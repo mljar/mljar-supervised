@@ -2,13 +2,13 @@ import copy
 import pandas as pd
 import numpy as np
 
-from preprocessing_jsonable import PreprocessingJsonable
+from utils.jsonable import Jsonable
 from preprocessing_utils import PreprocessingUtils
 from preprocessing_categorical import PreprocessingCategorical
 from preprocessing_missing import PreprocessingMissingValues
 from preprocessing_scale import PreprocessingScale
 
-class PreprocessingBox(PreprocessingJsonable):
+class PreprocessingBox(Jsonable):
 
     def __init__(self, missing_values_method = PreprocessingMissingValues.FILL_NA_MEDIAN, \
                         categorical_method = PreprocessingCategorical.CONVERT_INTEGER,

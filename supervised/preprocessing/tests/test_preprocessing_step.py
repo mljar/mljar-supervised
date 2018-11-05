@@ -9,7 +9,6 @@ import uuid
 from preprocessing_missing import PreprocessingMissingValues
 from preprocessing_categorical import PreprocessingCategorical
 from preprocessing_step import PreprocessingStep
-from utils.constants import PROJECT_BIN_CLASS, PROJECT_REGRESSION
 
 class PreprocessingStepTest(unittest.TestCase):
 
@@ -282,11 +281,11 @@ class PreprocessingStepTest(unittest.TestCase):
 
         a_lot = 250
         cs = []
-        for i in xrange(a_lot):
-            cs.append(str(uuid.uuid4().get_hex().upper()[0:6]))
+        for i in range(a_lot):
+            cs.append(str(uuid.uuid4().hex.upper()[0:6]))
 
         d = {'col1': cs,
-             'col2': ['a', 'b'] * (a_lot / 2),
+             'col2': ['a', 'b'] * int(a_lot / 2),
              'col3': range(a_lot),
              'col4': range(a_lot)}
 
@@ -330,7 +329,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(missing_values_method = PreprocessingMissingValues.FILL_NA_MEDIAN, \
                                 categorical_method = PreprocessingCategorical.CONVERT_ONE_HOT,
-                                project_task = PROJECT_BIN_CLASS)
+                                project_task = 'PROJECT_BIN_CLASS')
         X_train, y_train, _, _ = ps.run(X_train = X_train, y_train = y_train)
 
         self.assertEqual(2, len(np.unique(y_train)))
@@ -349,7 +348,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(missing_values_method = PreprocessingMissingValues.FILL_NA_MEDIAN, \
                                 categorical_method = PreprocessingCategorical.CONVERT_ONE_HOT,
-                                project_task = PROJECT_REGRESSION)
+                                project_task = 'PROJECT_REGRESSION')
         X_train, y_train, _, _ = ps.run(X_train = X_train, y_train = y_train)
 
         self.assertEqual(2, len(np.unique(y_train)))

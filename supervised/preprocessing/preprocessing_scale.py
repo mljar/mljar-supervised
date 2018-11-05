@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
 
-from preprocessing_jsonable import PreprocessingJsonable
+from utils.jsonable import Jsonable
 from preprocessing_utils import PreprocessingUtils
 
-class PreprocessingScale(PreprocessingJsonable):
+class PreprocessingScale(Jsonable):
 
     SCALE_MIN_MAX = "scale_min_max"
     SCALE_NORMAL = "scale_normal"

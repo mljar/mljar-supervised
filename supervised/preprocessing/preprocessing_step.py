@@ -2,7 +2,7 @@ import copy
 import pandas as pd
 import numpy as np
 
-from preprocessing_jsonable import PreprocessingJsonable
+from utils.jsonable import Jsonable
 from preprocessing_utils import PreprocessingUtils
 from preprocessing_categorical import PreprocessingCategorical
 from preprocessing_missing import PreprocessingMissingValues
@@ -10,16 +10,12 @@ from preprocessing_scale import PreprocessingScale
 from preprocessing_box import PreprocessingBox
 from preprocessing.label_encoder import LabelEncoder
 
-from utils.constants import PROJECT_BIN_CLASS, PROJECT_IMG_CLASS, PROJECT_REGRESSION
-
-class PreprocessingStep(PreprocessingJsonable):
-
-    FILE_POSTFIX = '_preprocessing_ver_0.0.1.json'
+class PreprocessingStep(Jsonable):
 
     def __init__(self, missing_values_method = PreprocessingMissingValues.FILL_NA_MEDIAN, \
                         categorical_method = PreprocessingCategorical.CONVERT_INTEGER,
                         scale_method = PreprocessingScale.SCALE_NORMAL,
-                        project_task = PROJECT_BIN_CLASS):
+                        project_task = 'PROJECT_BIN_CLASS'):
         self._missing_values_method = missing_values_method
         self._categorical_method = categorical_method
         self._scale_method = scale_method
@@ -52,7 +48,7 @@ class PreprocessingStep(PreprocessingJsonable):
 
         if y_train is not None:
             apply_convert = False
-            if self._project_task == PROJECT_BIN_CLASS:
+            if self._project_task == 'PROJECT_BIN_CLASS':
                 u = np.unique(y_train)
                 apply_convert = not(0 in u and 1 in u)
 

@@ -2,11 +2,11 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from preprocessing_jsonable import PreprocessingJsonable
+from utils.jsonable import Jsonable
 from preprocessing_utils import PreprocessingUtils
 
 
-class PreprocessingMissingValues(PreprocessingJsonable):
+class PreprocessingMissingValues(Jsonable):
 
     FILL_NA_MIN = 'na_fill_min_1'
     FILL_NA_MEAN = 'na_fill_mean'
@@ -68,7 +68,7 @@ class PreprocessingMissingValues(PreprocessingJsonable):
             self._na_fill_params[column] = self._get_fill_value(X[column])
 
     def _transform_na_fill(self, X):
-        for column, value in self._na_fill_params.iteritems():
+        for column, value in self._na_fill_params.items():
             ind = pd.isnull(X.loc[:,column])
             X.loc[ind, column] = value
         return X

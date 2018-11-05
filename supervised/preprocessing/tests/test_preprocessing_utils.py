@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
-from preprocessing.preprocessing_utils import PreprocessingUtils
+from preprocessing_utils import PreprocessingUtils
 
 class PreprocessingUtilsTest(unittest.TestCase):
 

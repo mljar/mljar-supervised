@@ -116,32 +116,6 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
         self.assertEqual(df['col4'][1], 1)
         self.assertEqual(df['col4'][2], 2)
 
-    def test_save_and_load_convert_integers(self):
-        # training data
-        d = {
-                'col1': [1, 2, 3],
-                'col2': ['a', 'a', 'c'],
-                'col3': [1, 1, 3],
-                'col4': ['a', 'b', 'c']
-            }
-        df = pd.DataFrame(data=d)
-        cat1 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
-        cat1.fit(df)
-
-        cat2 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
-        with tempfile.NamedTemporaryFile() as temp:
-            cat1.save(temp.name)
-            cat2.load(temp.name)
-        df = cat2.transform(df)
-        for col in ['col1', 'col2', 'col3', 'col4']:
-            self.assertTrue(col in df.columns)
-        self.assertEqual(df['col2'][0], 0)
-        self.assertEqual(df['col2'][1], 0)
-        self.assertEqual(df['col2'][2], 1)
-        self.assertEqual(df['col4'][0], 0)
-        self.assertEqual(df['col4'][1], 1)
-        self.assertEqual(df['col4'][2], 2)
-
 
 if __name__ == '__main__':
     unittest.main()

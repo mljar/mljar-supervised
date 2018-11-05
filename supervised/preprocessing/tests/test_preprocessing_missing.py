@@ -104,25 +104,6 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         self.assertEqual(2, df_test.loc[3, 'col3'])
         self.assertEqual('b', df_test.loc[3, 'col4'])
 
-    def test_save_and_load(self):
-        '''
-            Check save and load parameters
-        '''
-        d = {
-                'col1': [1, 2, 3, np.nan, np.nan],
-                'col2': ['a', 'a', np.nan, 'b', 'c']
-            }
-        df = pd.DataFrame(data=d)
-        # fill with median
-        preprocess_missing = PreprocessingMissingValues(PreprocessingMissingValues.FILL_NA_MEDIAN)
-        preprocess_missing.fit(df)
-        # save parameters
-        with tempfile.NamedTemporaryFile() as temp:
-            preprocess_missing.save(temp.name)
-            del preprocess_missing
-            preprocess_missing = PreprocessingMissingValues()
-            preprocess_missing.load(temp.name)
-            self.assertEqual(PreprocessingMissingValues.FILL_NA_MEDIAN, preprocess_missing._na_fill_method)
 
     def test_transform_on_new_data(self):
         # training data

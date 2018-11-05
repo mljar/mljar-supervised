@@ -1,10 +1,10 @@
 import numpy as np
-from sklearn import preprocessing
+from sklearn import preprocessing as sk_preproc
 
 class LabelEncoder(object):
 
     def __init__(self):
-        self.lbl = preprocessing.LabelEncoder()
+        self.lbl = sk_preproc.LabelEncoder()
 
 
     def fit(self, x):
@@ -19,7 +19,6 @@ class LabelEncoder(object):
             classes = np.unique(list(x.values))
             diff = np.setdiff1d(classes, self.lbl.classes_)
             self.lbl.classes_ = np.concatenate((self.lbl.classes_, diff))
-
             return self.lbl.transform(list(x.values))
 
     def to_json(self):
@@ -29,4 +28,7 @@ class LabelEncoder(object):
         return data_json
 
     def from_json(self, data_json):
-        self.lbl.classes_ = np.unique(list(data_json.keys()))
+        keys = np.unique(list(data_json.keys()))
+        if len(keys) == 2 and 'False' in keys and 'True' in keys:
+            keys = [False, True]
+        self.lbl.classes_ = keys

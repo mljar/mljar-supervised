@@ -3,12 +3,12 @@ import json
 import numpy as np
 import pandas as pd
 
-from preprocessing_jsonable import PreprocessingJsonable
+from utils.jsonable import Jsonable
 from preprocessing_utils import PreprocessingUtils
 from label_encoder import LabelEncoder
 from label_binarizer import LabelBinarizer
 
-class PreprocessingCategorical(PreprocessingJsonable):
+class PreprocessingCategorical(Jsonable):
 
     CONVERT_ONE_HOT = 'categorical_to_onehot'
     CONVERT_INTEGER = 'categorical_to_int'
@@ -44,7 +44,7 @@ class PreprocessingCategorical(PreprocessingJsonable):
 
     def transform(self, X):
 
-        for column, lbl_params in self._convert_params.iteritems():
+        for column, lbl_params in self._convert_params.items():
             if "unique_values" in lbl_params and "new_columns" in lbl_params:
                 # convert to one hot
                 lbl = LabelBinarizer()

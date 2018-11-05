@@ -116,33 +116,5 @@ class PreprocessingCategoricalOneHotTest(unittest.TestCase):
         self.assertEqual(df['col4_c'][2], 1)
 
 
-    def test_save_and_load_convert_one_hot(self):
-        d = {
-                'col1': [1, 2, 3],
-                'col2': ['a', 'a', 'c'],
-                'col3': [1, 1, 3],
-                'col4': ['a', 'b', 'c']
-            }
-        df = pd.DataFrame(data=d)
-        cat1 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_ONE_HOT)
-        cat1.fit(df)
-
-        cat2 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_ONE_HOT)
-        with tempfile.NamedTemporaryFile() as temp:
-            cat1.save(temp.name)
-            cat2.load(temp.name)
-        df = cat2.transform(df)
-        for col in ['col1', 'col2_c', 'col3', 'col4_a', 'col4_b', 'col4_c']:
-            self.assertTrue(col in df.columns)
-        self.assertEqual(df['col2_c'][0], 0)
-        self.assertEqual(df['col2_c'][1], 0)
-        self.assertEqual(df['col2_c'][2], 1)
-        self.assertEqual(df['col4_a'][0], 1)
-        self.assertEqual(df['col4_a'][1], 0)
-        self.assertEqual(df['col4_a'][2], 0)
-        self.assertEqual(df['col4_b'][1], 1)
-        self.assertEqual(df['col4_c'][2], 1)
-
-
 if __name__ == '__main__':
     unittest.main()

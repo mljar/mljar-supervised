@@ -3,9 +3,8 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
-from preprocessing_utils import PreprocessingUtils
+from preprocessing.preprocessing_utils import PreprocessingUtils
 from label_encoder import LabelEncoder
-
 
 class LabelEncoderTest(unittest.TestCase):
 
@@ -104,6 +103,7 @@ class LabelEncoderTest(unittest.TestCase):
         df_test = pd.DataFrame(data=d_test)
         # transform
         y = new_le.transform(df_test['col2'])
+
         self.assertEqual(y[0], 1)
         self.assertEqual(y[1], 0)
         self.assertEqual(y[2], 1)
