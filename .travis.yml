@@ -5,6 +5,6 @@ install:
   - pip install -U -r requirements.txt
   - pip install coveralls
 script:
-  coverage run -m tests.run -v
+  coverage run --source='supervised' -m tests.run -v
 after_success:
   coveralls
