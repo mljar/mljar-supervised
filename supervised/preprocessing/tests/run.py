@@ -6,8 +6,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 
 from .test_preprocessing_utils import PreprocessingUtilsTest
-#from test_preprocessing_missing import PreprocessingMissingValuesTest
-#from test_preprocessing_categorical_integers import PreprocessingCategoricalIntegersTest
+#from .test_preprocessing_missing import PreprocessingMissingValuesTest
+#from .test_preprocessing_categorical_integers import PreprocessingCategoricalIntegersTest
 #from test_preprocessing_categorical_one_hot import PreprocessingCategoricalOneHotTest
 #from test_label_encoder import LabelEncoderTest
 #from test_label_binarizer import LabelBinarizerTest
