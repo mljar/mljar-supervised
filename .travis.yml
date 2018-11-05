@@ -3,8 +3,5 @@ python:
   - "3.6"
 install:
   - pip install -U -r requirements.txt
-  - pip install coveralls
 script:
-  coverage run --source='mljar' -m tests.run -v
-after_success:
-  coveralls
+  python -m tests.run -v
