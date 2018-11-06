@@ -7,7 +7,10 @@ class ModelsRegistry():
         model_information = {"model_name": model_name,
                                 "model_code": model_code,
                                 "model_class": model_class}
+        print(model_information)
         if task_name in ModelsRegistry.registry:
-            ModelsRegistry[task_name] += [model_information]
+            ModelsRegistry.registry[task_name] += [model_information]
         else:
-            ModelsRegistry[task_name] = [model_information]
+            ModelsRegistry.registry[task_name] = [model_information]
+
+            

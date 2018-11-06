@@ -75,14 +75,6 @@ class XgbLearner(Learner):
         dtrain=xgb.DMatrix(X,missing=np.NaN)
         return self.model.predict(dtrain)
 
-    def make_copy(self):
-        return None
-
-    def save_locally(self):
-        logger.info('XgbLearner save locally model')
-        self.model.save_model(self.model_fname)
-        return self.model_fname
-
     def save(self):
         model_fname = self.save_locally()
         logger.info('XgbLearner save model to %s' % model_fname)
@@ -114,15 +106,3 @@ class XgbLearner(Learner):
 
         imp = dict(sorted(imp.items(), key=operator.itemgetter(1), reverse=True))
         return imp
-
-    def definition(self, alg_iters):
-        definition_fname =  '/tmp/' + self.uid + '.xgb.code.py'
-        with open(definition_fname, 'w') as fout:
-            fout.write('# a code snippet to run model locally\n')
-            fout.write('import xgboost as xgb\n')
-            fout.write('params = ' + json.dumps(self.fit_params, indent=4) + '\n')
-            fout.write('# prepare train dataset\n')
-            fout.write('dtrain=xgb.DMatrix(X, label=y,missing=np.NaN)\n')
-            fout.write('# fit xgboost model\n')
-            fout.write('model = xgb.train(params, dtrain, {0})\n'.format(alg_iters))
-        return definition_fname
