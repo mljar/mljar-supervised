@@ -1,4 +1,10 @@
 
+# tasks that can be handled by the package
+BINARY_CLASSIFICATION = 'binary_classification'
+MULTICLASS_CLASSIFICATION = 'multiclass_classification'
+REGRESSION = 'regression'
+
+
 class ModelsRegistry():
 
     registry = {}
@@ -12,5 +18,3 @@ class ModelsRegistry():
             ModelsRegistry.registry[task_name] += [model_information]
         else:
             ModelsRegistry.registry[task_name] = [model_information]
-
-            
