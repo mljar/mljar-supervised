@@ -30,3 +30,8 @@ class IterativeLearnerTest(unittest.TestCase):
             }
         }
         il = IterativeLearner(data, train_params)
+        self.assertTrue(il.preprocessing is not None)
+        self.assertTrue(il.validation is not None)
+        self.assertTrue(il.metrics is not None)
+        self.assertTrue(il.model is not None)
+        
