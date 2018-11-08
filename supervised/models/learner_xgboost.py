@@ -1,25 +1,13 @@
-__author__ = 'Piotr Plonski'
-__copyright__ = 'MLJAR, Inc.'
-
+import logging
+import copy
 import numpy as np
 import pandas as pd
-import time, logging, uuid, cPickle, json
 from learner import Learner
-from sklearn.externals import joblib
-from learner_sklearn import SklearnLearner
-logger = logging.getLogger('mljar')
-
-import copy
 import xgboost as xgb
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import ExtraTreesRegressor
-
-
 import operator
+
+log = logging.getLogger(__name__)
+
 
 def reg_log_obj(preds, dtrain):
     labels = dtrain.get_label()
@@ -38,16 +26,19 @@ class XgbLearner(Learner):
     '''
     This is a wrapper over xgboost algorithm.
     '''
-    def __init__(self, fit_params):
-        Learner.__init__(self, fit_params)
+    def __init__(self, params):
+        Learner.__init__(self, params)
         self.model_base_fname = self.uid + '.xgb.model'
         self.model_fname = '/tmp/' + self.model_base_fname
-        logger.info('XgbLearner initialized')
+        self.rounds = 10
+        log.info('XgbLearner __init__')
 
     def update(self, update_params):
         self.rounds = update_params['iters']
 
     def _set_params(self):
+        pass
+        '''
         self.params = {
             'booster': self.fit_params['booster'],
             "objective": self.fit_params['objective'],
@@ -59,17 +50,12 @@ class XgbLearner(Learner):
             'colsample_bytree':self.fit_params['colsample_bytree'],
             'silent':1
         }
+        '''
 
-    def fit(self, X, y, sample_weight = None):
-        print 'Fit xgboost'
-        dtrain=xgb.DMatrix(X, label = y, missing = np.NaN, weight = sample_weight)
+    def fit(self, X, y):
+        dtrain = xgb.DMatrix(X, label = y, missing = np.NaN)
         self._set_params()
-        if self.params["objective"] == "reg:log":
-            del self.params["objective"]
-            self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model,
-                                    obj=reg_log_obj, feval=reg_log_evalerror)
-        else:
-            self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model)
+        self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model)
 
     def predict(self, X):
         dtrain=xgb.DMatrix(X, missing=np.NaN)
@@ -77,15 +63,17 @@ class XgbLearner(Learner):
 
     def save(self):
         model_fname = self.save_locally()
-        logger.info('XgbLearner save model to %s' % model_fname)
+        log.debug('XgbLearner save model to %s' % model_fname)
         return model_fname
 
     def load(self, model_path):
-        logger.info('Xgboost load model from %s' % model_path)
+        log.debug('Xgboost load model from %s' % model_path)
         self.model = xgb.Booster() #init model
         self.model.load_model(model_path)
 
     def importance(self, column_names, normalize = True):
+        return None
+        '''
         # add tmp files here TODO
         tmp_fmap =  '/tmp/xgb.fmap.' + self.uid
         print tmp_fmap
@@ -106,3 +94,4 @@ class XgbLearner(Learner):
 
         imp = dict(sorted(imp.items(), key=operator.itemgetter(1), reverse=True))
         return imp
+        '''

@@ -5,3 +5,5 @@ class Jsonable(object):
 
     def from_json(self, data_json):
         pass
+
+        

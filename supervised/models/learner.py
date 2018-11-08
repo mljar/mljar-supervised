@@ -14,7 +14,7 @@ class Learner():
 
     def update(self, update_params):
         pass
-    def fit(self, X, y, sample_weight = None):
+    def fit(self, X, y):
         pass
     def predict(self, X):
         pass
