@@ -72,7 +72,7 @@ class XgbLearner(Learner):
             self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model)
 
     def predict(self, X):
-        dtrain=xgb.DMatrix(X,missing=np.NaN)
+        dtrain=xgb.DMatrix(X, missing=np.NaN)
         return self.model.predict(dtrain)
 
     def save(self):

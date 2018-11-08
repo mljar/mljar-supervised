@@ -22,7 +22,7 @@ def logloss(y_true, y_predicted):
 
 def rmse(y_true, y_predicted):
     val = mean_squared_error(y_true, y_predicted)
-    return np.sqrt(val) #if val > 0 else -1
+    return np.sqrt(val) if val > 0 else -np.Inf
 
 class Metric(object):
 
@@ -48,10 +48,10 @@ class Metric(object):
         else:
             raise MetricException('Unknown metric {0}'.format(self.metric_name))
 
-    def score(self, y_true, y_predicted):
+    def __call__(self, y_true, y_predicted):
         return self.metric(y_true, y_predicted)
 
-    def improvement(self, score_previous, score_current):
+    def improvement(self, previous, current):
         if self.minimize_direction:
-            return score_current < score_previous
-        return score_current > score_previous
+            return current < previous
+        return current > previous
