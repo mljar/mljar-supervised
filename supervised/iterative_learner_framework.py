@@ -33,6 +33,8 @@ class IterativeLearner(LearnerFramework):
 
         for train_data, validation_data in self.validation.split():
 
+            log.debug('Train data, X: {0} y: {1}'.format(train_data.get('X').shape,
+                                                            train_data.get('y').shape))
             #self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
             #self.preprocessings[-1].fit_and_transform(train_data, validation_data)
 

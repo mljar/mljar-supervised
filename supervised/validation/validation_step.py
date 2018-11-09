@@ -17,16 +17,16 @@ class ValidationStep():
         self.params = params
 
         # kfold is default validation technique
-        self.validator_type = self.params.get('validator_type', 'kfold')
+        self.validation_type = self.params.get('validation_type', 'kfold')
 
-        if self.validator_type == 'kfold':
+        if self.validation_type == 'kfold':
             self.validator = KFoldValidator(params, data)
-        elif self.validator_type == 'split':
+        elif self.validation_type == 'split':
             self.validator = SplitValidator(params, data)
-        elif self.validator_type == 'split':
+        elif self.validation_type == 'split':
             self.validator = WithDatasetValidator(params, data)
         else:
-            msg = 'Unknown validation type: {0}'.format(self.validator_type)
+            msg = 'Unknown validation type: {0}'.format(self.validation_type)
             raise ValidationStepException(msg)
 
     def split(self):

@@ -1,3 +1,5 @@
+import logging
+log = logging.getLogger(__name__)
 
 from sklearn.model_selection import train_test_split
 
@@ -18,6 +20,7 @@ class SplitValidator(BaseValidator):
         self.shuffle = self.params.get('shuffle', True)
         self.stratify = self.params.get('stratify', False)
         self.random_seed = self.params.get('random_seed', 1706)
+        log.debug('SplitValidator, train_ratio: {0}'.format(self.train_ratio))
 
     def split(self):
         X = self.data['train']['X']

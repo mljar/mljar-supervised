@@ -7,7 +7,7 @@ from metric import Metric
 class MetricTest(unittest.TestCase):
 
     def test_create(self):
-        params = {'metric_name': 'logloss'}
+        params = {'name': 'logloss'}
         m = Metric(params)
         y_true = np.array([0,0,1,1])
         y_predicted = np.array([0,0,1,1])
@@ -19,7 +19,7 @@ class MetricTest(unittest.TestCase):
         self.assertTrue(score > 1.0)
 
     def test_metric_improvement(self):
-        params = {'metric_name': 'logloss'}
+        params = {'name': 'logloss'}
         m = Metric(params)
         y_true = np.array([0,0,1,1])
         y_predicted = np.array([0,0,0,1])

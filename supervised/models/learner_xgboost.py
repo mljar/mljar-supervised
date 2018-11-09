@@ -32,7 +32,7 @@ class XgbLearner(Learner):
         self.model_fname = '/tmp/' + self.model_base_fname
         self.rounds = 1
         self.max_iters = params.get('max_iters', 3)
-        log.info('XgbLearner __init__')
+        log.debug('XgbLearner __init__')
 
     def update(self, update_params):
         self.rounds = update_params['iters']
@@ -59,15 +59,17 @@ class XgbLearner(Learner):
         dtrain = xgb.DMatrix(X, label = y, missing = np.NaN)
         self._set_params()
         self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model)
+        log.debug('XgbLearner.fit')
 
     def predict(self, X):
         dtrain=xgb.DMatrix(X, missing=np.NaN)
         return self.model.predict(dtrain)
 
     def save(self):
-        model_fname = self.save_locally()
-        log.debug('XgbLearner save model to %s' % model_fname)
-        return model_fname
+        return 'saved'
+        #model_fname = self.save_locally()
+        #log.debug('XgbLearner save model to %s' % model_fname)
+        #return model_fname
 
     def load(self, model_path):
         log.debug('Xgboost load model from %s' % model_path)

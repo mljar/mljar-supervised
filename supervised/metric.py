@@ -27,26 +27,28 @@ def rmse(y_true, y_predicted):
 class Metric(object):
 
     def __init__(self, params):
+        if params is None:
+            raise MetricException('Metric params not defined')
         self.params = params
-        self.metric_name = self.params.get('metric_name')
-        if self.metric_name is None:
-            raise MetricException('Metric not defined')
-        self.minimize_direction = self.metric_name in ['logloss', 'rmse',
+        self.name = self.params.get('name')
+        if self.name is None:
+            raise MetricException('Metric name not defined')
+        self.minimize_direction = self.name in ['logloss', 'rmse',
                                                         'mae', 'ce', 'mse']
-        if self.metric_name == 'logloss':
+        if self.name == 'logloss':
             self.metric = logloss
-        elif self.metric_name == 'auc':
+        elif self.name == 'auc':
             self.metric = roc_auc_score
-        elif self.metric_name == 'acc':
+        elif self.name == 'acc':
             self.metric = accuracy_score
-        elif self.metric_name == 'rmse':
+        elif self.name == 'rmse':
             self.metric = rmse
-        elif self.metric_name == 'mse':
+        elif self.name == 'mse':
             self.metric = mean_squared_error
-        elif self.metric_name == 'mae':
+        elif self.name == 'mae':
             self.metric = mean_absolute_error
         else:
-            raise MetricException('Unknown metric {0}'.format(self.metric_name))
+            raise MetricException('Unknown metric {0}'.format(self.name))
 
     def __call__(self, y_true, y_predicted):
         return self.metric(y_true, y_predicted)
@@ -55,3 +57,8 @@ class Metric(object):
         if self.minimize_direction:
             return current < previous
         return current > previous
+
+    def worst_value(self):
+        if self.minimize_direction:
+            return np.Inf
+        return -np.Inf
