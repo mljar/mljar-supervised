@@ -2,7 +2,7 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
-from learner import Learner
+from .learner import Learner
 import xgboost as xgb
 import operator
 
@@ -30,7 +30,8 @@ class XgbLearner(Learner):
         Learner.__init__(self, params)
         self.model_base_fname = self.uid + '.xgb.model'
         self.model_fname = '/tmp/' + self.model_base_fname
-        self.rounds = 10
+        self.rounds = 1
+        self.max_iters = params.get('max_iters', 3)
         log.info('XgbLearner __init__')
 
     def update(self, update_params):
@@ -52,7 +53,9 @@ class XgbLearner(Learner):
         }
         '''
 
-    def fit(self, X, y):
+    def fit(self, data):
+        X = data.get('X')
+        y = data.get('y')
         dtrain = xgb.DMatrix(X, label = y, missing = np.NaN)
         self._set_params()
         self.model = xgb.train(self.params, dtrain, self.rounds, xgb_model=self.model)

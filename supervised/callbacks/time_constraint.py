@@ -1,6 +1,6 @@
 import time
 import logging
-from callback import Callback
+from .callback import Callback
 log = logging.getLogger(__name__)
 
 class TimeConstraint(Callback):

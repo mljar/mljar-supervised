@@ -1,7 +1,7 @@
 
 from sklearn.model_selection import train_test_split
 
-from validator_base import BaseValidator
+from .validator_base import BaseValidator
 
 class SplitValidatorException(Exception):
     def __init__(self, message):
@@ -11,8 +11,8 @@ class SplitValidatorException(Exception):
 
 class SplitValidator(BaseValidator):
 
-    def __init__(self, data, params):
-        BaseValidator.__init__(self, data, params)
+    def __init__(self, params, data):
+        BaseValidator.__init__(self, params, data)
 
         self.train_ratio = self.params.get('train_ratio', 0.8)
         self.shuffle = self.params.get('shuffle', True)
@@ -28,7 +28,7 @@ class SplitValidator(BaseValidator):
                                         test_size = 1.0 - self.train_ratio,
                                         stratify = y if self.stratify else None,
                                         random_state = self.random_seed)
-        yield X_train, y_train, X_validation, y_validation
+        yield {'X': X_train, 'y': y_train}, {'X': X_validation, 'y': y_validation}
 
 
 

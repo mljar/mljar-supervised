@@ -3,7 +3,7 @@ log = logging.getLogger(__name__)
 
 import numpy as np
 
-from callback import Callback
+from .callback import Callback
 from metric import Metric
 
 class MetricLogger(Callback):

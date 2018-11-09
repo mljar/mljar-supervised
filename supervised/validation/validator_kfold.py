@@ -4,12 +4,12 @@ log = logging.getLogger(__name__)
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
 
-from validator_base import BaseValidator
+from .validator_base import BaseValidator
 
 class KFoldValidator(BaseValidator):
 
-    def __init__(self, data, params):
-        BaseValidator.__init__(self, data, params)
+    def __init__(self, params, data):
+        BaseValidator.__init__(self, params, data)
 
         self.k_folds = self.params.get('k_folds', 5)
         self.shuffle = self.params.get('shuffle', True)
@@ -30,7 +30,7 @@ class KFoldValidator(BaseValidator):
         for train_index, validation_index in self.skf.split(X, y):
             X_train, y_train = X[train_index], y[train_index]
             X_validation, y_validation = X[validation_index], y[validation_index]
-            yield X_train, y_train, X_validation, y_validation
+            yield {'X': X_train, 'y': y_train}, {'X': X_validation, 'y': y_validation}
 
     def get_n_splits(self):
         return self.k_folds

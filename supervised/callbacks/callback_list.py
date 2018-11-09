@@ -4,18 +4,22 @@ class CallbackList(object):
     def __init__(self, callbacks = []):
         self.callbacks = callbacks
 
-    def on_training_start(self):
-        for cb in callbacks:
-            cb.on_training_start()
+    def add_and_set_learner(self, learner):
+        for cb in self.callbacks:
+            cb.add_and_set_learner(learner)
 
-    def on_training_end(self):
-        for cb in callbacks:
-            cb.on_training_end()
+    def on_learner_train_start(self, logs = None):
+        for cb in self.callbacks:
+            cb.on_learner_train_start(logs)
 
-    def on_iteration_start(self, iter_cnt, data):
-        for cb in callbacks:
-            cb.on_iteration_start(iter_cnt)
+    def on_learner_train_end(self, logs = None):
+        for cb in self.callbacks:
+            cb.on_learner_train_end(logs)
 
-    def on_iteration_end(self, iter_cnt, data):
-        for cb in callbacks:
-            cb.on_iteration_end(iter_cnt)
+    def on_iteration_start(self, logs = None):
+        for cb in self.callbacks:
+            cb.on_iteration_start(logs)
+
+    def on_iteration_end(self, logs = None, predictions = None):
+        for cb in self.callbacks:
+            cb.on_iteration_end(logs, predictions)

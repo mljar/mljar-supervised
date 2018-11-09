@@ -7,26 +7,40 @@ log = logging.getLogger(__name__)
 from validation.validation_step import ValidationStep
 
 
+
+from callbacks.early_stopping import EarlyStopping
+from callbacks.time_constraint import TimeConstraint
+
+
+from callbacks.callback_list import CallbackList
+
 class LearnerFrameworkParametersException(Exception):
     pass
 
 class LearnerFramework():
 
-    def __init__(self, params, callbacks = None):
+    def __init__(self, params, callbacks = []):
         log.debug('LearnerFramework __init__')
 
-        for i in ['model', 'metrics']: # mandatory parameters
+        for i in ['learner', 'validation']: # mandatory parameters
             if i not in params:
-                msg = 'Missing {0} parameter in train_params'.format(i)
+                msg = 'Missing {0} parameter in LearnerFramework params'.format(i)
                 log.error(msg)
-                raise LearnerFrameworkParametersException(msg)
+                raise ValueError(msg)
 
-        self.preprocessing = train_params.get('preprocessing')
-        self.validation = ValidationStep(train_params.get('validation'))
-        self.model = train_params.get('model')
+        self.params = params
+        self.callbacks = CallbackList(callbacks)
+
+        self.preprocessing_params = params.get('preprocessing')
+        self.validation_params = params.get('validation')
+        self.learner_params = params.get('learner')
+
+        self.validation = None
+        self.preprocessings = []
+        self.learners = []
 
     def train(self, data):
-        print('--- LearnerFramework start train ---')
+        pass
 
     def predict(self, data):
         pass
@@ -41,4 +55,4 @@ class LearnerFramework():
         pass
 
     def load(self):
-        pass        
+        pass

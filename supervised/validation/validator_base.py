@@ -8,12 +8,13 @@ class BaseValidatorException(Exception):
 
 class BaseValidator(object):
 
-    def __init__(self, data, params):
+    def __init__(self, params, data):
         self.data = data
         self.params = params
         self.validate()
 
     def validate(self):
+        print(self.data)
         if self.data.get('train') is None:
             msg = 'Missing train data'
             raise BaseValidatorException(msg)
