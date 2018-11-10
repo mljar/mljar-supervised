@@ -12,8 +12,11 @@ class XgboostLearnerTest(unittest.TestCase):
         params = {}
         xgb = XgbLearner(params)
         data = {
-            'X_train': np.array([[0,1,2,3], [0,1,2,3]]),
-            'y_train': np.array([0,1]) }
-        xgb.fit(data['X_train'], data['y_train'])
+            'train': {
+                'X': np.array([[0,1,2,3], [0,1,2,3]]),
+                'y': np.array([0,1])
+            }
+        }
+        xgb.fit(data['train'])
 
         # xgb.copy() # copy.deepcopy(clf) # error

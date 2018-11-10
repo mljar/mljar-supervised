@@ -39,6 +39,7 @@ class EarlyStopping(Callback):
         self.loss_values[self.learner.uid]['iters'] += [logs.get('iter_cnt')]
 
         if self.metric.improvement(previous = self.best_loss[self.learner.uid], current = loss):
+            self.no_improvement_cnt = 0
             self.best_loss[self.learner.uid] = loss
             self.best_models[self.learner.uid] = self.learner.copy()
             # if local copy is not available, save model and keep path
