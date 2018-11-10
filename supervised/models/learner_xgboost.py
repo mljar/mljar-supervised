@@ -3,7 +3,7 @@ import copy
 import numpy as np
 import pandas as pd
 
-from models.learner import Learner
+from supervised.models.learner import Learner
 import xgboost as xgb
 import operator
 
@@ -33,13 +33,12 @@ class XgbLearner(Learner):
     '''
     def __init__(self, params):
         Learner.__init__(self, params)
-        self.model_base_fname = self.uid + '.xgb.model'
-        self.model_fname = '/tmp/' + self.model_base_fname
-        self.rounds = 1
-        log.debug('XgbLearner __init__')
+        self.version = xgb.__version__
+        self.model_file = self.uid + '.xgb.model'
+        self.model_file_path = '/tmp/' + self.model_file
 
+        self.boosting_rounds = params.get('boosting_rounds', 50)
         self.max_iters = params.get('max_iters', 3)
-
         self.learner_params = {
             'booster': self.params.get('booster', 'gbtree'),
             'objective': self.params.get('objective'),
@@ -57,34 +56,37 @@ class XgbLearner(Learner):
         }
         for p, v in mandatory_params.items():
             if self.learner_params[p] is None:
-                msg = 'Please specify the {0}, should be from {1}'.format(p, v)
+                msg = 'Please specify the {0}, it should be one from {1}'.format(p, v)
                 raise XgbLearnerException(msg)
-
+        log.debug('XgbLearner __init__')
 
     def update(self, update_params):
-        self.rounds = update_params['iters']
-
+        # Dont need to update boosting rounds, it it adding it incrementally
+        pass
 
     def fit(self, data):
+        log.debug('XgbLearner.fit')
         X = data.get('X')
         y = data.get('y')
         dtrain = xgb.DMatrix(X, label = y, missing = np.NaN)
-        self._set_params()
-        self.model = xgb.train(self.learner_params, dtrain, self.rounds, xgb_model=self.model)
-        log.debug('XgbLearner.fit')
+        self.model = xgb.train(self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model)
 
     def predict(self, X):
+        if self.model is None:
+            raise XgbLearnerException('Xgboost model is None')
         dtrain=xgb.DMatrix(X, missing=np.NaN)
         return self.model.predict(dtrain)
 
+    def copy(self):
+        return copy.deepcopy(self)
+
     def save(self):
-        return 'saved'
-        #model_fname = self.save_locally()
-        #log.debug('XgbLearner save model to %s' % model_fname)
-        #return model_fname
+        self.model.save_model(self.model_file_path)
+        log.debug('XgbLearner save model to %s' % self.model_file_path)
+        return self.model_file_path
 
     def load(self, model_path):
-        log.debug('Xgboost load model from %s' % model_path)
+        log.debug('XgbLearner load model from %s' % model_path)
         self.model = xgb.Booster() #init model
         self.model.load_model(model_path)
 
@@ -112,3 +114,6 @@ class XgbLearner(Learner):
         imp = dict(sorted(imp.items(), key=operator.itemgetter(1), reverse=True))
         return imp
         '''
+
+
+# For binary classification target should be 0, 1. There should be no NaNs in target.

@@ -4,7 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from registry import ModelsRegistry
+from supervised.models.registry import ModelsRegistry
 
 class ModelsRegistryTest(unittest.TestCase):
 
@@ -16,4 +16,4 @@ class ModelsRegistryTest(unittest.TestCase):
                     "model_code": "M 1",
                     "model_class": Model1}
         ModelsRegistry(**model1)
-        print(ModelsRegistry.registry)
+        #print(ModelsRegistry.registry)
