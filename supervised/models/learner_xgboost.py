@@ -70,6 +70,8 @@ class XgbLearner(Learner):
         log.debug('XgbLearner.fit')
         X = data.get('X')
         y = data.get('y')
+        #print('rounds', self.boosting_rounds)
+        #print('model', self.model)
         dtrain = xgb.DMatrix(X, label = y, missing = np.NaN)
         self.model = xgb.train(self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model)
 

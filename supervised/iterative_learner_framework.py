@@ -48,8 +48,26 @@ class IterativeLearner(LearnerFramework):
                 self.callbacks.on_iteration_start()
                 learner.fit(train_data)
                 self.callbacks.on_iteration_end({'iter_cnt': i},
-                        self.predictions(learner, train_data, validation_data))
+                                                self.predictions(learner,
+                                                    train_data, validation_data))
                 if learner.stop_training: break
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
         # end of validation loop
+
+    def predict(self, X):
+        # run predict on all learners and return the average
+        y_predicted = np.zeros((X.shape[0],))
+        for learner in self.learners:
+            print('learner->', learner.algorithm_short_name)
+            y_predicted += learner.predict(X)
+        return y_predicted / float(len(self.learners))
+
+    def save(self, file_path):
+
+        for learner in self.learners:
+            learner_file_path = learner.save()
+            
+
+    def load(self, file_path):
+        pass

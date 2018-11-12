@@ -8,20 +8,15 @@ from metric import Metric
 
 class MetricLogger(Callback):
 
-    def __init__(self, learner, params):
-        super(MetricLogger, self).__init__(learner, params, data)
+    def __init__(self,params):
+        super(MetricLogger, self).__init__(params)
         self.metrics = []
-        self.loss_values = {}
         for metric_name in params.get('metric_names'):
-            self.metrics += [Metric({'metric_name': metric_name})]
-            self.loss_values[metric_name] = {'train': [],
-                                            'validation': [],
-                                            'iter_cnts': []}
+            self.metrics += [Metric({'name': metric_name})]
 
-    def on_iteration_end(self, iter_cnt, data):
+
+    def on_iteration_end(self, logs, predictions):
         for m in self.metrics:
-            self.loss_values[m.metric_name]['iter_cnts'] += [iter_cnt]
-            for t in ['train', 'validation']:
-                loss = m(data.get('y_{0}_true'.format(t)),
-                            data.get('y_{0}_predicted'.format(t)))
-                self.loss_values[m.metric_name][t] += [loss]
+            loss = m(predictions.get('y_validation_true'),
+                                predictions.get('y_validation_predicted'))
+            log.info('Iteration {0} {1}: {2}'.format(logs['iter_cnt'], m.name, loss))

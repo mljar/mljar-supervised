@@ -42,17 +42,17 @@ class LearnerFramework():
     def train(self, data):
         pass
 
-    def predict(self, data):
+    def predict(self, X):
         pass
 
     def to_json(self):
         pass
 
-    def from_json(self):
+    def from_json(self, json_data):
         pass
 
-    def save(self):
+    def save(self, file_path):
         pass
 
-    def load(self):
+    def load(self, file_path):
         pass

@@ -14,7 +14,6 @@ class BaseValidator(object):
         self.validate()
 
     def validate(self):
-        print(self.data)
         if self.data.get('train') is None:
             msg = 'Missing train data'
             raise BaseValidatorException(msg)
