@@ -14,19 +14,6 @@ class XgbLearnerException(Exception):
         Exception.__init__(self, message)
         log.error(message)
 
-
-def reg_log_obj(preds, dtrain):
-    labels = dtrain.get_label()
-    con = 2
-    x =preds-labels
-    grad =con*x / (np.abs(x)+con)
-    hess =con**2 / (np.abs(x)+con)**2
-    return grad, hess
-
-def reg_log_evalerror(preds, dtrain):
-    labels = dtrain.get_label()
-    return 'mae', mean_absolute_error(np.exp(preds), np.exp(labels))
-
 class XgbLearner(Learner):
     '''
     This is a wrapper over xgboost algorithm.
