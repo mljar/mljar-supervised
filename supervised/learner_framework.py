@@ -1,7 +1,7 @@
 import logging
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.DEBUG)
-
-import logging
+import uuid
+import os
 log = logging.getLogger(__name__)
 
 from validation.validation_step import ValidationStep
@@ -21,7 +21,9 @@ class LearnerFramework():
 
     def __init__(self, params, callbacks = []):
         log.debug('LearnerFramework __init__')
-
+        self.uid = str(uuid.uuid4())
+        self.framwork_file_path = os.path.join('/tmp/', self.uid + '.framework')
+        print(self.framwork_file_path)
         for i in ['learner', 'validation']: # mandatory parameters
             if i not in params:
                 msg = 'Missing {0} parameter in LearnerFramework params'.format(i)
@@ -45,14 +47,8 @@ class LearnerFramework():
     def predict(self, X):
         pass
 
-    def to_json(self):
+    def save(self):
         pass
 
-    def from_json(self, json_data):
-        pass
-
-    def save(self, file_path):
-        pass
-
-    def load(self, file_path):
+    def load(self, json_desc):
         pass

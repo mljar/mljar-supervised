@@ -12,7 +12,7 @@ class Learner():
         self.algorithm_name = 'Unknown'
         self.algorithm_short_name = 'Unknown'
         self.model = None
-        self.uid = str(uuid.uuid4())
+        self.uid = params.get('uid', str(uuid.uuid4()))
 
     def fit(self, X, y):
         pass

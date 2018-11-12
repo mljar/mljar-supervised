@@ -59,4 +59,7 @@ class IterativeLearnerTest(unittest.TestCase):
         il = IterativeLearner(self.train_params, callbacks = [])
         il.train(self.data)
 
-        il.save('test.lf')
+        desc = il.save()
+        print(desc)
+
+        il.load(desc)

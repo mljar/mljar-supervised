@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-
+import zipfile
 from learner_framework import LearnerFramework
 from validation.validation_step import ValidationStep
 from models.learner_factory import LearnerFactory
@@ -63,11 +63,26 @@ class IterativeLearner(LearnerFramework):
             y_predicted += learner.predict(X)
         return y_predicted / float(len(self.learners))
 
-    def save(self, file_path):
-
+    def save(self):
+        learner_file_paths = []
         for learner in self.learners:
-            learner_file_path = learner.save()
-            
+            learner_file_paths += [learner.save()]
 
-    def load(self, file_path):
-        pass
+        zf = zipfile.ZipFile(self.framwork_file_path, mode='w')
+        try:
+            for lf in learner_file_paths:
+                zf.write(lf)
+        finally:
+            zf.close()
+        desc = {
+            'file_path': self.framwork_file_path,
+            'learner_type': self.learners[0].algorithm_short_name,
+            'library_version': self.learners[0].library_version,
+            'model_uids': [i.uid for i in self.learners]
+        }
+        return desc
+
+    def load(self, json_desc):
+
+        with zipfile.ZipFile(json_desc.get('file_path'), 'r') as zip_ref:
+            zip_ref.extractall('/tmp')
