@@ -15,3 +15,4 @@ class LearnerFactoryTest(unittest.TestCase):
             'eval_metric': 'logloss'
         }
         learner = LearnerFactory.get_learner(params)
+        self.assertEqual(learner.algorithm_short_name, 'Xgboost')

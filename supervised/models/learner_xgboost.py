@@ -33,7 +33,9 @@ class XgbLearner(Learner):
     '''
     def __init__(self, params):
         Learner.__init__(self, params)
-        self.version = xgb.__version__
+        self.library_version = xgb.__version__
+        self.algorithm_name = 'Extreme Gradient Boosting'
+        self.algorithm_short_name = 'Xgboost'
         self.model_file = self.uid + '.xgb.model'
         self.model_file_path = '/tmp/' + self.model_file
 
