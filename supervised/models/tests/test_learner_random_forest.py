@@ -69,9 +69,11 @@ class RandomForestLearnerTest(unittest.TestCase):
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        file_path = rf.save()
+        json_desc = rf.save()
         rf2 = RandomForestLearner({})
-        rf2.load(file_path)
+        self.assertTrue(rf.uid != rf2.uid)
+        rf2.load(json_desc)
+        self.assertTrue(rf.uid == rf2.uid)
 
         y_predicted = rf2.predict(self.X)
         loss2 = metric(self.y, y_predicted)

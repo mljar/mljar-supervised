@@ -54,7 +54,7 @@ class XgboostLearnerTest(unittest.TestCase):
         loss = metric(self.y, y_predicted)
 
         xgb2 = XgbLearner(params)
-        self.assertTrue(xgb2.model is None)
+        self.assertTrue(xgb2.model is None) # model is set to None, while initialized
         xgb2 = xgb.copy()
         y_predicted = xgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
@@ -81,10 +81,12 @@ class XgboostLearnerTest(unittest.TestCase):
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        file_path = xgb.save()
+        json_desc = xgb.save()
         xgb2 = XgbLearner(params)
+        self.assertTrue(xgb.uid != xgb2.uid)
         self.assertTrue(xgb2.model is None)
-        xgb2.load(file_path)
+        xgb2.load(json_desc)
+        self.assertTrue(xgb.uid == xgb2.uid)
 
         y_predicted = xgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)

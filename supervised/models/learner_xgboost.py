@@ -73,13 +73,31 @@ class XgbLearner(Learner):
 
     def save(self):
         self.model.save_model(self.model_file_path)
-        log.debug('XgbLearner save model to %s' % self.model_file_path)
-        return self.model_file_path
 
-    def load(self, model_path):
-        log.debug('XgbLearner load model from %s' % model_path)
+        json_desc = {
+            'library_version': self.library_version,
+            'algorithm_name': self.algorithm_name,
+            'algorithm_short_name': self.algorithm_short_name,
+            'uid': self.uid,
+            'model_file': self.model_file,
+            'model_file_path': self.model_file_path
+        }
+
+        log.debug('XgbLearner save model to %s' % self.model_file_path)
+        return json_desc
+
+    def load(self, json_desc):
+
+        self.library_version = json_desc.get('library_version', self.library_version)
+        self.algorithm_name = json_desc.get('algorithm_name', self.algorithm_name)
+        self.algorithm_short_name = json_desc.get('algorithm_short_name', self.algorithm_short_name)
+        self.uid = json_desc.get('uid', self.uid)
+        self.model_file = json_desc.get('model_file', self.model_file)
+        self.model_file_path = json_desc.get('model_file_path', self.model_file_path)
+
+        log.debug('XgbLearner load model from %s' % self.model_file_path)
         self.model = xgb.Booster() #init model
-        self.model.load_model(model_path)
+        self.model.load_model(self.model_file_path)
 
     def importance(self, column_names, normalize = True):
         return None

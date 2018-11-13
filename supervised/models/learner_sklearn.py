@@ -19,12 +19,32 @@ class SklearnLearner(Learner):
 
     def save(self):
         joblib.dump(self.model, self.model_file_path, compress=True)
-        logger.debug('SklearnLearner save to {0}'.format(self.model_file_path))
-        return self.model_file_path
 
-    def load(self, model_path):
-        logger.debug('SklearnLearner loading model from {0}'.format(model_path))
-        self.model = joblib.load(model_path)
+        json_desc = {
+            'library_version': self.library_version,
+            'algorithm_name': self.algorithm_name,
+            'algorithm_short_name': self.algorithm_short_name,
+            'uid': self.uid,
+            'model_file': self.model_file,
+            'model_file_path': self.model_file_path
+        }
+
+        logger.debug('SklearnLearner save to {0}'.format(self.model_file_path))
+        return json_desc
+
+    def load(self, json_desc):
+        self.library_version = json_desc.get('library_version', self.library_version)
+        self.algorithm_name = json_desc.get('algorithm_name', self.algorithm_name)
+        self.algorithm_short_name = json_desc.get('algorithm_short_name', self.algorithm_short_name)
+        self.uid = json_desc.get('uid', self.uid)
+        self.model_file = json_desc.get('model_file', self.model_file)
+        self.model_file_path = json_desc.get('model_file_path', self.model_file_path)
+
+        self.model = joblib.load(self.model_file_path)
+
+        logger.debug('SklearnLearner loading model from {0}'.format(self.model_file_path))
+
+
 
 
 class SklearnTreesClassifierLearner(SklearnLearner):
