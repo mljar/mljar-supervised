@@ -18,3 +18,10 @@ class LearnerFactory(object):
         else:
             msg = 'Learner {0} not defined'.format(learner_type)
             raise LearnerFactoryException(msg)
+
+
+    @staticmethod
+    def load(json_desc):
+        learner = LearnerFactory.get_learner(json_desc.get('params'))
+        learner.load(json_desc)
+        return learner

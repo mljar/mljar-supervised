@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 class XgbLearnerException(Exception):
     def __init__(self, message):
-        Exception.__init__(self, message)
+        super(XgbLearnerException, self).__init__(message)
         log.error(message)
 
 class XgbLearner(Learner):
@@ -19,7 +19,7 @@ class XgbLearner(Learner):
     This is a wrapper over xgboost algorithm.
     '''
     def __init__(self, params):
-        Learner.__init__(self, params)
+        super(XgbLearner, self).__init__(params)
         self.library_version = xgb.__version__
         self.algorithm_name = 'Extreme Gradient Boosting'
         self.algorithm_short_name = 'Xgboost'
@@ -80,7 +80,8 @@ class XgbLearner(Learner):
             'algorithm_short_name': self.algorithm_short_name,
             'uid': self.uid,
             'model_file': self.model_file,
-            'model_file_path': self.model_file_path
+            'model_file_path': self.model_file_path,
+            'params': self.params
         }
 
         log.debug('XgbLearner save model to %s' % self.model_file_path)
@@ -94,6 +95,7 @@ class XgbLearner(Learner):
         self.uid = json_desc.get('uid', self.uid)
         self.model_file = json_desc.get('model_file', self.model_file)
         self.model_file_path = json_desc.get('model_file_path', self.model_file_path)
+        self.params = json_desc.get('params', self.params)
 
         log.debug('XgbLearner load model from %s' % self.model_file_path)
         self.model = xgb.Booster() #init model

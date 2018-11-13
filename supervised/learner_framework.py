@@ -22,8 +22,10 @@ class LearnerFramework():
     def __init__(self, params, callbacks = []):
         log.debug('LearnerFramework __init__')
         self.uid = str(uuid.uuid4())
-        self.framwork_file_path = os.path.join('/tmp/', self.uid + '.framework')
-        print(self.framwork_file_path)
+
+        self.framework_file = self.uid + '.framework'
+        self.framework_file_path = os.path.join('/tmp/', self.framework_file)
+
         for i in ['learner', 'validation']: # mandatory parameters
             if i not in params:
                 msg = 'Missing {0} parameter in LearnerFramework params'.format(i)

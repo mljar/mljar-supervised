@@ -4,6 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 
+from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from iterative_learner_framework import IterativeLearner
@@ -59,7 +60,20 @@ class IterativeLearnerTest(unittest.TestCase):
         il = IterativeLearner(self.train_params, callbacks = [])
         il.train(self.data)
 
-        desc = il.save()
-        print(desc)
+        metric = Metric({'name': 'logloss'})
+        loss = metric(self.y, il.predict(self.X))
 
-        il.load(desc)
+        json_desc = il.save()
+        print(json_desc)
+
+        il2 = IterativeLearner(self.train_params, callbacks = [])
+        self.assertTrue(il.uid != il2.uid)
+        il2.load(json_desc)
+        self.assertTrue(il.uid == il2.uid)
+        loss2 = metric(self.y, il2.predict(self.X))
+        assert_almost_equal(loss, loss2)
+
+        uids = [i.uid for i in il.learners]
+        uids2 = [i.uid for i in il2.learners]
+        for u in uids:
+            self.assertTrue(u in uids2)

@@ -26,7 +26,8 @@ class SklearnLearner(Learner):
             'algorithm_short_name': self.algorithm_short_name,
             'uid': self.uid,
             'model_file': self.model_file,
-            'model_file_path': self.model_file_path
+            'model_file_path': self.model_file_path,
+            'params': self.params
         }
 
         logger.debug('SklearnLearner save to {0}'.format(self.model_file_path))
@@ -39,6 +40,7 @@ class SklearnLearner(Learner):
         self.uid = json_desc.get('uid', self.uid)
         self.model_file = json_desc.get('model_file', self.model_file)
         self.model_file_path = json_desc.get('model_file_path', self.model_file_path)
+        self.params = json_desc.get('params', self.params)
 
         self.model = joblib.load(self.model_file_path)
 
@@ -50,7 +52,7 @@ class SklearnLearner(Learner):
 class SklearnTreesClassifierLearner(SklearnLearner):
 
     def __init__(self, params):
-        SklearnLearner.__init__(self, params)
+        super(SklearnTreesClassifierLearner, self).__init__(params)
 
     def fit(self, data):
         X = data.get('X')

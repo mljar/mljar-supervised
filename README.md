@@ -2,3 +2,5 @@
 
 # mljar-supervised
 Collection of supervised methods (including processing), used in MLJAR AutoML solution.
+
+# The package is under active development! Please expect a lot of changes!

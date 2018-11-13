@@ -9,8 +9,11 @@ from models.learner_factory import LearnerFactory
 import logging
 log = logging.getLogger(__name__)
 
-class IterativeLearnerError(Exception):
-    pass
+class IterativeLearnerException(Exception):
+
+    def __init__(self, message):
+        super(IterativeLearnerException, self).__init__(message)
+        log.error(message)
 
 
 class IterativeLearner(LearnerFramework):
@@ -56,33 +59,43 @@ class IterativeLearner(LearnerFramework):
         # end of validation loop
 
     def predict(self, X):
+        if self.learners is None or len(self.learners) == 0:
+            raise IterativeLearnerException('Learnes are not initialized')
         # run predict on all learners and return the average
         y_predicted = np.zeros((X.shape[0],))
         for learner in self.learners:
-            print('learner->', learner.algorithm_short_name)
             y_predicted += learner.predict(X)
         return y_predicted / float(len(self.learners))
 
     def save(self):
-        learner_file_paths = []
+        learners_desc = []
         for learner in self.learners:
-            learner_file_paths += [learner.save()]
+            learners_desc += [learner.save()]
 
-        zf = zipfile.ZipFile(self.framwork_file_path, mode='w')
+        zf = zipfile.ZipFile(self.framework_file_path, mode='w')
         try:
-            for lf in learner_file_paths:
-                zf.write(lf)
+            for lf in learners_desc:
+                zf.write(lf['model_file_path'])
         finally:
             zf.close()
         desc = {
-            'file_path': self.framwork_file_path,
-            'learner_type': self.learners[0].algorithm_short_name,
-            'library_version': self.learners[0].library_version,
-            'model_uids': [i.uid for i in self.learners]
+            'uid': self.uid,
+            'framework_file': self.framework_file,
+            'framework_file_path': self.framework_file_path,
+            'learners': learners_desc
         }
         return desc
 
     def load(self, json_desc):
+        self.uid = json_desc.get('uid', self.uid)
+        self.framework_file = json_desc.get('framework_file', self.framework_file)
+        self.framework_file_path = json_desc.get('framework_file_path', self.framework_file_path)
 
-        with zipfile.ZipFile(json_desc.get('file_path'), 'r') as zip_ref:
+        destination_dir = '/tmp'
+        with zipfile.ZipFile(json_desc.get('framework_file_path'), 'r') as zip_ref:
             zip_ref.extractall('/tmp')
+        self.learners = []
+        for learner_desc in json_desc.get('learners'):
+            self.learners += [LearnerFactory.load(learner_desc)]
+
+            
