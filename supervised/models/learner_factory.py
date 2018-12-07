@@ -15,7 +15,7 @@ class LearnerFactory(object):
     @staticmethod
     def get_learner(params):
         learner_type = params.get("learner_type", "xgb")
-        if learner_type == "xgb":
+        if learner_type == "Xgboost":
             return XgbLearner(params)
         else:
             msg = "Learner {0} not defined".format(learner_type)
