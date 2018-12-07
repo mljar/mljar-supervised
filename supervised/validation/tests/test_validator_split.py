@@ -3,20 +3,16 @@ import numpy as np
 from validator_split import SplitValidator
 from validator_split import SplitValidatorException
 
-class SplitValidatorTest(unittest.TestCase):
 
+class SplitValidatorTest(unittest.TestCase):
     def test_create(self):
         data = {
-            'train': {
-                'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                'y': np.array([0, 0, 1, 1])
+            "train": {
+                "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                "y": np.array([0, 0, 1, 1]),
             }
         }
-        params = {
-            'shuffle': False,
-            'stratify': False,
-            'train_ratio': 0.75
-        }
+        params = {"shuffle": False, "stratify": False, "train_ratio": 0.75}
         vl = SplitValidator(data, params)
         self.assertEqual(1, vl.get_n_splits())
         cnt = 0
@@ -33,19 +29,15 @@ class SplitValidatorTest(unittest.TestCase):
     def wrong_split_value(self, split_value):
         with self.assertRaises(ValueError) as context:
             data = {
-                'train': {
-                    'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                    'y': np.array([0, 0, 1, 1])
+                "train": {
+                    "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                    "y": np.array([0, 0, 1, 1]),
                 }
             }
-            params = {
-                'shuffle': True,
-                'stratify': True,
-                'train_ratio': split_value
-            }
+            params = {"shuffle": True, "stratify": True, "train_ratio": split_value}
             vl = SplitValidator(data, params)
             X_train, y_train, X_validation, y_validation = vl.split()
-        self.assertTrue('should be' in str(context.exception))
+        self.assertTrue("should be" in str(context.exception))
 
     def test_wrong_split_values(self):
         for i in [0.1, 0.9, 1.1, -0.1]:

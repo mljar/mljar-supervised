@@ -7,5 +7,5 @@ sys.path.append(BASE_DIR)
 
 from .test_early_stopping import EarlyStoppingTest
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

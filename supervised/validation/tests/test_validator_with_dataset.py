@@ -3,18 +3,18 @@ import numpy as np
 from validator_with_dataset import WithDatasetValidator
 from validator_with_dataset import WithDatasetValidatorException
 
-class WithDatasetValidatorTest(unittest.TestCase):
 
+class WithDatasetValidatorTest(unittest.TestCase):
     def test_create(self):
         data = {
-            'train': {
-                'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                'y': np.array([0, 0, 1, 1])
+            "train": {
+                "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                "y": np.array([0, 0, 1, 1]),
             },
-            'validation': {
-                'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                'y': np.array([0, 0, 1, 1])
-            }
+            "validation": {
+                "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                "y": np.array([0, 0, 1, 1]),
+            },
         }
         vl = WithDatasetValidator(data, {})
         self.assertEqual(1, vl.get_n_splits())
@@ -26,18 +26,16 @@ class WithDatasetValidatorTest(unittest.TestCase):
             self.assertEqual(y_validation.shape[0], 4)
             cnt += 1
         self.assertEqual(cnt, 1)
-        
+
     def test_missing_data(self):
         with self.assertRaises(WithDatasetValidatorException) as context:
             data = {
-                'train': {
-                    'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                    'y': np.array([0, 0, 1, 1])
+                "train": {
+                    "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
+                    "y": np.array([0, 0, 1, 1]),
                 },
-                'validation': {
-                    'X': np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-                }
+                "validation": {"X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]])},
             }
             vl = WithDatasetValidator(data, {})
 
-        self.assertTrue('Missing' in str(context.exception))
+        self.assertTrue("Missing" in str(context.exception))

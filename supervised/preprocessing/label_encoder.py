@@ -1,15 +1,13 @@
 import numpy as np
 from sklearn import preprocessing as sk_preproc
 
-class LabelEncoder(object):
 
+class LabelEncoder(object):
     def __init__(self):
         self.lbl = sk_preproc.LabelEncoder()
 
-
     def fit(self, x):
         self.lbl.fit(list(x.values))
-
 
     def transform(self, x):
         try:
@@ -29,6 +27,6 @@ class LabelEncoder(object):
 
     def from_json(self, data_json):
         keys = np.unique(list(data_json.keys()))
-        if len(keys) == 2 and 'False' in keys and 'True' in keys:
+        if len(keys) == 2 and "False" in keys and "True" in keys:
             keys = [False, True]
         self.lbl.classes_ = keys

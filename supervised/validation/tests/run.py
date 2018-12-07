@@ -10,5 +10,5 @@ from .test_validator_split import SplitValidatorTest
 from .test_validator_with_dataset import WithDatasetValidatorTest
 from .test_validation_step import ValidationStepTest
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

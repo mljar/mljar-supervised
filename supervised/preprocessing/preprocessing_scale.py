@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 
 from utils.jsonable import Jsonable
-from preprocessing_utils import PreprocessingUtils
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+
 
 class PreprocessingScale(Jsonable):
 

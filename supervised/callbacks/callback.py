@@ -1,10 +1,8 @@
-
 class Callback(object):
-
     def __init__(self, params):
         self.params = params
         self.learners = []
-        self.learner = None # current learner
+        self.learner = None  # current learner
 
     def add_and_set_learner(self, learner):
         self.learners += [learner]

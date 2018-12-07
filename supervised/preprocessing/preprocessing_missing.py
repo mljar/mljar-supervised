@@ -3,18 +3,18 @@ import json
 import numpy as np
 import pandas as pd
 from utils.jsonable import Jsonable
-from preprocessing_utils import PreprocessingUtils
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 class PreprocessingMissingValues(Jsonable):
 
-    FILL_NA_MIN = 'na_fill_min_1'
-    FILL_NA_MEAN = 'na_fill_mean'
-    FILL_NA_MEDIAN = 'na_fill_median'
-    #NA_EXCLUDE = 'na_exclude'
-    MISSING_VALUE = '_missing_value_'
+    FILL_NA_MIN = "na_fill_min_1"
+    FILL_NA_MEAN = "na_fill_mean"
+    FILL_NA_MEDIAN = "na_fill_median"
+    # NA_EXCLUDE = 'na_exclude'
+    MISSING_VALUE = "_missing_value_"
 
-    def __init__(self, na_fill_method = FILL_NA_MEDIAN):
+    def __init__(self, na_fill_method=FILL_NA_MEDIAN):
         # fill method
         self._na_fill_method = na_fill_method
         # fill parameters stored as a dict, feature -> fill value
@@ -35,24 +35,25 @@ class PreprocessingMissingValues(Jsonable):
         if len(self._na_fill_params) == 0:
             return {}
         params = {
-                    'fill_method': self._na_fill_method,
-                    'fill_params': self._na_fill_params
-                }
+            "fill_method": self._na_fill_method,
+            "fill_params": self._na_fill_params,
+        }
         return params
 
     def from_json(self, params):
         if params is not None:
-            self._na_fill_method = params.get('fill_method', None)
-            self._na_fill_params = params.get('fill_params', {})
+            self._na_fill_method = params.get("fill_method", None)
+            self._na_fill_params = params.get("fill_params", {})
         else:
             self._na_fill_method, self._na_fill_params = None, None
-
 
     def _get_fill_value(self, x):
         # categorical type
         if PreprocessingUtils.get_type(x) == PreprocessingUtils.CATEGORICAL:
             if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MIN:
-                return PreprocessingMissingValues.MISSING_VALUE # add new categorical value
+                return (
+                    PreprocessingMissingValues.MISSING_VALUE
+                )  # add new categorical value
             return PreprocessingUtils.get_most_frequent(x)
         # numerical type
         if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MIN:
@@ -69,7 +70,7 @@ class PreprocessingMissingValues(Jsonable):
 
     def _transform_na_fill(self, X):
         for column, value in self._na_fill_params.items():
-            ind = pd.isnull(X.loc[:,column])
+            ind = pd.isnull(X.loc[:, column])
             X.loc[ind, column] = value
         return X
 
