@@ -6,3 +6,5 @@ Collection of supervised methods (including processing), used in MLJAR AutoML so
 With this package you can handle any supervised ML algorithm with the same interface.
 
 # The package is under active development! Please expect a lot of changes!
+
+Please check our [platform](https://github.com/mljar/mljar)! 
