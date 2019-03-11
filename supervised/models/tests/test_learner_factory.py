@@ -10,7 +10,7 @@ from supervised.models.learner_factory import LearnerFactory
 class LearnerFactoryTest(unittest.TestCase):
     def test_fit(self):
         params = {
-            "learner_type": "xgb",
+            "learner_type": "Xgboost",
             "objective": "binary:logistic",
             "eval_metric": "logloss",
         }

@@ -14,6 +14,6 @@ from .test_registry import ModelsRegistryTest
 from .test_learner_factory import LearnerFactoryTest
 from .test_learner_xgboost import XgboostLearnerTest
 from .test_learner_random_forest import RandomForestLearnerTest
-
+from .test_registry import ModelsRegistryTest
 if __name__ == "__main__":
     unittest.main()

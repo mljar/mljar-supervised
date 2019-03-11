@@ -53,7 +53,7 @@ class XgbLearner(Learner):
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):
-        # Dont need to update boosting rounds, it it adding it incrementally
+        # Dont need to update boosting rounds, it is adding rounds incrementally
         pass
 
     def fit(self, data):

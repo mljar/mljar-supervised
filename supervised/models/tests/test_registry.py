@@ -13,10 +13,10 @@ class ModelsRegistryTest(unittest.TestCase):
             pass
 
         model1 = {
-            "task_name": "T1",
+            "task_name": "binary_classification",
             "model_name": "Model 1",
             "model_code": "M 1",
             "model_class": Model1,
         }
         ModelsRegistry(**model1)
-        # print(ModelsRegistry.registry)
+        
