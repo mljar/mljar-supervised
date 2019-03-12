@@ -15,7 +15,7 @@ Please check our [platform](https://github.com/mljar/mljar)!
 ### Installation
 
 ```
-git clone
+git clone https://github.com/mljar/mljar-supervised.git
 virtualenv venv --python=python3.6
 source venv/bin/activate
 pip install -r requirements.txt
