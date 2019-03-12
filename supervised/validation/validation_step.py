@@ -25,7 +25,7 @@ class ValidationStep:
             self.validator = KFoldValidator(params, data)
         elif self.validation_type == "split":
             self.validator = SplitValidator(params, data)
-        elif self.validation_type == "split":
+        elif self.validation_type == "with_dataset":
             self.validator = WithDatasetValidator(params, data)
         else:
             msg = "Unknown validation type: {0}".format(self.validation_type)
