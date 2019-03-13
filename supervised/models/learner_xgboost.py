@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 
 from supervised.models.learner import Learner
-from supervised.models.registry import ModelsRegistry
-from supervised.models.registry import (
+from supervised.tuner.registry import ModelsRegistry
+from supervised.tuner.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
@@ -150,28 +150,7 @@ XgbLearnerBinaryClassificationParams = {
     "eval_metric": ["auc", "logloss"],
     "eta": [0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1],
     "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    "min_child_weight": [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        12,
-        15,
-        17,
-        20,
-        25,
-        30,
-        35,
-        40,
-        45,
-        50,
-    ],
+    "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "subsample": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     "colsample_bytree": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 }
@@ -187,7 +166,11 @@ additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
-    "required_preprocessing": ["target_preprocessing"],
+    "required_preprocessing": [
+        "missing_values_inputation",
+        "convert_categorical",
+        "target_preprocessing",
+    ],
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

@@ -7,9 +7,9 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from iterative_learner_framework import IterativeLearner
-from callbacks.early_stopping import EarlyStopping
-from callbacks.metric_logger import MetricLogger
+from supervised.iterative_learner_framework import IterativeLearner
+from supervised.callbacks.early_stopping import EarlyStopping
+from supervised.callbacks.metric_logger import MetricLogger
 from supervised.metric import Metric
 
 
@@ -37,7 +37,7 @@ class IterativeLearnerTest(unittest.TestCase):
                 "shuffle": True,
             },
             "learner": {
-                "learner_type": "xgb",
+                "learner_type": "Xgboost",
                 "objective": "binary:logistic",
                 "eval_metric": "logloss",
                 "max_iters": 3,
@@ -79,3 +79,6 @@ class IterativeLearnerTest(unittest.TestCase):
         uids2 = [i.uid for i in il2.learners]
         for u in uids:
             self.assertTrue(u in uids2)
+
+if __name__ == "__main__":
+    unittest.main()

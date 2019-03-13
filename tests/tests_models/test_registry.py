@@ -12,14 +12,14 @@ class ModelsRegistryTest(unittest.TestCase):
         class Model1:
             algorithm_short_name = ""
 
-
         model1 = {
             "task_name": "binary_classification",
             "model_class": Model1,
             "model_params": {},
-            "additional": {}
+            "additional": {},
         }
         ModelsRegistry.add(**model1)
+
 
 if __name__ == "__main__":
     unittest.main()

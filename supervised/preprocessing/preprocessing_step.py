@@ -2,7 +2,7 @@ import copy
 import pandas as pd
 import numpy as np
 
-from utils.jsonable import Jsonable
+
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
@@ -11,7 +11,7 @@ from supervised.preprocessing.preprocessing_box import PreprocessingBox
 from supervised.preprocessing.label_encoder import LabelEncoder
 
 
-class PreprocessingStep(Jsonable):
+class PreprocessingStep(object):
     def __init__(
         self,
         missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,

@@ -3,13 +3,12 @@ import json
 import numpy as np
 import pandas as pd
 
-from utils.jsonable import Jsonable
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 
 
-class PreprocessingCategorical(Jsonable):
+class PreprocessingCategorical(object):
 
     CONVERT_ONE_HOT = "categorical_to_onehot"
     CONVERT_INTEGER = "categorical_to_int"

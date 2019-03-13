@@ -31,6 +31,10 @@ class IterativeLearner(LearnerFramework):
 
     def train(self, data):
 
+        # Do a target column preprocessing
+        # 1. remove rows with missing values
+        # 2. convert categorical to integers
+
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
