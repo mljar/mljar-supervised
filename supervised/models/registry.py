@@ -7,16 +7,18 @@ REGRESSION = "regression"
 class ModelsRegistry:
 
     registry = {
-        BINARY_CLASSIFICATION: [],
-        MULTICLASS_CLASSIFICATION: [],
-        REGRESSION: []
+        BINARY_CLASSIFICATION: {},
+        MULTICLASS_CLASSIFICATION: {},
+        REGRESSION: {},
     }
 
-    def __init__(self, task_name, model_name, model_code, model_class):
+    @staticmethod
+    def add(task_name, model_class, model_params, additional):
         model_information = {
-            "model_name": model_name,
-            "model_code": model_code,
             "model_class": model_class,
-            "parameters": {}
+            "model_params": model_params,
+            "additional": additional,
         }
-        ModelsRegistry.registry[task_name] += [model_information]
+        ModelsRegistry.registry[task_name][
+            model_class.algorithm_short_name
+        ] = model_information

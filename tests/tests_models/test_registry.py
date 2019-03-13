@@ -10,13 +10,16 @@ from supervised.models.registry import ModelsRegistry
 class ModelsRegistryTest(unittest.TestCase):
     def test_add_to_registry(self):
         class Model1:
-            pass
+            algorithm_short_name = ""
+
 
         model1 = {
             "task_name": "binary_classification",
-            "model_name": "Model 1",
-            "model_code": "M 1",
             "model_class": Model1,
+            "model_params": {},
+            "additional": {}
         }
-        ModelsRegistry(**model1)
-        
+        ModelsRegistry.add(**model1)
+
+if __name__ == "__main__":
+    unittest.main()

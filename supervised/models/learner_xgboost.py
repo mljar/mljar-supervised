@@ -4,6 +4,13 @@ import numpy as np
 import pandas as pd
 
 from supervised.models.learner import Learner
+from supervised.models.registry import ModelsRegistry
+from supervised.models.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
+
 import xgboost as xgb
 import operator
 
@@ -21,14 +28,14 @@ class XgbLearner(Learner):
     This is a wrapper over xgboost algorithm.
     """
 
+    algorithm_name = "Extreme Gradient Boosting"
+    algorithm_short_name = "Xgboost"
+
     def __init__(self, params):
         super(XgbLearner, self).__init__(params)
         self.library_version = xgb.__version__
-        self.algorithm_name = "Extreme Gradient Boosting"
-        self.algorithm_short_name = "Xgboost"
         self.model_file = self.uid + ".xgb.model"
         self.model_file_path = "/tmp/" + self.model_file
-
         self.boosting_rounds = params.get("boosting_rounds", 50)
         self.max_iters = params.get("max_iters", 3)
         self.learner_params = {
@@ -42,6 +49,7 @@ class XgbLearner(Learner):
             "colsample_bytree": self.params.get("colsample_bytree", 0.8),
             "silent": self.params.get("silent", 1),
         }
+        """
         mandatory_params = {
             "objective": ["binary:logistic"],
             "eval_metric": ["auc", "logloss"],
@@ -50,6 +58,7 @@ class XgbLearner(Learner):
             if self.learner_params[p] is None:
                 msg = "Please specify the {0}, it should be one from {1}".format(p, v)
                 raise XgbLearnerException(msg)
+        """
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):
@@ -135,3 +144,61 @@ class XgbLearner(Learner):
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
+XgbLearnerBinaryClassificationParams = {
+    "booster": ["gbtree", "gblinear"],
+    "objective": ["binary:logistic"],
+    "eval_metric": ["auc", "logloss"],
+    "eta": [0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1],
+    "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "min_child_weight": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        15,
+        17,
+        20,
+        25,
+        30,
+        35,
+        40,
+        45,
+        50,
+    ],
+    "subsample": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "colsample_bytree": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+}
+
+XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
+XgbLearnerRegressionParams["booster"] = ["gbtree"]
+XgbLearnerRegressionParams["objective"] = ["reg:linear", "reg:log"]
+XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
+
+XgbLearnerMulticlassClassificationParams = dict(XgbLearnerBinaryClassificationParams)
+
+additional = {
+    "one_step": 50,
+    "train_cant_improve_limit": 5,
+    "max_steps": 500,
+    "required_preprocessing": ["target_preprocessing"],
+    "max_rows_limit": None,
+    "max_cols_limit": None,
+}
+
+ModelsRegistry.add(
+    BINARY_CLASSIFICATION, XgbLearner, XgbLearnerBinaryClassificationParams, additional
+)
+ModelsRegistry.add(
+    MULTICLASS_CLASSIFICATION,
+    XgbLearner,
+    XgbLearnerMulticlassClassificationParams,
+    additional,
+)
+ModelsRegistry.add(REGRESSION, XgbLearner, XgbLearnerRegressionParams, additional)

@@ -7,12 +7,13 @@ class Learner:
     All algorithms inherit from Learner.
     """
 
+    algorithm_name = "Unknown"
+    algorithm_short_name = "Unknown"
+
     def __init__(self, params):
         self.params = params
         self.stop_training = False
         self.library_version = None
-        self.algorithm_name = "Unknown"
-        self.algorithm_short_name = "Unknown"
         self.model = None
         self.uid = params.get("uid", str(uuid.uuid4()))
 
