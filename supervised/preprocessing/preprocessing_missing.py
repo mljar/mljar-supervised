@@ -11,6 +11,8 @@ class PreprocessingMissingValues(object):
     FILL_NA_MIN = "na_fill_min_1"
     FILL_NA_MEAN = "na_fill_mean"
     FILL_NA_MEDIAN = "na_fill_median"
+    # there is no exlude in this class, because it requires working on both X and y!
+    # Please check PreprocessingExcludeMissingValues
     NA_EXCLUDE = "na_exclude"
     MISSING_VALUE = "_missing_value_"
 
@@ -23,11 +25,23 @@ class PreprocessingMissingValues(object):
     def fit(self, X):
         X = self._fit_na_fill(X)
 
+    def _fit_na_fill(self, X):
+        for column in X.columns:
+            if np.sum(pd.isnull(X[column]) == True) == 0:
+                continue
+            self._na_fill_params[column] = self._get_fill_value(X[column])
+
     def transform(self, X):
         X = self._transform_na_fill(X)
         # this is additional run through columns,
         # in case of transforming data with new columns with missing values
         X = self._make_sure_na_filled(X)
+        return X
+
+    def _transform_na_fill(self, X):
+        for column, value in self._na_fill_params.items():
+            ind = pd.isnull(X.loc[:, column])
+            X.loc[ind, column] = value
         return X
 
     def to_json(self):
@@ -61,18 +75,6 @@ class PreprocessingMissingValues(object):
         if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MEAN:
             return PreprocessingUtils.get_mean(x)
         return PreprocessingUtils.get_median(x)
-
-    def _fit_na_fill(self, X):
-        for column in X.columns:
-            if np.sum(pd.isnull(X[column]) == True) == 0:
-                continue
-            self._na_fill_params[column] = self._get_fill_value(X[column])
-
-    def _transform_na_fill(self, X):
-        for column, value in self._na_fill_params.items():
-            ind = pd.isnull(X.loc[:, column])
-            X.loc[ind, column] = value
-        return X
 
     def _make_sure_na_filled(self, X):
         self._fit_na_fill(X)

@@ -30,11 +30,10 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         model_params = RandomParameters.get(model_info["params"])
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
-
         preprocessing_params = PreprocessingTuner.get(
             required_preprocessing, cls.data, BINARY_CLASSIFICATION
         )
-        print(json.dumps(preprocessing_params, indent=4))
+
         cls.train_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,
@@ -50,8 +49,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         }
 
     def test_fit_and_predict(self):
-        print("test")
-        print(self.train_params)
+        print(json.dumps(self.train_params, indent=4))
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])

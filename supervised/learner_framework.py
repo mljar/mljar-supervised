@@ -37,6 +37,7 @@ class LearnerFramework:
         self.params = params
         self.callbacks = CallbackList(callbacks)
 
+        self.additional_params = params.get("additional")
         self.preprocessing_params = params.get("preprocessing")
         self.validation_params = params.get("validation")
         self.learner_params = params.get("learner")

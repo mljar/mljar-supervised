@@ -5,6 +5,7 @@ from supervised.learner_framework import LearnerFramework
 from supervised.validation.validation_step import ValidationStep
 from supervised.models.learner_factory import LearnerFactory
 
+from supervised.preprocessing.preprocessing_step import PreprocessingStep
 import logging
 
 log = logging.getLogger(__name__)
@@ -35,13 +36,12 @@ class IterativeLearner(LearnerFramework):
 
         for train_data, validation_data in self.validation.split():
 
-            log.debug(
-                "Train data, X: {0} y: {1}".format(
-                    train_data.get("X").shape, train_data.get("y").shape
+            for d in [train_data, validation_data]:
+                log.debug(
+                    "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
-            )
-            # self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
-            # self.preprocessings[-1].fit_and_transform(train_data, validation_data)
+            self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
+            self.preprocessings[-1].run(train_data, validation_data)
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]
@@ -52,6 +52,7 @@ class IterativeLearner(LearnerFramework):
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
                 learner.fit(train_data)
+                # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
                     self.predictions(learner, train_data, validation_data),

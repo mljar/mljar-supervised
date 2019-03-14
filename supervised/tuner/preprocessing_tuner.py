@@ -22,7 +22,6 @@ class PreprocessingTuner:
         X = data["train"]["X"]
         y = data["train"]["y"]
 
-        print(y)
         columns_preprocessing = {}
         for col in X.columns:
             preprocessing_to_apply = []

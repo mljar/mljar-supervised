@@ -2,40 +2,25 @@ import copy
 import pandas as pd
 import numpy as np
 
-
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_scale import PreprocessingScale
-from supervised.preprocessing.preprocessing_box import PreprocessingBox
 from supervised.preprocessing.label_encoder import LabelEncoder
+from supervised.preprocessing.preprocessing_exclude_missing import (
+    PreprocessingExcludeMissingValues,
+)
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class PreprocessingStep(object):
-    def __init__(
-        self,
-        missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,
-        categorical_method=PreprocessingCategorical.CONVERT_INTEGER,
-        scale_method=PreprocessingScale.SCALE_NORMAL,
-        project_task="PROJECT_BIN_CLASS",
-    ):
-        self._missing_values_method = missing_values_method
-        self._categorical_method = categorical_method
-        self._scale_method = scale_method
-        self._project_task = project_task
+    def __init__(self, preprocessing_params):
+        self._params = preprocessing_params
 
-        self._missing_values = (
-            None
-            if self._missing_values_method is None
-            else PreprocessingMissingValues(self._missing_values_method)
-        )
-        self._categorical = (
-            None
-            if self._categorical_method is None
-            else PreprocessingCategorical(self._categorical_method)
-        )
-        self._scale = None
-        self._categorical_y = None
+        # preprocssing step attributes
+        self._categorical_y
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -51,29 +36,46 @@ class PreprocessingStep(object):
             X.index = range(X.shape[0])
         return X, y
 
-    def run(self, X_train=None, y_train=None, X_test=None, y_test=None):
-        # check if there are missing values
-
-        X_train, y_train = self._exclude_missing_targets(X_train, y_train)
-        X_test, y_test = self._exclude_missing_targets(X_test, y_test)
+    def run(self, train_data, validation_data):
+        log.info("PreprocessingStep.run")
+        X_train, y_train = train_data.get("X"), train_data.get("y")
+        X_validation, y_validation = validation_data.get("X"), validation_data.get("y")
 
         if y_train is not None:
-            apply_convert = False
-            if self._project_task == "PROJECT_BIN_CLASS":
-                u = np.unique(y_train)
-                apply_convert = not (0 in u and 1 in u)
+            # target preprocessing
+            # this must be used first, maybe we will drop some rows because of missing target values
+            target_preprocessing = self._params.get("target_preprocessing")
+            log.info("target_preprocessing -> {}".format(target_preprocessing))
+            if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
+                X_train, y_train = PreprocessingExcludeMissingValues.transform(X_train, y_train)
+                X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
+                    X_validation, y_validation
+                )
 
-            if (
-                apply_convert
-                or PreprocessingUtils.CATEGORICAL
-                == PreprocessingUtils.get_type(y_train)
-            ):
+            if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 self._categorical_y = LabelEncoder()
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
+                if y_validation is not None and self._categorical_y is not None:
+                    y_validation = pd.Series(self._categorical_y.transform(y_validation))
 
-        if y_test is not None and self._categorical_y is not None:
-            y_test = pd.Series(self._categorical_y.transform(y_test))
+            if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
+                log.error("not implemented SCALE_LOG_AND_NORMAL")
+                raise Exception("not implemented SCALE_LOG_AND_NORMAL")
+
+            if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
+                log.error("not implemented SCALE_NORMAL")
+                raise Exception("not implemented SCALE_NORMAL")
+
+        # columns preprocessing
+        columns_preprocessing = self._params.get("columns_preprocessing")
+        for preprocess_column in columns_preprocessing:
+            log.info(
+                "Preprocess column -> {}, {}".format(
+                    preprocess_column, columns_preprocessing[preprocess_column]
+                )
+            )
+
         if X_train is not None:
             # missing values
             if self._missing_values is not None:
