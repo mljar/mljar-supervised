@@ -4,7 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from supervised.models.registry import ModelsRegistry
+from supervised.tuner.registry import ModelsRegistry
 
 
 class ModelsRegistryTest(unittest.TestCase):
@@ -16,6 +16,7 @@ class ModelsRegistryTest(unittest.TestCase):
             "task_name": "binary_classification",
             "model_class": Model1,
             "model_params": {},
+            "required_preprocessing": {},
             "additional": {},
         }
         ModelsRegistry.add(**model1)
