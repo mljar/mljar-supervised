@@ -9,6 +9,8 @@ class PreprocessingScale(object):
 
     SCALE_MIN_MAX = "scale_min_max"
     SCALE_NORMAL = "scale_normal"
+    SCALE_LOG = "scale_log"
+    SCALE_LOG_AND_NORMAL = "scale_log_and_normal"
 
     def __init__(self):
         pass

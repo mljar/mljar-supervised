@@ -9,9 +9,7 @@ from supervised.preprocessing.preprocessing_scale import PreprocessingScale
 
 
 class PreprocessingTarget(object):
-    def __init__(
-        self
-    ):
+    def __init__(self):
         pass
 
     def run(self, X_train, y_train=None, X_test=None, y_test=None):

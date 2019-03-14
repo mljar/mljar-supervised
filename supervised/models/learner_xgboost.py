@@ -166,22 +166,33 @@ additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
-    "required_preprocessing": [
-        "missing_values_inputation",
-        "convert_categorical",
-        "target_preprocessing",
-    ],
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
+required_preprocessing = [
+    "missing_values_inputation",
+    "convert_categorical",
+    "target_preprocessing",
+]
 
 ModelsRegistry.add(
-    BINARY_CLASSIFICATION, XgbLearner, XgbLearnerBinaryClassificationParams, additional
+    BINARY_CLASSIFICATION,
+    XgbLearner,
+    XgbLearnerBinaryClassificationParams,
+    required_preprocessing,
+    additional,
 )
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     XgbLearner,
     XgbLearnerMulticlassClassificationParams,
+    required_preprocessing,
     additional,
 )
-ModelsRegistry.add(REGRESSION, XgbLearner, XgbLearnerRegressionParams, additional)
+ModelsRegistry.add(
+    REGRESSION,
+    XgbLearner,
+    XgbLearnerRegressionParams,
+    required_preprocessing,
+    additional,
+)

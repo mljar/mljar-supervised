@@ -16,6 +16,7 @@ from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 
+
 class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -27,9 +28,13 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         model_type = np.random.permutation(available_models)[0]
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
+        required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
-        preprocessing_params = PreprocessingTuner.get(model_additional["required_preprocessing"])
 
+        preprocessing_params = PreprocessingTuner.get(
+            required_preprocessing, cls.data, BINARY_CLASSIFICATION
+        )
+        print(json.dumps(preprocessing_params, indent=4))
         cls.train_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,
@@ -51,7 +56,6 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
-
 
 
 if __name__ == "__main__":

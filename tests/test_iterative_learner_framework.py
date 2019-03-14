@@ -80,5 +80,6 @@ class IterativeLearnerTest(unittest.TestCase):
         for u in uids:
             self.assertTrue(u in uids2)
 
+
 if __name__ == "__main__":
     unittest.main()

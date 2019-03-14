@@ -11,7 +11,7 @@ class PreprocessingMissingValues(object):
     FILL_NA_MIN = "na_fill_min_1"
     FILL_NA_MEAN = "na_fill_mean"
     FILL_NA_MEDIAN = "na_fill_median"
-    # NA_EXCLUDE = 'na_exclude'
+    NA_EXCLUDE = "na_exclude"
     MISSING_VALUE = "_missing_value_"
 
     def __init__(self, na_fill_method=FILL_NA_MEDIAN):

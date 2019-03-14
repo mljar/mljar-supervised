@@ -31,10 +31,6 @@ class IterativeLearner(LearnerFramework):
 
     def train(self, data):
 
-        # Do a target column preprocessing
-        # 1. remove rows with missing values
-        # 2. convert categorical to integers
-
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
@@ -72,6 +68,7 @@ class IterativeLearner(LearnerFramework):
         # run predict on all learners and return the average
         y_predicted = np.zeros((X.shape[0],))
         for learner in self.learners:
+            # preprocessing goes here
             y_predicted += learner.predict(X)
         return y_predicted / float(len(self.learners))
 
