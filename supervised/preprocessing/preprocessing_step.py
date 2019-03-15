@@ -20,7 +20,9 @@ class PreprocessingStep(object):
         self._params = preprocessing_params
 
         # preprocssing step attributes
-        self._categorical_y
+        self._categorical_y = None
+        self._missing_values = {}
+        self._categorical = {}
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -46,18 +48,25 @@ class PreprocessingStep(object):
             # this must be used first, maybe we will drop some rows because of missing target values
             target_preprocessing = self._params.get("target_preprocessing")
             log.info("target_preprocessing -> {}".format(target_preprocessing))
+            print(X_train.shape)
+            print(y_train.shape)
             if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
-                X_train, y_train = PreprocessingExcludeMissingValues.transform(X_train, y_train)
+                X_train, y_train = PreprocessingExcludeMissingValues.transform(
+                    X_train, y_train
+                )
                 X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
                     X_validation, y_validation
                 )
-
+            print(X_train.shape)
+            print(y_train.shape)
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 self._categorical_y = LabelEncoder()
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
                 if y_validation is not None and self._categorical_y is not None:
-                    y_validation = pd.Series(self._categorical_y.transform(y_validation))
+                    y_validation = pd.Series(
+                        self._categorical_y.transform(y_validation)
+                    )
 
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 log.error("not implemented SCALE_LOG_AND_NORMAL")
@@ -69,29 +78,28 @@ class PreprocessingStep(object):
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
-        for preprocess_column in columns_preprocessing:
-            log.info(
-                "Preprocess column -> {}, {}".format(
-                    preprocess_column, columns_preprocessing[preprocess_column]
+
+        for column in columns_preprocessing:
+            transforms = columns_preprocessing[preprocess_column]
+            log.info("Preprocess column -> {}, {}".format(column, transforms))
+            if PreprocessingMissingValues.FILL_NA_MEDIAN in transforms:
+                missing = PreprocessingMissingValues(
+                    PreprocessingMissingValues.FILL_NA_MEDIAN
                 )
-            )
-
-        if X_train is not None:
-            # missing values
-            if self._missing_values is not None:
-                self._missing_values.fit(X_train)
-                X_train = self._missing_values.transform(X_train)
-            # categorical
-            if self._categorical is not None:
-                self._categorical.fit(X_train)
-                X_train = self._categorical.transform(X_train)
-
-        # apply missing and categorical transforms
-        if X_test is not None:
-            if self._missing_values is not None:
-                X_test = self._missing_values.transform(X_test)
-            if self._categorical is not None:
-                X_test = self._categorical.transform(X_test)
+                missing.fit(X_train[column])
+                X_train[column] = missing.transform(X_train[column])
+                if X_validation is not None:
+                    X_validation[column] = missing.transform(X_validation[column])
+                self._missing_values[column] = missing
+            if PreprocessingCategorical.CONVERT_INTEGER in transforms:
+                convert = PreprocessingCategorical(
+                    PreprocessingCategorical.CONVERT_INTEGER
+                )
+                convert.fit(X_train[column])
+                X_train[column] = convert.transform(X_train[column])
+                if X_validation is not None:
+                    X_validation[column] = convert.transform(X_validation[column])
+                self._categorical[column] = convert
 
         return X_train, y_train, X_test, y_test
 
