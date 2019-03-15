@@ -40,8 +40,10 @@ class IterativeLearner(LearnerFramework):
                 log.debug(
                     "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
+
+
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
-            self.preprocessings[-1].run(train_data, validation_data)
+            train_data, validation_data = self.preprocessings[-1].run(train_data, validation_data)
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]

@@ -20,33 +20,33 @@ class PreprocessingMissingValues(object):
         # fill method
         self._na_fill_method = na_fill_method
         # fill parameters stored as a dict, feature -> fill value
-        self._na_fill_params = {}
+        self._na_fill_params = None
 
-    def fit(self, X):
-        X = self._fit_na_fill(X)
+    # for one column
+    def fit(self, x):
+        x = self._fit_na_fill(x)
 
-    def _fit_na_fill(self, X):
-        for column in X.columns:
-            if np.sum(pd.isnull(X[column]) == True) == 0:
-                continue
-            self._na_fill_params[column] = self._get_fill_value(X[column])
+    def _fit_na_fill(self, x):
+        if np.sum(pd.isnull(x) == True) == 0:
+            return
+        self._na_fill_params = self._get_fill_value(x)
 
-    def transform(self, X):
-        X = self._transform_na_fill(X)
+    def transform(self, x):
+        x = self._transform_na_fill(x)
         # this is additional run through columns,
         # in case of transforming data with new columns with missing values
-        X = self._make_sure_na_filled(X)
-        return X
+        x = self._make_sure_na_filled(x)
+        return x
 
-    def _transform_na_fill(self, X):
-        for column, value in self._na_fill_params.items():
-            ind = pd.isnull(X.loc[:, column])
-            X.loc[ind, column] = value
-        return X
+    def _transform_na_fill(self, x):
+        value = self._na_fill_params
+        ind = pd.isnull(x)
+        x.loc[ind] = value
+        return x
 
     def to_json(self):
         # prepare json with all parameters
-        if len(self._na_fill_params) == 0:
+        if self._na_fill_params is None:
             return {}
         params = {
             "fill_method": self._na_fill_method,
@@ -57,7 +57,7 @@ class PreprocessingMissingValues(object):
     def from_json(self, params):
         if params is not None:
             self._na_fill_method = params.get("fill_method", None)
-            self._na_fill_params = params.get("fill_params", {})
+            self._na_fill_params = params.get("fill_params", None)
         else:
             self._na_fill_method, self._na_fill_params = None, None
 
@@ -76,6 +76,6 @@ class PreprocessingMissingValues(object):
             return PreprocessingUtils.get_mean(x)
         return PreprocessingUtils.get_median(x)
 
-    def _make_sure_na_filled(self, X):
-        self._fit_na_fill(X)
-        return self._transform_na_fill(X)
+    def _make_sure_na_filled(self, x):
+        self._fit_na_fill(x)
+        return self._transform_na_fill(x)

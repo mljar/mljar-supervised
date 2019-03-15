@@ -80,7 +80,7 @@ class PreprocessingStep(object):
         columns_preprocessing = self._params.get("columns_preprocessing")
 
         for column in columns_preprocessing:
-            transforms = columns_preprocessing[preprocess_column]
+            transforms = columns_preprocessing[column]
             log.info("Preprocess column -> {}, {}".format(column, transforms))
             if PreprocessingMissingValues.FILL_NA_MEDIAN in transforms:
                 missing = PreprocessingMissingValues(
@@ -101,7 +101,7 @@ class PreprocessingStep(object):
                     X_validation[column] = convert.transform(X_validation[column])
                 self._categorical[column] = convert
 
-        return X_train, y_train, X_test, y_test
+        return {"X":X_train, "y":y_train}, {"X":X_validation, "y":y_validation}
 
     def to_json(self):
         preprocessing_params = {}
