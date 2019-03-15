@@ -41,7 +41,8 @@ class PreprocessingMissingValues(object):
     def _transform_na_fill(self, x):
         value = self._na_fill_params
         ind = pd.isnull(x)
-        x.loc[ind] = value
+        print(x.is_copy, "copy")
+        x.loc[ind] = value ###########################x.loc[ind]
         return x
 
     def to_json(self):
