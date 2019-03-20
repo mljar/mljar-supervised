@@ -62,8 +62,6 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         loss = metric(self.data["train"]["y"], y_predicted)
         self.assertTrue(loss < 0.6)
 
-
-
     def test_save_and_load(self):
 
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
@@ -75,7 +73,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         loss_1 = metric(self.data["train"]["y"], y_predicted)
 
         json_desc = il.save()
-        
+
         il2 = IterativeLearner(self.train_params, callbacks=[])
         self.assertTrue(il.uid != il2.uid)
         il2.load(json_desc)

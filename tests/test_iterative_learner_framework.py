@@ -27,7 +27,12 @@ class IterativeLearnerTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.data = {"train": {"X": pd.DataFrame(cls.X, columns=["f0","f1", "f2", "f3", "f4"]), "y": pd.DataFrame(cls.y)}}
+        cls.data = {
+            "train": {
+                "X": pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"]),
+                "y": pd.DataFrame(cls.y),
+            }
+        }
 
         cls.train_params = {
             "preprocessing": {},

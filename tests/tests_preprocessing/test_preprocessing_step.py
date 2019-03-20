@@ -122,8 +122,6 @@ class PreprocessingStepTest(unittest.TestCase):
         params_json = ps.to_json()
         self.assertFalse(params_json)  # should be empty
 
-
-
     def test_run_fill_median_convert_integer(self):
         # training data
         d = {
@@ -179,7 +177,9 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertTrue("categorical_y" not in params_json)
 
         self.assertTrue("fill_params" in params_json["missing_values"][0])
-        self.assertEqual("na_fill_median", params_json["missing_values"][0]["fill_method"])
+        self.assertEqual(
+            "na_fill_median", params_json["missing_values"][0]["fill_method"]
+        )
         self.assertTrue("convert_params" in params_json["categorical"][0])
         self.assertEqual(
             "categorical_to_int", params_json["categorical"][0]["convert_method"]
@@ -232,7 +232,10 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(train_data={"X": X_train, "y": y_train}, validation_data={"X": X_test, "y": y_test})
+        train_data, validation_data = ps.run(
+            train_data={"X": X_train, "y": y_train},
+            validation_data={"X": X_test, "y": y_test},
+        )
         X_train, y_train = train_data.get("X"), train_data.get("y")
         X_test, y_test = validation_data.get("X"), validation_data.get("y")
 
@@ -252,20 +255,19 @@ class PreprocessingStepTest(unittest.TestCase):
 
         preprocessing_params = {
             "target_preprocessing": [
-                    PreprocessingMissingValues.FILL_NA_MEDIAN,
-                    PreprocessingCategorical.CONVERT_INTEGER,
-                ]
+                PreprocessingMissingValues.FILL_NA_MEDIAN,
+                PreprocessingCategorical.CONVERT_INTEGER,
+            ]
         }
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, _ = ps.run(train_data={ "y": y_train})
+        train_data, _ = ps.run(train_data={"y": y_train})
         y_train = train_data.get("y")
 
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(0, y_train[0])
         self.assertEqual(1, y_train[1])
-
 
     def test_run_on_y_only_validation(self):
         d = {"y": ["a", "b", "a", "b"]}
@@ -276,17 +278,18 @@ class PreprocessingStepTest(unittest.TestCase):
         df_test = pd.DataFrame(data=d_test)
         y_test = df_test.loc[:, "y"]
 
-
         preprocessing_params = {
             "target_preprocessing": [
-                    PreprocessingMissingValues.FILL_NA_MEDIAN,
-                    PreprocessingCategorical.CONVERT_INTEGER,
-                ]
+                PreprocessingMissingValues.FILL_NA_MEDIAN,
+                PreprocessingCategorical.CONVERT_INTEGER,
+            ]
         }
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(train_data={ "y": y_train}, validation_data={"y": y_test})
+        train_data, validation_data = ps.run(
+            train_data={"y": y_train}, validation_data={"y": y_test}
+        )
         y_train = train_data.get("y")
         y_test = validation_data.get("y")
 
@@ -296,7 +299,6 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(1, y_train[1])
         self.assertEqual(0, y_test[0])
         self.assertEqual(1, y_test[1])
-
 
     def test_to_and_from_json_run_fill_median_convert_integer(self):
         # training data
@@ -327,7 +329,7 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-        train_data, _ = ps.run(train_data={"X": X_train, "y":y_train})
+        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
 
         ps2 = PreprocessingStep()
         ps2.from_json(ps.to_json())
@@ -344,13 +346,15 @@ class PreprocessingStepTest(unittest.TestCase):
         X_test = df_test.loc[:, ["col1", "col2", "col3", "col4"]]
         y_test = df_test.loc[:, "y"]
 
-        validation_data = ps2.transform(validation_data={"X":X_test, "y":y_test})
+        validation_data = ps2.transform(validation_data={"X": X_test, "y": y_test})
         X_test, y_test = validation_data.get("X"), validation_data.get("y")
 
         self.assertEqual(2, y_test.shape[0])
         self.assertEqual(2, np.sum(y_test))
         self.assertEqual(1, X_test["col1"][0])
         self.assertEqual(0, X_test["col2"][0])
+
+
 """
     def test_run_fill_median_convert_one_hot_validation_dataset(self):
         # training data
