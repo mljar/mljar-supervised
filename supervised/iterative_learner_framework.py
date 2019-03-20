@@ -78,9 +78,10 @@ class IterativeLearner(LearnerFramework):
             raise IterativeLearnerException("Learnes are not initialized")
         # run predict on all learners and return the average
         y_predicted = np.zeros((X.shape[0],))
-        for learner in self.learners:
+        for ind, learner in enumerate(self.learners):
             # preprocessing goes here
-            y_predicted += learner.predict(X)
+            validation_data = self.preprocessings[ind].transform({"X":X})
+            y_predicted += learner.predict(validation_data.get("X"))
         return y_predicted / float(len(self.learners))
 
     def save(self):
