@@ -85,6 +85,10 @@ class IterativeLearner(LearnerFramework):
         return y_predicted / float(len(self.learners))
 
     def save(self):
+        preprocessing = []
+        for p in self.preprocessings:
+            preprocessing += [p.to_json()]
+
         learners_desc = []
         for learner in self.learners:
             learners_desc += [learner.save()]
@@ -99,6 +103,7 @@ class IterativeLearner(LearnerFramework):
             "uid": self.uid,
             "framework_file": self.framework_file,
             "framework_file_path": self.framework_file_path,
+            "preprocessing": preprocessing,
             "learners": learners_desc,
         }
         return desc
@@ -116,3 +121,9 @@ class IterativeLearner(LearnerFramework):
         self.learners = []
         for learner_desc in json_desc.get("learners"):
             self.learners += [LearnerFactory.load(learner_desc)]
+        preprocessing = json_desc.get("preprocessing", [])
+
+        for p in preprocessing:
+            preproc = PreprocessingStep()
+            preproc.from_json(p)
+            self.preprocessings += [preproc]

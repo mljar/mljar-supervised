@@ -75,8 +75,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         loss_1 = metric(self.data["train"]["y"], y_predicted)
 
         json_desc = il.save()
-        print(json_desc)
-
+        
         il2 = IterativeLearner(self.train_params, callbacks=[])
         self.assertTrue(il.uid != il2.uid)
         il2.load(json_desc)
@@ -84,12 +83,12 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         y_predicted_2 = il2.predict(self.data["train"]["X"])
         loss_2 = metric(self.data["train"]["y"], y_predicted_2)
         print(loss_1, loss_2)
-        #assert_almost_equal(loss, loss2)
+        assert_almost_equal(loss_1, loss_2)
 
-        #uids = [i.uid for i in il.learners]
-        #uids2 = [i.uid for i in il2.learners]
-        #for u in uids:
-        #    self.assertTrue(u in uids2)
+        uids = [i.uid for i in il.learners]
+        uids2 = [i.uid for i in il2.learners]
+        for u in uids:
+            self.assertTrue(u in uids2)
 
 
 if __name__ == "__main__":
