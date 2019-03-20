@@ -9,7 +9,10 @@ from supervised.preprocessing.preprocessing_step import PreprocessingStep
 import logging
 
 log = logging.getLogger(__name__)
-from supervised.preprocessing.preprocessing_exclude_missing import PreprocessingExcludeMissingValues
+from supervised.preprocessing.preprocessing_exclude_missing import (
+    PreprocessingExcludeMissingValues,
+)
+
 
 class IterativeLearnerException(Exception):
     def __init__(self, message):
@@ -45,7 +48,9 @@ class IterativeLearner(LearnerFramework):
             print("before preprocessing", train_data["X"].head())
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
-            train_data, validation_data = self.preprocessings[-1].run(train_data, validation_data)
+            train_data, validation_data = self.preprocessings[-1].run(
+                train_data, validation_data
+            )
             print("after preprocessing", train_data["X"].head())
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]

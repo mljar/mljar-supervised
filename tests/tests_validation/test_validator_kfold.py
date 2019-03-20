@@ -29,7 +29,9 @@ class KFoldValidatorTest(unittest.TestCase):
         # rows with missing target will be distributed equaly among folds
         data = {
             "train": {
-                "X": pd.DataFrame(np.array([[1, 0], [2, 1], [3, 0], [4, 1], [5, 1], [6, 1]])),
+                "X": pd.DataFrame(
+                    np.array([[1, 0], [2, 1], [3, 0], [4, 1], [5, 1], [6, 1]])
+                ),
                 "y": pd.DataFrame(np.array(["a", "b", "a", "b", np.nan, np.nan])),
             }
         }
@@ -69,6 +71,7 @@ class KFoldValidatorTest(unittest.TestCase):
             vl = KFoldValidator(data, params)
 
         self.assertTrue("Missing" in str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

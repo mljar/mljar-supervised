@@ -35,7 +35,10 @@ class KFoldValidator(BaseValidator):
         y = self.data["train"]["y"]
         for train_index, validation_index in self.skf.split(X, y):
             X_train, y_train = X.loc[train_index], y.loc[train_index]
-            X_validation, y_validation = X.loc[validation_index], y.loc[validation_index]
+            X_validation, y_validation = (
+                X.loc[validation_index],
+                y.loc[validation_index],
+            )
             yield {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 
     def get_n_splits(self):

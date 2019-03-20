@@ -40,8 +40,8 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
             "validation": {
                 "validation_type": "split",
                 "train_ratio": 0.8,
-                #"validation_type": "kfold",
-                #"k_folds": 5,
+                # "validation_type": "kfold",
+                # "k_folds": 5,
                 "shuffle": True,
             },
             "learner": {

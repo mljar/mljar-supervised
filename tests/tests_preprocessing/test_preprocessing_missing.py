@@ -29,22 +29,19 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         df = pd.DataFrame(data=d)
         # fill with median
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,
-            PreprocessingMissingValues.FILL_NA_MEDIAN
+            df.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
         )
         self.assertEqual(preprocess_missing._get_fill_value(df["col1"]), 2)
         self.assertEqual(preprocess_missing._get_fill_value(df["col2"]), "a")
         # fill with mean
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,
-            PreprocessingMissingValues.FILL_NA_MEDIAN
+            df.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
         )
         self.assertEqual(preprocess_missing._get_fill_value(df["col1"]), 2)
         self.assertEqual(preprocess_missing._get_fill_value(df["col2"]), "a")
         # fill with min
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,
-            PreprocessingMissingValues.FILL_NA_MIN
+            df.columns, PreprocessingMissingValues.FILL_NA_MIN
         )
         self.assertEqual(preprocess_missing._get_fill_value(df["col1"]), 0)
         self.assertEqual(
@@ -63,8 +60,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         df = pd.DataFrame(data=d)
         # fill with median
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,
-            PreprocessingMissingValues.FILL_NA_MEDIAN
+            df.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
         )
         preprocess_missing._fit_na_fill(df)
         self.assertTrue("col1" in preprocess_missing._na_fill_params)
@@ -74,8 +70,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         self.assertEqual("a", preprocess_missing._na_fill_params["col2"])
         # fill with mean
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,
-            PreprocessingMissingValues.FILL_NA_MEAN
+            df.columns, PreprocessingMissingValues.FILL_NA_MEAN
         )
         preprocess_missing._fit_na_fill(df)
         self.assertTrue("col1" in preprocess_missing._na_fill_params)
@@ -85,7 +80,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         self.assertEqual("a", preprocess_missing._na_fill_params["col2"])
         # fill with min
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,PreprocessingMissingValues.FILL_NA_MIN
+            df.columns, PreprocessingMissingValues.FILL_NA_MIN
         )
         preprocess_missing._fit_na_fill(df)
         self.assertTrue("col1" in preprocess_missing._na_fill_params)
@@ -116,7 +111,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         df_test = pd.DataFrame(data=d_test)
         # fill with median
         preprocess_missing = PreprocessingMissingValues(
-            df.columns,PreprocessingMissingValues.FILL_NA_MEDIAN
+            df.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
         )
         preprocess_missing.fit(df)
         self.assertEqual(
@@ -134,8 +129,8 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         # it is disabled, should be treated separately at the end of preprocessing
         # columns without missing values in training set are also filled
         # but they are filled based on their own values
-        #self.assertEqual(2, df_test.loc[3, "col3"])
-        #self.assertEqual("b", df_test.loc[3, "col4"])
+        # self.assertEqual(2, df_test.loc[3, "col3"])
+        # self.assertEqual("b", df_test.loc[3, "col4"])
 
     def test_transform_on_new_data(self):
         # training data
@@ -161,7 +156,9 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
         X_test = df_test.loc[:, ["col1", "col2", "col3", "col4"]]
         y_test = df_test.loc[:, "y"]
 
-        pm = PreprocessingMissingValues(X_train.columns,PreprocessingMissingValues.FILL_NA_MEDIAN)
+        pm = PreprocessingMissingValues(
+            X_train.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
+        )
         pm.fit(X_train)
         X_train = pm.transform(X_train)
         X_test = pm.transform(X_test)

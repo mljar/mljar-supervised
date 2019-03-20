@@ -10,10 +10,10 @@ from supervised.preprocessing.label_binarizer import LabelBinarizer
 
 class PreprocessingCategorical(object):
 
-    CONVERT_ONE_HOT = 'categorical_to_onehot'
-    CONVERT_INTEGER = 'categorical_to_int'
+    CONVERT_ONE_HOT = "categorical_to_onehot"
+    CONVERT_INTEGER = "categorical_to_int"
 
-    def __init__(self, columns = [], convert_categorical_method = CONVERT_INTEGER):
+    def __init__(self, columns=[], convert_categorical_method=CONVERT_INTEGER):
         self._convert_method = convert_categorical_method
         self._convert_params = {}
         self._columns = columns
@@ -33,7 +33,10 @@ class PreprocessingCategorical(object):
             # TODO it needs refactoring !!!
             too_much_categories = len(np.unique(list(X[column].values))) > 200
             lbl = None
-            if self._convert_method == PreprocessingCategorical.CONVERT_ONE_HOT and not too_much_categories:
+            if (
+                self._convert_method == PreprocessingCategorical.CONVERT_ONE_HOT
+                and not too_much_categories
+            ):
                 lbl = LabelBinarizer()
                 lbl.fit(X, column)
             else:
@@ -55,20 +58,22 @@ class PreprocessingCategorical(object):
                 # convert to integer
                 lbl = LabelEncoder()
                 lbl.from_json(lbl_params)
-                X.loc[:,column] = lbl.transform(X.loc[:,column])
+                X.loc[:, column] = lbl.transform(X.loc[:, column])
 
         return X
 
     def to_json(self):
         if len(self._convert_params) == 0:
             return {}
-        params = {'convert_method': self._convert_method,
-                  'convert_params': self._convert_params}
+        params = {
+            "convert_method": self._convert_method,
+            "convert_params": self._convert_params,
+        }
         return params
 
     def from_json(self, params):
         if params is not None:
-            self._convert_method = params.get('convert_method', None)
-            self._convert_params = params.get('convert_params', {})
+            self._convert_method = params.get("convert_method", None)
+            self._convert_params = params.get("convert_params", {})
         else:
             self._convert_method, self._convert_params = None, None
