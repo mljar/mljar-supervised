@@ -21,8 +21,8 @@ class PreprocessingStep(object):
 
         # preprocssing step attributes
         self._categorical_y = None
-        self._missing_values = {}
-        self._categorical = {}
+        self._missing_values = []
+        self._categorical = []
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -78,28 +78,33 @@ class PreprocessingStep(object):
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
-
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
             log.info("Preprocess column -> {}, {}".format(column, transforms))
-            if PreprocessingMissingValues.FILL_NA_MEDIAN in transforms:
-                missing = PreprocessingMissingValues(
-                    PreprocessingMissingValues.FILL_NA_MEDIAN
-                )
-                missing.fit(X_train[column])
-                X_train[column] = missing.transform(X_train[column])
-                if X_validation is not None:
-                    X_validation[column] = missing.transform(X_validation[column])
-                self._missing_values[column] = missing
-            if PreprocessingCategorical.CONVERT_INTEGER in transforms:
-                convert = PreprocessingCategorical(
-                    PreprocessingCategorical.CONVERT_INTEGER
-                )
-                convert.fit(X_train[column])
-                X_train[column] = convert.transform(X_train[column])
-                if X_validation is not None:
-                    X_validation[column] = convert.transform(X_validation[column])
-                self._categorical[column] = convert
+
+        for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
+            cols_to_process = list(filter(lambda k: missing_method in columns_preprocessing[k], columns_preprocessing))
+            missing = PreprocessingMissingValues(
+                cols_to_process,
+                missing_method
+            )
+            missing.fit(X_train)
+            X_train = missing.transform(X_train)
+            if X_validation is not None:
+                X_validation = missing.transform(X_validation)
+            self._missing_values += [missing]
+
+        for convert_method in [PreprocessingCategorical.CONVERT_INTEGER]:
+            cols_to_process = list(filter(lambda k: convert_method in columns_preprocessing[k], columns_preprocessing))
+            convert = PreprocessingCategorical(
+                cols_to_process,
+                convert_method
+            )
+            convert.fit(X_train)
+            X_train = convert.transform(X_train)
+            if X_validation is not None:
+                X_validation = convert.transform(X_validation)
+            self._categorical += [convert]
 
         return {"X":X_train, "y":y_train}, {"X":X_validation, "y":y_validation}
 

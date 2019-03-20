@@ -3,8 +3,8 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
-from preprocessing.preprocessing_utils import PreprocessingUtils
-from label_encoder import LabelEncoder
+
+from supervised.preprocessing.label_encoder import LabelEncoder
 
 
 class LabelEncoderTest(unittest.TestCase):

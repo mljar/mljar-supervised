@@ -2,8 +2,7 @@ import unittest
 import tempfile
 import numpy as np
 import pandas as pd
-from preprocessing_utils import PreprocessingUtils
-from preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 
 
 class PreprocessingCategoricalIntegersTest(unittest.TestCase):
@@ -11,7 +10,7 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
         """
             Check if PreprocessingCategorical object is properly initialized
         """
-        categorical = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        categorical = PreprocessingCategorical([], PreprocessingCategorical.CONVERT_INTEGER)
         self.assertEqual(
             categorical._convert_method, PreprocessingCategorical.CONVERT_INTEGER
         )
@@ -26,7 +25,7 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
             "col4": ["a", "b", "c"],
         }
         df = pd.DataFrame(data=d)
-        categorical = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        categorical = PreprocessingCategorical(df.columns, PreprocessingCategorical.CONVERT_INTEGER)
         categorical.fit(df)
 
         self.assertTrue("col2" in categorical._convert_params)
@@ -47,7 +46,7 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
             "col4": ["a", "b", "c"],
         }
         df = pd.DataFrame(data=d)
-        categorical = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        categorical = PreprocessingCategorical(df.columns, PreprocessingCategorical.CONVERT_INTEGER)
         categorical.fit(df)
         df = categorical.transform(df)
         for col in ["col1", "col2", "col3", "col4"]:
@@ -68,7 +67,7 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
             "col4": ["a", "b", "c"],
         }
         df_train = pd.DataFrame(data=d_train)
-        categorical = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        categorical = PreprocessingCategorical(df_train.columns, PreprocessingCategorical.CONVERT_INTEGER)
         categorical.fit(df_train)
         # testing data
         d = {
@@ -97,10 +96,10 @@ class PreprocessingCategoricalIntegersTest(unittest.TestCase):
             "col4": ["a", "b", "c"],
         }
         df = pd.DataFrame(data=d)
-        cat1 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        cat1 = PreprocessingCategorical(df.columns, PreprocessingCategorical.CONVERT_INTEGER)
         cat1.fit(df)
 
-        cat2 = PreprocessingCategorical(PreprocessingCategorical.CONVERT_INTEGER)
+        cat2 = PreprocessingCategorical(df.columns, PreprocessingCategorical.CONVERT_INTEGER)
         cat2.from_json(cat1.to_json())
         df = cat2.transform(df)
         for col in ["col1", "col2", "col3", "col4"]:

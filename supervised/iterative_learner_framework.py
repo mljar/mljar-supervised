@@ -42,10 +42,11 @@ class IterativeLearner(LearnerFramework):
                 log.debug(
                     "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
-
+            print("before preprocessing", train_data["X"].head())
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
             train_data, validation_data = self.preprocessings[-1].run(train_data, validation_data)
+            print("after preprocessing", train_data["X"].head())
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]

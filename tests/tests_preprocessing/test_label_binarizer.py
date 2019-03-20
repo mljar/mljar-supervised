@@ -3,8 +3,8 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
-from preprocessing_utils import PreprocessingUtils
-from label_binarizer import LabelBinarizer
+
+from supervised.preprocessing.label_binarizer import LabelBinarizer
 
 
 class LabelBinarizerTest(unittest.TestCase):
