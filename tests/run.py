@@ -2,10 +2,9 @@ import os
 import sys
 import unittest
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(BASE_DIR)
 
-from .test_iterative_learner_framework import IterativeLearnerTest
+from tests.test_iterative_learner_framework import IterativeLearnerTest
+from tests.test_iterative_learner_framework_with_preprocessing import IterativeLearnerWithPreprocessingTest
 
 # from .test_metric import MetricTest
 
