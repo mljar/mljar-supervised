@@ -26,19 +26,37 @@ class KFoldValidatorTest(unittest.TestCase):
             self.assertEqual(y_validation.shape[0], 2)
 
     def test_missing_target_values(self):
-        pass
+        # rows with missing target will be distributed equaly among folds
+        data = {
+            "train": {
+                "X": pd.DataFrame(np.array([[1, 0], [2, 1], [3, 0], [4, 1], [5, 1], [6, 1]])),
+                "y": pd.DataFrame(np.array(["a", "b", "a", "b", np.nan, np.nan])),
+            }
+        }
+        params = {"shuffle": True, "stratify": True, "k_folds": 2}
+        vl = KFoldValidator(params, data)
+        self.assertEqual(params["k_folds"], vl.get_n_splits())
+        for train, validation in vl.split():
+            X_train, y_train = train.get("X"), train.get("y")
+            X_validation, y_validation = validation.get("X"), validation.get("y")
+            self.assertEqual(X_train.shape[0], 3)
+            self.assertEqual(y_train.shape[0], 3)
+            self.assertEqual(X_validation.shape[0], 3)
+            self.assertEqual(y_validation.shape[0], 3)
 
     def test_create_with_target_as_labels(self):
         data = {
             "train": {
-                "X": np.array([[0, 0], [0, 1], [1, 0], [1, 1]]),
-                "y": np.array(["a", "b", "a", "b"]),
+                "X": pd.DataFrame(np.array([[0, 0], [0, 1], [1, 0], [1, 1]])),
+                "y": pd.DataFrame(np.array(["a", "b", "a", "b"])),
             }
         }
         params = {"shuffle": True, "stratify": True, "k_folds": 2}
-        vl = KFoldValidator(data, params)
+        vl = KFoldValidator(params, data)
         self.assertEqual(params["k_folds"], vl.get_n_splits())
-        for X_train, y_train, X_validation, y_validation in vl.split():
+        for train, validation in vl.split():
+            X_train, y_train = train.get("X"), train.get("y")
+            X_validation, y_validation = validation.get("X"), validation.get("y")
             self.assertEqual(X_train.shape[0], 2)
             self.assertEqual(y_train.shape[0], 2)
             self.assertEqual(X_validation.shape[0], 2)
