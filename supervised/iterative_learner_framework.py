@@ -34,9 +34,8 @@ class IterativeLearner(LearnerFramework):
         }
 
     def train(self, data):
-        print(data["train"]["X"].shape)
+
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
-        print(data["train"]["X"].shape)
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
