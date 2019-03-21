@@ -3,6 +3,7 @@ class Callback(object):
         self.params = params
         self.learners = []
         self.learner = None  # current learner
+        self.name = "callback"
 
     def add_and_set_learner(self, learner):
         self.learners += [learner]
@@ -18,4 +19,7 @@ class Callback(object):
         pass
 
     def on_iteration_end(self, logs, predictions):
+        pass
+
+    def on_framework_train_end(self, logs):
         pass

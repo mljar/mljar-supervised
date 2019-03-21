@@ -21,3 +21,13 @@ class CallbackList(object):
     def on_iteration_end(self, logs=None, predictions=None):
         for cb in self.callbacks:
             cb.on_iteration_end(logs, predictions)
+
+    def on_framework_train_end(self, logs=None):
+        for cb in self.callbacks:
+            cb.on_framework_train_end(logs)
+
+    def get(self, callback_name):
+        for cb in self.callbacks:
+            if cb.name == callback_name:
+                return cb
+        return cb

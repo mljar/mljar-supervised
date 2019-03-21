@@ -44,6 +44,7 @@ class IterativeLearner(LearnerFramework):
                 log.debug(
                     "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
+
             print("before preprocessing", train_data["X"].head())
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
@@ -71,6 +72,10 @@ class IterativeLearner(LearnerFramework):
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
         # end of validation loop
+        self.callbacks.on_framework_train_end()
+
+    def get_out_of_folds(self):
+        print("Get out of folds")
 
     def predict(self, X):
         if self.learners is None or len(self.learners) == 0:
@@ -79,7 +84,7 @@ class IterativeLearner(LearnerFramework):
         y_predicted = np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
             # preprocessing goes here
-            validation_data = self.preprocessings[ind].transform({"X":X})
+            validation_data = self.preprocessings[ind].transform({"X": X})
             y_predicted += learner.predict(validation_data.get("X"))
         return y_predicted / float(len(self.learners))
 

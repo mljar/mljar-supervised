@@ -16,7 +16,10 @@ log = logging.getLogger(__name__)
 
 
 class PreprocessingStep(object):
-    def __init__(self, preprocessing_params={"target_preprocessing": [], "columns_preprocessing": {}}):
+    def __init__(
+        self,
+        preprocessing_params={"target_preprocessing": [], "columns_preprocessing": {}},
+    ):
         self._params = preprocessing_params
 
         if "target_preprocessing" not in preprocessing_params:
@@ -50,7 +53,10 @@ class PreprocessingStep(object):
             X_train, y_train = train_data.get("X"), train_data.get("y")
         X_validation, y_validation = None, None
         if validation_data is not None:
-            X_validation, y_validation = validation_data.get("X"), validation_data.get("y")
+            X_validation, y_validation = (
+                validation_data.get("X"),
+                validation_data.get("y"),
+            )
 
         if y_train is not None:
             # target preprocessing
@@ -58,7 +64,7 @@ class PreprocessingStep(object):
             target_preprocessing = self._params.get("target_preprocessing")
             log.info("target_preprocessing -> {}".format(target_preprocessing))
 
-            #if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
+            # if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
                 X_train, y_train
             )
@@ -124,7 +130,10 @@ class PreprocessingStep(object):
         log.info("PreprocessingStep.transform")
         X_validation, y_validation = None, None
         if validation_data is not None:
-            X_validation, y_validation = validation_data.get("X"), validation_data.get("y")
+            X_validation, y_validation = (
+                validation_data.get("X"),
+                validation_data.get("y"),
+            )
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
@@ -138,9 +147,7 @@ class PreprocessingStep(object):
 
         if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
             if y_validation is not None and self._categorical_y is not None:
-                y_validation = pd.Series(
-                    self._categorical_y.transform(y_validation)
-                )
+                y_validation = pd.Series(self._categorical_y.transform(y_validation))
 
         if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
             log.error("not implemented SCALE_LOG_AND_NORMAL")

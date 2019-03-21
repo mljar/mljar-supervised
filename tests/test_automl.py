@@ -7,6 +7,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.automl import AutoML
+from supervised.metric import Metric
 
 
 class AutoMLTest(unittest.TestCase):
@@ -29,9 +30,14 @@ class AutoMLTest(unittest.TestCase):
     def test_fit_and_predict(self):
         automl = AutoML()
         automl.fit(self.X, self.y)
-        y_predicted = automl.predict(self.y)
-        print(y_predicted)
-        #self.assertTrue(y_predicted is not None)
+
+        # y_predicted = automl.predict(self.X)
+        # print(y_predicted)
+        # metric = Metric({"name": "logloss"})
+        # loss = metric(self.y, y_predicted)
+        # print("Loss", loss)
+        # self.assertTrue(y_predicted is not None)
+
 
 if __name__ == "__main__":
     unittest.main()

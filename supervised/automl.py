@@ -14,17 +14,10 @@ from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 
 
 class AutoML:
-
     def __init__(self, time_limit=60):
-        self._time_limit = time_limit # time limit in seconds
-
+        self._time_limit = time_limit  # time limit in seconds
         self._learners = []
-        self._learners_params = []
-        self._validation = {
-            "validation_type": "kfold",
-            "k_folds": 5,
-            "shuffle": True,
-        }
+        self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
     def _get_model_params(self, X, y):
         available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
@@ -34,9 +27,8 @@ class AutoML:
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
         preprocessing_params = PreprocessingTuner.get(
-            required_preprocessing, {"train": {"X": X, "y":y}}, BINARY_CLASSIFICATION
+            required_preprocessing, {"train": {"X": X, "y": y}}, BINARY_CLASSIFICATION
         )
-
         return {
             "additional": model_additional,
             "preprocessing": preprocessing_params,
@@ -48,42 +40,44 @@ class AutoML:
         }
 
     def fit(self, X, y):
-        # get preprocessing and model params
+
         for i in range(5):
-            print("-"*21)
+            print("-" * 21)
             params = self._get_model_params(X, y)
-            self._learners_params += [params]
-
             early_stop = EarlyStopping({"metric": {"name": "logloss"}})
-            metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-            il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
-            il.train({"train":{"X":X, "y":y}})
-
-            y_predicted = il.predict(self.data["train"]["X"])
-            metric = Metric({"name": "logloss"})
-            loss = metric(self.data["train"]["y"], y_predicted)
-
+            il = IterativeLearner(params, callbacks=[early_stop])
+            il.train({"train": {"X": X, "y": y}})
             self._learners += [il]
+            print("early-----------------------")
+            print(early_stop.best_loss)
 
+        for il in self._learners:
+            print("Learner")
+            print(il.callbacks.callbacks[0].best_loss)
+            print(il.callbacks.callbacks[0].final_loss)
 
     def predict(self, X):
-        pass
+        y_predicted_mean = None
+        for il in self._learners:
+            y_predicted = il.predict(X)
+            y_predicted_mean = (
+                y_predicted
+                if y_predicted_mean is None
+                else y_predicted_mean + y_predicted
+            )
+        # Make a mean
+        y_predicted_mean /= float(len(self._learners))
+        return y_predicted_mean
 
-    def save(self, storage_path):
-        pass
+    def to_json(self):
+        save_details = []
+        for il in self._learners:
+            save_details += [il.save()]
+        return save_details
 
-    def load(self, storage_path):
-        pass
-
-'''
-        early_stop = EarlyStopping({"metric": {"name": "logloss"}})
-        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
-        il.train(self.data)
-
-        y_predicted = il.predict(self.data["train"]["X"])
-
-        metric = Metric({"name": "logloss"})
-        loss = metric(self.data["train"]["y"], y_predicted)
-        self.assertTrue(loss < 0.6)
-'''
+    def from_json(self, json_data):
+        self._learners = []
+        for save_detail in json_data:
+            il = IterativeLearner()
+            il.load(save_detail)
+            self._learners += [il]
