@@ -52,9 +52,7 @@ class AutoML:
             print(early_stop.best_loss)
 
         for il in self._learners:
-            print("Learner")
-            print(il.callbacks.callbacks[0].best_loss)
-            print(il.callbacks.callbacks[0].final_loss)
+            print("Learner final loss {0}".format(il.callbacks.callbacks[0].final_loss))
 
     def predict(self, X):
         y_predicted_mean = None
