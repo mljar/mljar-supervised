@@ -50,22 +50,60 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
             },
         }
 
-    def test_fit_and_predict(self):
+    def test_fit_and_predict_split(self):
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
+
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
 
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
+
         y_predicted = il.predict(self.data["train"]["X"])
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
+
+        metric = Metric({"name": "logloss"})
+        loss = metric(self.data["train"]["y"], y_predicted)
+        self.assertTrue(loss < 0.6)
+
+
+    def test_fit_and_predict_kfold(self):
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
+
+        early_stop = EarlyStopping({"metric": {"name": "logloss"}})
+        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
+
+        params = self.train_params.copy()
+        params["validation"] = {
+                "validation_type": "kfold",
+                "k_folds": 5,
+                "shuffle": True,
+        }
+        il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
+        il.train(self.data)
+
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
+
+        y_predicted = il.predict(self.data["train"]["X"])
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         metric = Metric({"name": "logloss"})
         loss = metric(self.data["train"]["y"], y_predicted)
         self.assertTrue(loss < 0.6)
 
     def test_save_and_load(self):
-
+        print(self.data["train"]["X"].head())
+        self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
+        print("train_params",self.train_params)
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         y_predicted = il.predict(self.data["train"]["X"])

@@ -17,6 +17,7 @@ class AutoML:
     def __init__(self, time_limit=60):
         self._time_limit = time_limit  # time limit in seconds
         self._learners = []
+        self._best_learner = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
     def _get_model_params(self, X, y):
@@ -40,21 +41,24 @@ class AutoML:
         }
 
     def fit(self, X, y):
-
         for i in range(5):
-            print("-" * 21)
             params = self._get_model_params(X, y)
             early_stop = EarlyStopping({"metric": {"name": "logloss"}})
             il = IterativeLearner(params, callbacks=[early_stop])
             il.train({"train": {"X": X, "y": y}})
             self._learners += [il]
-            print("early-----------------------")
-            print(early_stop.best_loss)
 
+        max_loss = 1000000.0
         for il in self._learners:
             print("Learner final loss {0}".format(il.callbacks.callbacks[0].final_loss))
+            if il.callbacks.callbacks[0].final_loss < max_loss:
+                self._best_learner = il
+                max_loss = il.callbacks.callbacks[0].final_loss
+        print("Best learner")
+        print(self._best_learner.uid, max_loss)
 
     def predict(self, X):
+        '''
         y_predicted_mean = None
         for il in self._learners:
             y_predicted = il.predict(X)
@@ -66,6 +70,8 @@ class AutoML:
         # Make a mean
         y_predicted_mean /= float(len(self._learners))
         return y_predicted_mean
+        '''
+        return self._best_learner.predict(X)
 
     def to_json(self):
         save_details = []

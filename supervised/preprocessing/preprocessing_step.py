@@ -47,22 +47,26 @@ class PreprocessingStep(object):
         return X, y
 
     def run(self, train_data=None, validation_data=None):
-        log.info("PreprocessingStep.run")
+        log.debug("PreprocessingStep.run")
         X_train, y_train = None, None
         if train_data is not None:
-            X_train, y_train = train_data.get("X"), train_data.get("y")
+            if "X" in train_data:
+                X_train = train_data.get("X").copy()
+            if "y" in train_data:
+                y_train = train_data.get("y").copy()
         X_validation, y_validation = None, None
         if validation_data is not None:
-            X_validation, y_validation = (
-                validation_data.get("X"),
-                validation_data.get("y"),
-            )
+            if "X" in validation_data:
+                X_validation = validation_data.get("X").copy()
+            if "y" in validation_data:
+                y_validation = validation_data.get("y").copy()
+
 
         if y_train is not None:
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
             target_preprocessing = self._params.get("target_preprocessing")
-            log.info("target_preprocessing -> {}".format(target_preprocessing))
+            log.debug("target_preprocessing -> {}".format(target_preprocessing))
 
             # if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
@@ -94,7 +98,7 @@ class PreprocessingStep(object):
         columns_preprocessing = self._params.get("columns_preprocessing")
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
-            log.info("Preprocess column -> {}, {}".format(column, transforms))
+            log.debug("Preprocess column -> {}, {}".format(column, transforms))
 
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
@@ -127,18 +131,19 @@ class PreprocessingStep(object):
         return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 
     def transform(self, validation_data=None):
-        log.info("PreprocessingStep.transform")
+        log.debug("PreprocessingStep.transform")
         X_validation, y_validation = None, None
         if validation_data is not None:
-            X_validation, y_validation = (
-                validation_data.get("X"),
-                validation_data.get("y"),
-            )
+            if "X" in validation_data:
+                X_validation = validation_data.get("X").copy()
+            if "y" in validation_data:
+                y_validation = validation_data.get("y").copy()
+
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
         target_preprocessing = self._params.get("target_preprocessing")
-        log.info("target_preprocessing -> {}".format(target_preprocessing))
+        log.debug("target_preprocessing -> {}".format(target_preprocessing))
 
         if validation_data is not None:
             X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
@@ -175,7 +180,7 @@ class PreprocessingStep(object):
             for mv in self._missing_values:
                 if mv.to_json():
                     mvs += [mv.to_json()]
-            print(mvs)
+
             if mvs:
                 preprocessing_params["missing_values"] = mvs
         if self._categorical is not None and len(self._categorical):

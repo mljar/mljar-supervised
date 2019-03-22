@@ -31,7 +31,7 @@ class PreprocessingExcludeMissingValues(object):
 
     @staticmethod
     def transform(X=None, y=None):
-        log.info("Exclude rows with missing target values")
+        log.debug("Exclude rows with missing target values")
         if y is None:
             return X, y
         y_missing = pd.isnull(y)

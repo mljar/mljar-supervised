@@ -23,7 +23,7 @@ class IterativeLearnerException(Exception):
 class IterativeLearner(LearnerFramework):
     def __init__(self, params, callbacks=[]):
         LearnerFramework.__init__(self, params, callbacks)
-        log.debug("IterativeLearner __init__")
+        log.debug("IterativeLearner.__init__")
 
     def predictions(self, learner, train_data, validation_data):
         return {
@@ -34,7 +34,7 @@ class IterativeLearner(LearnerFramework):
         }
 
     def train(self, data):
-
+        log.debug("IterativeLearner.train")
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
 
@@ -45,13 +45,11 @@ class IterativeLearner(LearnerFramework):
                     "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
 
-            print("before preprocessing", train_data["X"].head())
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
             train_data, validation_data = self.preprocessings[-1].run(
                 train_data, validation_data
             )
-            print("after preprocessing", train_data["X"].head())
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]
@@ -83,7 +81,7 @@ class IterativeLearner(LearnerFramework):
         # run predict on all learners and return the average
         y_predicted = np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
-            # preprocessing goes here
+            # prepfrocessing goes here
             validation_data = self.preprocessings[ind].transform({"X": X})
             y_predicted += learner.predict(validation_data.get("X"))
         return y_predicted / float(len(self.learners))
