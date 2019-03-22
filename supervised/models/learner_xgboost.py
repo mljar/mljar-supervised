@@ -36,8 +36,9 @@ class XgbLearner(Learner):
         self.library_version = xgb.__version__
         self.model_file = self.uid + ".xgb.model"
         self.model_file_path = "/tmp/" + self.model_file
-        self.boosting_rounds = params.get("boosting_rounds", 50)
-        self.max_iters = params.get("max_iters", 3)
+        
+        self.boosting_rounds = additional.get("one_step", 50) # params.get("boosting_rounds", 50)
+        self.max_iters = additional.get("max_steps", 3)
         self.learner_params = {
             "booster": self.params.get("booster", "gbtree"),
             "objective": self.params.get("objective"),

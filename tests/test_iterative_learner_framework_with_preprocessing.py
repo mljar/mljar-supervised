@@ -3,6 +3,7 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
+import copy
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
@@ -78,10 +79,10 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
 
-        params = self.train_params.copy()
+        params = copy.deepcopy(self.train_params)
         params["validation"] = {
                 "validation_type": "kfold",
-                "k_folds": 5,
+                "k_folds": 4,
                 "shuffle": True,
         }
         il = IterativeLearner(params, callbacks=[early_stop, metric_logger])

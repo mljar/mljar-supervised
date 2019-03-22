@@ -6,6 +6,7 @@ from supervised.models.learner_xgboost import XgbLearner
 from supervised.iterative_learner_framework import IterativeLearner
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
+from supervised.callbacks.time_constraint import TimeConstraint
 from supervised.metric import Metric
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.tuner.registry import ModelsRegistry
@@ -44,7 +45,8 @@ class AutoML:
         for i in range(5):
             params = self._get_model_params(X, y)
             early_stop = EarlyStopping({"metric": {"name": "logloss"}})
-            il = IterativeLearner(params, callbacks=[early_stop])
+            time_constraint = TimeConstraint({"train_seconds_time_limit": 10})
+            il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
             il.train({"train": {"X": X, "y": y}})
             self._learners += [il]
 

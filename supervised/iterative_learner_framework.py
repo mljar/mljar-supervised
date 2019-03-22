@@ -57,6 +57,8 @@ class IterativeLearner(LearnerFramework):
             self.callbacks.add_and_set_learner(learner)
             self.callbacks.on_learner_train_start()
 
+            print("Learner max iters", learner.max_iters)
+
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
                 learner.fit(train_data)

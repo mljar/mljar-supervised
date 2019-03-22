@@ -50,6 +50,10 @@ class EarlyStopping(Callback):
             self.best_y_oof["target"], self.best_y_oof["prediction"]
         )
 
+        print("OOF")
+        print(self.best_y_oof)
+        print(self.final_loss)
+
     def on_iteration_end(self, logs, predictions):
         loss = self.metric(
             predictions.get("y_validation_true"),
@@ -86,6 +90,6 @@ class EarlyStopping(Callback):
             self.learner.stop_training = True
 
         log.debug(
-            "EarlyStopping.on_teration_end, loss: {0}, "
-            "no improvement cnt {1}".format(loss, self.no_improvement_cnt)
+            "EarlyStopping.on_iteration_end, loss: {0}, "
+            "no improvement cnt {1}, iters {2}".format(loss, self.no_improvement_cnt, len(self.loss_values[self.learner.uid]["iters"]))
         )
