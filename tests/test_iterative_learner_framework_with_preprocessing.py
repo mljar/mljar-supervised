@@ -51,7 +51,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
             },
         }
 
-    def test_fit_and_predict_split(self):
+    def ztest_fit_and_predict_split(self):
         print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
@@ -99,7 +99,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         loss = metric(self.data["train"]["y"], y_predicted)
         self.assertTrue(loss < 0.6)
 
-    def test_save_and_load(self):
+    def ztest_save_and_load(self):
         print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})

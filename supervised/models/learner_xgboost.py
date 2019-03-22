@@ -36,7 +36,7 @@ class XgbLearner(Learner):
         self.library_version = xgb.__version__
         self.model_file = self.uid + ".xgb.model"
         self.model_file_path = "/tmp/" + self.model_file
-        
+
         self.boosting_rounds = additional.get("one_step", 50) # params.get("boosting_rounds", 50)
         self.max_iters = additional.get("max_steps", 3)
         self.learner_params = {
@@ -166,7 +166,7 @@ XgbLearnerMulticlassClassificationParams = dict(XgbLearnerBinaryClassificationPa
 additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
-    "max_steps": 500,
+    "max_steps": 3,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
