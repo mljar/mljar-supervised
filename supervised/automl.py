@@ -43,6 +43,8 @@ class AutoML:
 
     def fit(self, X, y):
         for i in range(5):
+            print(i)
+            print(X.head())
             params = self._get_model_params(X, y)
             early_stop = EarlyStopping({"metric": {"name": "logloss"}})
             time_constraint = TimeConstraint({"train_seconds_time_limit": 10})

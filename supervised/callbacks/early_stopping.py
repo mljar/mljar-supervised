@@ -50,10 +50,6 @@ class EarlyStopping(Callback):
             self.best_y_oof["target"], self.best_y_oof["prediction"]
         )
 
-        print("OOF")
-        print(self.best_y_oof)
-        print(self.final_loss)
-
     def on_iteration_end(self, logs, predictions):
         loss = self.metric(
             predictions.get("y_validation_true"),
@@ -67,8 +63,6 @@ class EarlyStopping(Callback):
         ):
 
             y_validation_true = predictions.get("y_validation_true")
-
-
             self.no_improvement_cnt = 0
             self.best_loss[self.learner.uid] = loss
             self.best_y_predicted[self.learner.uid] = pd.DataFrame(
@@ -76,7 +70,7 @@ class EarlyStopping(Callback):
                     "prediction": predictions.get("y_validation_predicted"),
                     "target": y_validation_true.values.reshape(y_validation_true.shape[0])
                 },
-                index=predictions.get("y_validation_true").index,
+                index=predictions.get("validation_index"),
             )
             self.best_models[self.learner.uid] = self.learner.copy()
 

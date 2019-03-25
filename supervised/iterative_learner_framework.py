@@ -31,6 +31,7 @@ class IterativeLearner(LearnerFramework):
             "y_train_predicted": learner.predict(train_data.get("X")),
             "y_validation_true": validation_data.get("y"),
             "y_validation_predicted": learner.predict(validation_data.get("X")),
+            "validation_index": validation_data.get("X").index
         }
 
     def train(self, data):
@@ -45,22 +46,17 @@ class IterativeLearner(LearnerFramework):
                     "Data, X: {0} y: {1}".format(d.get("X").shape, d.get("y").shape)
                 )
 
-            print(validation_data.get("X").index)
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
             train_data, validation_data = self.preprocessings[-1].run(
                 train_data, validation_data
             )
-            print(validation_data.get("X").index)
-            
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]
 
             self.callbacks.add_and_set_learner(learner)
             self.callbacks.on_learner_train_start()
-
-            print("Learner max iters", learner.max_iters)
 
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
@@ -78,7 +74,10 @@ class IterativeLearner(LearnerFramework):
         self.callbacks.on_framework_train_end()
 
     def get_out_of_folds(self):
-        print("Get out of folds")
+        early_stopping = self.callbacks.get("early_stopping")
+        if early_stopping is None:
+            return None
+        return early_stopping.best_y_oof
 
     def predict(self, X):
         if self.learners is None or len(self.learners) == 0:

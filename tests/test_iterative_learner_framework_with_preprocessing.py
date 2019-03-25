@@ -51,8 +51,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
             },
         }
 
-    def ztest_fit_and_predict_split(self):
-        print(self.data["train"]["X"].head())
+    def test_fit_and_predict_split(self):
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
@@ -60,11 +59,9 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
 
-        print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         y_predicted = il.predict(self.data["train"]["X"])
-        print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         metric = Metric({"name": "logloss"})
@@ -73,7 +70,6 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
 
 
     def test_fit_and_predict_kfold(self):
-        print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
@@ -87,24 +83,25 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         }
         il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
+        oof = il.get_out_of_folds()
+        self.assertEqual(len(np.unique(oof.index)), oof.shape[0])
+        self.assertTrue(np.array_equal(oof.index, self.data["train"]["X"].index))
 
-        print(self.data["train"]["X"].head())
+
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         y_predicted = il.predict(self.data["train"]["X"])
-        print(self.data["train"]["X"].head())
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
         metric = Metric({"name": "logloss"})
         loss = metric(self.data["train"]["y"], y_predicted)
         self.assertTrue(loss < 0.6)
 
-    def ztest_save_and_load(self):
-        print(self.data["train"]["X"].head())
+    def test_save_and_load(self):
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        print("train_params",self.train_params)
+
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         y_predicted = il.predict(self.data["train"]["X"])
@@ -119,7 +116,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         self.assertTrue(il.uid == il2.uid)
         y_predicted_2 = il2.predict(self.data["train"]["X"])
         loss_2 = metric(self.data["train"]["y"], y_predicted_2)
-        print(loss_1, loss_2)
+
         assert_almost_equal(loss_1, loss_2)
 
         uids = [i.uid for i in il.learners]
