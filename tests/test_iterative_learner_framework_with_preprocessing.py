@@ -84,6 +84,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         oof = il.get_out_of_folds()
+        
         self.assertEqual(len(np.unique(oof.index)), oof.shape[0])
         self.assertTrue(np.array_equal(oof.index, self.data["train"]["X"].index))
 

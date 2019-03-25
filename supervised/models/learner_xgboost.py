@@ -120,29 +120,12 @@ class XgbLearner(Learner):
 
     def importance(self, column_names, normalize=True):
         return None
-        """
-        # add tmp files here TODO
-        tmp_fmap =  '/tmp/xgb.fmap.' + self.uid
-        print tmp_fmap
-        with open(tmp_fmap, 'w') as fout:
-            for i, feat in enumerate(column_names):
-                fout.write('{0}\t{1}\tq\n'.format(i, feat.encode('utf-8').strip().replace(' ', '_')))
 
-        if self.fit_params['booster'] == 'gbtree':
-            self.model.dump_model('/tmp/' + self.uid + '-xgb.dump',fmap = tmp_fmap, with_stats=True)
-
-        imp = self.model.get_fscore(fmap=tmp_fmap)
-
-        if normalize:
-            total = 0.01*float(sum(imp.values())) # in percents
-            for k,v in imp.iteritems():
-                imp[k] /= total
-                imp[k] = round(imp[k],4)
-
-        imp = dict(sorted(imp.items(), key=operator.itemgetter(1), reverse=True))
-        return imp
-        """
-
+    def get_params_key(self):
+        params_key = "key"
+        for p, v in self.params.items():
+            params_key += "_{}_{}".format(p, str(v))
+        return params_key
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 XgbLearnerBinaryClassificationParams = {

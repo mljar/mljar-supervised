@@ -18,11 +18,11 @@ class MetricException(Exception):
 
 
 def logloss(y_true, y_predicted):
-    epsilon = 1e-15
+    epsilon = 1e-6
     y_predicted = sp.maximum(epsilon, y_predicted)
     y_predicted = sp.minimum(1 - epsilon, y_predicted)
-    return log_loss(y_true, y_predicted)
-
+    ll = log_loss(y_true, y_predicted)
+    return ll
 
 def rmse(y_true, y_predicted):
     val = mean_squared_error(y_true, y_predicted)

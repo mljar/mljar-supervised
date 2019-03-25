@@ -35,5 +35,8 @@ class Learner:
     def load(self, model_path):
         pass
 
+    def get_params_key(self):
+        pass      
+
     # def importance(self, column_names, normalize = True):
     #    pass
