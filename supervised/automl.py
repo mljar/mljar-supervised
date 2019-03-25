@@ -85,6 +85,7 @@ class AutoML:
                 params_1, params_2 = HillClimbing.get(m.params.get("learner"))
                 for p in [params_1, params_2]:
                     if p is not None:
+                        print(m)
                         all_params = copy.deepcopy(m.params)
                         all_params["learner"] = p
                         m = self.train_model(all_params, X, y)
