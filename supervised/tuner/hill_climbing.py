@@ -44,3 +44,13 @@ class HillClimbing:
         params_1, params_2 = None, None
         if left is not None:
             params_1 = copy.deepcopy(params)
+            params_1[key_to_update] = left
+        if right is not None:
+            params_2 = copy.deepcopy(params)
+            params_2[key_to_update] = right
+
+        print("params->", params)
+        print("params_1", params_1)
+        print("params_2", params_2)
+
+        return params_1, params_2

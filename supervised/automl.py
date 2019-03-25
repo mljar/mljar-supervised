@@ -1,4 +1,5 @@
 import json
+import copy
 import numpy as np
 import pandas as pd
 
@@ -24,7 +25,7 @@ class AutoML:
 
         self._start_random_models = 5
         self._hill_climbing_steps = 3
-        self._top_models_to_improve = 4
+        self._top_models_to_improve = 3
 
 
     def _get_model_params(self, X, y):
@@ -51,6 +52,12 @@ class AutoML:
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": 10})
         il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
+        il_key = il.get_params_key()
+        print("KEY", il_key)
+        if il_key in self._models_params_keys:
+            print("Already trained !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            return None
+        self._models_params_keys += [il_key]
         il.train({"train": {"X": X, "y": y}})
         return il
 
@@ -58,7 +65,9 @@ class AutoML:
         # start with not-so-random models
         for i in range(self._start_random_models):
             params = self._get_model_params(X, y)
-            self._models += [self.train_model(params, X, y)]
+            m = self.train_model(params, X, y)
+            if m is not None:
+                self._models += [m]
         # perform hill climbing steps on best models
         for hill_climbing in range(self._hill_climbing_steps):
             # get models orderer by loss
@@ -70,9 +79,17 @@ class AutoML:
             for i in range(self._top_models_to_improve):
                 print(">",models[i])
                 m = models[i][1]
+                if m is None:
+                    continue
                 print(m.params.get("learner"))
-                new_params = HillClimbing.get(m.params.get("learner"))
-                print("new params", new_params)
+                params_1, params_2 = HillClimbing.get(m.params.get("learner"))
+                for p in [params_1, params_2]:
+                    if p is not None:
+                        all_params = copy.deepcopy(m.params)
+                        all_params["learner"] = p
+                        m = self.train_model(all_params, X, y)
+                        if m is not None:
+                            self._models += [m]
 
 
         max_loss = 1000000.0

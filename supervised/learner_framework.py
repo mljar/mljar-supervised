@@ -46,6 +46,14 @@ class LearnerFramework:
         self.preprocessings = []
         self.learners = []
 
+    def get_params_key(self):
+        key = "key_"
+        for main_key in ["additional", "preprocessing", "validation", "learner"]:
+            key += main_key
+            for k, v in self.params[main_key].items():
+                key += "_{}_{}".format(k,v)
+        return key
+
     def train(self, data):
         pass
 
