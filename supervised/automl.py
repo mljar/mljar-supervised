@@ -12,18 +12,20 @@ from supervised.tuner.random_parameters import RandomParameters
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
-
+from supervised.tuner.hill_climbing import HillClimbing
 
 class AutoML:
     def __init__(self, time_limit=60):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
+        self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
         self._start_random_models = 5
-        self._hill_climbing_count = 3
-        self._best_models_to_improve = 4
+        self._hill_climbing_steps = 3
+        self._top_models_to_improve = 4
+
 
     def _get_model_params(self, X, y):
         available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
@@ -45,7 +47,7 @@ class AutoML:
             },
         }
 
-    def check_model(self, params, X, y):
+    def train_model(self, params, X, y):
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": 10})
         il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
@@ -56,8 +58,22 @@ class AutoML:
         # start with not-so-random models
         for i in range(self._start_random_models):
             params = self._get_model_params(X, y)
-            self._models += [self.check_model(params, X, y)]
+            self._models += [self.train_model(params, X, y)]
         # perform hill climbing steps on best models
+        for hill_climbing in range(self._hill_climbing_steps):
+            # get models orderer by loss
+            models = []
+            for m in self._models:
+                models += [(m.callbacks.callbacks[0].final_loss, m)]
+            models = sorted(models, key = lambda x: x[0])
+            print("models", models)
+            for i in range(self._top_models_to_improve):
+                print(">",models[i])
+                m = models[i][1]
+                print(m.params.get("learner"))
+                new_params = HillClimbing.get(m.params.get("learner"))
+                print("new params", new_params)
+
 
         max_loss = 1000000.0
         for il in self._models:
