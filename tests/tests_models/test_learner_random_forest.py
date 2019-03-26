@@ -33,11 +33,12 @@ class RandomForestLearnerTest(unittest.TestCase):
         rf = RandomForestLearner(params)
 
         loss_prev = None
-        for i in range(5):
+        for i in range(2):
             rf.fit(self.data["train"])
             y_predicted = rf.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
+                print(loss_prev, loss)
                 self.assertTrue(loss + 0.00001 < loss_prev)
             loss_prev = loss
 

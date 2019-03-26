@@ -24,9 +24,9 @@ class AutoML:
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 5
-        self._hill_climbing_steps = 3
-        self._top_models_to_improve = 3
+        self._start_random_models = 2
+        self._hill_climbing_steps = 1
+        self._top_models_to_improve = 1
         self._algorithms = algorithms
         if len(self._algorithms) == 0:
             self._algorithms = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())

@@ -1,3 +1,4 @@
+import numpy as np
 import logging
 from supervised.models.learner import Learner
 from sklearn.externals import joblib
@@ -58,7 +59,7 @@ class SklearnTreesClassifierLearner(SklearnLearner):
 
     def fit(self, data):
         X = data.get("X")
-        y = data.get("y")
+        y = np.ravel(data.get("y"))
         self.model.fit(X, y)
         self.model.n_estimators += self.trees_in_step
 
