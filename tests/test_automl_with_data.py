@@ -16,7 +16,7 @@ from sklearn.metrics import log_loss
 class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
         seed = 1706
-        for dataset_id in [735]:
+        for dataset_id in [31]:
             df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
             x_cols = [c for c in df.columns if c != "target"]
             X = df[x_cols]
@@ -32,7 +32,14 @@ class AutoMLTestWithData(unittest.TestCase):
             response = automl.predict(X_test)
             # Compute the logloss on test dataset
             ll = log_loss(y_test, response)
-            print("Dataset id {} logloss {}".format(dataset_id, ll))
+            print("(*) Dataset id {} logloss {}".format(dataset_id, ll))
+
+
+            for m in automl._models:
+                response = m.predict(X_test)
+                ll = log_loss(y_test, response)
+                print("Dataset id {} logloss {}".format(dataset_id, ll))
+
 
         # y_predicted = automl.predict(self.X)
         # print(y_predicted)

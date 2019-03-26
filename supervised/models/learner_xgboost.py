@@ -152,7 +152,7 @@ XgbLearnerMulticlassClassificationParams = dict(XgbLearnerBinaryClassificationPa
 additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
-    "max_steps": 3,
+    "max_steps": 100,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

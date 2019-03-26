@@ -14,27 +14,30 @@ from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
+from supervised.models.ensemble import Ensemble
 
 
 class AutoML:
-    def __init__(self, time_limit=60, algorithms = []):
+    def __init__(self, time_limit=60, algorithms=["Xgboost", "RF"]):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 2
-        self._hill_climbing_steps = 1
-        self._top_models_to_improve = 1
+        self._start_random_models = 8
+        self._hill_climbing_steps = 3
+        self._top_models_to_improve = 3
         self._algorithms = algorithms
         if len(self._algorithms) == 0:
-            self._algorithms = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
+            self._algorithms = list(
+                ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()
+            )
 
     def _get_model_params(self, model_type, X, y):
-        #available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
-        #print("available_models", available_models)
-        #model_type = np.random.permutation(available_models)[0]
+        # available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
+        # print("available_models", available_models)
+        # model_type = np.random.permutation(available_models)[0]
         print("model_type", model_type)
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
@@ -64,9 +67,19 @@ class AutoML:
             return None
         self._models_params_keys += [il_key]
         il.train({"train": {"X": X, "y": y}})
+        print("oof--->>>", il.get_out_of_folds().shape, X.shape, y.shape)
         return il
 
     def fit(self, X, y):
+        print("FIT", X.head())
+        print("FIT", X.columns)
+        print("automl fit", X.shape, y.shape)
+        print(X.index[:10])
+        print(y.index[:10])
+        X.reset_index(drop=True, inplace=True)
+        y.reset_index(drop=True, inplace=True)
+        print("FIT", X.columns)
+
         # start with not-so-random models
         for model_type in self._algorithms:
             for i in range(self._start_random_models):
@@ -99,6 +112,9 @@ class AutoML:
                         if new_model is not None:
                             self._models += [new_model]
 
+        self.ensemble = Ensemble()
+        self.ensemble.fit(self._models, y)
+
         max_loss = 1000000.0
         for il in self._models:
             print(
@@ -112,22 +128,13 @@ class AutoML:
                 max_loss = il.callbacks.callbacks[0].final_loss
         print("Best learner")
         print(self._best_model.uid, max_loss)
+        print("FIT", X.columns)
 
     def predict(self, X):
-        """
-        y_predicted_mean = None
-        for il in self._models:
-            y_predicted = il.predict(X)
-            y_predicted_mean = (
-                y_predicted
-                if y_predicted_mean is None
-                else y_predicted_mean + y_predicted
-            )
-        # Make a mean
-        y_predicted_mean /= float(len(self._models))
-        return y_predicted_mean
-        """
-        return self._best_model.predict(X)
+        print("Predict", X.head())
+        #return self._best_model.predict(X)
+        return self.ensemble.predict(X)
+
 
     def to_json(self):
         save_details = []

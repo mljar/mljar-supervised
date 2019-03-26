@@ -77,7 +77,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         params = copy.deepcopy(self.train_params)
         params["validation"] = {
             "validation_type": "kfold",
-            "k_folds": 4,
+            "k_folds": 5,
             "shuffle": True,
         }
         il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
@@ -86,6 +86,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
 
         self.assertEqual(len(np.unique(oof.index)), oof.shape[0])
         self.assertTrue(np.array_equal(oof.index, self.data["train"]["X"].index))
+        self.assertTrue(oof.shape[0], self.data["train"]["X"].shape[0])
 
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
