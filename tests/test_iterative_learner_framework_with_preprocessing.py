@@ -68,7 +68,6 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         loss = metric(self.data["train"]["y"], y_predicted)
         self.assertTrue(loss < 0.6)
 
-
     def test_fit_and_predict_kfold(self):
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 
@@ -77,17 +76,16 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
 
         params = copy.deepcopy(self.train_params)
         params["validation"] = {
-                "validation_type": "kfold",
-                "k_folds": 4,
-                "shuffle": True,
+            "validation_type": "kfold",
+            "k_folds": 4,
+            "shuffle": True,
         }
         il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         oof = il.get_out_of_folds()
-        
+
         self.assertEqual(len(np.unique(oof.index)), oof.shape[0])
         self.assertTrue(np.array_equal(oof.index, self.data["train"]["X"].index))
-
 
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
 

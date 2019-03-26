@@ -61,7 +61,6 @@ class PreprocessingStep(object):
             if "y" in validation_data:
                 y_validation = validation_data.get("y").copy()
 
-
         if y_train is not None:
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
@@ -138,7 +137,6 @@ class PreprocessingStep(object):
                 X_validation = validation_data.get("X").copy()
             if "y" in validation_data:
                 y_validation = validation_data.get("y").copy()
-
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values

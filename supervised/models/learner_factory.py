@@ -4,6 +4,8 @@ log = logging.getLogger(__name__)
 
 from supervised.models.learner_xgboost import XgbLearner
 
+from supervised.models.learner_random_forest import RandomForestLearner
+
 
 class LearnerFactoryException(Exception):
     def __init__(self, message):
@@ -14,9 +16,11 @@ class LearnerFactoryException(Exception):
 class LearnerFactory(object):
     @staticmethod
     def get_learner(params):
-        learner_type = params.get("learner_type", "Xgboost")
+        learner_type = params.get("model_type", "Xgboost")
         if learner_type == "Xgboost":
             return XgbLearner(params)
+        if learner_type == "RF":
+            return RandomForestLearner(params)
         else:
             msg = "Learner {0} not defined".format(learner_type)
             raise LearnerFactoryException(msg)

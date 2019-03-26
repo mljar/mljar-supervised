@@ -24,6 +24,7 @@ def logloss(y_true, y_predicted):
     ll = log_loss(y_true, y_predicted)
     return ll
 
+
 def rmse(y_true, y_predicted):
     val = mean_squared_error(y_true, y_predicted)
     return np.sqrt(val) if val > 0 else -np.Inf

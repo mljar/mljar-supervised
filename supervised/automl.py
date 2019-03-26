@@ -15,8 +15,9 @@ from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 
+
 class AutoML:
-    def __init__(self, time_limit=60):
+    def __init__(self, time_limit=60, algorithms = []):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
@@ -26,11 +27,15 @@ class AutoML:
         self._start_random_models = 5
         self._hill_climbing_steps = 3
         self._top_models_to_improve = 3
+        self._algorithms = algorithms
+        if len(self._algorithms) == 0:
+            self._algorithms = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
 
-
-    def _get_model_params(self, X, y):
-        available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
-        model_type = np.random.permutation(available_models)[0]
+    def _get_model_params(self, model_type, X, y):
+        #available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
+        #print("available_models", available_models)
+        #model_type = np.random.permutation(available_models)[0]
+        print("model_type", model_type)
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
         required_preprocessing = model_info["required_preprocessing"]
@@ -63,39 +68,45 @@ class AutoML:
 
     def fit(self, X, y):
         # start with not-so-random models
-        for i in range(self._start_random_models):
-            params = self._get_model_params(X, y)
-            m = self.train_model(params, X, y)
-            if m is not None:
-                self._models += [m]
+        for model_type in self._algorithms:
+            for i in range(self._start_random_models):
+                params = self._get_model_params(model_type, X, y)
+                m = self.train_model(params, X, y)
+                if m is not None:
+                    self._models += [m]
         # perform hill climbing steps on best models
         for hill_climbing in range(self._hill_climbing_steps):
             # get models orderer by loss
             models = []
             for m in self._models:
                 models += [(m.callbacks.callbacks[0].final_loss, m)]
-            models = sorted(models, key = lambda x: x[0])
+            models = sorted(models, key=lambda x: x[0])
             print("models", models)
             for i in range(self._top_models_to_improve):
-                print(">",models[i])
+                print(">", models[i])
                 m = models[i][1]
                 if m is None:
                     continue
                 print(m.params.get("learner"))
+                print(m is None)
                 params_1, params_2 = HillClimbing.get(m.params.get("learner"))
                 for p in [params_1, params_2]:
                     if p is not None:
-                        print(m)
+                        print(m is None)
                         all_params = copy.deepcopy(m.params)
                         all_params["learner"] = p
-                        m = self.train_model(all_params, X, y)
-                        if m is not None:
-                            self._models += [m]
-
+                        new_model = self.train_model(all_params, X, y)
+                        if new_model is not None:
+                            self._models += [new_model]
 
         max_loss = 1000000.0
         for il in self._models:
-            print("Learner final loss {0}".format(il.callbacks.callbacks[0].final_loss))
+            print(
+                "Learner {} final loss {}".format(
+                    il.learners[0].algorithm_short_name,
+                    il.callbacks.callbacks[0].final_loss,
+                )
+            )
             if il.callbacks.callbacks[0].final_loss < max_loss:
                 self._best_model = il
                 max_loss = il.callbacks.callbacks[0].final_loss
@@ -103,7 +114,7 @@ class AutoML:
         print(self._best_model.uid, max_loss)
 
     def predict(self, X):
-        '''
+        """
         y_predicted_mean = None
         for il in self._models:
             y_predicted = il.predict(X)
@@ -115,7 +126,7 @@ class AutoML:
         # Make a mean
         y_predicted_mean /= float(len(self._models))
         return y_predicted_mean
-        '''
+        """
         return self._best_model.predict(X)
 
     def to_json(self):

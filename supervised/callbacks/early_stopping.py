@@ -68,7 +68,9 @@ class EarlyStopping(Callback):
             self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                 {
                     "prediction": predictions.get("y_validation_predicted"),
-                    "target": y_validation_true.values.reshape(y_validation_true.shape[0])
+                    "target": y_validation_true.values.reshape(
+                        y_validation_true.shape[0]
+                    ),
                 },
                 index=predictions.get("validation_index"),
             )
@@ -85,5 +87,9 @@ class EarlyStopping(Callback):
 
         log.debug(
             "EarlyStopping.on_iteration_end, loss: {0}, "
-            "no improvement cnt {1}, iters {2}".format(loss, self.no_improvement_cnt, len(self.loss_values[self.learner.uid]["iters"]))
+            "no improvement cnt {1}, iters {2}".format(
+                loss,
+                self.no_improvement_cnt,
+                len(self.loss_values[self.learner.uid]["iters"]),
+            )
         )

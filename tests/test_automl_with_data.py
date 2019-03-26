@@ -14,18 +14,17 @@ from sklearn.metrics import log_loss
 
 
 class AutoMLTestWithData(unittest.TestCase):
-
-
     def test_fit_and_predict(self):
         seed = 1706
-        for dataset_id in [737]:
-            df = pd.read_csv('./tests/data/data/{0}.csv'.format(dataset_id))
-            x_cols = [c for c in df.columns if c != 'target']
+        for dataset_id in [735]:
+            df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
+            x_cols = [c for c in df.columns if c != "target"]
             X = df[x_cols]
-            y = df['target']
+            y = df["target"]
 
-            X_train, X_test, y_train, y_test = \
-                sklearn.model_selection.train_test_split(X, y, test_size = 0.3, random_state=seed)
+            X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
+                X, y, test_size=0.3, random_state=seed
+            )
             automl = AutoML()
 
             automl.fit(X_train, y_train)

@@ -3,6 +3,7 @@ import copy
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 
+
 class HillClimbing:
 
     """
@@ -36,10 +37,10 @@ class HillClimbing:
             print("v", v)
             if v == params[key_to_update]:
                 print("***")
-                if i+1 < len(values):
-                    right = values[i+1]
-                if i-1 >= 0:
-                    left = values[i-1]
+                if i + 1 < len(values):
+                    right = values[i + 1]
+                if i - 1 >= 0:
+                    left = values[i - 1]
 
         params_1, params_2 = None, None
         if left is not None:

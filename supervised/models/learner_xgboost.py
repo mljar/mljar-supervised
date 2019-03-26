@@ -37,7 +37,9 @@ class XgbLearner(Learner):
         self.model_file = self.uid + ".xgb.model"
         self.model_file_path = "/tmp/" + self.model_file
 
-        self.boosting_rounds = additional.get("one_step", 50) # params.get("boosting_rounds", 50)
+        self.boosting_rounds = additional.get(
+            "one_step", 50
+        )  # params.get("boosting_rounds", 50)
         self.max_iters = additional.get("max_steps", 3)
         self.learner_params = {
             "booster": self.params.get("booster", "gbtree"),
@@ -126,6 +128,7 @@ class XgbLearner(Learner):
         for p, v in self.params.items():
             params_key += "_{}_{}".format(p, str(v))
         return params_key
+
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 XgbLearnerBinaryClassificationParams = {

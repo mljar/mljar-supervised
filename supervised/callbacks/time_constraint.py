@@ -19,7 +19,9 @@ class TimeConstraint(Callback):
 
     def on_iteration_end(self, logs, predictions):
         log.debug(
-            "Iteration took {0} seconds, total training time {1} seconds".format(time.time() - self.iter_start_time, time.time() - self.train_start_time)
+            "Iteration took {0} seconds, total training time {1} seconds".format(
+                time.time() - self.iter_start_time, time.time() - self.train_start_time
+            )
         )
         if time.time() - self.train_start_time > self.train_time_limit:
             self.learner.stop_training = True

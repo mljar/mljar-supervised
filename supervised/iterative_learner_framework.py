@@ -31,7 +31,7 @@ class IterativeLearner(LearnerFramework):
             "y_train_predicted": learner.predict(train_data.get("X")),
             "y_validation_true": validation_data.get("y"),
             "y_validation_predicted": learner.predict(validation_data.get("X")),
-            "validation_index": validation_data.get("X").index
+            "validation_index": validation_data.get("X").index,
         }
 
     def train(self, data):
