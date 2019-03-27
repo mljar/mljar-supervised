@@ -18,16 +18,17 @@ from supervised.models.ensemble import Ensemble
 
 
 class AutoML:
-    def __init__(self, time_limit=60, algorithms=["Xgboost", "RF"]):
+    # "Xgboost", "RF", "LightGBM"
+    def __init__(self, time_limit=60, algorithms=["CatBoost"]):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 8
-        self._hill_climbing_steps = 3
-        self._top_models_to_improve = 3
+        self._start_random_models = 1
+        self._hill_climbing_steps = 0
+        self._top_models_to_improve = 0
         self._algorithms = algorithms
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -132,9 +133,8 @@ class AutoML:
 
     def predict(self, X):
         print("Predict", X.head())
-        #return self._best_model.predict(X)
+        # return self._best_model.predict(X)
         return self.ensemble.predict(X)
-
 
     def to_json(self):
         save_details = []

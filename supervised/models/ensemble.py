@@ -47,7 +47,7 @@ class Ensemble:
                 m.callbacks.callbacks[0].final_loss,
             )
             oof = m.get_out_of_folds()
-            oofs['model_{}'.format(i)] = oof["prediction"]
+            oofs["model_{}".format(i)] = oof["prediction"]
         X = pd.DataFrame(oofs)
         print(X.shape)
         print(X.head())
@@ -64,10 +64,10 @@ class Ensemble:
             best_index = -1
             # try to add some algorithm to the best_sum to minimize metric
             for i in range(X.shape[1]):
-                y_ens = self._get_mean(X, best_sum, j + 1,"model_{}".format(i))
+                y_ens = self._get_mean(X, best_sum, j + 1, "model_{}".format(i))
 
                 print(y_ens.shape, y.shape)
-                #score = get_score_for_opt(metric_type, y_train, y_ens, w_train)
+                # score = get_score_for_opt(metric_type, y_train, y_ens, w_train)
                 score = self.metric(y, y_ens)
 
                 # logger.info('EnsembleAvg: _get_score time = {}'.format(str(time.time()-score_start_time)))
@@ -78,14 +78,16 @@ class Ensemble:
 
             print("j", j, "min_score", min_score, best_index, total_min)
 
-            if min_score+10e-6 < total_min:
+            if min_score + 10e-6 < total_min:
                 total_min = min_score
                 total_j = j
 
             self.best_algs.append(best_index)  # save the best algoritm index
             # update best_sum value
             best_sum = (
-                X["model_{}".format(best_index)] if best_sum is None else best_sum + X["model_{}".format(best_index)]
+                X["model_{}".format(best_index)]
+                if best_sum is None
+                else best_sum + X["model_{}".format(best_index)]
             )
             if j == total_j:
                 total_best_sum = best_sum
@@ -93,9 +95,9 @@ class Ensemble:
 
         total_best_sum /= float(total_j + 1)
         print(total_best_sum.shape)
-        #total_best_sum = total_best_sum.reshape((total_best_sum.shape[0],))
-        #print(total_best_sum.shape)
-        self.best_algs = self.best_algs[:(total_j+1)]
+        # total_best_sum = total_best_sum.reshape((total_best_sum.shape[0],))
+        # print(total_best_sum.shape)
+        self.best_algs = self.best_algs[: (total_j + 1)]
         # return [all_ids[i] for i in best_algs[:(total_j+1)]], cost_in_iters, total_best_sum, get_score_value(metric_type, total_min)
 
     def predict(self, X):
@@ -103,7 +105,11 @@ class Ensemble:
         y_predicted = None
         for best in self.best_algs:
             print("best", best)
-            y_predicted = self.models[best].predict(X) if y_predicted is None else y_predicted + self.models[best].predict(X)
+            y_predicted = (
+                self.models[best].predict(X)
+                if y_predicted is None
+                else y_predicted + self.models[best].predict(X)
+            )
 
         return y_predicted / float(len(self.best_algs))
 

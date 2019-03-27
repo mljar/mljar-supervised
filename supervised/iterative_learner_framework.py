@@ -60,7 +60,7 @@ class IterativeLearner(LearnerFramework):
                     {"iter_cnt": i},
                     self.predictions(learner, train_data, validation_data),
                 )
-                #print(i, "v", train_data["X"].shape, validation_data["X"].shape)
+                # print(i, "v", train_data["X"].shape, validation_data["X"].shape)
                 if learner.stop_training:
                     break
             # end of learner iters loop
