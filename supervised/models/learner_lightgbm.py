@@ -129,7 +129,7 @@ LightgbmLearnerBinaryClassificationParams = {
 
 
 additional = {
-    "one_step": 50,
+    "one_step": 10,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
     "max_rows_limit": None,
