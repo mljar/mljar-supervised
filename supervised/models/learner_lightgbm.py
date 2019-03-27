@@ -48,7 +48,7 @@ class LightgbmLearner(Learner):
 
     def update(self, update_params):
         print("LGBM update", update_params)
-        self.rounds = update_params["iters"]
+        #self.rounds = update_params["iters"]
 
     def fit(self, data):
         log.debug("LightgbmLearner.fit")
@@ -131,7 +131,7 @@ LightgbmLearnerBinaryClassificationParams = {
 additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
-    "max_steps": 100,
+    "max_steps": 500,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

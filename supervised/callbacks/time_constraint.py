@@ -23,6 +23,12 @@ class TimeConstraint(Callback):
                 time.time() - self.iter_start_time, time.time() - self.train_start_time
             )
         )
+        print(
+            "Iteration took {0} seconds, total training time {1} seconds".format(
+                time.time() - self.iter_start_time, time.time() - self.train_start_time
+            )
+        )
         if time.time() - self.train_start_time > self.train_time_limit:
             self.learner.stop_training = True
             log.info("Terminating learning, time limit reached")
+            print("Terminating learning, time limit reached")

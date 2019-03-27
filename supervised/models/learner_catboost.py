@@ -26,40 +26,52 @@ class CatBoostLearner(Learner):
         self.library_version = catboost.__version__
         self.model_file = self.uid + ".cat.model"
         self.model_file_path = "/tmp/" + self.model_file
+        self.snapshot_file_path = "/tmp/training_snapshot_" + self.model_file
 
         self.rounds = additional.get(
-            "one_step", 10
+            "one_step", 50
         )
-        self.max_iters = 1#additional.get("max_steps", 3)
+        self.max_iters = additional.get("max_steps", 10)
         self.learner_params = {
-            #"bagging_fraction": self.params.get("bagging_fraction", 0.7),
+            "learning_rate": self.params.get("learning_rate", 0.025),
+            "depth": self.params.get("depth", 6),
+            "rsm": self.params.get("rsm", 1),
+            "random_strength": self.params.get("random_strength", 1),
+            "bagging_temperature": self.params.get("bagging_temperature", 1),
+            "l2_leaf_reg": self.params.get("l2_leaf_reg",3)
         }
+
+
 
         log.debug("CatBoostLearner __init__")
 
-        self.model = CatBoostClassifier(iterations=150,
-                                   depth=4,
-                                   learning_rate=0.1,
+        self.model = CatBoostClassifier(iterations=0,
+                                   learning_rate=self.learner_params.get("learning_rate"),
+                                   depth=self.learner_params.get("depth"),
+                                   rsm=self.learner_params.get("rsm"),
+                                   random_strength=self.learner_params.get("random_strength"),
+                                   bagging_temperature=self.learner_params.get("bagging_temperature"),
+                                   l2_leaf_reg=self.learner_params.get("l2_leaf_reg"),
                                    loss_function='Logloss',
-                                   verbose=True)
+                                   verbose=False)
 
 
     def update(self, update_params):
-        print("CatBoost update", update_params)
-        #self.rounds = update_params["iters"]
+        pass
+        # here should be update
 
     def fit(self, data):
-        log.debug("CatBoostLearner.fit")
         X = data.get("X")
         y = data.get("y")
+        self.model._init_params["iterations"] += self.rounds
+        self.model.fit(X, y, save_snapshot=True, snapshot_file=self.snapshot_file_path)
 
-        self.model.fit(X, y)
 
     def predict(self, X):
         return self.model.predict_proba(X)[:,1]
 
     def copy(self):
-        return None
+        return self.model.copy()
 
     def save(self):
         self.model.save_model(self.model_file_path)
@@ -112,14 +124,19 @@ CatBoostLearnerBinaryClassificationParams = {
         0.2,
         0.25,
         0.3,
-    ]
+    ],
+    "depth": [2,4,6,8],
+    "rsm": [0.5, 0.6, 0.7, 0.8, 0.9, 1], # random subspace method
+    "random_strength": [1, 3, 5, 8, 10, 15, 20],
+    "bagging_temperature": [0.5, 0.7, 0.9, 1],
+    "l2_leaf_reg": [1, 3,5,7,10]
 }
 
 
 additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
-    "max_steps": 100,
+    "max_steps": 500,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
