@@ -43,8 +43,8 @@ class PreprocessingTuner:
             if "scale" in required_preprocessing:
                 if convert_to_integer_will_be_applied:
                     preprocessing_to_apply += [PreprocessingScale.SCALE_NORMAL]
-                elif PreprocessingUtils.is_log_scale_needed(X[col]):
-                    preprocessing_to_apply += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
+                #elif PreprocessingUtils.is_log_scale_needed(X[col]):
+                #    preprocessing_to_apply += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
                 elif PreprocessingUtils.is_scale_needed(X[col]):
                     preprocessing_to_apply += [PreprocessingScale.SCALE_NORMAL]
 

@@ -16,8 +16,8 @@ from keras.models import model_from_json
 
 log = logging.getLogger(__name__)
 
-class NeuralNetworkLearner(Learner):
 
+class NeuralNetworkLearner(Learner):
 
     algorithm_name = "Neural Network"
     algorithm_short_name = "NN"
@@ -28,34 +28,32 @@ class NeuralNetworkLearner(Learner):
         self.model_file = self.uid + ".nn.model"
         self.model_file_path = "/tmp/" + self.model_file
 
-        self.rounds = additional.get(
-            "one_step", 50
-        )
+        self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 3)
-        self.learner_params = {
-
-        }
-        model = Sequential()
-        model.add(Dense(32, activation='relu', input_dim=100))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(optimizer='sgd',
-              loss='binary_crossentropy',
-              metrics=['logloss'])
+        self.learner_params = {}
+        self.model = Sequential()
+        self.model.add(Dense(32, activation="relu", input_dim=6))
+        self.model.add(Dense(1, activation="sigmoid"))
+        self.model.compile(
+            optimizer="sgd", loss="binary_crossentropy", metrics=["accuracy"]
+        )
 
         log.debug("NeuralNetworkLearner __init__")
 
     def update(self, update_params):
         print("NN update", update_params)
-        self.rounds = update_params['step']
+        self.rounds = update_params["step"]
 
     def fit(self, data):
         log.debug("NNLearner.fit")
         X = data.get("X")
         y = data.get("y")
-        self.model.fit(X, y, batch_size = 256, nb_epoch = 1)
+        print(X.head(5))
+        self.model.fit(X, y, batch_size=256, nb_epoch=1)
 
     def predict(self, X):
-        return self.model.predict(X)
+        print("Predict", np.unique(np.ravel(self.model.predict(X))))
+        return np.ravel(self.model.predict(X))
 
     def copy(self):
         return None
@@ -72,7 +70,7 @@ class NeuralNetworkLearner(Learner):
             "model_file": self.model_file,
             "model_file_path": self.model_file_path,
             "params": self.params,
-            "model_architecture_json": self.model.to_json()
+            "model_architecture_json": self.model.to_json(),
         }
 
         log.debug("NeuralNetworkLearner save model to %s" % self.model_file_path)
@@ -100,18 +98,18 @@ class NeuralNetworkLearner(Learner):
     def importance(self, column_names, normalize=True):
         return None
 
-NeuralNetworkLearnerBinaryClassificationParams = {
-    'dense_layers': [1,2,3],
-    'dense_1_size': [5,10,20,50,100],
-    'dense_2_size': [5,10,20,50,100],
-    'dense_3_size': [5,10,20,50,100],
-    'dense_4_size': [5,10,20,50,100],
-    'dense_5_size': [5,10,20,50,100],
-    'dense_6_size': [5,10,20,50,100],
-    'optimize': ['adadelta', 'sgd'], #'sgd',
-    'activation': ['relu', 'prelu', 'leakyrelu'],
-    'dropout': [0, 0.25, 0.5]
 
+NeuralNetworkLearnerBinaryClassificationParams = {
+    "dense_layers": [1, 2, 3],
+    "dense_1_size": [5, 10, 20, 50, 100],
+    "dense_2_size": [5, 10, 20, 50, 100],
+    "dense_3_size": [5, 10, 20, 50, 100],
+    "dense_4_size": [5, 10, 20, 50, 100],
+    "dense_5_size": [5, 10, 20, 50, 100],
+    "dense_6_size": [5, 10, 20, 50, 100],
+    "optimize": ["adadelta", "sgd"],  #'sgd',
+    "activation": ["relu", "prelu", "leakyrelu"],
+    "dropout": [0, 0.25, 0.5],
 }
 
 additional = {
@@ -124,9 +122,8 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
-    "scale"
+    "scale",
     "target_preprocessing",
-    "target_scale"
 ]
 
 ModelsRegistry.add(

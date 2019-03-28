@@ -52,6 +52,9 @@ class EarlyStopping(Callback):
         )
 
     def on_iteration_end(self, logs, predictions):
+        for k, v in predictions.items():
+            print(k, v.shape)
+
         loss = self.metric(
             predictions.get("y_validation_true"),
             predictions.get("y_validation_predicted"),

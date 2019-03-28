@@ -31,6 +31,7 @@ class PreprocessingStep(object):
         self._categorical_y = None
         self._missing_values = []
         self._categorical = []
+        self._scale = []
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -127,6 +128,23 @@ class PreprocessingStep(object):
                 X_validation = convert.transform(X_validation)
             self._categorical += [convert]
 
+        # SCALE
+        for scale_method in [PreprocessingScale.SCALE_NORMAL]:
+            print(">>>SCALE", scale_method)
+            cols_to_process = list(
+                filter(
+                    lambda k: scale_method in columns_preprocessing[k],
+                    columns_preprocessing,
+                )
+            )
+            print(cols_to_process)
+            scale = PreprocessingScale(cols_to_process, convert_method)
+            scale.fit(X_train)
+            X_train = scale.transform(X_train)
+            if X_validation is not None:
+                X_validation = scale.transform(X_validation)
+            self._scale += [scale]
+
         return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 
     def transform(self, validation_data=None):
@@ -168,26 +186,32 @@ class PreprocessingStep(object):
         for convert in self._categorical:
             if X_validation is not None and convert is not None:
                 X_validation = convert.transform(X_validation)
+        for scale in self._scale:
+            if X_validation is not None and scale is not None:
+                X_validation = scale.transform(X_validation)
 
         return {"X": X_validation, "y": y_validation}
 
     def to_json(self):
         preprocessing_params = {}
         if self._missing_values is not None and len(self._missing_values):
-            mvs = []
+            mvs = [] # refactor
             for mv in self._missing_values:
                 if mv.to_json():
                     mvs += [mv.to_json()]
-
             if mvs:
                 preprocessing_params["missing_values"] = mvs
         if self._categorical is not None and len(self._categorical):
-            cats = []
+            cats = [] # refactor
             for cat in self._categorical:
                 if cat.to_json():
                     cats += [cat.to_json()]
             if cats:
                 preprocessing_params["categorical"] = cats
+        if self._scale is not None and len(self._scale):
+            scs = [sc.to_json() for sc in self._scale if sc.to_json()]
+            if scs:
+                preprocessing_params["scale"] = scs
         if self._categorical_y is not None:
             cat_y = self._categorical_y.to_json()
             if cat_y:
@@ -207,6 +231,12 @@ class PreprocessingStep(object):
                 cat = PreprocessingCategorical()
                 cat.from_json(cat_data)
                 self._categorical += [cat]
+        if "scale" in data_json:
+            self._scale = []
+            for scale_data in data_json["scale"]:
+                sc = PreprocessingScale()
+                sc.from_json(scale_data)
+                self._scale += [sc]
         if "categorical_y" in data_json:
             self._categorical_y = LabelEncoder()
             self._categorical_y.from_json(data_json["categorical_y"])

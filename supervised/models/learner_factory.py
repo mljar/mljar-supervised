@@ -9,6 +9,7 @@ from supervised.models.learner_lightgbm import LightgbmLearner
 from supervised.models.learner_catboost import CatBoostLearner
 from supervised.models.learner_nn import NeuralNetworkLearner
 
+
 class LearnerFactoryException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
@@ -28,7 +29,7 @@ class LearnerFactory(object):
         elif learner_type == "CatBoost":
             return CatBoostLearner(params)
         elif learner_type == "NN":
-            return NeuralNetworkLearner(params)    
+            return NeuralNetworkLearner(params)
         else:
             msg = "Learner {0} not defined".format(learner_type)
             raise LearnerFactoryException(msg)

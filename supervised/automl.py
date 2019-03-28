@@ -18,7 +18,7 @@ from supervised.models.ensemble import Ensemble
 
 
 class AutoML:
-    #"CatBoost", "Xgboost", "RF", "LightGBM"
+    # "CatBoost", "Xgboost", "RF", "LightGBM"
     def __init__(self, time_limit=60, algorithms=["NN"]):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []

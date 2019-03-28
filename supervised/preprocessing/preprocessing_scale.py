@@ -20,3 +20,9 @@ class PreprocessingScale(object):
 
     def transform(self, X):
         pass
+
+    def to_json(self):
+        pass
+
+    def from_json(self, json_data):
+        pass

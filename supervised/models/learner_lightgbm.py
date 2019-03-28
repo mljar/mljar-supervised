@@ -16,7 +16,6 @@ log = logging.getLogger(__name__)
 
 class LightgbmLearner(Learner):
 
-
     algorithm_name = "LightGBM"
     algorithm_short_name = "LightGBM"
 
@@ -26,29 +25,27 @@ class LightgbmLearner(Learner):
         self.model_file = self.uid + ".lgbm.model"
         self.model_file_path = "/tmp/" + self.model_file
 
-        self.rounds = additional.get(
-            "one_step", 50
-        )
+        self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 3)
         self.learner_params = {
             "boosting_type": "gbdt",
             "objective": "binary",
             "metric": self.params.get("metric", "binary_logloss"),
             "num_threads": multiprocessing.cpu_count(),
-            "num_leaves": self.params.get("num_leaves",16),
+            "num_leaves": self.params.get("num_leaves", 16),
             "learning_rate": self.params.get("learning_rate", 0.01),
             "feature_fraction": self.params.get("feature_fraction", 0.7),
             "bagging_fraction": self.params.get("bagging_fraction", 0.7),
             "bagging_freq": self.params.get("bagging_freq", 1),
             "verbose": -1,
-            #"verbosity": -1,
+            # "verbosity": -1,
         }
 
         log.debug("LightgbmLearner __init__")
 
     def update(self, update_params):
         print("LGBM update", update_params)
-        #self.rounds = update_params["iters"]
+        # self.rounds = update_params["iters"]
 
     def fit(self, data):
         log.debug("LightgbmLearner.fit")

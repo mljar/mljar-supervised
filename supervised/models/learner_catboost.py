@@ -15,8 +15,8 @@ log = logging.getLogger(__name__)
 from catboost import CatBoostClassifier
 import catboost
 
-class CatBoostLearner(Learner):
 
+class CatBoostLearner(Learner):
 
     algorithm_name = "CatBoost"
     algorithm_short_name = "CatBoost"
@@ -28,9 +28,7 @@ class CatBoostLearner(Learner):
         self.model_file_path = "/tmp/" + self.model_file
         self.snapshot_file_path = "/tmp/training_snapshot_" + self.model_file
 
-        self.rounds = additional.get(
-            "one_step", 50
-        )
+        self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 10)
         self.learner_params = {
             "learning_rate": self.params.get("learning_rate", 0.025),
@@ -38,23 +36,22 @@ class CatBoostLearner(Learner):
             "rsm": self.params.get("rsm", 1),
             "random_strength": self.params.get("random_strength", 1),
             "bagging_temperature": self.params.get("bagging_temperature", 1),
-            "l2_leaf_reg": self.params.get("l2_leaf_reg",3)
+            "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
         }
-
-
 
         log.debug("CatBoostLearner __init__")
 
-        self.model = CatBoostClassifier(iterations=0,
-                                   learning_rate=self.learner_params.get("learning_rate"),
-                                   depth=self.learner_params.get("depth"),
-                                   rsm=self.learner_params.get("rsm"),
-                                   random_strength=self.learner_params.get("random_strength"),
-                                   bagging_temperature=self.learner_params.get("bagging_temperature"),
-                                   l2_leaf_reg=self.learner_params.get("l2_leaf_reg"),
-                                   loss_function='Logloss',
-                                   verbose=False)
-
+        self.model = CatBoostClassifier(
+            iterations=0,
+            learning_rate=self.learner_params.get("learning_rate"),
+            depth=self.learner_params.get("depth"),
+            rsm=self.learner_params.get("rsm"),
+            random_strength=self.learner_params.get("random_strength"),
+            bagging_temperature=self.learner_params.get("bagging_temperature"),
+            l2_leaf_reg=self.learner_params.get("l2_leaf_reg"),
+            loss_function="Logloss",
+            verbose=False,
+        )
 
     def update(self, update_params):
         pass
@@ -66,9 +63,8 @@ class CatBoostLearner(Learner):
         self.model._init_params["iterations"] += self.rounds
         self.model.fit(X, y, save_snapshot=True, snapshot_file=self.snapshot_file_path)
 
-
     def predict(self, X):
-        return self.model.predict_proba(X)[:,1]
+        return self.model.predict_proba(X)[:, 1]
 
     def copy(self):
         return self.model.copy()
@@ -125,11 +121,11 @@ CatBoostLearnerBinaryClassificationParams = {
         0.25,
         0.3,
     ],
-    "depth": [2,4,6,8],
-    "rsm": [0.5, 0.6, 0.7, 0.8, 0.9, 1], # random subspace method
+    "depth": [2, 4, 6, 8],
+    "rsm": [0.5, 0.6, 0.7, 0.8, 0.9, 1],  # random subspace method
     "random_strength": [1, 3, 5, 8, 10, 15, 20],
     "bagging_temperature": [0.5, 0.7, 0.9, 1],
-    "l2_leaf_reg": [1, 3,5,7,10]
+    "l2_leaf_reg": [1, 3, 5, 7, 10],
 }
 
 

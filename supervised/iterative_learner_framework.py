@@ -63,7 +63,7 @@ class IterativeLearner(LearnerFramework):
                 # print(i, "v", train_data["X"].shape, validation_data["X"].shape)
                 if learner.stop_training:
                     break
-                learner.update({"step": i})    
+                learner.update({"step": i})
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
         # end of validation loop
