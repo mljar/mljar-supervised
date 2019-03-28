@@ -2,13 +2,14 @@ import numpy as np
 from sklearn import preprocessing
 
 class Scaler(object):
-    def __init__(self):
-        self.scale = preprocssing.StandardScaler(copy=True, with_mean=True, with_std=True)
+    def __init__(self, columns = []):
+        self.scale = preprocessing.StandardScaler(copy=True, with_mean=True, with_std=True)
+        self.columns = columns
 
-    def fit(self, x):
-        self.scale.fit(list(x.values))
+    def fit(self, X):
+        self.scale.fit(X) #np.array(x).reshape(-1, 1))
 
-    def transform(self, x):
+    def transform(self, X):
         return self.scale.transform(list(x.values))
 
     def to_json(self):
@@ -19,7 +20,7 @@ class Scaler(object):
         return data_json
 
     def from_json(self, data_json):
-        self.scale = preprocssing.StandardScaler(copy=True, with_mean=True, with_std=True)
+        self.scale = preprocessing.StandardScaler(copy=True, with_mean=True, with_std=True)
         self.scale.scale_ = data_json.get("scale")
         self.scale.mean_ = data_json.get("mean")
         self.scale.var_ = data_json.get("var")
