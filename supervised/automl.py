@@ -18,17 +18,17 @@ from supervised.models.ensemble import Ensemble
 
 
 class AutoML:
-    # "CatBoost", "Xgboost", "RF", "LightGBM"
-    def __init__(self, time_limit=120, algorithms=["NN"]):
+    # "NN", "CatBoost", "Xgboost", "RF", "LightGBM"
+    def __init__(self, time_limit=120, algorithms=["Xgboost", "LightGBM"]):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 8
-        self._hill_climbing_steps = 0
-        self._top_models_to_improve = 0
+        self._start_random_models = 10
+        self._hill_climbing_steps = 3
+        self._top_models_to_improve = 3
         self._algorithms = algorithms
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -59,7 +59,7 @@ class AutoML:
 
     def train_model(self, params, X, y):
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
-        time_constraint = TimeConstraint({"train_seconds_time_limit": 10})
+        time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
         il_key = il.get_params_key()
         print("KEY", il_key)
