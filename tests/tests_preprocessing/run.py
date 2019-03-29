@@ -13,7 +13,9 @@ from tests.tests_preprocessing.test_preprocessing_categorical_integers import (
 from tests.tests_preprocessing.test_label_encoder import LabelEncoderTest
 from tests.tests_preprocessing.test_label_binarizer import LabelBinarizerTest
 from tests.tests_preprocessing.test_preprocessing_utils import PreprocessingUtilsTest
+from tests.tests_preprocessing.test_preprocessing_scale import PreprocessingScale
 from tests.tests_preprocessing.test_preprocessing_step import PreprocessingStepTest
+
 
 
 if __name__ == "__main__":

@@ -52,8 +52,8 @@ class EarlyStopping(Callback):
         )
 
     def on_iteration_end(self, logs, predictions):
-        for k, v in predictions.items():
-            print(k, v.shape)
+        # for k, v in predictions.items():
+        #    print(k, v.shape)
 
         loss = self.metric(
             predictions.get("y_validation_true"),
@@ -89,6 +89,14 @@ class EarlyStopping(Callback):
         if self.no_improvement_cnt > self.max_no_improvement_cnt:
             self.learner.stop_training = True
 
+        print(
+            "EarlyStopping.on_iteration_end, loss: {0}, "
+            "no improvement cnt {1}, iters {2}".format(
+                loss,
+                self.no_improvement_cnt,
+                len(self.loss_values[self.learner.uid]["iters"]),
+            )
+        )
         log.debug(
             "EarlyStopping.on_iteration_end, loss: {0}, "
             "no improvement cnt {1}, iters {2}".format(

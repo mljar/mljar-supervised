@@ -130,15 +130,14 @@ class PreprocessingStep(object):
 
         # SCALE
         for scale_method in [PreprocessingScale.SCALE_NORMAL]:
-            print(">>>SCALE", scale_method)
             cols_to_process = list(
                 filter(
                     lambda k: scale_method in columns_preprocessing[k],
                     columns_preprocessing,
                 )
             )
-            print(cols_to_process)
-            scale = PreprocessingScale(cols_to_process, convert_method)
+            print("scale columns", cols_to_process)
+            scale = PreprocessingScale(cols_to_process)
             scale.fit(X_train)
             X_train = scale.transform(X_train)
             if X_validation is not None:
@@ -195,14 +194,14 @@ class PreprocessingStep(object):
     def to_json(self):
         preprocessing_params = {}
         if self._missing_values is not None and len(self._missing_values):
-            mvs = [] # refactor
+            mvs = []  # refactor
             for mv in self._missing_values:
                 if mv.to_json():
                     mvs += [mv.to_json()]
             if mvs:
                 preprocessing_params["missing_values"] = mvs
         if self._categorical is not None and len(self._categorical):
-            cats = [] # refactor
+            cats = []  # refactor
             for cat in self._categorical:
                 if cat.to_json():
                     cats += [cat.to_json()]

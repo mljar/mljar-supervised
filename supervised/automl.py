@@ -19,14 +19,14 @@ from supervised.models.ensemble import Ensemble
 
 class AutoML:
     # "CatBoost", "Xgboost", "RF", "LightGBM"
-    def __init__(self, time_limit=60, algorithms=["NN"]):
+    def __init__(self, time_limit=120, algorithms=["NN"]):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 1
+        self._start_random_models = 8
         self._hill_climbing_steps = 0
         self._top_models_to_improve = 0
         self._algorithms = algorithms

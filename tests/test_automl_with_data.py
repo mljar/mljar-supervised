@@ -16,7 +16,7 @@ from sklearn.metrics import log_loss
 class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
         seed = 1706
-        for dataset_id in [737]:  # 31,44
+        for dataset_id in [44]:  # 31,44,737
             df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
             x_cols = [c for c in df.columns if c != "target"]
             X = df[x_cols]

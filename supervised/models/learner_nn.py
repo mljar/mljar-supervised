@@ -10,6 +10,8 @@ from supervised.tuner.registry import BINARY_CLASSIFICATION
 import operator
 
 import keras
+
+from keras.optimizers import SGD
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.models import model_from_json
@@ -28,31 +30,58 @@ class NeuralNetworkLearner(Learner):
         self.model_file = self.uid + ".nn.model"
         self.model_file_path = "/tmp/" + self.model_file
 
-        self.rounds = additional.get("one_step", 50)
-        self.max_iters = additional.get("max_steps", 3)
-        self.learner_params = {}
-        self.model = Sequential()
-        self.model.add(Dense(32, activation="relu", input_dim=6))
-        self.model.add(Dense(1, activation="sigmoid"))
-        self.model.compile(
-            optimizer="sgd", loss="binary_crossentropy", metrics=["accuracy"]
-        )
-
+        self.rounds = additional.get("one_step", 10)
+        self.max_iters = additional.get("max_steps", 1)
+        self.learner_params = {
+            "dense_layers": params.get("dense_layers"),
+            "dense_1_size": params.get("dense_1_size"),
+            "dense_2_size": params.get("dense_2_size"),
+            "dense_3_size": params.get("dense_3_size"),
+            "dropout": params.get("dropout"),
+            "learning_rate": params.get("learning_rate"),
+            "momentum": params.get("momentum"),
+            "decay": params.get("decay"),
+        }
+        self.model = None  # we need input data shape to construct model
         log.debug("NeuralNetworkLearner __init__")
 
+    def create_model(self, input_dim):
+        self.model = Sequential()
+        for i in range(self.learner_params.get("dense_layers")):
+            self.model.add(
+                Dense(
+                    self.learner_params.get("dense_{}_size".format(i + 1)),
+                    activation="relu",
+                    input_dim=input_dim,
+                )
+            )
+            if self.learner_params.get("dropout"):
+                self.model.add(Dropout(self.learner_params.get("dropout")))
+        self.model.add(Dense(1, activation="sigmoid"))
+        sgd_opt = SGD(
+            lr=self.learner_params.get("learning_rate"),
+            momentum=self.learner_params.get("momentum"),
+            decay=self.learner_params.get("decay"),
+            nesterov=True,
+        )
+        self.model.compile(
+            optimizer=sgd_opt, loss="binary_crossentropy", metrics=["accuracy"]
+        )
+        # and the model is constructed :)
+
     def update(self, update_params):
-        print("NN update", update_params)
-        self.rounds = update_params["step"]
+        pass
 
     def fit(self, data):
         log.debug("NNLearner.fit")
         X = data.get("X")
         y = data.get("y")
-        print(X.head(5))
-        self.model.fit(X, y, batch_size=256, nb_epoch=1)
+        if self.model is None:
+            self.create_model(input_dim=X.shape[1])
+        # rounds for learning are incremental
+        self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
 
     def predict(self, X):
-        print("Predict", np.unique(np.ravel(self.model.predict(X))))
         return np.ravel(self.model.predict(X))
 
     def copy(self):
@@ -101,21 +130,19 @@ class NeuralNetworkLearner(Learner):
 
 NeuralNetworkLearnerBinaryClassificationParams = {
     "dense_layers": [1, 2, 3],
-    "dense_1_size": [5, 10, 20, 50, 100],
-    "dense_2_size": [5, 10, 20, 50, 100],
-    "dense_3_size": [5, 10, 20, 50, 100],
-    "dense_4_size": [5, 10, 20, 50, 100],
-    "dense_5_size": [5, 10, 20, 50, 100],
-    "dense_6_size": [5, 10, 20, 50, 100],
-    "optimize": ["adadelta", "sgd"],  #'sgd',
-    "activation": ["relu", "prelu", "leakyrelu"],
-    "dropout": [0, 0.25, 0.5],
+    "dense_1_size": [4, 8, 16, 32, 64, 128],
+    "dense_2_size": [4, 8, 16, 32, 64],
+    "dense_3_size": [4, 8, 16, 32],
+    "dropout": [0, 0.25, 0.5, 0.75],
+    "learning_rate": [0.005, 0.01, 0.05, 0.1, 0.2],
+    "momentum": [0.85, 0.9, 0.95],
+    "decay": [0.0001, 0.001, 0.01],
 }
 
 additional = {
-    "one_step": 1,
+    "one_step": 10,
     "train_cant_improve_limit": 5,
-    "max_steps": 25,
+    "max_steps": 1000,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

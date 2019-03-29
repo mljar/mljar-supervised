@@ -33,7 +33,9 @@ class PreprocessingScaleTest(unittest.TestCase):
         assert_almost_equal(np.mean(df["col1"]), 5.5)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
         # to and from json
+
         json_data = scale.to_json()
+        print(json_data)
         scale2 = PreprocessingScale()
         scale2.from_json(json_data)
         # transform with loaded scaler
