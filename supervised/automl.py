@@ -19,17 +19,25 @@ from supervised.models.ensemble import Ensemble
 
 class AutoML:
     # "NN", "CatBoost", "Xgboost", "RF", "LightGBM"
-    def __init__(self, time_limit=120, algorithms=["Xgboost", "LightGBM"]):
+    def __init__(self, time_limit=120, algorithms=["Xgboost", "LightGBM"], tuning_mode=None):
         self._time_limit = time_limit  # time limit in seconds
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 10
-        self._hill_climbing_steps = 3
-        self._top_models_to_improve = 3
+        self._start_random_models = 3
+        self._hill_climbing_steps = 1
+        self._top_models_to_improve = 1
         self._algorithms = algorithms
+
+        if tuning_mode == "Insane":
+            self._time_limit = 120
+            self._start_random_models = 12
+            self._hill_climbing_steps = 3
+            self._top_models_to_improve = 5
+            self._algorithms = [ "NN", "CatBoost", "Xgboost", "RF", "LightGBM"]
+
         if len(self._algorithms) == 0:
             self._algorithms = list(
                 ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()

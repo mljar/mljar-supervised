@@ -25,7 +25,7 @@ class AutoMLTestWithData(unittest.TestCase):
             X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(
                 X, y, test_size=0.3, random_state=seed
             )
-            automl = AutoML(time_limit=1, algorithms=["Xgboost"])
+            automl = AutoML(tuning_mode="Insane")
 
             automl.fit(X_train, y_train)
 

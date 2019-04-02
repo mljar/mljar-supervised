@@ -47,11 +47,7 @@ class LightgbmLearner(Learner):
         print("LGBM update", update_params)
         # self.rounds = update_params["iters"]
 
-    def fit(self, data):
-        log.debug("LightgbmLearner.fit")
-        X = data.get("X")
-        y = data.get("y")
-
+    def fit(self, X, y):
         lgb_train = lgb.Dataset(X, y)
         self.model = lgb.train(
             self.learner_params,

@@ -54,7 +54,7 @@ class IterativeLearner(LearnerFramework):
 
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
-                learner.fit(train_data)
+                learner.fit(train_data.get("X"), train_data.get("y"))
                 # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},

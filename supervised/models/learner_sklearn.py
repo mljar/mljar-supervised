@@ -11,9 +11,7 @@ class SklearnLearner(Learner):
     def __init__(self, params):
         super(SklearnLearner, self).__init__(params)
 
-    def fit(self, data):
-        X = data.get("X")
-        y = data.get("y")
+    def fit(self, X, y):
         self.model.fit(X, y)
 
     def copy(self):
@@ -57,9 +55,7 @@ class SklearnTreesClassifierLearner(SklearnLearner):
     def __init__(self, params):
         super(SklearnTreesClassifierLearner, self).__init__(params)
 
-    def fit(self, data):
-        X = data.get("X")
-        y = np.ravel(data.get("y"))
+    def fit(self, X, y):
         self.model.fit(X, y)
         self.model.n_estimators += self.trees_in_step
 

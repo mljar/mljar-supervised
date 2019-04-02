@@ -88,10 +88,8 @@ class NeuralNetworkLearner(Learner):
     def update(self, update_params):
         pass
 
-    def fit(self, data):
+    def fit(self, X, y):
         log.debug("NNLearner.fit")
-        X = data.get("X")
-        y = data.get("y")
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
         # rounds for learning are incremental
@@ -138,7 +136,7 @@ class NeuralNetworkLearner(Learner):
 
         self.model = model_from_json(model_json)
         self.model.load_weights(self.model_file_path)
-    
+
     def importance(self, column_names, normalize=True):
         return None
 

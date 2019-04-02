@@ -57,9 +57,7 @@ class CatBoostLearner(Learner):
         pass
         # here should be update
 
-    def fit(self, data):
-        X = data.get("X")
-        y = data.get("y")
+    def fit(self, X, y):
         self.model._init_params["iterations"] += self.rounds
         self.model.fit(X, y, save_snapshot=True, snapshot_file=self.snapshot_file_path)
 
@@ -67,7 +65,7 @@ class CatBoostLearner(Learner):
         return self.model.predict_proba(X)[:, 1]
 
     def copy(self):
-        return copy.deepcopy(self) 
+        return copy.deepcopy(self)
 
     def save(self):
         self.model.save_model(self.model_file_path)
