@@ -119,11 +119,11 @@ class AutoML:
                         if new_model is not None:
                             self._models += [new_model]
 
-
-        self.ensemble = Ensemble()
-        X_oof = self.ensemble.get_oof_matrix(self._models)
-        self.ensemble.fit(X_oof, y)
-        self._models += [self.ensemble]
+        if self._train_ensemble:
+            self.ensemble = Ensemble()
+            X_oof = self.ensemble.get_oof_matrix(self._models)
+            self.ensemble.fit(X_oof, y)
+            self._models += [self.ensemble]
 
         max_loss = 1000000.0
         for i, m in enumerate(self._models):

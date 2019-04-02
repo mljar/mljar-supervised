@@ -1,4 +1,3 @@
-
 import unittest
 import tempfile
 import json
@@ -49,7 +48,6 @@ class NeuralNetworkLearnerTest(unittest.TestCase):
                 self.assertTrue(loss + 0.000001 < loss_prev)
             loss_prev = loss
 
-
     def test_copy(self):
         # train model #1
         metric = Metric({"name": "logloss"})
@@ -63,7 +61,7 @@ class NeuralNetworkLearnerTest(unittest.TestCase):
         self.assertTrue(nn2.model is None)
         # do a copy and use it for predictions
         nn2 = nn.copy()
-        self.assertEqual(type(nn),type(nn2))
+        self.assertEqual(type(nn), type(nn2))
         y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
@@ -76,7 +74,6 @@ class NeuralNetworkLearnerTest(unittest.TestCase):
         y_predicted = nn2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
         assert_almost_equal(loss2, loss4)
-
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
@@ -95,7 +92,6 @@ class NeuralNetworkLearnerTest(unittest.TestCase):
         y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
-
 
 
 if __name__ == "__main__":
