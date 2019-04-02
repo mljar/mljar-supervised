@@ -11,7 +11,10 @@ from supervised.preprocessing.preprocessing_scale import PreprocessingScale
 class PreprocessingScaleTest(unittest.TestCase):
     def test_fit(self):
         # training data
-        d = {"col1": [1,2,3,4,5,6,7,8,9,10.0], "col2": [21,22,23,24,25,26,27,28,29,30.0]}
+        d = {
+            "col1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10.0],
+            "col2": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30.0],
+        }
         df = pd.DataFrame(data=d)
 
         scale = PreprocessingScale(["col1"])
@@ -21,10 +24,12 @@ class PreprocessingScaleTest(unittest.TestCase):
         assert_almost_equal(np.mean(df["col1"]), 0)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
 
-
     def test_to_and_from_json(self):
         # training data
-        d = {"col1": [1,2,3,4,5,6,7,8.0,9,10], "col2": [21,22.0,23,24,25,26,27,28,29,30]}
+        d = {
+            "col1": [1, 2, 3, 4, 5, 6, 7, 8.0, 9, 10],
+            "col2": [21, 22.0, 23, 24, 25, 26, 27, 28, 29, 30],
+        }
         df = pd.DataFrame(data=d)
 
         scale = PreprocessingScale(["col1"])
@@ -42,7 +47,6 @@ class PreprocessingScaleTest(unittest.TestCase):
         df = scale2.transform(df)
         assert_almost_equal(np.mean(df["col1"]), 0)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
-
 
 
 if __name__ == "__main__":

@@ -17,6 +17,5 @@ from tests.tests_preprocessing.test_preprocessing_scale import PreprocessingScal
 from tests.tests_preprocessing.test_preprocessing_step import PreprocessingStepTest
 
 
-
 if __name__ == "__main__":
     unittest.main()

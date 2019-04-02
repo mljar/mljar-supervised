@@ -38,7 +38,6 @@ class RandomForestLearnerTest(unittest.TestCase):
             y_predicted = rf.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
-                print(loss_prev, loss)
                 self.assertTrue(loss + 0.00001 < loss_prev)
             loss_prev = loss
 
@@ -62,7 +61,6 @@ class RandomForestLearnerTest(unittest.TestCase):
 
         y_predicted = rf2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
-        self.assertEqual(loss2, loss4)
         assert_almost_equal(loss2, loss4)
 
     def test_save_and_load(self):

@@ -63,7 +63,6 @@ class XgboostLearnerTest(unittest.TestCase):
 
         y_predicted = xgb2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
-        self.assertEqual(loss2, loss4)
         assert_almost_equal(loss2, loss4)
 
     def test_save_and_load(self):
