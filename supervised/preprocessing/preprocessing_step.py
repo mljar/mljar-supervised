@@ -136,13 +136,13 @@ class PreprocessingStep(object):
                     columns_preprocessing,
                 )
             )
-            print("scale columns", cols_to_process)
-            scale = PreprocessingScale(cols_to_process)
-            scale.fit(X_train)
-            X_train = scale.transform(X_train)
-            if X_validation is not None:
-                X_validation = scale.transform(X_validation)
-            self._scale += [scale]
+            if len(cols_to_process):
+                scale = PreprocessingScale(cols_to_process)
+                scale.fit(X_train)
+                X_train = scale.transform(X_train)
+                if X_validation is not None:
+                    X_validation = scale.transform(X_validation)
+                self._scale += [scale]
 
         return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 

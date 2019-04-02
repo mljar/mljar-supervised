@@ -26,9 +26,13 @@ class Ensemble:
         self.model_file_path = "/tmp/" + self.model_file
         self.metric = Metric({"name": "logloss"})
         log.debug("EnsembleLearner __init__")
+        self.best_loss = None
 
     def get_final_loss(self):
-        pass
+        return self.best_loss
+
+    def get_name(self):
+        return self.algorithm_short_name
 
     def _get_mean(self, X, best_sum, best_count, selected):
         resp = copy.deepcopy(X[selected])
@@ -37,8 +41,7 @@ class Ensemble:
             resp /= float(best_count)
         return resp
 
-    def fit(self, models, y):
-        log.debug("EnsembleLearner.fit")
+    def get_oof_matrix(self, models):
         oofs = {}
         for i, m in enumerate(models):
             print(
@@ -51,11 +54,16 @@ class Ensemble:
         X = pd.DataFrame(oofs)
         print(X.shape)
         print(X.head())
+        self.models = models
+        return X
 
-        total_min = 10e12  # total minimum value
+    def fit(self, X, y):
+        log.debug("EnsembleLearner.fit")
+
+        self.best_loss = 10e12  # total minimum value
         total_j = 0  # total minimum index
         total_best_sum = 0  # total sum of predictions
-        self.models = models
+
         self.best_algs = []  # selected algoritms indices from each loop
         best_sum = None  # sum of best algorihtms
         cost_in_iters = []  # track cost in all iterations
@@ -66,7 +74,6 @@ class Ensemble:
             for i in range(X.shape[1]):
                 y_ens = self._get_mean(X, best_sum, j + 1, "model_{}".format(i))
 
-                print(y_ens.shape, y.shape)
                 # score = get_score_for_opt(metric_type, y_train, y_ens, w_train)
                 score = self.metric(y, y_ens)
 
@@ -76,10 +83,10 @@ class Ensemble:
                     min_score = score
                     best_index = i
 
-            print("j", j, "min_score", min_score, best_index, total_min)
+            print("j", j, "min_score", min_score, best_index, self.best_loss)
 
-            if min_score + 10e-6 < total_min:
-                total_min = min_score
+            if min_score + 10e-6 < self.best_loss:
+                self.best_loss = min_score
                 total_j = j
 
             self.best_algs.append(best_index)  # save the best algoritm index
@@ -91,14 +98,19 @@ class Ensemble:
             )
             if j == total_j:
                 total_best_sum = best_sum
-            print("loop end step")
+
 
         total_best_sum /= float(total_j + 1)
         print(total_best_sum.shape)
+        print(total_best_sum.head())
+        print("final loss->",self.get_final_loss())
+
         # total_best_sum = total_best_sum.reshape((total_best_sum.shape[0],))
         # print(total_best_sum.shape)
+        print(self.best_algs)
         self.best_algs = self.best_algs[: (total_j + 1)]
-        # return [all_ids[i] for i in best_algs[:(total_j+1)]], cost_in_iters, total_best_sum, get_score_value(metric_type, total_min)
+        print(self.best_algs)
+        # return [all_ids[i] for i in best_algs[:(total_j+1)]], cost_in_iters, total_best_sum, get_score_value(metric_type, self.best_loss)
 
     def predict(self, X):
         print("Ensemble predict")

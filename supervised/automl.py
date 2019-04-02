@@ -18,25 +18,42 @@ from supervised.models.ensemble import Ensemble
 
 
 class AutoML:
-    # "NN", "CatBoost", "Xgboost", "RF", "LightGBM"
-    def __init__(self, time_limit=120, algorithms=["Xgboost", "LightGBM"], tuning_mode=None):
-        self._time_limit = time_limit  # time limit in seconds
+    def __init__(
+        self,
+        total_time_limit=None,
+        learner_time_limit=120,
+        algorithms=["CatBoost", "Xgboost", "RF", "LightGBM", "NN"],
+        start_random_models=10,
+        hill_climbing_steps=3,
+        top_models_to_improve=5,
+        train_ensemble=True
+    ):
+        self._total_time_limit = total_time_limit
+        self._time_limit = learner_time_limit  # time limit in seconds for single learner
+        self._train_ensemble = train_ensemble
         self._models = []
         self._models_params_keys = []
         self._best_model = None
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
-        self._start_random_models = 3
-        self._hill_climbing_steps = 1
-        self._top_models_to_improve = 1
+        self._start_random_models = start_random_models
+        self._hill_climbing_steps = hill_climbing_steps
+        self._top_models_to_improve = top_models_to_improve
         self._algorithms = algorithms
 
-        if tuning_mode == "Insane":
-            self._time_limit = 120
-            self._start_random_models = 12
-            self._hill_climbing_steps = 3
-            self._top_models_to_improve = 5
-            self._algorithms = [ "NN", "CatBoost", "Xgboost", "RF", "LightGBM"]
+        if self._total_time_limit is not None:
+
+            estimated_models_to_check = (
+                len(self._algorithms)
+                * (
+                    self._start_random_models
+                    + self._top_models_to_improve * self._hill_climbing_steps * 2
+                )
+                * 5
+            )
+            # set time limit for single model training
+            self._time_limit = self._total_time_limit / estimated_models_to_check
+            print("time limit ->", self._time_limit)
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -44,10 +61,6 @@ class AutoML:
             )
 
     def _get_model_params(self, model_type, X, y):
-        # available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
-        # print("available_models", available_models)
-        # model_type = np.random.permutation(available_models)[0]
-        print("model_type", model_type)
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
         required_preprocessing = model_info["required_preprocessing"]
@@ -70,25 +83,15 @@ class AutoML:
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
         il_key = il.get_params_key()
-        print("KEY", il_key)
         if il_key in self._models_params_keys:
-            print("Already trained !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             return None
         self._models_params_keys += [il_key]
         il.train({"train": {"X": X, "y": y}})
-        print("oof--->>>", il.get_out_of_folds().shape, X.shape, y.shape)
         return il
 
     def fit(self, X, y):
-        print("FIT", X.head())
-        print("FIT", X.columns)
-        print("automl fit", X.shape, y.shape)
-        print(X.index[:10])
-        print(y.index[:10])
         X.reset_index(drop=True, inplace=True)
         y.reset_index(drop=True, inplace=True)
-        print("FIT", X.columns)
-
         # start with not-so-random models
         for model_type in self._algorithms:
             for i in range(self._start_random_models):
@@ -103,46 +106,41 @@ class AutoML:
             for m in self._models:
                 models += [(m.callbacks.callbacks[0].final_loss, m)]
             models = sorted(models, key=lambda x: x[0])
-            print("models", models)
             for i in range(self._top_models_to_improve):
-                print(">", models[i])
                 m = models[i][1]
                 if m is None:
                     continue
-                print(m.params.get("learner"))
-                print(m is None)
                 params_1, params_2 = HillClimbing.get(m.params.get("learner"))
                 for p in [params_1, params_2]:
                     if p is not None:
-                        print(m is None)
                         all_params = copy.deepcopy(m.params)
                         all_params["learner"] = p
                         new_model = self.train_model(all_params, X, y)
                         if new_model is not None:
                             self._models += [new_model]
 
+
         self.ensemble = Ensemble()
-        self.ensemble.fit(self._models, y)
+        X_oof = self.ensemble.get_oof_matrix(self._models)
+        self.ensemble.fit(X_oof, y)
+        self._models += [self.ensemble]
 
         max_loss = 1000000.0
-        for il in self._models:
+        for i, m in enumerate(self._models):
             print(
-                "Learner {} final loss {}".format(
-                    il.learners[0].algorithm_short_name,
-                    il.callbacks.callbacks[0].final_loss,
+                "{}) Learner {} final loss {}".format(
+                    i, m.get_name(),
+                    m.get_final_loss(),
                 )
             )
-            if il.callbacks.callbacks[0].final_loss < max_loss:
-                self._best_model = il
-                max_loss = il.callbacks.callbacks[0].final_loss
+            if m.get_final_loss() < max_loss:
+                self._best_model = m
+                max_loss = m.get_final_loss()
         print("Best learner")
         print(self._best_model.uid, max_loss)
-        print("FIT", X.columns)
 
     def predict(self, X):
-        print("Predict", X.head())
-        # return self._best_model.predict(X)
-        return self.ensemble.predict(X)
+        return self._best_model.predict(X)
 
     def to_json(self):
         save_details = []

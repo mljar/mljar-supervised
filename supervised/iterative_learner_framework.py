@@ -74,6 +74,15 @@ class IterativeLearner(LearnerFramework):
             return None
         return early_stopping.best_y_oof
 
+    def get_final_loss(self):
+        early_stopping = self.callbacks.get("early_stopping")
+        if early_stopping is None:
+            return None
+        return early_stopping.final_loss
+
+    def get_name(self):
+        return self.learners[0].algorithm_short_name
+
     def predict(self, X):
         if self.learners is None or len(self.learners) == 0:
             raise IterativeLearnerException("Learnes are not initialized")
