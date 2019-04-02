@@ -64,7 +64,7 @@ class LightgbmLearner(Learner):
         return self.model.predict(X)
 
     def copy(self):
-        return copy.deepcopy(self.model)
+        return copy.deepcopy(self)
 
     def save(self):
         self.model.save_model(self.model_file_path)

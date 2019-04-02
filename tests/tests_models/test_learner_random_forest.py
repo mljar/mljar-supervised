@@ -50,6 +50,7 @@ class RandomForestLearnerTest(unittest.TestCase):
 
         rf2 = RandomForestLearner({})
         rf2 = rf.copy()
+        self.assertEqual(type(rf), type(rf2))
         y_predicted = rf2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)

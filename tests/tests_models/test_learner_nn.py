@@ -1,3 +1,4 @@
+
 import unittest
 import tempfile
 import json
@@ -7,11 +8,11 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.models.learner_lightgbm import LightgbmLearner
+from supervised.models.learner_nn import NeuralNetworkLearner
 from supervised.metric import Metric
 
 
-class LightgbmLearnerTest(unittest.TestCase):
+class NeuralNetworkLearnerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -27,72 +28,74 @@ class LightgbmLearnerTest(unittest.TestCase):
         )
         cls.data = {"train": {"X": cls.X, "y": cls.y}}
         cls.params = {
-            "metric": "binary_logloss",
-            "num_leaves": "2",
+            "dense_layers": 2,
+            "dense_1_size": 8,
+            "dense_2_size": 4,
+            "dropout": 0.5,
             "learning_rate": 0.1,
-            "feature_fraction": 0.8,
-            "bagging_fraction": 0.8,
-            "bagging_freq": 1,
+            "momentum": 0.9,
+            "decay": 0.001,
         }
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-
-        lgb = LightgbmLearner(self.params)
-
+        nn = NeuralNetworkLearner(self.params)
         loss_prev = None
         for i in range(5):
-            lgb.fit(self.data["train"])
-            y_predicted = lgb.predict(self.X)
+            nn.fit(self.data["train"])
+            y_predicted = nn.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
-                self.assertTrue(loss + 0.001 < loss_prev)
+                self.assertTrue(loss + 0.000001 < loss_prev)
             loss_prev = loss
+
 
     def test_copy(self):
         # train model #1
         metric = Metric({"name": "logloss"})
-        lgb = LightgbmLearner(self.params)
-        lgb.fit(self.data["train"])
-        y_predicted = lgb.predict(self.X)
+        nn = NeuralNetworkLearner(self.params)
+        nn.fit(self.data["train"])
+        y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
         # create model #2
-        lgb2 = LightgbmLearner(self.params)
-        # model #2 is set to None, while initialized
-        self.assertTrue(lgb2.model is None)
+        nn2 = NeuralNetworkLearner(self.params)
+        # model #2 is not initialized in constructor
+        self.assertTrue(nn2.model is None)
         # do a copy and use it for predictions
-        lgb2 = lgb.copy()
-        self.assertEqual(type(lgb), type(lgb2))
-        y_predicted = lgb2.predict(self.X)
+        nn2 = nn.copy()
+        self.assertEqual(type(nn),type(nn2))
+        y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
         # fit model #1, there should be improvement in loss
-        lgb.fit(self.data["train"])
-        y_predicted = lgb.predict(self.X)
+        nn.fit(self.data["train"])
+        y_predicted = nn.predict(self.X)
         loss3 = metric(self.y, y_predicted)
         self.assertTrue(loss3 < loss)
         # the loss of model #2 should not change
-        y_predicted = lgb2.predict(self.X)
+        y_predicted = nn2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
         assert_almost_equal(loss2, loss4)
 
+
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        lgb = LightgbmLearner(self.params)
-        lgb.fit(self.data["train"])
-        y_predicted = lgb.predict(self.X)
+        nn = NeuralNetworkLearner(self.params)
+        nn.fit(self.data["train"])
+        y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        json_desc = lgb.save()
-        lgb2 = LightgbmLearner({})
-        self.assertTrue(lgb.uid != lgb2.uid)
-        self.assertTrue(lgb2.model is None)
-        lgb2.load(json_desc)
-        self.assertTrue(lgb.uid == lgb2.uid)
+        json_desc = nn.save()
+        nn2 = NeuralNetworkLearner({})
+        self.assertTrue(nn.uid != nn2.uid)
+        self.assertTrue(nn2.model is None)
+        nn2.load(json_desc)
+        self.assertTrue(nn.uid == nn2.uid)
 
-        y_predicted = lgb2.predict(self.X)
+        y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
 
 
 if __name__ == "__main__":

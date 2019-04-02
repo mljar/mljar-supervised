@@ -67,7 +67,7 @@ class CatBoostLearner(Learner):
         return self.model.predict_proba(X)[:, 1]
 
     def copy(self):
-        return self.model.copy()
+        return copy.deepcopy(self) 
 
     def save(self):
         self.model.save_model(self.model_file_path)

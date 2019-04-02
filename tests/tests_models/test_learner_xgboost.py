@@ -52,6 +52,7 @@ class XgboostLearnerTest(unittest.TestCase):
         xgb2 = XgbLearner(params)
         self.assertTrue(xgb2.model is None)  # model is set to None, while initialized
         xgb2 = xgb.copy()
+        self.assertEqual(type(xgb), type(xgb2))
         y_predicted = xgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
@@ -83,3 +84,7 @@ class XgboostLearnerTest(unittest.TestCase):
         y_predicted = xgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+
+if __name__ == "__main__":
+    unittest.main()

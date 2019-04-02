@@ -1,3 +1,17 @@
+import numpy as np
+import tensorflow as tf
+import random as rn
+np.random.seed(42)
+rn.seed(12345)
+session_conf = tf.ConfigProto(intra_op_parallelism_threads=1,
+                              inter_op_parallelism_threads=1)
+from keras import backend as K
+tf.set_random_seed(1234)
+sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
+K.set_session(sess)
+
+tf.logging.set_verbosity(tf.logging.ERROR)
+
 import logging
 import copy
 import numpy as np
@@ -26,6 +40,8 @@ class NeuralNetworkLearner(Learner):
 
     def __init__(self, params):
         super(NeuralNetworkLearner, self).__init__(params)
+
+
         self.library_version = keras.__version__
         self.model_file = self.uid + ".nn.model"
         self.model_file_path = "/tmp/" + self.model_file
@@ -56,7 +72,7 @@ class NeuralNetworkLearner(Learner):
                 )
             )
             if self.learner_params.get("dropout"):
-                self.model.add(Dropout(self.learner_params.get("dropout")))
+                self.model.add(Dropout(rate=self.learner_params.get("dropout")))
         self.model.add(Dense(1, activation="sigmoid"))
         sgd_opt = SGD(
             lr=self.learner_params.get("learning_rate"),
@@ -85,7 +101,7 @@ class NeuralNetworkLearner(Learner):
         return np.ravel(self.model.predict(X))
 
     def copy(self):
-        return None
+        return copy.deepcopy(self)
 
     def save(self):
 
@@ -122,8 +138,7 @@ class NeuralNetworkLearner(Learner):
 
         self.model = model_from_json(model_json)
         self.model.load_weights(self.model_file_path)
-        print("Loaded model from disk")
-
+    
     def importance(self, column_names, normalize=True):
         return None
 
