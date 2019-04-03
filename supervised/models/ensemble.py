@@ -6,7 +6,7 @@ import uuid
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
-
+from supervised.models.learner_factory import LearnerFactory
 import operator
 
 log = logging.getLogger(__name__)
@@ -24,9 +24,11 @@ class Ensemble:
         self.uid = str(uuid.uuid4())
         self.model_file = self.uid + ".ensemble.model"
         self.model_file_path = "/tmp/" + self.model_file
+        # right now only logloss can be optimized by ensemble
         self.metric = Metric({"name": "logloss"})
-        log.debug("EnsembleLearner __init__")
-        self.best_loss = None
+        self.best_loss = 10e12  # the best loss obtained by ensemble
+        self.models = None
+        self.selected_models = []
 
     def get_final_loss(self):
         return self.best_loss
@@ -52,42 +54,29 @@ class Ensemble:
             oof = m.get_out_of_folds()
             oofs["model_{}".format(i)] = oof["prediction"]
         X = pd.DataFrame(oofs)
-        print(X.shape)
-        print(X.head())
-        self.models = models
+        self.models = models  # remeber models, will be needed in predictions
         return X
 
     def fit(self, X, y):
-        log.debug("EnsembleLearner.fit")
-
-        self.best_loss = 10e12  # total minimum value
-        total_j = 0  # total minimum index
-        total_best_sum = 0  # total sum of predictions
-
+        selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
+        total_best_sum = 0  # total sum of predictions
         best_sum = None  # sum of best algorihtms
-        cost_in_iters = []  # track cost in all iterations
         for j in range(X.shape[1]):  # iterate over all solutions
             min_score = 10e12
             best_index = -1
             # try to add some algorithm to the best_sum to minimize metric
             for i in range(X.shape[1]):
                 y_ens = self._get_mean(X, best_sum, j + 1, "model_{}".format(i))
-
-                # score = get_score_for_opt(metric_type, y_train, y_ens, w_train)
                 score = self.metric(y, y_ens)
-
-                # logger.info('EnsembleAvg: _get_score time = {}'.format(str(time.time()-score_start_time)))
-                # print 'score', score, min_score
                 if score < min_score:
                     min_score = score
                     best_index = i
 
-            print("j", j, "min_score", min_score, best_index, self.best_loss)
-
+            # there is improvement, save it
             if min_score + 10e-6 < self.best_loss:
                 self.best_loss = min_score
-                total_j = j
+                selected_algs_cnt = j
 
             self.best_algs.append(best_index)  # save the best algoritm index
             # update best_sum value
@@ -96,40 +85,58 @@ class Ensemble:
                 if best_sum is None
                 else best_sum + X["model_{}".format(best_index)]
             )
-            if j == total_j:
-                total_best_sum = best_sum
+            if j == selected_algs_cnt:
+                total_best_sum = copy.deepcopy(best_sum)
 
-
-        total_best_sum /= float(total_j + 1)
-        print(total_best_sum.shape)
-        print(total_best_sum.head())
-        print("final loss->",self.get_final_loss())
-
-        # total_best_sum = total_best_sum.reshape((total_best_sum.shape[0],))
-        # print(total_best_sum.shape)
-        print(self.best_algs)
-        self.best_algs = self.best_algs[: (total_j + 1)]
-        print(self.best_algs)
-        # return [all_ids[i] for i in best_algs[:(total_j+1)]], cost_in_iters, total_best_sum, get_score_value(metric_type, self.best_loss)
+        # keep oof predictions of ensemble
+        total_best_sum /= float(selected_algs_cnt + 1)
+        self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
+        for i in np.unique(self.best_algs):
+            self.selected_models += [
+                {"model": self.models[i], "repeat": np.sum(self.best_algs == i)}
+            ]
 
     def predict(self, X):
-        print("Ensemble predict")
         y_predicted = None
-        for best in self.best_algs:
-            print("best", best)
+        for selected in self.selected_models:
+            model = selected["model"]
+            repeat = selected["repeat"]
             y_predicted = (
-                self.models[best].predict(X)
+                model.predict(X) * repeat
                 if y_predicted is None
-                else y_predicted + self.models[best].predict(X)
+                else y_predicted + model.predict(X) * repeat
             )
-
         return y_predicted / float(len(self.best_algs))
 
-    def copy(self):
-        return copy.deepcopy(self)
-
     def save(self):
-        pass
+        models_json = []
+        for selected in self.selected_models:
+            model = selected["model"]
+            repeat = selected["repeat"]
+            models_json += [{"model": model.save(), "repeat": repeat}]
+
+        json_desc = {
+            "library_version": self.library_version,
+            "algorithm_name": self.algorithm_name,
+            "algorithm_short_name": self.algorithm_short_name,
+            "uid": self.uid,
+            "models": models_json,
+        }
+        return json_desc
 
     def load(self, json_desc):
-        pass
+
+        self.library_version = json_desc.get("library_version", self.library_version)
+        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
+        self.algorithm_short_name = json_desc.get(
+            "algorithm_short_name", self.algorithm_short_name
+        )
+        self.uid = json_desc.get("uid", self.uid)
+        self.selected_models = []
+        models_json = json_desc.get("models")
+        for selected in models_json:
+            model = selected["model"]
+            repeat = selected["repeat"]
+            self.selected_models += [
+                {"model": LearnerFactory.load(model), "repeat": repeat}
+            ]

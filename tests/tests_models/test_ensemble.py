@@ -9,28 +9,61 @@ from sklearn import datasets
 
 from supervised.models.ensemble import Ensemble
 from supervised.metric import Metric
+from supervised.models.learner_factory import LearnerFactory
+
+
+class SimpleModel:
+    def predict(self, X):
+        return np.array([0.1, 0.2, 0.8, 0.9])
+
+    def save(self):
+        return {
+            
+        }
 
 
 class EnsembleTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        X = {"model_0": []}
-        cls.data = {"train": {"X": X, "y": y}}
+        cls.X = pd.DataFrame(
+            {
+                "model_0": [0.1, 0.2, 0.8, 0.9],
+                "model_1": [0.2, 0.1, 0.9, 0.8],
+                "model_2": [0.8, 0.8, 0.1, 0.1],
+                "model_3": [0.8, 0.8, 0.1, 0.1],
+                "model_4": [0.8, 0.8, 0.1, 0.1],
+                "model_5": [0.8, 0.8, 0.1, 0.1],
+            }
+        )
+        cls.y = np.array([0, 0, 1, 1])
 
     def test_fit_predict(self):
-        metric = Metric({"name": "logloss"})
+        ensemble = Ensemble()
+        ensemble.models = [SimpleModel()] * 5
+        ensemble.fit(self.X, self.y)
+        self.assertEqual(1, ensemble.selected_models[1]["repeat"])
+        self.assertEqual(1, ensemble.selected_models[1]["repeat"])
+        self.assertTrue(len(ensemble.selected_models) == 2)
+        y = ensemble.predict(self.X)
+        assert_almost_equal(y[0], 0.1)
+        assert_almost_equal(y[1], 0.2)
+        assert_almost_equal(y[2], 0.8)
+        assert_almost_equal(y[3], 0.9)
 
-        lgb = LightgbmLearner(self.params)
+    def test_save_load(self):
+        LearnerFactory.learners["simple"] = SimpleModel
 
-        loss_prev = None
-        for i in range(5):
-            lgb.fit(self.data["train"])
-            y_predicted = lgb.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.001 < loss_prev)
-            loss_prev = loss
+        ensemble = Ensemble()
+        ensemble.models = [SimpleModel()] * 5
+        ensemble.fit(self.X, self.y)
+        y = ensemble.predict(self.X)
+        assert_almost_equal(y[0], 0.1)
+        ensemble_json = ensemble.save()
+        ensemble2 = Ensemble()
+        ensemble2.load(ensemble_json)
+        y2 = ensemble2.predict(self.X)
+        assert_almost_equal(y2[0], 0.1)
 
 
 if __name__ == "__main__":

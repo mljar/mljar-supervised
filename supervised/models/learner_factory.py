@@ -17,25 +17,27 @@ class LearnerFactoryException(Exception):
 
 
 class LearnerFactory(object):
-    @staticmethod
-    def get_learner(params):
+
+    learners = {
+        "Xgboost": XgbLearner,
+        "RF": RandomForestLearner,
+        "LightGBM": LightgbmLearner,
+        "CatBoost": CatBoostLearner,
+        "NN": NeuralNetworkLearner
+    }
+
+    @classmethod
+    def get_learner(cls, params):
         learner_type = params.get("model_type", "Xgboost")
-        if learner_type == "Xgboost":
-            return XgbLearner(params)
-        elif learner_type == "RF":
-            return RandomForestLearner(params)
-        elif learner_type == "LightGBM":
-            return LightgbmLearner(params)
-        elif learner_type == "CatBoost":
-            return CatBoostLearner(params)
-        elif learner_type == "NN":
-            return NeuralNetworkLearner(params)
+
+        if learner_type in cls.learners:
+            return cls.learners[learner_type](params)
         else:
             msg = "Learner {0} not defined".format(learner_type)
             raise LearnerFactoryException(msg)
 
-    @staticmethod
-    def load(json_desc):
+    @classmethod
+    def load(cls, json_desc):
         learner = LearnerFactory.get_learner(json_desc.get("params"))
         learner.load(json_desc)
         return learner

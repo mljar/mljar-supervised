@@ -26,10 +26,12 @@ class AutoML:
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
-        train_ensemble=True
+        train_ensemble=True,
     ):
         self._total_time_limit = total_time_limit
-        self._time_limit = learner_time_limit  # time limit in seconds for single learner
+        self._time_limit = (
+            learner_time_limit
+        )  # time limit in seconds for single learner
         self._train_ensemble = train_ensemble
         self._models = []
         self._models_params_keys = []
@@ -129,8 +131,7 @@ class AutoML:
         for i, m in enumerate(self._models):
             print(
                 "{}) Learner {} final loss {}".format(
-                    i, m.get_name(),
-                    m.get_final_loss(),
+                    i, m.get_name(), m.get_final_loss()
                 )
             )
             if m.get_final_loss() < max_loss:

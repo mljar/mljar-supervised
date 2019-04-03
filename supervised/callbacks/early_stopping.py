@@ -87,7 +87,6 @@ class EarlyStopping(Callback):
         if self.no_improvement_cnt > self.max_no_improvement_cnt:
             self.learner.stop_training = True
 
-
         log.debug(
             "EarlyStopping.on_iteration_end, loss: {0}, "
             "no improvement cnt {1}, iters {2}".format(
