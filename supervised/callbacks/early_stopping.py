@@ -33,7 +33,7 @@ class EarlyStopping(Callback):
         self.learners += [learner]
         self.learner = learner
         self.best_loss[learner.uid] = self.metric.worst_value()
-        self.loss_values[learner.uid] = {"values": [], "iters": []}
+        self.loss_values[learner.uid] = {"train": [], "validation": [], "iters": []}
         self.best_models[learner.uid] = None
         self.best_model_paths[learner.uid] = None
         self.best_y_predicted[learner.uid] = None
@@ -53,20 +53,24 @@ class EarlyStopping(Callback):
 
     def on_iteration_end(self, logs, predictions):
 
-        loss = self.metric(
+        train_loss = self.metric(
+            predictions.get("y_train_true"), predictions.get("y_train_predicted")
+        )
+        validation_loss = self.metric(
             predictions.get("y_validation_true"),
             predictions.get("y_validation_predicted"),
         )
-        self.loss_values[self.learner.uid]["values"] += [loss]
+        self.loss_values[self.learner.uid]["train"] += [train_loss]
+        self.loss_values[self.learner.uid]["validation"] += [validation_loss]
         self.loss_values[self.learner.uid]["iters"] += [logs.get("iter_cnt")]
 
         if self.metric.improvement(
-            previous=self.best_loss[self.learner.uid], current=loss
+            previous=self.best_loss[self.learner.uid], current=validation_loss
         ):
 
             y_validation_true = predictions.get("y_validation_true")
             self.no_improvement_cnt = 0
-            self.best_loss[self.learner.uid] = loss
+            self.best_loss[self.learner.uid] = validation_loss
             self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                 {
                     "prediction": predictions.get("y_validation_predicted"),
@@ -88,10 +92,18 @@ class EarlyStopping(Callback):
             self.learner.stop_training = True
 
         log.debug(
-            "EarlyStopping.on_iteration_end, loss: {0}, "
-            "no improvement cnt {1}, iters {2}".format(
-                loss,
+            "EarlyStopping.on_iteration_end, train loss: {}, validation loss: {}, "
+            "no improvement cnt {}, iters {}".format(
+                train_loss,
+                validation_loss,
                 self.no_improvement_cnt,
                 len(self.loss_values[self.learner.uid]["iters"]),
             )
+        )
+
+    def get_status(self):
+        return "Train loss: {}, Validation loss: {} @ iteration {}".format(
+            self.loss_values[self.learner.uid]["train"][-1],
+            self.loss_values[self.learner.uid]["validation"][-1],
+            len(self.loss_values[self.learner.uid]["iters"]),
         )

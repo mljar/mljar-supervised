@@ -26,13 +26,14 @@ class AutoMLTestWithData(unittest.TestCase):
                 X, y, test_size=0.3, random_state=seed
             )
             automl = AutoML(
-                total_time_limit=60 * 60,
-                algorithms=["CatBoost", "Xgboost"],
-                start_random_models=5,
-                hill_climbing_steps=1,
+                total_time_limit=60 * 6000,
+                algorithms=["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
+                start_random_models=10,
+                hill_climbing_steps=3,
+                top_models_to_improve=3,
                 train_ensemble=True,
+                verbose=True
             )
-
             automl.fit(X_train, y_train)
 
             response = automl.predict(X_test)
@@ -44,13 +45,6 @@ class AutoMLTestWithData(unittest.TestCase):
                 response = m.predict(X_test)
                 ll = log_loss(y_test, response)
                 print("{}) Dataset id {} logloss {}".format(i, dataset_id, ll))
-
-        # y_predicted = automl.predict(self.X)
-        # print(y_predicted)
-        # metric = Metric({"name": "logloss"})
-        # loss = metric(self.y, y_predicted)
-        # print("Loss", loss)
-        # self.assertTrue(y_predicted is not None)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ class LearnerFactory(object):
         "RF": RandomForestLearner,
         "LightGBM": LightgbmLearner,
         "CatBoost": CatBoostLearner,
-        "NN": NeuralNetworkLearner
+        "NN": NeuralNetworkLearner,
     }
 
     @classmethod

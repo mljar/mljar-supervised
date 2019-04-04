@@ -38,14 +38,12 @@ class LightgbmLearner(Learner):
             "bagging_fraction": self.params.get("bagging_fraction", 0.7),
             "bagging_freq": self.params.get("bagging_freq", 1),
             "verbose": -1,
-            # "verbosity": -1,
         }
 
         log.debug("LightgbmLearner __init__")
 
     def update(self, update_params):
-        print("LGBM update", update_params)
-        # self.rounds = update_params["iters"]
+        pass
 
     def fit(self, X, y):
         lgb_train = lgb.Dataset(X, y)

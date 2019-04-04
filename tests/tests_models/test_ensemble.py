@@ -13,7 +13,6 @@ from supervised.models.learner_factory import LearnerFactory
 
 
 class SimpleModel:
-
     def __init__(self, params):
         pass
 
@@ -21,9 +20,7 @@ class SimpleModel:
         return np.array([0.1, 0.2, 0.8, 0.9])
 
     def save(self):
-        return {
-            "params": {"model_type":"simple"}
-        }
+        return {"params": {"model_type": "simple"}}
 
     def load(self, json_desc):
         pass

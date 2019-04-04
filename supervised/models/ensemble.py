@@ -46,11 +46,6 @@ class Ensemble:
     def get_oof_matrix(self, models):
         oofs = {}
         for i, m in enumerate(models):
-            print(
-                "ensemble",
-                m.learners[0].algorithm_name,
-                m.callbacks.callbacks[0].final_loss,
-            )
             oof = m.get_out_of_folds()
             oofs["model_{}".format(i)] = oof["prediction"]
         X = pd.DataFrame(oofs)
