@@ -32,7 +32,7 @@ class AutoMLTestWithData(unittest.TestCase):
                 hill_climbing_steps=3,
                 top_models_to_improve=3,
                 train_ensemble=True,
-                verbose=True
+                verbose=True,
             )
             automl.fit(X_train, y_train)
 

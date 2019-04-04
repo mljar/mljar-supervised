@@ -1,5 +1,6 @@
 import json
 import copy
+import time
 import numpy as np
 import pandas as pd
 
@@ -56,12 +57,14 @@ class AutoML:
                 * 5
             )
             # set time limit for single model training
-            self._time_limit = self._total_time_limit / estimated_models_to_check
+            # the 0.85 is safe scale factor, to not exceed time limit
+            self._time_limit = self._total_time_limit * 0.85 / estimated_models_to_check
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
                 ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()
             )
+        self._fit_time = None
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
@@ -144,6 +147,7 @@ class AutoML:
             )
 
     def fit(self, X, y):
+        start_time = time.time()
         X.reset_index(drop=True, inplace=True)
         y.reset_index(drop=True, inplace=True)
 
@@ -161,6 +165,7 @@ class AutoML:
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()
+        self._fit_time = time.time() - start_time
 
     def predict(self, X):
         return self._best_model.predict(X)
