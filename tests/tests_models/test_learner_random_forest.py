@@ -25,7 +25,6 @@ class RandomForestLearnerTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.data = {"train": {"X": cls.X, "y": cls.y}}
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
@@ -34,7 +33,7 @@ class RandomForestLearnerTest(unittest.TestCase):
 
         loss_prev = None
         for i in range(2):
-            rf.fit(self.data["train"])
+            rf.fit(self.X, self.y)
             y_predicted = rf.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
@@ -44,7 +43,7 @@ class RandomForestLearnerTest(unittest.TestCase):
     def test_copy(self):
         metric = Metric({"name": "logloss"})
         rf = RandomForestLearner({})
-        rf.fit(self.data["train"])
+        rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
@@ -55,7 +54,7 @@ class RandomForestLearnerTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
-        rf.fit(self.data["train"])
+        rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss3 = metric(self.y, y_predicted)
         self.assertTrue(loss3 < loss)
@@ -67,7 +66,7 @@ class RandomForestLearnerTest(unittest.TestCase):
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
         rf = RandomForestLearner({})
-        rf.fit(self.data["train"])
+        rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 

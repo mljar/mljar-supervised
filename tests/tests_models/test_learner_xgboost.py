@@ -25,7 +25,6 @@ class XgboostLearnerTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.data = {"train": {"X": cls.X, "y": cls.y}}
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
@@ -34,7 +33,7 @@ class XgboostLearnerTest(unittest.TestCase):
 
         loss_prev = None
         for i in range(5):
-            xgb.fit(self.data["train"])
+            xgb.fit(self.X, self.y)
             y_predicted = xgb.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
@@ -45,7 +44,7 @@ class XgboostLearnerTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         params = {"objective": "binary:logistic", "eval_metric": "logloss"}
         xgb = XgbLearner(params)
-        xgb.fit(self.data["train"])
+        xgb.fit(self.X, self.y)
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
@@ -57,7 +56,7 @@ class XgboostLearnerTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
 
-        xgb.fit(self.data["train"])
+        xgb.fit(self.X, self.y)
         y_predicted = xgb.predict(self.X)
         loss3 = metric(self.y, y_predicted)
         self.assertTrue(loss3 < loss)
@@ -70,7 +69,7 @@ class XgboostLearnerTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         params = {"objective": "binary:logistic", "eval_metric": "logloss"}
         xgb = XgbLearner(params)
-        xgb.fit(self.data["train"])
+        xgb.fit(self.X, self.y)
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 

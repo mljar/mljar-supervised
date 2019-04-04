@@ -13,13 +13,20 @@ from supervised.models.learner_factory import LearnerFactory
 
 
 class SimpleModel:
+
+    def __init__(self, params):
+        pass
+
     def predict(self, X):
         return np.array([0.1, 0.2, 0.8, 0.9])
 
     def save(self):
         return {
-            
+            "params": {"model_type":"simple"}
         }
+
+    def load(self, json_desc):
+        pass
 
 
 class EnsembleTest(unittest.TestCase):
@@ -40,7 +47,7 @@ class EnsembleTest(unittest.TestCase):
 
     def test_fit_predict(self):
         ensemble = Ensemble()
-        ensemble.models = [SimpleModel()] * 5
+        ensemble.models = [SimpleModel({})] * 5
         ensemble.fit(self.X, self.y)
         self.assertEqual(1, ensemble.selected_models[1]["repeat"])
         self.assertEqual(1, ensemble.selected_models[1]["repeat"])
@@ -55,7 +62,7 @@ class EnsembleTest(unittest.TestCase):
         LearnerFactory.learners["simple"] = SimpleModel
 
         ensemble = Ensemble()
-        ensemble.models = [SimpleModel()] * 5
+        ensemble.models = [SimpleModel({})] * 5
         ensemble.fit(self.X, self.y)
         y = ensemble.predict(self.X)
         assert_almost_equal(y[0], 0.1)

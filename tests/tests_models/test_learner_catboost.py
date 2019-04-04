@@ -25,7 +25,6 @@ class CatBoostLearnerTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.data = {"train": {"X": cls.X, "y": cls.y}}
         cls.params = {
             "learning_rate": 0.1,
             "depth": 2,
@@ -40,7 +39,7 @@ class CatBoostLearnerTest(unittest.TestCase):
         cat = CatBoostLearner(self.params)
         loss_prev = None
         for i in range(5):
-            cat.fit(self.data["train"])
+            cat.fit(self.X, self.y)
             y_predicted = cat.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
@@ -51,7 +50,7 @@ class CatBoostLearnerTest(unittest.TestCase):
         # train model #1
         metric = Metric({"name": "logloss"})
         cat = CatBoostLearner(self.params)
-        cat.fit(self.data["train"])
+        cat.fit(self.X, self.y)
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
         # create model #2
@@ -65,7 +64,7 @@ class CatBoostLearnerTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
         # fit model #1, there should be improvement in loss
-        cat.fit(self.data["train"])
+        cat.fit(self.X, self.y)
         y_predicted = cat.predict(self.X)
         loss3 = metric(self.y, y_predicted)
         self.assertTrue(loss3 < loss)
@@ -77,7 +76,7 @@ class CatBoostLearnerTest(unittest.TestCase):
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
         cat = CatBoostLearner(self.params)
-        cat.fit(self.data["train"])
+        cat.fit(self.X, self.y)
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
 

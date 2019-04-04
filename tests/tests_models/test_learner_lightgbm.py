@@ -25,7 +25,6 @@ class LightgbmLearnerTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.data = {"train": {"X": cls.X, "y": cls.y}}
         cls.params = {
             "metric": "binary_logloss",
             "num_leaves": "2",
@@ -42,7 +41,7 @@ class LightgbmLearnerTest(unittest.TestCase):
 
         loss_prev = None
         for i in range(5):
-            lgb.fit(self.data["train"])
+            lgb.fit(self.X, self.y)
             y_predicted = lgb.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
@@ -53,7 +52,7 @@ class LightgbmLearnerTest(unittest.TestCase):
         # train model #1
         metric = Metric({"name": "logloss"})
         lgb = LightgbmLearner(self.params)
-        lgb.fit(self.data["train"])
+        lgb.fit(self.X, self.y)
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
         # create model #2
@@ -67,7 +66,7 @@ class LightgbmLearnerTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
         # fit model #1, there should be improvement in loss
-        lgb.fit(self.data["train"])
+        lgb.fit(self.X, self.y)
         y_predicted = lgb.predict(self.X)
         loss3 = metric(self.y, y_predicted)
         self.assertTrue(loss3 < loss)
@@ -79,7 +78,7 @@ class LightgbmLearnerTest(unittest.TestCase):
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
         lgb = LightgbmLearner(self.params)
-        lgb.fit(self.data["train"])
+        lgb.fit(self.X, self.y)
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 

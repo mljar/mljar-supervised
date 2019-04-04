@@ -28,7 +28,7 @@ class AutoMLTest(unittest.TestCase):
         cls.y = pd.DataFrame(cls.y)
 
     def test_fit_and_predict(self):
-        automl = AutoML(time_limit=1, algorithms=["Xgboost"])
+        automl = AutoML(total_time_limit=1, algorithms=["Xgboost"])
         automl.fit(self.X, self.y)
 
         # y_predicted = automl.predict(self.X)

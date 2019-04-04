@@ -98,15 +98,17 @@ class Ensemble:
 
     def predict(self, X):
         y_predicted = None
+        total_repeat = 0.0
         for selected in self.selected_models:
             model = selected["model"]
             repeat = selected["repeat"]
+            total_repeat += repeat
             y_predicted = (
                 model.predict(X) * repeat
                 if y_predicted is None
                 else y_predicted + model.predict(X) * repeat
             )
-        return y_predicted / float(len(self.best_algs))
+        return y_predicted / total_repeat
 
     def save(self):
         models_json = []
