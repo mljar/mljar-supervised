@@ -2,6 +2,7 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import time
 import uuid
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
@@ -29,6 +30,10 @@ class Ensemble:
         self.best_loss = 10e12  # the best loss obtained by ensemble
         self.models = None
         self.selected_models = []
+        self.train_time = None
+
+    def get_train_time(self):
+        return self.train_time
 
     def get_final_loss(self):
         return self.best_loss
@@ -53,6 +58,7 @@ class Ensemble:
         return X
 
     def fit(self, X, y):
+        start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
         total_best_sum = 0  # total sum of predictions
@@ -90,6 +96,7 @@ class Ensemble:
             self.selected_models += [
                 {"model": self.models[i], "repeat": np.sum(self.best_algs == i)}
             ]
+        self.train_time = time.time() - start_time
 
     def predict(self, X):
         y_predicted = None

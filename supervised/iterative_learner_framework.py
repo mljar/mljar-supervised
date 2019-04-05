@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 import zipfile
 from supervised.learner_framework import LearnerFramework
 from supervised.validation.validation_step import ValidationStep
@@ -23,7 +24,11 @@ class IterativeLearnerException(Exception):
 class IterativeLearner(LearnerFramework):
     def __init__(self, params, callbacks=[]):
         LearnerFramework.__init__(self, params, callbacks)
+        self.train_time = None
         log.debug("IterativeLearner.__init__")
+
+    def get_train_time(self):
+        return self.train_time
 
     def predictions(self, learner, train_data, validation_data):
         return {
@@ -35,6 +40,7 @@ class IterativeLearner(LearnerFramework):
         }
 
     def train(self, data):
+        start_time = time.time()
         log.debug("IterativeLearner.train")
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
@@ -67,6 +73,7 @@ class IterativeLearner(LearnerFramework):
             self.callbacks.on_learner_train_end()
         # end of validation loop
         self.callbacks.on_framework_train_end()
+        self.train_time = time.time() - start_time
 
     def get_out_of_folds(self):
         early_stopping = self.callbacks.get("early_stopping")
@@ -81,7 +88,7 @@ class IterativeLearner(LearnerFramework):
         return early_stopping.final_loss
 
     def get_name(self):
-        return self.learners[0].algorithm_short_name
+        return self.learner_params.get("model_type")
 
     def predict(self, X):
         if self.learners is None or len(self.learners) == 0:

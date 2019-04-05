@@ -29,12 +29,12 @@ class AutoMLTestWithData(unittest.TestCase):
                     )
                     automl = AutoML(
                         total_time_limit=60 * 60,  # 1h limit
-                        algorithms=["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
+                        algorithms=["LightGBM", "CatBoost", "Xgboost", "RF", "NN"],
                         start_random_models=10,
                         hill_climbing_steps=3,
                         top_models_to_improve=3,
                         train_ensemble=True,
-                        verbose=False,
+                        verbose=True,
                     )
                     automl.fit(X_train, y_train)
 

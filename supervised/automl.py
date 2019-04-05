@@ -59,12 +59,14 @@ class AutoML:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
             self._time_limit = self._total_time_limit * 0.85 / estimated_models_to_check
+            print("single time limit->", self._time_limit)
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
                 ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()
             )
         self._fit_time = None
+        self._models_train_time = {}
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
@@ -92,12 +94,47 @@ class AutoML:
         if il_key in self._models_params_keys:
             return None
         self._models_params_keys += [il_key]
-        il.train({"train": {"X": X, "y": y}})
-        return il
+        if self.should_train_next(il.get_name()):
+            il.train({"train": {"X": X, "y": y}})
+            return il
+        return None
 
     def verbose_print(self, msg):
         if self._verbose:
             print(msg)
+
+    def log_train_time(self, model_type, train_time):
+        if model_type in self._models_train_time:
+            self._models_train_time[model_type] += [train_time]
+        else:
+            self._models_train_time[model_type] = [train_time]
+
+    def should_train_next(self, model_type):
+        # no time limit, just train, dont ask
+        if self._total_time_limit is None:
+            return True
+        print(self._models_train_time)
+        total_time_already_spend = (
+            0
+            if model_type not in self._models_train_time
+            else np.sum(self._models_train_time[model_type])
+        )
+        mean_time_already_spend = (
+            0
+            if model_type not in self._models_train_time
+            else np.mean(self._models_train_time[model_type])
+        )
+
+        print("Total time already spend", total_time_already_spend)
+        print("Mean time already spend", mean_time_already_spend)
+        print(">", 0.85 * self._total_time_limit / float(len(self._algorithms)))
+
+        if (
+            total_time_already_spend + mean_time_already_spend
+            < 0.85 * self._total_time_limit / float(len(self._algorithms))
+        ):
+            return True
+        return False
 
     def not_so_random_step(self, X, y):
         for model_type in self._algorithms:
@@ -107,10 +144,11 @@ class AutoML:
                 if m is not None:
                     self._models += [m]
                     self.verbose_print(
-                        "Learner {} final loss {}".format(
-                            m.get_name(), m.get_final_loss()
+                        "Learner {} final loss {} time {}".format(
+                            m.get_name(), m.get_final_loss(), m.get_train_time()
                         )
                     )
+                    self.log_train_time(m.get_name(), m.get_train_time())
 
     def hill_climbing_step(self, X, y):
         for hill_climbing in range(self._hill_climbing_steps):
@@ -129,9 +167,14 @@ class AutoML:
                         if new_model is not None:
                             self._models += [new_model]
                             self.verbose_print(
-                                "Learner {} final loss {}".format(
-                                    new_model.get_name(), new_model.get_final_loss()
+                                "Learner {} final loss {} time {}".format(
+                                    new_model.get_name(),
+                                    new_model.get_final_loss(),
+                                    new_model.get_train_time(),
                                 )
+                            )
+                            self.log_train_time(
+                                new_model.get_name(), new_model.get_train_time()
                             )
 
     def ensemble_step(self, y):
@@ -141,9 +184,14 @@ class AutoML:
             self.ensemble.fit(X_oof, y)
             self._models += [self.ensemble]
             self.verbose_print(
-                "Learner {} final loss {}".format(
-                    self.ensemble.get_name(), self.ensemble.get_final_loss()
+                "Learner {} final loss {} time {}".format(
+                    self.ensemble.get_name(),
+                    self.ensemble.get_final_loss(),
+                    self.ensemble.get_train_time(),
                 )
+            )
+            self.log_train_time(
+                self.ensemble.get_name(), self.ensemble.get_train_time()
             )
 
     def fit(self, X, y):
