@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
@@ -25,6 +27,15 @@ class PreprocessingTuner:
         columns_preprocessing = {}
         for col in X.columns:
             preprocessing_to_apply = []
+
+            # remove empty columns and columns with only one variable
+            empty_column = np.sum(pd.isnull(X[col]) == True) == X.shape[0]
+            constant_column = len(np.unique(X[col])) == 1
+            if empty_column or constant_column:
+                preprocessing_to_apply += ["remove_column"]
+                columns_preprocessing[col] = preprocessing_to_apply
+                continue
+
             # always check for missing values
             if (
                 "missing_values_inputation" in required_preprocessing

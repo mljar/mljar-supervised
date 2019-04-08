@@ -100,6 +100,20 @@ class PreprocessingStep(object):
             transforms = columns_preprocessing[column]
             log.debug("Preprocess column -> {}, {}".format(column, transforms))
 
+        # remove empty or constant columns
+        cols_to_remove = list(
+            filter(
+                lambda k: "remove_column" in columns_preprocessing[k],
+                columns_preprocessing,
+            )
+        )
+        print("Remove columns", cols_to_remove)
+        if X_train is not None:
+            X_train.drop(cols_to_remove, axis=1, inplace=True)
+        if X_validation is not None:
+            X_validation.drop(cols_to_remove, axis=1, inplace=True)
+
+
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
                 filter(

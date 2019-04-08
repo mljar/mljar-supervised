@@ -16,7 +16,7 @@ from sklearn.metrics import log_loss
 class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
         with open("./result.txt", "a") as f_result:
-            for dataset_id in [3, 24, 31, 38, 44, 179, 737, 720]:  # 720 # 31,44,737
+            for dataset_id in [38]:  # 3, 24, 31, 38, 44, 179, 737, 720
                 df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
                 x_cols = [c for c in df.columns if c != "target"]
                 X = df[x_cols]
@@ -28,11 +28,11 @@ class AutoMLTestWithData(unittest.TestCase):
                         X, y, test_size=0.3, random_state=1706 + repeat
                     )
                     automl = AutoML(
-                        total_time_limit=60 * 60,  # 1h limit
-                        algorithms=["LightGBM", "CatBoost", "Xgboost", "RF", "NN"],
-                        start_random_models=10,
-                        hill_climbing_steps=3,
-                        top_models_to_improve=3,
+                        total_time_limit=60 * 1,  # 1h limit
+                        algorithms=[ "Xgboost"], # ["LightGBM", "CatBoost", "Xgboost", "RF", "NN"],
+                        start_random_models=3,
+                        hill_climbing_steps=0,
+                        top_models_to_improve=1,
                         train_ensemble=True,
                         verbose=True,
                     )

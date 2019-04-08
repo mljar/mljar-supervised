@@ -15,6 +15,7 @@ class PreprocessingMissingValues(object):
     # Please check PreprocessingExcludeMissingValues
     NA_EXCLUDE = "na_exclude"
     MISSING_VALUE = "_missing_value_"
+    REMOVE_COLUMN = "remove_column"
 
     def __init__(self, columns=[], na_fill_method=FILL_NA_MEDIAN):
         self._columns = columns
