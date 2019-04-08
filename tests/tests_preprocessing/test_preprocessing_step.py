@@ -355,6 +355,50 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(0, X_test["col2"][0])
 
 
+
+    def test_empty_column(self):
+        print("--------------------empty")
+        # training data
+        d = {
+            "col1": [np.nan, np.nan, np.nan, np.nan],
+            "col2": [5, 6, 7, 0],
+            "col3": [1, 1, 1, 3],
+            "col4": [2, 2, 4, 3],
+            "y": [0, 1, 0, 1],
+        }
+        df = pd.DataFrame(data=d)
+        X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
+        y_train = df.loc[:, "y"]
+
+        preprocessing_params = {
+            "columns_preprocessing": {
+                "col1": [
+                    "remove_column"
+                ]
+            }
+        }
+
+        ps = PreprocessingStep(preprocessing_params)
+
+        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        X_train1 = train_data.get("X")
+
+        print("columns", X_train1.columns)
+
+        train_data2 = ps.transform(validation_data={"X": X_train, "y": y_train})
+        X_train2 = train_data2.get("X")
+
+        print("columns", X_train2.columns)
+
+        #for col in ["col1", "col2", "col3", "col4"]:
+        #    self.assertTrue(col in X_train.columns)
+
+        #params_json = ps.to_json()
+        #self.assertFalse(params_json)  # should be empty
+
+
+
+
 """
     def test_run_fill_median_convert_one_hot_validation_dataset(self):
         # training data

@@ -32,6 +32,7 @@ class PreprocessingStep(object):
         self._missing_values = []
         self._categorical = []
         self._scale = []
+        self._remove_columns = []
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -112,6 +113,7 @@ class PreprocessingStep(object):
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         if X_validation is not None:
             X_validation.drop(cols_to_remove, axis=1, inplace=True)
+        self._remove_columns = cols_to_remove
 
 
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
@@ -192,6 +194,9 @@ class PreprocessingStep(object):
             raise Exception("not implemented SCALE_NORMAL")
 
         # columns preprocessing
+        if len(self._remove_columns) and X_validation is not None:
+            cols_to_remove = [col for col in X_validation.columns if col in self._remove_columns]
+            X_validation.drop(cols_to_remove, axis=1, inplace=True)
 
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
@@ -207,6 +212,8 @@ class PreprocessingStep(object):
 
     def to_json(self):
         preprocessing_params = {}
+        if self._remove_columns:
+            preprocessing_params["remove_columns"] = self._remove_columns
         if self._missing_values is not None and len(self._missing_values):
             mvs = []  # refactor
             for mv in self._missing_values:
@@ -232,6 +239,8 @@ class PreprocessingStep(object):
         return preprocessing_params
 
     def from_json(self, data_json):
+        if "remove_columns" in data_json:
+            self._remove_columns = data_json.get("remove_columns", [])
         if "missing_values" in data_json:
             self._missing_values = []
             for mv_data in data_json["missing_values"]:
