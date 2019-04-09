@@ -17,7 +17,7 @@ class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
 
         for dataset_id in [3, 24, 31, 38, 44, 179, 737, 720]:
-            df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
+            df = pd.read_csv("./tests/data/{0}.csv".format(dataset_id))
             x_cols = [c for c in df.columns if c != "target"]
             X = df[x_cols]
             y = df["target"]
