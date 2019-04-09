@@ -120,3 +120,11 @@ Don't miss updates and news from us.
 
 The package is under active development! Please expect a lot of changes!
 For this package the graphical interface will be provided soon (also open source!). Please be tuned.
+
+To be added:
+- training single decision tree
+- create text report from trained models (maybe with plots from learning)
+- compute threshold for model prediction and predicting discrete output (label)
+- add model/predictions explanations
+- add support for multiclass classification
+- add support for regressions
