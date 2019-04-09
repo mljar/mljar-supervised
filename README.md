@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-[![Machine Learning for Humans](images/the-mljar.svg | width=100)](https://mljar.com)
+[![Machine Learning for Humans](images/the-mljar.svg =100x)](https://mljar.com)
 
 **The new standard in Machine Learning!** Always have best model which is selected and tuned.
 
