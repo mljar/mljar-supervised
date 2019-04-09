@@ -63,9 +63,9 @@ class EnsembleTest(unittest.TestCase):
         ensemble.fit(self.X, self.y)
         y = ensemble.predict(self.X)
         assert_almost_equal(y[0], 0.1)
-        ensemble_json = ensemble.save()
+        ensemble_json = ensemble.to_json()
         ensemble2 = Ensemble()
-        ensemble2.load(ensemble_json)
+        ensemble2.from_json(ensemble_json)
         y2 = ensemble2.predict(self.X)
         assert_almost_equal(y2[0], 0.1)
 

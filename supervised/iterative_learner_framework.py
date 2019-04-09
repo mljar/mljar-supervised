@@ -101,7 +101,7 @@ class IterativeLearner(LearnerFramework):
             y_predicted += learner.predict(validation_data.get("X"))
         return y_predicted / float(len(self.learners))
 
-    def save(self):
+    def to_json(self):
         preprocessing = []
         for p in self.preprocessings:
             preprocessing += [p.to_json()]
@@ -118,14 +118,16 @@ class IterativeLearner(LearnerFramework):
             zf.close()
         desc = {
             "uid": self.uid,
+            "algorithm_short_name": self.get_name(),
             "framework_file": self.framework_file,
             "framework_file_path": self.framework_file_path,
             "preprocessing": preprocessing,
             "learners": learners_desc,
+            "params": self.params # this is needed while constructing new Iterative Learner Framework
         }
         return desc
 
-    def load(self, json_desc):
+    def from_json(self, json_desc):
         self.uid = json_desc.get("uid", self.uid)
         self.framework_file = json_desc.get("framework_file", self.framework_file)
         self.framework_file_path = json_desc.get(

@@ -25,18 +25,29 @@ class AutoMLTest(unittest.TestCase):
             random_state=0,
         )
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
-        cls.y = pd.DataFrame(cls.y)
+        #cls.y = pd.DataFrame(cls.y)
 
     def test_fit_and_predict(self):
-        automl = AutoML(total_time_limit=1, algorithms=["Xgboost"])
+        metric = Metric({"name": "logloss"})
+
+        automl = AutoML(total_time_limit=10, algorithms=["Xgboost"],
+                        start_random_models=5,
+                        hill_climbing_steps=0)
         automl.fit(self.X, self.y)
 
-        # y_predicted = automl.predict(self.X)
-        # print(y_predicted)
-        # metric = Metric({"name": "logloss"})
-        # loss = metric(self.y, y_predicted)
-        # print("Loss", loss)
-        # self.assertTrue(y_predicted is not None)
+        y_predicted = automl.predict(self.X)
+        self.assertTrue(y_predicted is not None)
+        loss = metric(self.y, y_predicted)
+        self.assertTrue(loss < 0.5)
+
+        params = automl.to_json()
+        automl2 = AutoML()
+        automl2.from_json(params)
+
+        y_predicted2 = automl2.predict(self.X)
+        self.assertTrue(y_predicted2 is not None)
+        loss2 = metric(self.y, y_predicted2)
+        self.assertTrue(loss2 < 0.5)
 
 
 if __name__ == "__main__":

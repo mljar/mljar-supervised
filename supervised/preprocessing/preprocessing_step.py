@@ -108,7 +108,7 @@ class PreprocessingStep(object):
                 columns_preprocessing,
             )
         )
-        print("Remove columns", cols_to_remove)
+        
         if X_train is not None:
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         if X_validation is not None:

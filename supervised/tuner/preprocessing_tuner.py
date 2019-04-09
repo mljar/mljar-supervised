@@ -30,7 +30,7 @@ class PreprocessingTuner:
 
             # remove empty columns and columns with only one variable
             empty_column = np.sum(pd.isnull(X[col]) == True) == X.shape[0]
-            constant_column = len(np.unique(X[col])) == 1
+            constant_column = len(np.unique(X.loc[~pd.isnull(X[col]), col])) == 1
             if empty_column or constant_column:
                 preprocessing_to_apply += ["remove_column"]
                 columns_preprocessing[col] = preprocessing_to_apply

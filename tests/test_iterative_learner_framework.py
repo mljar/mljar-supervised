@@ -70,12 +70,11 @@ class IterativeLearnerTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         loss = metric(self.y, il.predict(self.X))
 
-        json_desc = il.save()
-        print(json_desc)
+        json_desc = il.to_json()
 
-        il2 = IterativeLearner(self.train_params, callbacks=[])
+        il2 = IterativeLearner(json_desc.get("params"), callbacks=[])
         self.assertTrue(il.uid != il2.uid)
-        il2.load(json_desc)
+        il2.from_json(json_desc)
         self.assertTrue(il.uid == il2.uid)
         loss2 = metric(self.y, il2.predict(self.X))
         assert_almost_equal(loss, loss2)

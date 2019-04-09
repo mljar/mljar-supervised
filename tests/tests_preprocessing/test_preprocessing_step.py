@@ -171,7 +171,7 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(X_train["col4"][3], 2)
 
         params_json = ps.to_json()
-        print(params_json)
+
         self.assertTrue("missing_values" in params_json)
         self.assertTrue("categorical" in params_json)
         self.assertTrue("categorical_y" not in params_json)
@@ -357,7 +357,6 @@ class PreprocessingStepTest(unittest.TestCase):
 
 
     def test_empty_column(self):
-        print("--------------------empty")
         # training data
         d = {
             "col1": [np.nan, np.nan, np.nan, np.nan],
@@ -379,22 +378,27 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-
         train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
         X_train1 = train_data.get("X")
-
-        print("columns", X_train1.columns)
-
+        self.assertTrue("col1" not in X_train1.columns)
+        self.assertEqual(3, len(X_train1.columns))
         train_data2 = ps.transform(validation_data={"X": X_train, "y": y_train})
         X_train2 = train_data2.get("X")
+        self.assertTrue("col1" not in X_train2.columns)
+        self.assertEqual(3, len(X_train2.columns))
+        for col in ["col2", "col3", "col4"]:
+            self.assertTrue(col in X_train2.columns)
 
-        print("columns", X_train2.columns)
+        params_json = ps.to_json()
+        ps2 = PreprocessingStep()
+        ps2.from_json(params_json)
 
-        #for col in ["col1", "col2", "col3", "col4"]:
-        #    self.assertTrue(col in X_train.columns)
-
-        #params_json = ps.to_json()
-        #self.assertFalse(params_json)  # should be empty
+        train_data3 = ps2.transform(validation_data={"X": X_train, "y": y_train})
+        X_train3 = train_data3.get("X")
+        self.assertTrue("col1" not in X_train3.columns)
+        self.assertEqual(3, len(X_train3.columns))
+        for col in ["col2", "col3", "col4"]:
+            self.assertTrue(col in X_train3.columns)
 
 
 

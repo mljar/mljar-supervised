@@ -112,7 +112,7 @@ class Ensemble:
             )
         return y_predicted / total_repeat
 
-    def save(self):
+    def to_json(self):
         models_json = []
         for selected in self.selected_models:
             model = selected["model"]
@@ -128,7 +128,7 @@ class Ensemble:
         }
         return json_desc
 
-    def load(self, json_desc):
+    def from_json(self, json_desc):
 
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)

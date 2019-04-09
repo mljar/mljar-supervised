@@ -56,7 +56,7 @@ class SklearnTreesClassifierLearner(SklearnLearner):
         super(SklearnTreesClassifierLearner, self).__init__(params)
 
     def fit(self, X, y):
-        self.model.fit(X, y)
+        self.model.fit(X, np.ravel(y))
         self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):

@@ -21,7 +21,7 @@ from supervised.models.ensemble import Ensemble
 class AutoML:
     def __init__(
         self,
-        total_time_limit=None,
+        total_time_limit=60*60,
         learner_time_limit=120,
         algorithms=["CatBoost", "Xgboost", "RF", "LightGBM", "NN"],
         start_random_models=10,
@@ -35,9 +35,9 @@ class AutoML:
             learner_time_limit
         )  # time limit in seconds for single learner
         self._train_ensemble = train_ensemble
-        self._models = []
+        self._models = [] # instances of iterative learner framework or ensemble
         self._models_params_keys = []
-        self._best_model = None
+        self._best_model = None # it is instance of iterative learner framework or ensemble
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
         self._start_random_models = start_random_models
@@ -47,7 +47,6 @@ class AutoML:
         self._verbose = verbose
 
         if self._total_time_limit is not None:
-
             estimated_models_to_check = (
                 len(self._algorithms)
                 * (
@@ -59,7 +58,6 @@ class AutoML:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
             self._time_limit = self._total_time_limit * 0.85 / estimated_models_to_check
-            print("single time limit->", self._time_limit)
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -113,7 +111,7 @@ class AutoML:
         # no time limit, just train, dont ask
         if self._total_time_limit is None:
             return True
-        print(self._models_train_time)
+
         total_time_already_spend = (
             0
             if model_type not in self._models_train_time
@@ -124,10 +122,6 @@ class AutoML:
             if model_type not in self._models_train_time
             else np.mean(self._models_train_time[model_type])
         )
-
-        print("Total time already spend", total_time_already_spend)
-        print("Mean time already spend", mean_time_already_spend)
-        print(">", 0.85 * self._total_time_limit / float(len(self._algorithms)))
 
         if (
             total_time_already_spend + mean_time_already_spend
@@ -197,6 +191,8 @@ class AutoML:
     def fit(self, X, y):
         start_time = time.time()
         X.reset_index(drop=True, inplace=True)
+        if not isinstance(y, pd.DataFrame):
+            y = pd.DataFrame(y)
         y.reset_index(drop=True, inplace=True)
 
         # start with not-so-random models
@@ -216,17 +212,18 @@ class AutoML:
         self._fit_time = time.time() - start_time
 
     def predict(self, X):
-        return self._best_model.predict(X)
+        if self._best_model is not None:
+            return self._best_model.predict(X)
+        return None
 
     def to_json(self):
-        save_details = []
-        for il in self._models:
-            save_details += [il.save()]
-        return save_details
+        return self._best_model.to_json() if self._best_model is not None else None
 
     def from_json(self, json_data):
-        self._models = []
-        for save_detail in json_data:
-            il = IterativeLearner()
-            il.load(save_detail)
-            self._models += [il]
+        # pretty sure that this can be easily refactored
+        if json_data["algorithm_short_name"] == "Ensemble":
+            self._best_model = Ensemble()
+            self._best_model.from_json(json_data)
+        else:
+            self._best_model = IterativeLearner(json_data.get("params"))
+            self._best_model.from_json(json_data)

@@ -108,11 +108,11 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         loss_1 = metric(self.data["train"]["y"], y_predicted)
 
-        json_desc = il.save()
+        json_desc = il.to_json()
 
         il2 = IterativeLearner(self.train_params, callbacks=[])
         self.assertTrue(il.uid != il2.uid)
-        il2.load(json_desc)
+        il2.from_json(json_desc)
         self.assertTrue(il.uid == il2.uid)
         y_predicted_2 = il2.predict(self.data["train"]["X"])
         loss_2 = metric(self.data["train"]["y"], y_predicted_2)

@@ -60,8 +60,8 @@ class LearnerFramework:
     def predict(self, X):
         pass
 
-    def save(self):
+    def to_json(self):
         pass
 
-    def load(self, json_desc):
+    def from_json(self, json_desc):
         pass
