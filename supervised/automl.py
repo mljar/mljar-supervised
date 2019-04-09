@@ -191,6 +191,7 @@ class AutoML:
     def fit(self, X, y):
         start_time = time.time()
         X.reset_index(drop=True, inplace=True)
+        y = np.array(y)
         if not isinstance(y, pd.DataFrame):
             y = pd.DataFrame(y)
         y.reset_index(drop=True, inplace=True)
