@@ -15,7 +15,22 @@ In the current version only binary classification is supported with optimization
 
 ## Example 
 
+```
+import pandas as pd
+from supervised.automl import AutoML
 
+df = pd.read_csv("https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv", skipinitialspace=True)
+print(df.head())
+X = df[df.columns[:-1]]
+y = df["income"]
+
+automl = AutoML()
+automl.fit(X, y)
+
+predictions = automl.predict(X)
+
+
+```
 
 ## The tuning algorithm
 
