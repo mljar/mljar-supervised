@@ -5,17 +5,58 @@
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-![Machine Learning for Humans](images/the-mljar.svg)
+[![Machine Learning for Humans](images/the-mljar.svg)](https://mljar.com)
+
+**The new standard in Machine Learning!** Always have best model which is selected and tuned.
 
 Collection of supervised methods (including processing), used in MLJAR AutoML solution.
 
 With this package you can handle any supervised ML algorithm with the same interface.
 
-# The package is under active development! Please expect a lot of changes!
+## Installation
 
-Please check our [platform](https://github.com/mljar/mljar)!
+From PyPi repository:
 
-# Development
+```
+pip install mljar-supervised
+```
+
+From source code:
+
+```
+git clone https://github.com/mljar/mljar-supervised.git
+cd mljar-supervised
+python setup.py install
+```
+
+Python 3.6 is required.
+
+## Usage
+
+This is Automated Machine Learning package, so all hard tasks is done for you. The interface is simple but if necessary allows you to control the training process.
+
+#### Train and predict
+
+```
+automl = AutoML()
+automl.fit(X, y)
+predictions = automl.predict(X)
+```
+
+By the default the training should be not longet than 1 hour and as ML algorithms will be checked:
+
+- Random Forest
+- Xgboost
+- CatBoost
+- LightGBM
+- Neural Network
+- Ensemble
+
+The parameters that you can use to control the training process are:
+
+- **total_time_limit** - it is a total time limit that AutoML can spend for searching to the best ML model. It is in seconds. _Default is set to 3600 seconds._
+
+## Development
 
 ### Installation
 
@@ -32,3 +73,9 @@ pip install -r requirements.txt
 cd supervised
 python -m tests.run_all
 ```
+
+## Roadmap
+
+The package is under active development! Please expect a lot of changes!
+
+Please check our [platform](https://github.com/mljar/mljar)!
