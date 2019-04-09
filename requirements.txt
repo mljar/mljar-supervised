@@ -8,4 +8,3 @@ catboost==0.13.1
 h5py==2.9.0
 tensorflow==1.13.1
 Keras==2.2.4
-
