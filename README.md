@@ -43,7 +43,7 @@ automl.fit(X, y)
 predictions = automl.predict(X)
 ```
 
-By the default the training should be not longet than 1 hour and as ML algorithms will be checked:
+By the default, the training should finish in less than 1 hour and as ML algorithms will be checked:
 
 - Random Forest
 - Xgboost
@@ -74,8 +74,12 @@ cd supervised
 python -m tests.run_all
 ```
 
+## Newsletter
+
+Don't miss updates and news from us.
+[Subscribe to newsletter!](https://tinyletter.com/mljar)
+
 ## Roadmap
 
 The package is under active development! Please expect a lot of changes!
-
-Please check our [platform](https://github.com/mljar/mljar)!
+For this package the graphical interface will be provided soon (also open source!). Please be tuned.
