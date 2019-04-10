@@ -25,8 +25,8 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         df = pd.read_csv("tests/data/adult_missing_values_missing_target_500rows.csv")
         cls.data = {"train": {"X": df[df.columns[:-1]], "y": df["income"]}}
 
-        available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
-        model_type = np.random.permutation(available_models)[0]
+        #available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
+        model_type = "Xgboost"#np.random.permutation(available_models)[0]
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
         required_preprocessing = model_info["required_preprocessing"]
@@ -105,6 +105,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         y_predicted = il.predict(self.data["train"]["X"])
+        self.assertTrue(y_predicted is not None)
         metric = Metric({"name": "logloss"})
         loss_1 = metric(self.data["train"]["y"], y_predicted)
 

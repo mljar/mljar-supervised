@@ -30,25 +30,26 @@ class AutoMLTest(unittest.TestCase):
     def test_fit_and_predict(self):
         metric = Metric({"name": "logloss"})
 
-        automl = AutoML(total_time_limit=20, algorithms=["Xgboost"],
+        automl = AutoML(total_time_limit=5, algorithms=["Xgboost"],
                         start_random_models=5,
                         hill_climbing_steps=0)
         automl.fit(self.X, self.y)
 
-        y_predicted = automl.predict(self.X)
+        y_predicted = automl.predict(self.X)["prediction"]
         self.assertTrue(y_predicted is not None)
         loss = metric(self.y, y_predicted)
-        print(loss)
-        self.assertTrue(loss < 0.5)
+        self.assertTrue(loss < 0.7)
 
         params = automl.to_json()
         automl2 = AutoML()
         automl2.from_json(params)
 
-        y_predicted2 = automl2.predict(self.X)
+        y_predicted2 = automl2.predict(self.X)["prediction"]
         self.assertTrue(y_predicted2 is not None)
         loss2 = metric(self.y, y_predicted2)
-        self.assertTrue(loss2 < 0.5)
+        self.assertTrue(loss2 < 0.7)
+
+        assert_almost_equal(automl._threshold, automl2._threshold)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,9 @@ import json
 import numpy as np
 import pandas as pd
 
+from supervised.models.learner_xgboost import additional
+additional["max_steps"] = 3
+
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -52,10 +55,7 @@ class IterativeLearnerTest(unittest.TestCase):
         }
 
     def test_fit_and_predict(self):
-
-        early_stop = EarlyStopping({"metric": {"name": "logloss"}})
-        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
+        il = IterativeLearner(self.train_params, callbacks=[])
         il.train(self.data)
 
         y_predicted = il.predict(self.X)
@@ -71,9 +71,9 @@ class IterativeLearnerTest(unittest.TestCase):
         loss = metric(self.y, il.predict(self.X))
 
         json_desc = il.to_json()
-
         il2 = IterativeLearner(json_desc.get("params"), callbacks=[])
         self.assertTrue(il.uid != il2.uid)
+
         il2.from_json(json_desc)
         self.assertTrue(il.uid == il2.uid)
         loss2 = metric(self.y, il2.predict(self.X))

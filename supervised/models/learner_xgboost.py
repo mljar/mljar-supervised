@@ -52,16 +52,6 @@ class XgbLearner(Learner):
             "colsample_bytree": self.params.get("colsample_bytree", 0.8),
             "silent": self.params.get("silent", 1),
         }
-        """
-        mandatory_params = {
-            "objective": ["binary:logistic"],
-            "eval_metric": ["auc", "logloss"],
-        }
-        for p, v in mandatory_params.items():
-            if self.learner_params[p] is None:
-                msg = "Please specify the {0}, it should be one from {1}".format(p, v)
-                raise XgbLearnerException(msg)
-        """
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):
