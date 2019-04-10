@@ -123,7 +123,7 @@ class IterativeLearner(LearnerFramework):
             "framework_file_path": self.framework_file_path,
             "preprocessing": preprocessing,
             "learners": learners_desc,
-            "params": self.params # this is needed while constructing new Iterative Learner Framework
+            "params": self.params,  # this is needed while constructing new Iterative Learner Framework
         }
         return desc
 

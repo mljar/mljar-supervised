@@ -108,13 +108,12 @@ class PreprocessingStep(object):
                 columns_preprocessing,
             )
         )
-        
+
         if X_train is not None:
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         if X_validation is not None:
             X_validation.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
-
 
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
@@ -195,7 +194,9 @@ class PreprocessingStep(object):
 
         # columns preprocessing
         if len(self._remove_columns) and X_validation is not None:
-            cols_to_remove = [col for col in X_validation.columns if col in self._remove_columns]
+            cols_to_remove = [
+                col for col in X_validation.columns if col in self._remove_columns
+            ]
             X_validation.drop(cols_to_remove, axis=1, inplace=True)
 
         for missing in self._missing_values:

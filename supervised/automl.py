@@ -16,12 +16,13 @@ from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.models.ensemble import Ensemble
+from supervised.models.compute_additional_metrics import ComputeAdditionalMetrics
 
 
 class AutoML:
     def __init__(
         self,
-        total_time_limit=60*60,
+        total_time_limit=60 * 60,
         learner_time_limit=120,
         algorithms=["CatBoost", "Xgboost", "RF", "LightGBM", "NN"],
         start_random_models=10,
@@ -35,9 +36,11 @@ class AutoML:
             learner_time_limit
         )  # time limit in seconds for single learner
         self._train_ensemble = train_ensemble
-        self._models = [] # instances of iterative learner framework or ensemble
+        self._models = []  # instances of iterative learner framework or ensemble
         self._models_params_keys = []
-        self._best_model = None # it is instance of iterative learner framework or ensemble
+        self._best_model = (
+            None
+        )  # it is instance of iterative learner framework or ensemble
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
 
         self._start_random_models = start_random_models
@@ -65,6 +68,19 @@ class AutoML:
             )
         self._fit_time = None
         self._models_train_time = {}
+        self._threshold, self._metrics_details, self._max_metrics, self._confusion_matrix = (
+            None,
+            None,
+            None,
+            None,
+        )
+
+    def get_additional_metrics(self, y):
+        oof_predictions = self._best_model.get_out_of_folds()
+        self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
+            y, oof_predictions["prediction"], BINARY_CLASSIFICATION
+        )
+        self._threshold = self._max_metrics["f1"]["threshold"]
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
@@ -210,21 +226,32 @@ class AutoML:
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()
+
+        self.get_additional_metrics(y)
         self._fit_time = time.time() - start_time
 
     def predict(self, X):
         if self._best_model is not None:
-            return self._best_model.predict(X)
+            return pd.DataFrame(
+                {
+                    "prediction": self._best_model.predict(X),
+                    "label": self._best_model.predict(X) > self._threshold,
+                }
+            )
         return None
 
     def to_json(self):
-        return self._best_model.to_json() if self._best_model is not None else None
+        if self._best_model is None:
+            return None
+
+        return {"best_model": self._best_model.to_json(), "threshold": self._threshold}
 
     def from_json(self, json_data):
         # pretty sure that this can be easily refactored
-        if json_data["algorithm_short_name"] == "Ensemble":
+        if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
             self._best_model = Ensemble()
-            self._best_model.from_json(json_data)
+            self._best_model.from_json(json_data["best_model"])
         else:
-            self._best_model = IterativeLearner(json_data.get("params"))
-            self._best_model.from_json(json_data)
+            self._best_model = IterativeLearner(json_data["best_model"].get("params"))
+            self._best_model.from_json(json_data["best_model"])
+        self._threshold = json_data.get("threshold")

@@ -31,6 +31,7 @@ class Ensemble:
         self.models = None
         self.selected_models = []
         self.train_time = None
+        self.total_best_sum = None  # total sum of predictions, the oof of ensemble
 
     def get_train_time(self):
         return self.train_time
@@ -40,6 +41,9 @@ class Ensemble:
 
     def get_name(self):
         return self.algorithm_short_name
+
+    def get_out_of_folds(self):
+        return pd.DataFrame({"prediction": self.total_best_sum})
 
     def _get_mean(self, X, best_sum, best_count, selected):
         resp = copy.deepcopy(X[selected])
@@ -61,7 +65,7 @@ class Ensemble:
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
-        total_best_sum = 0  # total sum of predictions
+
         best_sum = None  # sum of best algorihtms
         for j in range(X.shape[1]):  # iterate over all solutions
             min_score = 10e12
@@ -87,10 +91,10 @@ class Ensemble:
                 else best_sum + X["model_{}".format(best_index)]
             )
             if j == selected_algs_cnt:
-                total_best_sum = copy.deepcopy(best_sum)
+                self.total_best_sum = copy.deepcopy(best_sum)
 
         # keep oof predictions of ensemble
-        total_best_sum /= float(selected_algs_cnt + 1)
+        self.total_best_sum /= float(selected_algs_cnt + 1)
         self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
         for i in np.unique(self.best_algs):
             self.selected_models += [

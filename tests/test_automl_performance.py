@@ -10,7 +10,7 @@ from supervised.automl import AutoML
 from supervised.metric import Metric
 
 import sklearn.model_selection
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss, f1_score
 
 
 class AutoMLTestWithData(unittest.TestCase):
@@ -38,15 +38,18 @@ class AutoMLTestWithData(unittest.TestCase):
                 )
                 automl.fit(X_train, y_train)
 
-                response = automl.predict(X_test)
+                response = automl.predict(X_test)["prediction"]
+                labels = automl.predict(X_test)["label"]
+
                 # Compute the logloss on test dataset
                 ll = log_loss(y_test, response)
+                f1 = f1_score(y_test, labels)
                 print(
-                    "{} {} {} {}".format(repeat, dataset_id, ll, automl._fit_time)
+                    "iter: {}) id:{} logloss:{} f1:{} time:{}".format(repeat, dataset_id, ll, f1, automl._fit_time)
                 )
                 with open("./result.txt", "a") as f_result:
                     f_result.write(
-                        "{} {} {} {}\n".format(repeat, dataset_id, ll, automl._fit_time)
+                        "{} {} {} {} {}\n".format(repeat, dataset_id, ll, f1, automl._fit_time)
                     )
 
 
