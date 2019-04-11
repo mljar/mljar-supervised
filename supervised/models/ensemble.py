@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
+
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION

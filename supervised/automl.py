@@ -17,7 +17,7 @@ from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.models.ensemble import Ensemble
 from supervised.models.compute_additional_metrics import ComputeAdditionalMetrics
-
+from supervised.preprocessing.preprocessing_exclude_missing import PreprocessingExcludeMissingValues
 
 class AutoML:
     def __init__(
@@ -209,8 +209,12 @@ class AutoML:
         X.reset_index(drop=True, inplace=True)
         y = np.array(y)
         if not isinstance(y, pd.DataFrame):
-            y = pd.DataFrame(y)
+            y = pd.DataFrame({"target": y})
         y.reset_index(drop=True, inplace=True)
+        y = y["target"]
+
+        # drops rows with missing target
+        X, y = PreprocessingExcludeMissingValues.transform(X, y)
 
         # start with not-so-random models
         self.not_so_random_step(X, y)

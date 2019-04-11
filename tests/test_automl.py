@@ -26,7 +26,7 @@ class AutoMLTest(unittest.TestCase):
         )
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
         #cls.y = pd.DataFrame(cls.y)
-
+    '''
     def test_fit_and_predict(self):
         metric = Metric({"name": "logloss"})
 
@@ -50,6 +50,21 @@ class AutoMLTest(unittest.TestCase):
         self.assertTrue(loss2 < 0.7)
 
         assert_almost_equal(automl._threshold, automl2._threshold)
+    '''
+
+    def test_prediction_labels(self):
+        df = pd.read_csv('tests/data/adult_missing_values_missing_target_500rows.csv')
+        X = df[df.columns[:-1]]
+        y = df[df.columns[-1]]
+        automl = AutoML(total_time_limit=1, algorithms=["Xgboost"],
+                        start_random_models=1,
+                        hill_climbing_steps=0)
+        automl.fit(X, y)
+
+        y_predicted = automl.predict(X)
+
+        print(y_predicted)
+        pass
 
 
 if __name__ == "__main__":
