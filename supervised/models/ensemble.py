@@ -33,6 +33,7 @@ class Ensemble:
         self.selected_models = []
         self.train_time = None
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
+        self.target = None
 
     def get_train_time(self):
         return self.train_time
@@ -44,7 +45,7 @@ class Ensemble:
         return self.algorithm_short_name
 
     def get_out_of_folds(self):
-        return pd.DataFrame({"prediction": self.total_best_sum})
+        return pd.DataFrame({"prediction": self.total_best_sum, "target": self.target})
 
     def _get_mean(self, X, best_sum, best_count, selected):
         resp = copy.deepcopy(X[selected])
@@ -58,6 +59,10 @@ class Ensemble:
         for i, m in enumerate(models):
             oof = m.get_out_of_folds()
             oofs["model_{}".format(i)] = oof["prediction"]
+            if self.target is None:
+                self.target = oof["target"] # it will be needed for computing advance model statistics
+                                            # it can be a mess in the future when target will be transformed depending on each model
+
         X = pd.DataFrame(oofs)
         self.models = models  # remeber models, will be needed in predictions
         return X

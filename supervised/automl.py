@@ -86,7 +86,7 @@ class AutoML:
             oof_predictions["target"], oof_predictions["prediction"], BINARY_CLASSIFICATION
         )
         self._threshold = self._max_metrics["f1"]["threshold"]
-        print(self._metrics_details, self._max_metrics, self._confusion_matrix)
+        # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
@@ -243,18 +243,12 @@ class AutoML:
     def predict(self, X):
         if self._best_model is not None:
             predictions = self._best_model.predict(X)
-
-            print("columns", predictions.columns, predictions.head())
             neg_label, pos_label = predictions.columns[0][2:], predictions.columns[1][2:]
             if neg_label == '0' and pos_label == '1':
                 neg_label, pos_label = 0, 1
             # assume that it is binary classification
             predictions['label'] = predictions.iloc[:, 1] > self._threshold
-
-            booleanDictionary = {True: pos_label, False: neg_label}
-
-            predictions['label'] = predictions['label'].map(booleanDictionary)
-
+            predictions['label'] = predictions['label'].map({True: pos_label, False: neg_label})
 
             return predictions
             #return pd.DataFrame(

@@ -40,7 +40,7 @@ class AutoMLTestWithData(unittest.TestCase):
                 )
                 automl.fit(X_train, y_train)
 
-                response = automl.predict(X_test)["prediction"]
+                response = automl.predict(X_test)["p_1"]
                 labels = automl.predict(X_test)["label"]
 
                 # Compute the logloss on test dataset
