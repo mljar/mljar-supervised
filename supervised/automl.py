@@ -17,7 +17,10 @@ from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.models.ensemble import Ensemble
 from supervised.models.compute_additional_metrics import ComputeAdditionalMetrics
-from supervised.preprocessing.preprocessing_exclude_missing import PreprocessingExcludeMissingValues
+from supervised.preprocessing.preprocessing_exclude_missing import (
+    PreprocessingExcludeMissingValues,
+)
+
 
 class AutoML:
     def __init__(
@@ -75,12 +78,15 @@ class AutoML:
             None,
         )
 
-    def get_additional_metrics(self, y):
+    def get_additional_metrics(self):
+        # 'target' - the target after processing used for model training
+        # 'prediction' - out of folds predictions of model
         oof_predictions = self._best_model.get_out_of_folds()
         self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
-            y, oof_predictions["prediction"], BINARY_CLASSIFICATION
+            oof_predictions["target"], oof_predictions["prediction"], BINARY_CLASSIFICATION
         )
         self._threshold = self._max_metrics["f1"]["threshold"]
+        print(self._metrics_details, self._max_metrics, self._confusion_matrix)
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
@@ -231,17 +237,32 @@ class AutoML:
                 self._best_model = m
                 max_loss = m.get_final_loss()
 
-        self.get_additional_metrics(y)
+        self.get_additional_metrics()
         self._fit_time = time.time() - start_time
 
     def predict(self, X):
         if self._best_model is not None:
-            return pd.DataFrame(
-                {
-                    "prediction": self._best_model.predict(X),
-                    "label": self._best_model.predict(X) > self._threshold,
-                }
-            )
+            predictions = self._best_model.predict(X)
+
+            print("columns", predictions.columns, predictions.head())
+            neg_label, pos_label = predictions.columns[0][2:], predictions.columns[1][2:]
+            if neg_label == '0' and pos_label == '1':
+                neg_label, pos_label = 0, 1
+            # assume that it is binary classification
+            predictions['label'] = predictions.iloc[:, 1] > self._threshold
+
+            booleanDictionary = {True: pos_label, False: neg_label}
+
+            predictions['label'] = predictions['label'].map(booleanDictionary)
+
+
+            return predictions
+            #return pd.DataFrame(
+            #    {
+            #        "prediction": self._best_model.predict(X),
+            #        "label": self._best_model.predict(X) > self._threshold,
+            #    }
+            #)
         return None
 
     def to_json(self):

@@ -14,20 +14,23 @@ from supervised.tuner.registry import BINARY_CLASSIFICATION
 
 
 class ComputeAdditionalMetricsTest(unittest.TestCase):
-
-
     def test_compute(self):
-        target = np.array([0,0,0,0, 1,1,1,1])
+        target = np.array([0, 0, 0, 0, 1, 1, 1, 1])
         pred = np.array([0.1, 0.8, 0.1, 0.1, 0.8, 0.1, 0.8, 0.8])
-        details, max_metrics, conf = ComputeAdditionalMetrics.compute(target, pred, BINARY_CLASSIFICATION)
-        self.assertEqual(conf.iloc[0,0], 3)
-        self.assertEqual(conf.iloc[1,1], 3)
+        details, max_metrics, conf = ComputeAdditionalMetrics.compute(
+            target, pred, BINARY_CLASSIFICATION
+        )
+        self.assertEqual(conf.iloc[0, 0], 3)
+        self.assertEqual(conf.iloc[1, 1], 3)
 
     def test_compute_f1(self):
-        target = np.array([0,0,0,0, 1,1,1,1])
+        target = np.array([0, 0, 0, 0, 1, 1, 1, 1])
         pred = np.array([0.01, 0.2, 0.1, 0.1, 0.8, 0.8, 0.8, 0.8])
-        details, max_metrics, conf = ComputeAdditionalMetrics.compute(target, pred, BINARY_CLASSIFICATION)
+        details, max_metrics, conf = ComputeAdditionalMetrics.compute(
+            target, pred, BINARY_CLASSIFICATION
+        )
         self.assertEqual(max_metrics["f1"]["score"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

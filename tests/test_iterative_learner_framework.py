@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from supervised.models.learner_xgboost import additional
+
 additional["max_steps"] = 3
 
 from numpy.testing import assert_almost_equal

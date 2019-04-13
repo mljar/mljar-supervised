@@ -99,7 +99,13 @@ class IterativeLearner(LearnerFramework):
             # prepfrocessing goes here
             validation_data = self.preprocessings[ind].transform({"X": X})
             y_predicted += learner.predict(validation_data.get("X"))
-        return y_predicted / float(len(self.learners))
+        y_predicted_average = y_predicted / float(len(self.learners))
+        # get first preprosessing and reverse transform target
+        # we can use the preprocessing of the first model, because for target they are all the same
+        y_predicted_final = self.preprocessings[0].reverse_transform_target(
+            y_predicted_average
+        )
+        return y_predicted_final
 
     def to_json(self):
         preprocessing = []

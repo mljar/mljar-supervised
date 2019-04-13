@@ -52,17 +52,18 @@ class AutoMLTest(unittest.TestCase):
         assert_almost_equal(automl._threshold, automl2._threshold)
     '''
 
-    def test_prediction_labels(self):
+    def test_predict_labels(self):
+        # 3.csv') #
         df = pd.read_csv('tests/data/adult_missing_values_missing_target_500rows.csv')
         X = df[df.columns[:-1]]
         y = df[df.columns[-1]]
         automl = AutoML(total_time_limit=1, algorithms=["Xgboost"],
                         start_random_models=1,
-                        hill_climbing_steps=0)
+                        hill_climbing_steps=0,
+                        train_ensemble=False)
         automl.fit(X, y)
 
         y_predicted = automl.predict(X)
-
         print(y_predicted)
         pass
 

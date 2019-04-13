@@ -354,8 +354,6 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(1, X_test["col1"][0])
         self.assertEqual(0, X_test["col2"][0])
 
-
-
     def test_empty_column(self):
         # training data
         d = {
@@ -369,13 +367,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        preprocessing_params = {
-            "columns_preprocessing": {
-                "col1": [
-                    "remove_column"
-                ]
-            }
-        }
+        preprocessing_params = {"columns_preprocessing": {"col1": ["remove_column"]}}
 
         ps = PreprocessingStep(preprocessing_params)
         train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
@@ -399,8 +391,6 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(3, len(X_train3.columns))
         for col in ["col2", "col3", "col4"]:
             self.assertTrue(col in X_train3.columns)
-
-
 
 
 """

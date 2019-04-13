@@ -35,9 +35,6 @@ class ComputeAdditionalMetrics:
         }
         samples_per_step = max(1, np.floor(predictions.shape[0] / STEPS))
 
-        print(target.shape, predictions.shape)
-        print(target.head(), predictions.head())
-
         for i in range(1, STEPS):
             idx = int(i * samples_per_step)
             if idx + 1 >= predictions.shape[0]:
@@ -46,7 +43,7 @@ class ComputeAdditionalMetrics:
             if np.sum(predictions > th) < 1:
                 break
             response = (predictions > th).astype(int)
-            
+
             details["threshold"] += [th]
             details["f1"] += [f1_score(target, response)]
             details["accuracy"] += [accuracy_score(target, response)]

@@ -239,6 +239,23 @@ class PreprocessingStep(object):
                 preprocessing_params["categorical_y"] = cat_y
         return preprocessing_params
 
+    def reverse_transform_target(self, y):
+
+        #target_preprocessing = self._params.get("target_preprocessing")
+        # assume for now that all tasks are binary classification
+        # if there is no target preprocessing, assume that there is 0 and 1 target
+        pos_label, neg_label = "1", "0"
+        if self._categorical_y is not None:
+            for label, value in self._categorical_y.to_json().items():
+                if value == 1:
+                    pos_label = label
+                else:
+                    neg_label = label
+
+        return pd.DataFrame(
+            {"p_{}".format(neg_label): 1 - y, "p_{}".format(pos_label): y}
+        )
+
     def from_json(self, data_json):
         if "remove_columns" in data_json:
             self._remove_columns = data_json.get("remove_columns", [])

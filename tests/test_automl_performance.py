@@ -29,7 +29,9 @@ class AutoMLTestWithData(unittest.TestCase):
                 )
                 automl = AutoML(
                     total_time_limit=60 * 1,  # 1h limit
-                    algorithms=[ "Xgboost"], # ["LightGBM", "CatBoost", "Xgboost", "RF", "NN"],
+                    algorithms=[
+                        "Xgboost"
+                    ],  # ["LightGBM", "CatBoost", "Xgboost", "RF", "NN"],
                     start_random_models=3,
                     hill_climbing_steps=1,
                     top_models_to_improve=1,
@@ -45,11 +47,15 @@ class AutoMLTestWithData(unittest.TestCase):
                 ll = log_loss(y_test, response)
                 f1 = f1_score(y_test, labels)
                 print(
-                    "iter: {}) id:{} logloss:{} f1:{} time:{}".format(repeat, dataset_id, ll, f1, automl._fit_time)
+                    "iter: {}) id:{} logloss:{} f1:{} time:{}".format(
+                        repeat, dataset_id, ll, f1, automl._fit_time
+                    )
                 )
                 with open("./result.txt", "a") as f_result:
                     f_result.write(
-                        "{} {} {} {} {}\n".format(repeat, dataset_id, ll, f1, automl._fit_time)
+                        "{} {} {} {} {}\n".format(
+                            repeat, dataset_id, ll, f1, automl._fit_time
+                        )
                     )
 
 
