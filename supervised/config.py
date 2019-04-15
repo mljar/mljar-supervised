@@ -1,0 +1,1 @@
+storage_path = '/tmp'
