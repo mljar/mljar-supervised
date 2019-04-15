@@ -2,7 +2,9 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import os
 
+from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import (
@@ -35,7 +37,7 @@ class XgbLearner(Learner):
         super(XgbLearner, self).__init__(params)
         self.library_version = xgb.__version__
         self.model_file = self.uid + ".xgb.model"
-        self.model_file_path = "/tmp/" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.boosting_rounds = additional.get(
             "one_step", 50

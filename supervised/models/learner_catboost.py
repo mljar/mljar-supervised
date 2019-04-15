@@ -2,7 +2,9 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import os
 
+from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
@@ -25,8 +27,8 @@ class CatBoostLearner(Learner):
         super(CatBoostLearner, self).__init__(params)
         self.library_version = catboost.__version__
         self.model_file = self.uid + ".cat.model"
-        self.model_file_path = "/tmp/" + self.model_file
-        self.snapshot_file_path = "/tmp/training_snapshot_" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
+        self.snapshot_file_path = os.path.join(storage_path,"/training_snapshot_", self.model_file)
 
         self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 10)

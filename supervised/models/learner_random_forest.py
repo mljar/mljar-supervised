@@ -2,6 +2,9 @@ import logging
 from supervised.models.learner import Learner
 from sklearn.externals import joblib
 import copy
+import os
+
+from supervised.config import storage_path
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class RandomForestLearner(SklearnTreesClassifierLearner):
         self.library_version = sklearn.__version__
 
         self.model_file = self.uid + ".rf.model"
-        self.model_file_path = "/tmp/" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.trees_in_step = additional.get("trees_in_step", 5)
         self.max_iters = additional.get("max_steps", 3)

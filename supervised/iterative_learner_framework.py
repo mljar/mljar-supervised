@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import time
 import zipfile
+import os
+
+from supervised.config import storage_path
 from supervised.learner_framework import LearnerFramework
 from supervised.validation.validation_step import ValidationStep
 from supervised.models.learner_factory import LearnerFactory
@@ -140,9 +143,8 @@ class IterativeLearner(LearnerFramework):
             "framework_file_path", self.framework_file_path
         )
 
-        destination_dir = "/tmp"
         with zipfile.ZipFile(json_desc.get("framework_file_path"), "r") as zip_ref:
-            zip_ref.extractall("/tmp")
+            zip_ref.extractall(storage_path)
         self.learners = []
         for learner_desc in json_desc.get("learners"):
             self.learners += [LearnerFactory.load(learner_desc)]

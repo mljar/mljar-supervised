@@ -1,3 +1,4 @@
+import os
 import logging
 import copy
 import numpy as np
@@ -5,6 +6,7 @@ import pandas as pd
 import time
 import uuid
 
+from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
@@ -25,7 +27,7 @@ class Ensemble:
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
         self.model_file = self.uid + ".ensemble.model"
-        self.model_file_path = "/tmp/" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
         # right now only logloss can be optimized by ensemble
         self.metric = Metric({"name": "logloss"})
         self.best_loss = 10e12  # the best loss obtained by ensemble

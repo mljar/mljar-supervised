@@ -2,7 +2,9 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import os
 
+from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
@@ -23,7 +25,7 @@ class LightgbmLearner(Learner):
         super(LightgbmLearner, self).__init__(params)
         self.library_version = lgb.__version__
         self.model_file = self.uid + ".lgbm.model"
-        self.model_file_path = "/tmp/" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 3)

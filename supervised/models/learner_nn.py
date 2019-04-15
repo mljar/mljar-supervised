@@ -38,7 +38,9 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import os
 
+from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
@@ -65,7 +67,7 @@ class NeuralNetworkLearner(Learner):
 
         self.library_version = keras.__version__
         self.model_file = self.uid + ".nn.model"
-        self.model_file_path = "/tmp/" + self.model_file
+        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.rounds = additional.get("one_step", 10)
         self.max_iters = additional.get("max_steps", 1)

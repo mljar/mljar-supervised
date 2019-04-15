@@ -4,6 +4,8 @@ logging.basicConfig(format="%(asctime)s %(levelname)s %(message)s", level=loggin
 import uuid
 import os
 
+from supervised.config import storage_path
+
 log = logging.getLogger(__name__)
 
 from supervised.validation.validation_step import ValidationStep
@@ -26,7 +28,7 @@ class LearnerFramework:
         self.uid = str(uuid.uuid4())
 
         self.framework_file = self.uid + ".framework"
-        self.framework_file_path = os.path.join("/tmp/", self.framework_file)
+        self.framework_file_path = os.path.join(storage_path, self.framework_file)
 
         for i in ["learner", "validation"]:  # mandatory parameters
             if i not in params:
