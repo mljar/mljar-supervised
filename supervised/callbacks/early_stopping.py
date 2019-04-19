@@ -16,6 +16,7 @@ class EarlyStopping(Callback):
         self.max_no_improvement_cnt = params.get("max_no_improvement_cnt", 5)
 
         self.keep_best_model = params.get("keep_best_model", True)
+        self.best_iter = {}
         self.best_loss = {}
         self.loss_values = {}
         self.best_models = {}
@@ -32,6 +33,7 @@ class EarlyStopping(Callback):
     def add_and_set_learner(self, learner):
         self.learners += [learner]
         self.learner = learner
+        self.best_iter[learner.uid] = None
         self.best_loss[learner.uid] = self.metric.worst_value()
         self.loss_values[learner.uid] = {"train": [], "validation": [], "iters": []}
         self.best_models[learner.uid] = None
@@ -70,6 +72,7 @@ class EarlyStopping(Callback):
 
             y_validation_true = predictions.get("y_validation_true")
             self.no_improvement_cnt = 0
+            self.best_iter[self.learner.uid] = logs.get("iter_cnt")
             self.best_loss[self.learner.uid] = validation_loss
             self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                 {
