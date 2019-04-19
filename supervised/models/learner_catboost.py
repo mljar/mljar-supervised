@@ -28,7 +28,9 @@ class CatBoostLearner(Learner):
         self.library_version = catboost.__version__
         self.model_file = self.uid + ".cat.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
-        self.snapshot_file_path = os.path.join(storage_path,"/training_snapshot_", self.model_file)
+        self.snapshot_file_path = os.path.join(
+            storage_path, "/training_snapshot_", self.model_file
+        )
 
         self.rounds = additional.get("one_step", 50)
         self.max_iters = additional.get("max_steps", 10)

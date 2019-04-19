@@ -241,7 +241,7 @@ class PreprocessingStep(object):
 
     def reverse_transform_target(self, y):
 
-        #target_preprocessing = self._params.get("target_preprocessing")
+        # target_preprocessing = self._params.get("target_preprocessing")
         # assume for now that all tasks are binary classification
         # if there is no target preprocessing, assume that there is 0 and 1 target
         pos_label, neg_label = "1", "0"

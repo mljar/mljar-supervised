@@ -83,7 +83,9 @@ class AutoML:
         # 'prediction' - out of folds predictions of model
         oof_predictions = self._best_model.get_out_of_folds()
         self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
-            oof_predictions["target"], oof_predictions["prediction"], BINARY_CLASSIFICATION
+            oof_predictions["target"],
+            oof_predictions["prediction"],
+            BINARY_CLASSIFICATION,
         )
         self._threshold = self._max_metrics["f1"]["threshold"]
         # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
@@ -243,20 +245,25 @@ class AutoML:
     def predict(self, X):
         if self._best_model is not None:
             predictions = self._best_model.predict(X)
-            neg_label, pos_label = predictions.columns[0][2:], predictions.columns[1][2:]
-            if neg_label == '0' and pos_label == '1':
+            neg_label, pos_label = (
+                predictions.columns[0][2:],
+                predictions.columns[1][2:],
+            )
+            if neg_label == "0" and pos_label == "1":
                 neg_label, pos_label = 0, 1
             # assume that it is binary classification
-            predictions['label'] = predictions.iloc[:, 1] > self._threshold
-            predictions['label'] = predictions['label'].map({True: pos_label, False: neg_label})
+            predictions["label"] = predictions.iloc[:, 1] > self._threshold
+            predictions["label"] = predictions["label"].map(
+                {True: pos_label, False: neg_label}
+            )
 
             return predictions
-            #return pd.DataFrame(
+            # return pd.DataFrame(
             #    {
             #        "prediction": self._best_model.predict(X),
             #        "label": self._best_model.predict(X) > self._threshold,
             #    }
-            #)
+            # )
         return None
 
     def to_json(self):

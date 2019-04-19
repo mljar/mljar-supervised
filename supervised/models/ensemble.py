@@ -62,8 +62,10 @@ class Ensemble:
             oof = m.get_out_of_folds()
             oofs["model_{}".format(i)] = oof["prediction"]
             if self.target is None:
-                self.target = oof["target"] # it will be needed for computing advance model statistics
-                                            # it can be a mess in the future when target will be transformed depending on each model
+                self.target = oof[
+                    "target"
+                ]  # it will be needed for computing advance model statistics
+                # it can be a mess in the future when target will be transformed depending on each model
 
         X = pd.DataFrame(oofs)
         self.models = models  # remeber models, will be needed in predictions
