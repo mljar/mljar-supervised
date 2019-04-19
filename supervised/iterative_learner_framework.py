@@ -90,6 +90,12 @@ class IterativeLearner(LearnerFramework):
             return None
         return early_stopping.final_loss
 
+    def get_metric_logs(self):
+        metric_logger = self.callbacks.get("metric_logger")
+        if metric_logger is None:
+            return None
+        return metric_logger.loss_values
+
     def get_name(self):
         return self.learner_params.get("model_type")
 

@@ -109,9 +109,12 @@ class AutoML:
         }
 
     def train_model(self, params, X, y):
+        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
-        il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
+        il = IterativeLearner(
+            params, callbacks=[early_stop, time_constraint, metric_logger]
+        )
         il_key = il.get_params_key()
         if il_key in self._models_params_keys:
             return None
