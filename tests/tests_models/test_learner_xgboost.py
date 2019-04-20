@@ -28,8 +28,8 @@ class XgboostLearnerTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss", "seed":1}
-        prev_loss = None    
+        params = {"objective": "binary:logistic", "eval_metric": "logloss", "seed": 1}
+        prev_loss = None
         for i in range(3):
             xgb = XgbLearner(params)
             xgb.fit(self.X, self.y)
@@ -38,7 +38,6 @@ class XgboostLearnerTest(unittest.TestCase):
             if prev_loss is not None:
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
-
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})

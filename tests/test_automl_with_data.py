@@ -17,7 +17,7 @@ class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
         seed = 1706 + 1
         for dataset_id in [31]:  # 720 # 31,44,737
-            df = pd.read_csv("./tests/data/data/{0}.csv".format(dataset_id))
+            df = pd.read_csv("./tests/data/{0}.csv".format(dataset_id))
             x_cols = [c for c in df.columns if c != "target"]
             X = df[x_cols]
             y = df["target"]
@@ -26,9 +26,9 @@ class AutoMLTestWithData(unittest.TestCase):
                 X, y, test_size=0.3, random_state=seed
             )
             automl = AutoML(
-                total_time_limit=60 * 6000,
+                total_time_limit=60 * 1,
                 algorithms=["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
-                start_random_models=10,
+                start_random_models=5,
                 hill_climbing_steps=3,
                 top_models_to_improve=3,
                 train_ensemble=True,
@@ -36,7 +36,7 @@ class AutoMLTestWithData(unittest.TestCase):
             )
             automl.fit(X_train, y_train)
 
-            response = automl.predict(X_test)
+            response = automl.predict(X_test)["p_1"]
             # Compute the logloss on test dataset
             ll = log_loss(y_test, response)
             print("(*) Dataset id {} logloss {}".format(dataset_id, ll))

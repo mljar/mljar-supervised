@@ -41,11 +41,7 @@ class MaxItersConstraintTest(unittest.TestCase):
         cls.kfolds = 3
         cls.train_params = {
             "preprocessing": {},
-            "validation": {
-                "validation_type": "kfold",
-                "kfold": cls.kfolds,
-                
-            },
+            "validation": {"validation_type": "kfold", "kfold": cls.kfolds},
             "learner": {
                 "learner_type": "Xgboost",
                 "objective": "binary:logistic",
@@ -53,7 +49,7 @@ class MaxItersConstraintTest(unittest.TestCase):
                 "eta": 0.01,
                 "silent": 1,
                 "max_depth": 1,
-                "seed": 1
+                "seed": 1,
             },
         }
 
@@ -67,9 +63,12 @@ class MaxItersConstraintTest(unittest.TestCase):
         il.train(self.data)
         metric_logs = il.get_metric_logs()
         for k in range(self.kfolds):
-            self.assertEqual(len(metric_logs[il.learners[k].uid]["train"]["logloss"]), iters_cnt)
-            self.assertNotEqual(len(metric_logs[il.learners[k].uid]["train"]["logloss"]), MAX_STEPS)
-
+            self.assertEqual(
+                len(metric_logs[il.learners[k].uid]["train"]["logloss"]), iters_cnt
+            )
+            self.assertNotEqual(
+                len(metric_logs[il.learners[k].uid]["train"]["logloss"]), MAX_STEPS
+            )
 
 
 if __name__ == "__main__":

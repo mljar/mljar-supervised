@@ -40,7 +40,7 @@ class LightgbmLearner(Learner):
             "bagging_fraction": self.params.get("bagging_fraction", 0.7),
             "bagging_freq": self.params.get("bagging_freq", 1),
             "verbose": -1,
-            "seed": self.params.get("seed", 1)
+            "seed": self.params.get("seed", 1),
         }
 
         log.debug("LightgbmLearner __init__")

@@ -14,12 +14,10 @@ class MaxItersConstraint(Callback):
         self.name = params.get("name", "max_iters_constraint")
         self.max_iters = params.get("max_iters", 10)
 
-
     def add_and_set_learner(self, learner):
         self.learner = learner
 
-    def on_iteration_end(self, logs, predictions):   
-        # iters are computed starting from 0    
-        if logs.get("iter_cnt")+1 >= self.max_iters:
+    def on_iteration_end(self, logs, predictions):
+        # iters are computed starting from 0
+        if logs.get("iter_cnt") + 1 >= self.max_iters:
             self.learner.stop_training = True
-

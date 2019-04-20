@@ -29,7 +29,7 @@ class RandomForestLearnerTest(unittest.TestCase):
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         params = {"trees_in_step": 1, "seed": 1}
-        prev_loss = None    
+        prev_loss = None
         for i in range(3):
             model = RandomForestLearner(params)
             model.fit(self.X, self.y)
@@ -47,8 +47,6 @@ class RandomForestLearnerTest(unittest.TestCase):
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         self.assertTrue(metric(self.y, y_predicted) < 0.6)
-            
-        
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})

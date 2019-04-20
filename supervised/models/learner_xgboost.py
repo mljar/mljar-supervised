@@ -54,10 +54,9 @@ class XgbLearner(Learner):
             "colsample_bytree": self.params.get("colsample_bytree", 0.8),
             "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
-            
         }
         log.debug("XgbLearner __init__")
-        
+
     def update(self, update_params):
         # Dont need to update boosting rounds, it is adding rounds incrementally
         pass

@@ -17,9 +17,11 @@ sys.stderr = stderr
 import numpy as np
 import tensorflow as tf
 import random as rn
+
 np.random.seed(42)
 rn.seed(12345)
 from keras import backend as K
+
 tf.set_random_seed(1234)
 tf.logging.set_verbosity(tf.logging.ERROR)
 ################################################################################

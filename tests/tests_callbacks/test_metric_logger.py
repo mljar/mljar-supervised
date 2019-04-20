@@ -51,7 +51,7 @@ class MetricLoggerTest(unittest.TestCase):
                 "eta": 0.01,
                 "silent": 1,
                 "max_depth": 1,
-                "seed": 1
+                "seed": 1,
             },
         }
 
@@ -62,10 +62,17 @@ class MetricLoggerTest(unittest.TestCase):
         il = IterativeLearner(self.train_params, callbacks=[metric_logger])
         il.train(self.data)
         metric_logs = il.get_metric_logs()
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), len(metric_logs[il.learners[0].uid]["train"]["auc"]))
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), len(metric_logs[il.learners[0].uid]["iters"]))
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), MAX_STEPS)
-
+        self.assertEqual(
+            len(metric_logs[il.learners[0].uid]["train"]["logloss"]),
+            len(metric_logs[il.learners[0].uid]["train"]["auc"]),
+        )
+        self.assertEqual(
+            len(metric_logs[il.learners[0].uid]["train"]["logloss"]),
+            len(metric_logs[il.learners[0].uid]["iters"]),
+        )
+        self.assertEqual(
+            len(metric_logs[il.learners[0].uid]["train"]["logloss"]), MAX_STEPS
+        )
 
 
 if __name__ == "__main__":

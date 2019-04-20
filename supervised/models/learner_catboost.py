@@ -40,7 +40,7 @@ class CatBoostLearner(Learner):
             "random_strength": self.params.get("random_strength", 1),
             "bagging_temperature": self.params.get("bagging_temperature", 1),
             "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
-            "random_seed": self.params.get("seed", 1)
+            "random_seed": self.params.get("seed", 1),
         }
 
         log.debug("CatBoostLearner __init__")

@@ -3,7 +3,7 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
-import copy  
+import copy
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -32,14 +32,14 @@ class LightgbmLearnerTest(unittest.TestCase):
             "feature_fraction": 0.8,
             "bagging_fraction": 0.8,
             "bagging_freq": 1,
-            "seed": 1
+            "seed": 1,
         }
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        prev_loss = None  
+        prev_loss = None
         for i in range(3):
-            model =  LightgbmLearner(self.params)
+            model = LightgbmLearner(self.params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -51,13 +51,12 @@ class LightgbmLearnerTest(unittest.TestCase):
         for i in range(3):
             params = copy.deepcopy(self.params)
             params["seed"] = 1 + i
-            model =  LightgbmLearner(params)
+            model = LightgbmLearner(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             losses += [metric(self.y, y_predicted)]
-        for i in range(1,3):
-            self.assertNotEqual(losses[i-1], losses[i])    
-            
+        for i in range(1, 3):
+            self.assertNotEqual(losses[i - 1], losses[i])
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})

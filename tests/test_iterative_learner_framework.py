@@ -52,10 +52,9 @@ class IterativeLearnerTest(unittest.TestCase):
                 "max_iters": 3,
                 "silent": 1,
                 "max_depth": 1,
-                "seed": 1
+                "seed": 1,
             },
         }
-
 
     def test_reproduce_fit(self):
         losses = []
@@ -66,7 +65,6 @@ class IterativeLearnerTest(unittest.TestCase):
             metric = Metric({"name": "logloss"})
             losses += [metric(self.y, y_predicted)]
         assert_almost_equal(losses[0], losses[1])
-
 
     def test_fit_and_predict(self):
         il = IterativeLearner(self.train_params, callbacks=[])

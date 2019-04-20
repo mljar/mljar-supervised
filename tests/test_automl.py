@@ -27,20 +27,18 @@ class AutoMLTest(unittest.TestCase):
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
         # cls.y = pd.DataFrame(cls.y)
 
-
-
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         losses = []
         for i in range(2):
             automl = AutoML(
-                total_time_limit=10000, # the time limit should be big enough too not interrupt the training
+                total_time_limit=10000,  # the time limit should be big enough too not interrupt the training
                 algorithms=["Xgboost"],
                 start_random_models=2,
                 hill_climbing_steps=1,
                 train_ensemble=True,
                 verbose=True,
-                seed = 12
+                seed=12,
             )
             automl.fit(self.X, self.y)
             y_predicted = automl.predict(self.X)["p_1"]
@@ -93,6 +91,6 @@ class AutoMLTest(unittest.TestCase):
         self.assertTrue("A" in np.unique(y_predicted["label"]))
         self.assertTrue("B" in np.unique(y_predicted["label"]))
 
-    
+
 if __name__ == "__main__":
     unittest.main()
