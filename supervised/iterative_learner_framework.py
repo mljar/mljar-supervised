@@ -45,6 +45,7 @@ class IterativeLearner(LearnerFramework):
     def train(self, data):
         start_time = time.time()
         log.debug("IterativeLearner.train")
+        np.random.seed(self.learner_params["seed"])
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
 

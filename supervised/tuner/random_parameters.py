@@ -14,9 +14,9 @@ class RandomParameters:
     """
 
     @staticmethod
-    def get(params, seed=None):
+    def get(params, seed=1):
         np.random.seed(seed)
-        generated_params = {}
+        generated_params = {"seed": seed}
         for k in params:
             # we need to convert numpy types to native python types
             # it is needed in JSON serialization

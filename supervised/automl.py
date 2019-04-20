@@ -33,6 +33,7 @@ class AutoML:
         top_models_to_improve=5,
         train_ensemble=True,
         verbose=True,
+        seed = 1
     ):
         self._total_time_limit = total_time_limit
         self._time_limit = (
@@ -64,7 +65,7 @@ class AutoML:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
             self._time_limit = self._total_time_limit * 0.85 / estimated_models_to_check
-
+            
         if len(self._algorithms) == 0:
             self._algorithms = list(
                 ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()
@@ -77,6 +78,7 @@ class AutoML:
             None,
             None,
         )
+        self._seed = seed
 
     def get_additional_metrics(self):
         # 'target' - the target after processing used for model training
@@ -92,7 +94,7 @@ class AutoML:
 
     def _get_model_params(self, model_type, X, y):
         model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
-        model_params = RandomParameters.get(model_info["params"])
+        model_params = RandomParameters.get(model_info["params"], len(self._models) + self._seed)
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
         preprocessing_params = PreprocessingTuner.get(
@@ -180,7 +182,7 @@ class AutoML:
             models = sorted(models, key=lambda x: x[0])
             for i in range(min(self._top_models_to_improve, len(models))):
                 m = models[i][1]
-                for p in HillClimbing.get(m.params.get("learner")):
+                for p in HillClimbing.get(m.params.get("learner"), len(self._models) + self._seed):
                     if p is not None:
                         all_params = copy.deepcopy(m.params)
                         all_params["learner"] = p

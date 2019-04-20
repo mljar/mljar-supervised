@@ -39,7 +39,7 @@ class RandomForestLearner(SklearnTreesClassifierLearner):
             min_samples_leaf=params.get("min_samples_leaf", 4),
             warm_start=True,
             n_jobs=-1,
-            random_state=params.get("random_seed", 1706),
+            random_state=params.get("seed", 1),
         )
         logger.debug("RandomForestLearner __init__")
 

@@ -13,25 +13,14 @@ import keras
 sys.stderr = stderr
 ################################################################################
 # set seed for reproducibility
+# however in case of running on multiple CPU or GPU there is no reproducibility
 import numpy as np
 import tensorflow as tf
 import random as rn
-
 np.random.seed(42)
 rn.seed(12345)
-# session_conf = tf.ConfigProto(
-#    intra_op_parallelism_threads=1, inter_op_parallelism_threads=1,
-#    device_count={"CPU": 8}
-# )
 from keras import backend as K
-
 tf.set_random_seed(1234)
-# sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-# K.set_session(sess)
-
-config = tf.ConfigProto(device_count={"CPU": 8})
-K.tensorflow_backend.set_session(tf.Session(config=config))
-
 tf.logging.set_verbosity(tf.logging.ERROR)
 ################################################################################
 import logging

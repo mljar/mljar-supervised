@@ -17,10 +17,11 @@ class HillClimbing:
     """
 
     @staticmethod
-    def get(params, seed=None):
+    def get(params, seed=1):
         np.random.seed(seed)
         keys = list(params.keys())
         keys.remove("model_type")
+        keys.remove("seed")
         key_to_update = np.random.permutation(keys)[0]
 
         model_type = params["model_type"]

@@ -51,6 +51,7 @@ class MetricLoggerTest(unittest.TestCase):
                 "eta": 0.01,
                 "silent": 1,
                 "max_depth": 1,
+                "seed": 1
             },
         }
 

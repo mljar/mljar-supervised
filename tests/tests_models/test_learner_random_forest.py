@@ -26,19 +26,29 @@ class RandomForestLearnerTest(unittest.TestCase):
             random_state=0,
         )
 
+    def test_reproduce_fit(self):
+        metric = Metric({"name": "logloss"})
+        params = {"trees_in_step": 1, "seed": 1}
+        prev_loss = None    
+        for i in range(3):
+            model = RandomForestLearner(params)
+            model.fit(self.X, self.y)
+            y_predicted = model.predict(self.X)
+            loss = metric(self.y, y_predicted)
+            if prev_loss is not None:
+                assert_almost_equal(prev_loss, loss)
+            prev_loss = loss
+
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 1}
+        params = {"trees_in_step": 50}
         rf = RandomForestLearner(params)
 
-        loss_prev = None
-        for i in range(2):
-            rf.fit(self.X, self.y)
-            y_predicted = rf.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.00001 < loss_prev)
-            loss_prev = loss
+        rf.fit(self.X, self.y)
+        y_predicted = rf.predict(self.X)
+        self.assertTrue(metric(self.y, y_predicted) < 0.6)
+            
+        
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
@@ -57,7 +67,7 @@ class RandomForestLearnerTest(unittest.TestCase):
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss3 = metric(self.y, y_predicted)
-        self.assertTrue(loss3 < loss)
+        self.assertNotEqual(loss3, loss)
 
         y_predicted = rf2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
@@ -79,3 +89,7 @@ class RandomForestLearnerTest(unittest.TestCase):
         y_predicted = rf2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+
+if __name__ == "__main__":
+    unittest.main()

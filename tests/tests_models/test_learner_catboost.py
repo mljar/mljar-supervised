@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 import json
+import copy
 import numpy as np
 import pandas as pd
 
@@ -28,11 +29,27 @@ class CatBoostLearnerTest(unittest.TestCase):
         cls.params = {
             "learning_rate": 0.1,
             "depth": 2,
-            "rsm": 0.8,
+            "rsm": 0.5,
             "random_strength": 1,
             "bagging_temperature": 0.7,
             "l2_leaf_reg": 1,
+            "seed": 1
         }
+
+
+
+    def test_reproduce_fit(self):
+        metric = Metric({"name": "logloss"})
+        prev_loss = None  
+        for i in range(3):
+            model =  CatBoostLearner(self.params)
+            model.fit(self.X, self.y)
+            y_predicted = model.predict(self.X)
+            loss = metric(self.y, y_predicted)
+            if prev_loss is not None:
+                assert_almost_equal(prev_loss, loss)
+            prev_loss = loss
+
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
