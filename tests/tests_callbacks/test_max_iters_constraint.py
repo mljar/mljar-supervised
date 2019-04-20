@@ -13,10 +13,11 @@ from sklearn import datasets
 from supervised.iterative_learner_framework import IterativeLearner
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
+from supervised.callbacks.max_iters_constraint import MaxItersConstraint
 from supervised.metric import Metric
 
 
-class MetricLoggerTest(unittest.TestCase):
+class MaxItersConstraintTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -37,12 +38,13 @@ class MetricLoggerTest(unittest.TestCase):
             }
         }
 
+        cls.kfolds = 3
         cls.train_params = {
             "preprocessing": {},
             "validation": {
-                "validation_type": "split",
-                "train_ratio": 0.5,
-                "shuffle": True,
+                "validation_type": "kfold",
+                "kfold": cls.kfolds,
+                
             },
             "learner": {
                 "learner_type": "Xgboost",
@@ -55,15 +57,17 @@ class MetricLoggerTest(unittest.TestCase):
         }
 
     def test_fit_and_predict(self):
-        MAX_STEPS = 10
+        MAX_STEPS = 100
         additional["max_steps"] = MAX_STEPS
-        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        il = IterativeLearner(self.train_params, callbacks=[metric_logger])
+        iters_cnt = 5
+        max_iters = MaxItersConstraint({"max_iters": iters_cnt})
+        metric_logger = MetricLogger({"metric_names": ["logloss"]})
+        il = IterativeLearner(self.train_params, callbacks=[max_iters, metric_logger])
         il.train(self.data)
         metric_logs = il.get_metric_logs()
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), len(metric_logs[il.learners[0].uid]["train"]["auc"]))
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), len(metric_logs[il.learners[0].uid]["iters"]))
-        self.assertEqual(len(metric_logs[il.learners[0].uid]["train"]["logloss"]), MAX_STEPS)
+        for k in range(self.kfolds):
+            self.assertEqual(len(metric_logs[il.learners[k].uid]["train"]["logloss"]), iters_cnt)
+            self.assertNotEqual(len(metric_logs[il.learners[k].uid]["train"]["logloss"]), MAX_STEPS)
 
 
 
