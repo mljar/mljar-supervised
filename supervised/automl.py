@@ -34,6 +34,7 @@ class AutoML:
         top_models_to_improve=5,
         train_ensemble=True,
         verbose=True,
+        optimize_metric="logloss",
         seed=1,
     ):
         self._total_time_limit = total_time_limit
@@ -81,13 +82,14 @@ class AutoML:
             None,
         )
         self._seed = seed
+        self._optimize_metric = optimize_metric
 
     def get_leaderboard(self):
         ldb = {"uid":[], "model_type":[], "metric_type":[], "metric_value": [], "train_time": []}
         for m in self._models:
             ldb["uid"] += [m.uid] 
             ldb["model_type"] += [m.get_name()] 
-            ldb["metric_type"] += ["logloss"]
+            ldb["metric_type"] += [self._optimize_metric]
             ldb["metric_value"] += [m.get_final_loss()] 
             ldb["train_time"] += [m.get_train_time()]
         return pd.DataFrame(ldb)
@@ -141,7 +143,7 @@ class AutoML:
 
     def train_model(self, params, X, y):
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        early_stop = EarlyStopping({"metric": {"name": "logloss"}})
+        early_stop = EarlyStopping({"metric": {"name": self._optimize_metric}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         il = IterativeLearner(
             params, callbacks=[early_stop, time_constraint, metric_logger]
@@ -220,7 +222,7 @@ class AutoML:
 
     def ensemble_step(self, y):
         if self._train_ensemble:
-            self.ensemble = Ensemble()
+            self.ensemble = Ensemble(self._optimize_metric)
             X_oof = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(X_oof, y)
             self.keep_model(self.ensemble)

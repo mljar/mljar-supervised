@@ -11,6 +11,7 @@ from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.models.learner_factory import LearnerFactory
+from supervised.iterative_learner_framework import IterativeLearner
 import operator
 
 log = logging.getLogger(__name__)
@@ -23,14 +24,13 @@ class Ensemble:
     algorithm_name = "Greedy Ensemble"
     algorithm_short_name = "Ensemble"
 
-    def __init__(self):
+    def __init__(self, optimize_metric="logloss"):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
         self.model_file = self.uid + ".ensemble.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
-        # right now only logloss can be optimized by ensemble
-        self.metric = Metric({"name": "logloss"})
-        self.best_loss = 10e12  # the best loss obtained by ensemble
+        self.metric = Metric({"name": optimize_metric})
+        self.best_loss = self.metric.get_maximum()  # the best loss obtained by ensemble
         self.models = None
         self.selected_models = []
         self.train_time = None
@@ -78,18 +78,19 @@ class Ensemble:
 
         best_sum = None  # sum of best algorihtms
         for j in range(X.shape[1]):  # iterate over all solutions
-            min_score = 10e12
+            min_score = self.metric.get_maximum()
             best_index = -1
             # try to add some algorithm to the best_sum to minimize metric
             for i in range(X.shape[1]):
                 y_ens = self._get_mean(X, best_sum, j + 1, "model_{}".format(i))
                 score = self.metric(y, y_ens)
-                if score < min_score:
+
+                if self.metric.improvement(previous=min_score, current=score):
                     min_score = score
                     best_index = i
 
             # there is improvement, save it
-            if min_score + 10e-6 < self.best_loss:
+            if self.metric.improvement(previous=self.best_loss, current=min_score):
                 self.best_loss = min_score
                 selected_algs_cnt = j
 
@@ -131,7 +132,7 @@ class Ensemble:
         for selected in self.selected_models:
             model = selected["model"]
             repeat = selected["repeat"]
-            models_json += [{"model": model.save(), "repeat": repeat}]
+            models_json += [{"model": model.to_json(), "repeat": repeat}]
 
         json_desc = {
             "library_version": self.library_version,
@@ -143,7 +144,6 @@ class Ensemble:
         return json_desc
 
     def from_json(self, json_desc):
-
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
         self.algorithm_short_name = json_desc.get(
@@ -155,6 +155,10 @@ class Ensemble:
         for selected in models_json:
             model = selected["model"]
             repeat = selected["repeat"]
+
+            il = IterativeLearner(model.get("params"))
+            il.from_json(model)
             self.selected_models += [
-                {"model": LearnerFactory.load(model), "repeat": repeat}
+                #{"model": LearnerFactory.load(model), "repeat": repeat}
+                {"model": il, "repeat": repeat}
             ]

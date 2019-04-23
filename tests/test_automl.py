@@ -26,7 +26,7 @@ class AutoMLTest(unittest.TestCase):
         )
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
         # cls.y = pd.DataFrame(cls.y)
-    '''
+
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         losses = []
@@ -44,7 +44,7 @@ class AutoMLTest(unittest.TestCase):
             y_predicted = automl.predict(self.X)["p_1"]
             loss = metric(self.y, y_predicted)
             losses += [loss]
-        assert_almost_equal(losses[0], losses[1], decimal=6)
+        assert_almost_equal(losses[0], losses[1], decimal=4)
 
     def test_fit_and_predict(self):
         metric = Metric({"name": "logloss"})
@@ -54,9 +54,10 @@ class AutoMLTest(unittest.TestCase):
             algorithms=["Xgboost"],
             start_random_models=5,
             hill_climbing_steps=0,
+            seed=13
         )
         automl.fit(self.X, self.y)
-
+        
         y_predicted = automl.predict(self.X)["p_1"]
         self.assertTrue(y_predicted is not None)
         loss = metric(self.y, y_predicted)
@@ -73,6 +74,20 @@ class AutoMLTest(unittest.TestCase):
 
         assert_almost_equal(automl._threshold, automl2._threshold)
 
+    def test_fit_optimize_auc(self):
+        automl = AutoML(
+            total_time_limit=5,
+            algorithms=["Xgboost"],
+            start_random_models=2,
+            hill_climbing_steps=0,
+            optimize_metric="auc",
+            seed=16
+        )
+        automl.fit(self.X, self.y)
+        ldb = automl.get_leaderboard()
+        self.assertEqual(ldb["metric_type"][0], "auc")
+        self.assertEqual(np.sum(ldb["metric_value"] > 0.5), ldb.shape[0]) # all better than 0.5 AUC
+
     def test_predict_labels(self):
         df = pd.read_csv("tests/data/adult_missing_values_missing_target_500rows.csv")
         X = df[df.columns[:-1]]
@@ -83,13 +98,13 @@ class AutoMLTest(unittest.TestCase):
             start_random_models=5,
             hill_climbing_steps=0,
             train_ensemble=True,
+            seed=14
         )
         automl.fit(X, y)
 
         y_predicted = automl.predict(X)
         self.assertTrue("A" in np.unique(y_predicted["label"]))
         self.assertTrue("B" in np.unique(y_predicted["label"]))
-    '''
 
     def test_predict_labels(self):
         automl = AutoML(
@@ -98,6 +113,7 @@ class AutoMLTest(unittest.TestCase):
             start_random_models=5,
             hill_climbing_steps=0,
             train_ensemble=True,
+            seed=15
         )
         automl.fit(self.X, self.y)
         ldb = automl.get_leaderboard()

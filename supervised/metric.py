@@ -62,6 +62,12 @@ class Metric(object):
             return current < previous
         return current > previous
 
+    def get_maximum(self):
+        if self.minimize_direction:
+            return 10e12
+        else:
+            return -10e12    
+
     def worst_value(self):
         if self.minimize_direction:
             return np.Inf
