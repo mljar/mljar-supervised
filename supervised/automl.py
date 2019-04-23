@@ -1,9 +1,12 @@
+import sys
 import json
 import copy
 import time
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+
+from tqdm.auto import tqdm
+tqdm.pandas()
 
 from supervised.models.learner_xgboost import XgbLearner
 from supervised.iterative_learner_framework import IterativeLearner
@@ -56,7 +59,7 @@ class AutoML:
         self._verbose = verbose
 
         # single models including models in the folds
-        estimated_models_to_check = (
+        self._estimated_models_to_check = (
             len(self._algorithms) * self._start_random_models
             + self._top_models_to_improve * self._hill_climbing_steps * 2
         ) * 5
@@ -64,10 +67,9 @@ class AutoML:
         if self._total_time_limit is not None:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
-            self._time_limit = self._total_time_limit * 0.85 / estimated_models_to_check
-        self._progress_bar = tqdm(
-            total=int(estimated_models_to_check/5), desc="MLJAR AutoML", unit="model"
-        )
+            self._time_limit = self._total_time_limit * 0.85 / self._estimated_models_to_check
+
+        
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -230,6 +232,9 @@ class AutoML:
 
     def fit(self, X, y):
         start_time = time.time()
+        self._progress_bar = tqdm(
+            total=int(self._estimated_models_to_check/5), desc="MLJAR AutoML", unit="model"
+        )
         X.reset_index(drop=True, inplace=True)
         y = np.array(y)
         if not isinstance(y, pd.DataFrame):
