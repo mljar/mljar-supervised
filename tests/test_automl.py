@@ -26,7 +26,7 @@ class AutoMLTest(unittest.TestCase):
         )
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
         # cls.y = pd.DataFrame(cls.y)
-
+    '''
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         losses = []
@@ -74,7 +74,6 @@ class AutoMLTest(unittest.TestCase):
         assert_almost_equal(automl._threshold, automl2._threshold)
 
     def test_predict_labels(self):
-        # 3.csv') #
         df = pd.read_csv("tests/data/adult_missing_values_missing_target_500rows.csv")
         X = df[df.columns[:-1]]
         y = df[df.columns[-1]]
@@ -90,7 +89,21 @@ class AutoMLTest(unittest.TestCase):
         y_predicted = automl.predict(X)
         self.assertTrue("A" in np.unique(y_predicted["label"]))
         self.assertTrue("B" in np.unique(y_predicted["label"]))
+    '''
 
+    def test_predict_labels(self):
+        automl = AutoML(
+            total_time_limit=15,
+            algorithms=["Xgboost"],
+            start_random_models=5,
+            hill_climbing_steps=0,
+            train_ensemble=True,
+        )
+        automl.fit(self.X, self.y)
+        ldb = automl.get_leaderboard()
+        self.assertEqual(ldb.shape[0], len(automl._models))
+        for col in ["uid", "model_type", "metric_type", "metric_value", "train_time"]:
+            self.assertTrue(col in ldb.columns)
 
 if __name__ == "__main__":
     unittest.main()

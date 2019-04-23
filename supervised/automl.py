@@ -82,6 +82,16 @@ class AutoML:
         )
         self._seed = seed
 
+    def get_leaderboard(self):
+        ldb = {"uid":[], "model_type":[], "metric_type":[], "metric_value": [], "train_time": []}
+        for m in self._models:
+            ldb["uid"] += [m.uid] 
+            ldb["model_type"] += [m.get_name()] 
+            ldb["metric_type"] += ["logloss"]
+            ldb["metric_value"] += [m.get_final_loss()] 
+            ldb["train_time"] += [m.get_train_time()]
+        return pd.DataFrame(ldb)
+               
     def get_additional_metrics(self):
         # 'target' - the target after processing used for model training
         # 'prediction' - out of folds predictions of model
