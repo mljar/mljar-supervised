@@ -15,7 +15,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/mljar/mljar-supervised',
-    author='Piotr Plonski',
+    author='MLJAR, Inc.',
     author_email='contact@mljar.com',
     license='MIT',
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
