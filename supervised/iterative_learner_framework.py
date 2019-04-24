@@ -106,11 +106,11 @@ class IterativeLearner(LearnerFramework):
         # run predict on all learners and return the average
         y_predicted = np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
-            # prepfrocessing goes here
+            # preprocessing goes here
             validation_data = self.preprocessings[ind].transform({"X": X})
             y_predicted += learner.predict(validation_data.get("X"))
         y_predicted_average = y_predicted / float(len(self.learners))
-        # get first preprosessing and reverse transform target
+        # get first preprocessing and reverse transform target
         # we can use the preprocessing of the first model, because for target they are all the same
         y_predicted_final = self.preprocessings[0].reverse_transform_target(
             y_predicted_average

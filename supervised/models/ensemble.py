@@ -159,6 +159,6 @@ class Ensemble:
             il = IterativeLearner(model.get("params"))
             il.from_json(model)
             self.selected_models += [
-                #{"model": LearnerFactory.load(model), "repeat": repeat}
+                # {"model": LearnerFactory.load(model), "repeat": repeat}
                 {"model": il, "repeat": repeat}
             ]

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from tqdm.auto import tqdm
+
 tqdm.pandas()
 
 from supervised.models.learner_xgboost import XgbLearner
@@ -67,9 +68,9 @@ class AutoML:
         if self._total_time_limit is not None:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
-            self._time_limit = self._total_time_limit * 0.85 / self._estimated_models_to_check
-
-        
+            self._time_limit = (
+                self._total_time_limit * 0.85 / self._estimated_models_to_check
+            )
 
         if len(self._algorithms) == 0:
             self._algorithms = list(
@@ -87,15 +88,21 @@ class AutoML:
         self._optimize_metric = optimize_metric
 
     def get_leaderboard(self):
-        ldb = {"uid":[], "model_type":[], "metric_type":[], "metric_value": [], "train_time": []}
+        ldb = {
+            "uid": [],
+            "model_type": [],
+            "metric_type": [],
+            "metric_value": [],
+            "train_time": [],
+        }
         for m in self._models:
-            ldb["uid"] += [m.uid] 
-            ldb["model_type"] += [m.get_name()] 
+            ldb["uid"] += [m.uid]
+            ldb["model_type"] += [m.get_name()]
             ldb["metric_type"] += [self._optimize_metric]
-            ldb["metric_value"] += [m.get_final_loss()] 
+            ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [m.get_train_time()]
         return pd.DataFrame(ldb)
-               
+
     def get_additional_metrics(self):
         # 'target' - the target after processing used for model training
         # 'prediction' - out of folds predictions of model
@@ -136,12 +143,10 @@ class AutoML:
             "Learner {} final loss {} time {} seconds".format(
                 model.get_name(),
                 model.get_final_loss(),
-                np.round(model.get_train_time(),2),
+                np.round(model.get_train_time(), 2),
             )
         )
-        self.log_train_time(
-            model.get_name(), model.get_train_time()
-        )
+        self.log_train_time(model.get_name(), model.get_train_time())
 
     def train_model(self, params, X, y):
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
@@ -233,7 +238,9 @@ class AutoML:
     def fit(self, X, y):
         start_time = time.time()
         self._progress_bar = tqdm(
-            total=int(self._estimated_models_to_check/5), desc="MLJAR AutoML", unit="model"
+            total=int(self._estimated_models_to_check / 5),
+            desc="MLJAR AutoML",
+            unit="model",
         )
         X.reset_index(drop=True, inplace=True)
         y = np.array(y)

@@ -54,10 +54,10 @@ class AutoMLTest(unittest.TestCase):
             algorithms=["Xgboost"],
             start_random_models=5,
             hill_climbing_steps=0,
-            seed=13
+            seed=13,
         )
         automl.fit(self.X, self.y)
-        
+
         y_predicted = automl.predict(self.X)["p_1"]
         self.assertTrue(y_predicted is not None)
         loss = metric(self.y, y_predicted)
@@ -81,12 +81,14 @@ class AutoMLTest(unittest.TestCase):
             start_random_models=2,
             hill_climbing_steps=0,
             optimize_metric="auc",
-            seed=16
+            seed=16,
         )
         automl.fit(self.X, self.y)
         ldb = automl.get_leaderboard()
         self.assertEqual(ldb["metric_type"][0], "auc")
-        self.assertEqual(np.sum(ldb["metric_value"] > 0.5), ldb.shape[0]) # all better than 0.5 AUC
+        self.assertEqual(
+            np.sum(ldb["metric_value"] > 0.5), ldb.shape[0]
+        )  # all better than 0.5 AUC
 
     def test_predict_labels(self):
         df = pd.read_csv("tests/data/adult_missing_values_missing_target_500rows.csv")
@@ -98,7 +100,7 @@ class AutoMLTest(unittest.TestCase):
             start_random_models=5,
             hill_climbing_steps=0,
             train_ensemble=True,
-            seed=14
+            seed=14,
         )
         automl.fit(X, y)
 
@@ -113,13 +115,14 @@ class AutoMLTest(unittest.TestCase):
             start_random_models=5,
             hill_climbing_steps=0,
             train_ensemble=True,
-            seed=15
+            seed=15,
         )
         automl.fit(self.X, self.y)
         ldb = automl.get_leaderboard()
         self.assertEqual(ldb.shape[0], len(automl._models))
         for col in ["uid", "model_type", "metric_type", "metric_value", "train_time"]:
             self.assertTrue(col in ldb.columns)
+
 
 if __name__ == "__main__":
     unittest.main()

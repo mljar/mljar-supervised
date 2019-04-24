@@ -1,6 +1,7 @@
 import copy
 import pandas as pd
 import numpy as np
+import warnings
 
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
@@ -202,6 +203,21 @@ class PreprocessingStep(object):
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
                 X_validation = missing.transform(X_validation)
+        # to be sure that all missing are filled
+        # in case new data there can be gaps!
+        if np.sum(np.sum(pd.isnull(X_validation))) > 0:
+            # there is something missing, fill it
+            # we should notice user about it!
+            warnings.warn(
+                "There are columns {} with missing values which didnt have missing values in train dataset.".format(
+                    list(X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))])
+                )
+            )
+            missing = PreprocessingMissingValues(
+                X_validation.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
+            )
+            missing.fit(X_validation)
+            X_validation = missing.transform(X_validation)
         for convert in self._categorical:
             if X_validation is not None and convert is not None:
                 X_validation = convert.transform(X_validation)
