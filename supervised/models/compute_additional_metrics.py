@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import uuid
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 from sklearn.metrics import (
     f1_score,
     accuracy_score,
@@ -20,9 +21,7 @@ log = logging.getLogger(__name__)
 
 class ComputeAdditionalMetrics:
     @staticmethod
-    def compute(target, predictions, ml_task):
-        if ml_task != BINARY_CLASSIFICATION:
-            return {}
+    def compute_for_binary_classification(target, predictions):
         sorted_predictions = np.sort(predictions)
         STEPS = 100
         details = {
@@ -89,3 +88,17 @@ class ComputeAdditionalMetrics:
         )
 
         return pd.DataFrame(details), pd.DataFrame(max_metrics), conf_matrix
+
+    @staticmethod
+    def compute(target, predictions, ml_task):
+        if ml_task not in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+            raise Exception(
+                "Machine Learning task {} is not allowed (yet, ;)".format(ml_task)
+            )
+
+        if ml_task == BINARY_CLASSIFICATION:
+            return ComputeAdditionalMetrics.compute_for_binary_classification(
+                target, predictions
+            )
+        elif ml_task == MULTICLASS_CLASSIFICATION:
+            return None, None, None

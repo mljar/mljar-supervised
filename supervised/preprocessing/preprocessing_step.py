@@ -210,7 +210,9 @@ class PreprocessingStep(object):
             # we should notice user about it!
             warnings.warn(
                 "There are columns {} with missing values which didnt have missing values in train dataset.".format(
-                    list(X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))])
+                    list(
+                        X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
+                    )
                 )
             )
             missing = PreprocessingMissingValues(

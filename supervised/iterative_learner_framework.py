@@ -52,13 +52,8 @@ class IterativeLearner(LearnerFramework):
         for train_data, validation_data in self.validation.split():
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
-            train_data, _ = self.preprocessings[-1].run(
-                train_data
-            )
-            validation_data = self.preprocessings[-1].transform(
-                validation_data
-            )
-
+            train_data, _ = self.preprocessings[-1].run(train_data)
+            validation_data = self.preprocessings[-1].transform(validation_data)
 
             self.learners += [LearnerFactory.get_learner(self.learner_params)]
             learner = self.learners[-1]

@@ -18,6 +18,8 @@ from supervised.metric import Metric
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
+from supervised.tuner.registry import REGRESSION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.models.ensemble import Ensemble
@@ -38,7 +40,7 @@ class AutoML:
         top_models_to_improve=5,
         train_ensemble=True,
         verbose=True,
-        optimize_metric="logloss",
+        optimize_metric=None,
         seed=1,
     ):
         self._total_time_limit = total_time_limit
@@ -59,6 +61,18 @@ class AutoML:
         self._algorithms = algorithms
         self._verbose = verbose
 
+        self._fit_time = None
+        self._models_train_time = {}
+        self._threshold, self._metrics_details, self._max_metrics, self._confusion_matrix = (
+            None,
+            None,
+            None,
+            None,
+        )
+        self._seed = seed
+        self._user_set_optimize_metric = optimize_metric
+
+    def estimate_training_times(self):
         # single models including models in the folds
         self._estimated_models_to_check = (
             len(self._algorithms) * self._start_random_models
@@ -71,21 +85,6 @@ class AutoML:
             self._time_limit = (
                 self._total_time_limit * 0.85 / self._estimated_models_to_check
             )
-
-        if len(self._algorithms) == 0:
-            self._algorithms = list(
-                ModelsRegistry.registry[BINARY_CLASSIFICATION].keys()
-            )
-        self._fit_time = None
-        self._models_train_time = {}
-        self._threshold, self._metrics_details, self._max_metrics, self._confusion_matrix = (
-            None,
-            None,
-            None,
-            None,
-        )
-        self._seed = seed
-        self._optimize_metric = optimize_metric
 
     def get_leaderboard(self):
         ldb = {
@@ -107,23 +106,22 @@ class AutoML:
         # 'target' - the target after processing used for model training
         # 'prediction' - out of folds predictions of model
         oof_predictions = self._best_model.get_out_of_folds()
+        prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
         self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
-            oof_predictions["target"],
-            oof_predictions["prediction"],
-            BINARY_CLASSIFICATION,
+            oof_predictions["target"], oof_predictions[prediction_cols], self.ml_task
         )
         self._threshold = self._max_metrics["f1"]["threshold"]
         # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
 
     def _get_model_params(self, model_type, X, y):
-        model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
+        model_info = ModelsRegistry.registry[self.ml_task][model_type]
         model_params = RandomParameters.get(
             model_info["params"], len(self._models) + self._seed
         )
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
         preprocessing_params = PreprocessingTuner.get(
-            required_preprocessing, {"train": {"X": X, "y": y}}, BINARY_CLASSIFICATION
+            required_preprocessing, {"train": {"X": X, "y": y}}, self.ml_task
         )
         return {
             "additional": model_additional,
@@ -149,12 +147,12 @@ class AutoML:
         self.log_train_time(model.get_name(), model.get_train_time())
 
     def train_model(self, params, X, y):
-        metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
+
         early_stop = EarlyStopping({"metric": {"name": self._optimize_metric}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
-        il = IterativeLearner(
-            params, callbacks=[early_stop, time_constraint, metric_logger]
-        )
+        params["ml_task"] = self.ml_task
+        print(params)
+        il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
         il_key = il.get_params_key()
         if il_key in self._models_params_keys:
             self._progress_bar.update(1)
@@ -235,13 +233,18 @@ class AutoML:
             self.keep_model(self.ensemble)
             self._progress_bar.update(1)
 
-    def fit(self, X, y):
+    def set_ml_task(self, y):
+        target_unique_cnt = len(np.unique(y))
+        if target_unique_cnt == 2:
+            self.ml_task = BINARY_CLASSIFICATION
+        elif target_unique_cnt <= 20:
+            self.ml_task = MULTICLASS_CLASSIFICATION
+        else:
+            self.ml_task = REGRESSION
+
+    def fit(self, X, y, ml_task=None):
         start_time = time.time()
-        self._progress_bar = tqdm(
-            total=int(self._estimated_models_to_check / 5),
-            desc="MLJAR AutoML",
-            unit="model",
-        )
+
         X.reset_index(drop=True, inplace=True)
         y = np.array(y)
         if not isinstance(y, pd.DataFrame):
@@ -250,7 +253,80 @@ class AutoML:
         y = y["target"]
 
         # drops rows with missing target
+        # TODO needs a better name for this preprocessing
         X, y = PreprocessingExcludeMissingValues.transform(X, y)
+
+        # define the ml_task
+        if ml_task is None:
+            self.set_ml_task(y)
+        else:
+            self.ml_task = ml_task
+
+        supported_ml_tasks = [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+        if self.ml_task not in supported_ml_tasks:
+            raise Exception(
+                "Unknow Machine Learning task {}. Supported tasks are: {}".format(
+                    self.ml_task, supported_ml_tasks
+                )
+            )
+        print("ML task: {}".format(self.ml_task))
+        # define available algorithms
+        if len(self._algorithms) == 0:
+            self._algorithms = list(ModelsRegistry.registry[self.ml_task].keys())
+
+        print(self._algorithms)
+        for a in self._algorithms:
+            if a not in list(ModelsRegistry.registry[self.ml_task].keys()):
+                raise Exception(
+                    "The algorithm {} is not allowed to use for ML task: {}.".format(
+                        a, self.ml_task
+                    )
+                )
+
+        # set metric to be optimized, TODO move this to registry with dict
+        if self.ml_task == BINARY_CLASSIFICATION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "logloss"
+            elif self._user_set_optimize_metric not in ["logloss", "auc"]:
+                raise Exception(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+        elif self.ml_task == MULTICLASS_CLASSIFICATION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "logloss"
+            elif self._user_set_optimize_metric not in ["logloss"]:
+                raise Exception(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+        elif self.ml_task == REGRESSION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "mse"
+            elif self._user_set_optimize_metric not in ["mse"]:
+                raise Exception(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+
+        print("optimize", self._optimize_metric)
+        # estimate training time
+        self.estimate_training_times()
+
+        self._progress_bar = tqdm(
+            total=int(self._estimated_models_to_check / 5),
+            desc="MLJAR AutoML",
+            unit="model",
+        )
 
         # start with not-so-random models
         self.not_so_random_step(X, y)

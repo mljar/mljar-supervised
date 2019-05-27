@@ -9,7 +9,7 @@ from tests.test_iterative_learner_framework_with_preprocessing import (
 )
 from tests.test_automl import AutoMLTest
 
-# from tests.test_automl_with_data import AutoMLTestWithData
+# not ready from tests.test_automl_with_multiclass import AutoMLWithMulticlassTest
 
 # from .test_metric import MetricTest
 

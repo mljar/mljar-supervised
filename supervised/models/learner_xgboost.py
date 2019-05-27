@@ -55,6 +55,8 @@ class XgbLearner(Learner):
             "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
         }
+        if self.learner_params["objective"] == "multi:softprob":
+            self.learner_params["num_class"] = 3
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):
@@ -62,6 +64,7 @@ class XgbLearner(Learner):
         pass
 
     def fit(self, X, y):
+        print(y)
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
@@ -71,7 +74,10 @@ class XgbLearner(Learner):
         if self.model is None:
             raise XgbLearnerException("Xgboost model is None")
         dtrain = xgb.DMatrix(X, missing=np.NaN)
-        return self.model.predict(dtrain)
+        a = self.model.predict(dtrain)
+        print("predict")
+        print(a)
+        return a
 
     def copy(self):
         return copy.deepcopy(self)
@@ -134,8 +140,13 @@ XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
 XgbLearnerRegressionParams["booster"] = ["gbtree"]
 XgbLearnerRegressionParams["objective"] = ["reg:linear", "reg:log"]
 XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
+XgbLearnerRegressionParams["max_depth"] = [1, 2, 3, 4]
+
 
 XgbLearnerMulticlassClassificationParams = dict(XgbLearnerBinaryClassificationParams)
+XgbLearnerMulticlassClassificationParams["objective"] = ["multi:softprob"]
+XgbLearnerMulticlassClassificationParams["eval_metric"] = ["mlogloss"]
+
 
 additional = {
     "one_step": 50,

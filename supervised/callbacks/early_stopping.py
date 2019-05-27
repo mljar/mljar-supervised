@@ -49,9 +49,15 @@ class EarlyStopping(Callback):
 
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
-        self.final_loss = self.metric(
-            self.best_y_oof["target"], self.best_y_oof["prediction"]
-        )
+        if "prediction" in self.best_y_oof:
+            self.final_loss = self.metric(
+                self.best_y_oof["target"], self.best_y_oof["prediction"]
+            )
+        else:
+            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
+            self.final_loss = self.metric(
+                self.best_y_oof["target"], self.best_y_oof[prediction_cols]
+            )
 
     def on_iteration_end(self, logs, predictions):
 
@@ -74,15 +80,28 @@ class EarlyStopping(Callback):
             self.no_improvement_cnt = 0
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")
             self.best_loss[self.learner.uid] = validation_loss
+
             self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                 {
-                    "prediction": predictions.get("y_validation_predicted"),
                     "target": y_validation_true.values.reshape(
                         y_validation_true.shape[0]
-                    ),
+                    )
                 },
                 index=predictions.get("validation_index"),
             )
+            y_validation_predicted = predictions.get("y_validation_predicted")
+            if y_validation_predicted.shape[1] == 1:
+                # only one prediction column (binary classification or regression)
+                self.best_y_predicted[self.learner.uid][
+                    "prediction"
+                ] = y_validation_predicted
+            else:
+                # several columns (multiclass classification)
+                for i_col in range(y_validation_predicted.shape[1]):
+                    self.best_y_predicted[self.learner.uid][
+                        "prediction_{}".format(i_col)
+                    ] = y_validation_predicted[:, i_col]
+
             self.best_models[self.learner.uid] = self.learner.copy()
 
             # if local copy is not available, save model and keep path
