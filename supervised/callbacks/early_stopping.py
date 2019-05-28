@@ -90,7 +90,8 @@ class EarlyStopping(Callback):
                 index=predictions.get("validation_index"),
             )
             y_validation_predicted = predictions.get("y_validation_predicted")
-            if y_validation_predicted.shape[1] == 1:
+
+            if len(y_validation_predicted.shape) == 1:
                 # only one prediction column (binary classification or regression)
                 self.best_y_predicted[self.learner.uid][
                     "prediction"

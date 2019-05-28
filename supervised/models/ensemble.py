@@ -60,6 +60,7 @@ class Ensemble:
         oofs = {}
         for i, m in enumerate(models):
             oof = m.get_out_of_folds()
+            print(oof)
             oofs["model_{}".format(i)] = oof["prediction"]
             if self.target is None:
                 self.target = oof[

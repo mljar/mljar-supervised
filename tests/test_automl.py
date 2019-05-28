@@ -59,6 +59,7 @@ class AutoMLTest(unittest.TestCase):
         automl.fit(self.X, self.y)
 
         y_predicted = automl.predict(self.X)["p_1"]
+
         self.assertTrue(y_predicted is not None)
         loss = metric(self.y, y_predicted)
         self.assertTrue(loss < 0.7)

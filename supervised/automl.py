@@ -110,7 +110,8 @@ class AutoML:
         self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
             oof_predictions["target"], oof_predictions[prediction_cols], self.ml_task
         )
-        self._threshold = self._max_metrics["f1"]["threshold"]
+        if self.ml_task == BINARY_CLASSIFICATION:
+            self._threshold = float(self._max_metrics["f1"]["threshold"]) # TODO: do need conversion
         # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
 
     def _get_model_params(self, model_type, X, y):
@@ -151,7 +152,7 @@ class AutoML:
         early_stop = EarlyStopping({"metric": {"name": self._optimize_metric}})
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         params["ml_task"] = self.ml_task
-        print(params)
+
         il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
         il_key = il.get_params_key()
         if il_key in self._models_params_keys:
@@ -274,7 +275,6 @@ class AutoML:
         if len(self._algorithms) == 0:
             self._algorithms = list(ModelsRegistry.registry[self.ml_task].keys())
 
-        print(self._algorithms)
         for a in self._algorithms:
             if a not in list(ModelsRegistry.registry[self.ml_task].keys()):
                 raise Exception(
@@ -318,7 +318,7 @@ class AutoML:
             else:
                 self._optimize_metric = self._user_set_optimize_metric
 
-        print("optimize", self._optimize_metric)
+
         # estimate training time
         self.estimate_training_times()
 
@@ -348,25 +348,27 @@ class AutoML:
     def predict(self, X):
         if self._best_model is not None:
             predictions = self._best_model.predict(X)
-            neg_label, pos_label = (
-                predictions.columns[0][2:],
-                predictions.columns[1][2:],
-            )
-            if neg_label == "0" and pos_label == "1":
-                neg_label, pos_label = 0, 1
-            # assume that it is binary classification
-            predictions["label"] = predictions.iloc[:, 1] > self._threshold
-            predictions["label"] = predictions["label"].map(
-                {True: pos_label, False: neg_label}
-            )
+            
 
-            return predictions
-            # return pd.DataFrame(
-            #    {
-            #        "prediction": self._best_model.predict(X),
-            #        "label": self._best_model.predict(X) > self._threshold,
-            #    }
-            # )
+            if self.ml_task == BINARY_CLASSIFICATION:
+                neg_label, pos_label = (
+                    predictions.columns[0][2:],
+                    predictions.columns[1][2:],
+                )
+                if neg_label == "0" and pos_label == "1":
+                    neg_label, pos_label = 0, 1
+                # assume that it is binary classification
+                predictions["label"] = predictions.iloc[:, 1] > self._threshold
+                predictions["label"] = predictions["label"].map(
+                    {True: pos_label, False: neg_label}
+                )
+                return predictions
+            elif self.ml_task == MULTICLASS_CLASSIFICATION:
+
+                return predictions
+            else:
+                return predictions
+
         return None
 
     def to_json(self):

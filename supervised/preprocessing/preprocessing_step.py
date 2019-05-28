@@ -262,17 +262,36 @@ class PreprocessingStep(object):
         # target_preprocessing = self._params.get("target_preprocessing")
         # assume for now that all tasks are binary classification
         # if there is no target preprocessing, assume that there is 0 and 1 target
+
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
-            for label, value in self._categorical_y.to_json().items():
-                if value == 1:
-                    pos_label = label
-                else:
-                    neg_label = label
+            if len(y.shape) == 1:
+                # binary classification
+                for label, value in self._categorical_y.to_json().items():
+                    if value == 1:
+                        pos_label = label
+                    else:
+                        neg_label = label
+                # threshold is applied in AutoML class
+                return pd.DataFrame(
+                    {"p_{}".format(neg_label): 1 - y, "p_{}".format(pos_label): y}
+                )
+            else:
+                labels = res = dict((v,k) for k,v in self._categorical_y.to_json().items())
+                d = {}
+                cols = []
+                for i in range(y.shape[1]):
+                    d["p_{}".format(labels[i])] = y[:,i]
+                    cols += ["p_{}".format(labels[i])]
+                df = pd.DataFrame(d)
+                df["label"] = np.argmax(np.array(df[cols]), axis=1)
 
-        return pd.DataFrame(
-            {"p_{}".format(neg_label): 1 - y, "p_{}".format(pos_label): y}
-        )
+                df["label"] = df["label"].map(labels)
+                return df
+
+        # regression
+        # TODO: reverse transform for regression will be applied here
+        return pd.DataFrame({"prediction": y})
 
     def from_json(self, data_json):
         if "remove_columns" in data_json:

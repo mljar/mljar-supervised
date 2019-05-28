@@ -22,6 +22,8 @@ log = logging.getLogger(__name__)
 class ComputeAdditionalMetrics:
     @staticmethod
     def compute_for_binary_classification(target, predictions):
+        print(predictions)
+        predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
         STEPS = 100
         details = {
@@ -33,6 +35,12 @@ class ComputeAdditionalMetrics:
             "mcc": [],
         }
         samples_per_step = max(1, np.floor(predictions.shape[0] / STEPS))
+
+        print(predictions)
+        print(predictions > 0.5)
+        print(np.sum(predictions > 0.5))
+
+
 
         for i in range(1, STEPS):
             idx = int(i * samples_per_step)

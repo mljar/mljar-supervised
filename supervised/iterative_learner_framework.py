@@ -103,11 +103,13 @@ class IterativeLearner(LearnerFramework):
         if self.learners is None or len(self.learners) == 0:
             raise IterativeLearnerException("Learnes are not initialized")
         # run predict on all learners and return the average
-        y_predicted = np.zeros((X.shape[0],))
+        y_predicted = None #np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
             # preprocessing goes here
             validation_data = self.preprocessings[ind].transform({"X": X})
-            y_predicted += learner.predict(validation_data.get("X"))
+            y_p = learner.predict(validation_data.get("X"))
+            y_predicted = y_p if y_predicted is None else y_predicted + y_p
+            #y_predicted += learner.predict(validation_data.get("X"))
         y_predicted_average = y_predicted / float(len(self.learners))
         # get first preprocessing and reverse transform target
         # we can use the preprocessing of the first model, because for target they are all the same

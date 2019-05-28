@@ -64,7 +64,7 @@ class XgbLearner(Learner):
         pass
 
     def fit(self, X, y):
-        print(y)
+
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
@@ -75,8 +75,7 @@ class XgbLearner(Learner):
             raise XgbLearnerException("Xgboost model is None")
         dtrain = xgb.DMatrix(X, missing=np.NaN)
         a = self.model.predict(dtrain)
-        print("predict")
-        print(a)
+
         return a
 
     def copy(self):
