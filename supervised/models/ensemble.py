@@ -48,9 +48,6 @@ class Ensemble:
 
     def get_out_of_folds(self):
         # single prediction (in case of binary classification and regression)
-        print("ensemble oof")
-        print(self.total_best_sum)
-        print(self.total_best_sum.shape)
         if self.total_best_sum.shape[1] == 1:
             return pd.DataFrame({"prediction": self.total_best_sum["prediction"], "target": self.target})
 
@@ -138,6 +135,8 @@ class Ensemble:
 
             y_predicted_from_model = model.predict(X)
             prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
+            if len(prediction_cols) == 0:
+                prediction_cols = ["prediction"]
             y_predicted_from_model = y_predicted_from_model[prediction_cols]
             y_predicted_ensemble = (
                 y_predicted_from_model * repeat
@@ -146,6 +145,9 @@ class Ensemble:
             )
 
         y_predicted_ensemble /= total_repeat
+
+
+        # Ensemble needs to apply reverse transformation of target !!!
 
         if y_predicted_ensemble.shape[1] > 1:
             print("Multi class ensemble")

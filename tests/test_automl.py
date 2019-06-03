@@ -39,7 +39,7 @@ class AutoMLTest(unittest.TestCase):
         )
         automl.fit(self.X, self.y)
 
-        #print("TEST")
+        print("fit end")
         #print(automl.predict(self.X))
         y_predicted = automl.predict(self.X)["p_1"]
 

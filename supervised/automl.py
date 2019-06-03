@@ -349,7 +349,7 @@ class AutoML:
         if self._best_model is not None:
             print("best model predict in AutoML")
             predictions = self._best_model.predict(X)
-
+            print(predictions)
 
             if self.ml_task == BINARY_CLASSIFICATION:
                 # need to predict the label based on predictions and threshold
