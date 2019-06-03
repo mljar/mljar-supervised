@@ -47,43 +47,55 @@ class Ensemble:
         return self.algorithm_short_name
 
     def get_out_of_folds(self):
-        return pd.DataFrame({"prediction": self.total_best_sum, "target": self.target})
+        # single prediction (in case of binary classification and regression)
+        print("ensemble oof")
+        print(self.total_best_sum)
+        print(self.total_best_sum.shape)
+        if self.total_best_sum.shape[1] == 1:
+            return pd.DataFrame({"prediction": self.total_best_sum["prediction"], "target": self.target})
 
-    def _get_mean(self, X, best_sum, best_count, selected):
-        resp = copy.deepcopy(X[selected])
+        ensemble_oof = pd.DataFrame(data=self.total_best_sum,
+                                    columns=["prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])])
+        ensemble_oof["target"] = self.target
+        return ensemble_oof
+
+
+    def _get_mean(self, oofs, best_sum, best_count, selected):
+        resp = copy.deepcopy(oofs[selected])
         if best_count > 1:
             resp += best_sum
             resp /= float(best_count)
         return resp
 
     def get_oof_matrix(self, models):
+        # remeber models, will be needed in predictions
+        self.models = models
+
         oofs = {}
         for i, m in enumerate(models):
             oof = m.get_out_of_folds()
-            print(oof)
-            oofs["model_{}".format(i)] = oof["prediction"]
+            prediction_cols = [c for c in oof.columns if "prediction" in c]
+            oofs["model_{}".format(i)] = oof[prediction_cols] # oof["prediction"]
             if self.target is None:
                 self.target = oof[
                     "target"
                 ]  # it will be needed for computing advance model statistics
                 # it can be a mess in the future when target will be transformed depending on each model
 
-        X = pd.DataFrame(oofs)
-        self.models = models  # remeber models, will be needed in predictions
-        return X
+        return oofs
 
-    def fit(self, X, y):
+    def fit(self, oofs, y):
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
 
         best_sum = None  # sum of best algorihtms
-        for j in range(X.shape[1]):  # iterate over all solutions
+        for j in range(len(oofs)):  # iterate over all solutions
             min_score = self.metric.get_maximum()
             best_index = -1
             # try to add some algorithm to the best_sum to minimize metric
-            for i in range(X.shape[1]):
-                y_ens = self._get_mean(X, best_sum, j + 1, "model_{}".format(i))
+            for i in range(len(oofs)):
+                y_ens = self._get_mean(oofs, best_sum, j + 1, "model_{}".format(i))
                 score = self.metric(y, y_ens)
 
                 if self.metric.improvement(previous=min_score, current=score):
@@ -98,12 +110,13 @@ class Ensemble:
             self.best_algs.append(best_index)  # save the best algoritm index
             # update best_sum value
             best_sum = (
-                X["model_{}".format(best_index)]
+                oofs["model_{}".format(best_index)]
                 if best_sum is None
-                else best_sum + X["model_{}".format(best_index)]
+                else best_sum + oofs["model_{}".format(best_index)]
             )
             if j == selected_algs_cnt:
                 self.total_best_sum = copy.deepcopy(best_sum)
+        # end of main loop #
 
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)
@@ -115,18 +128,29 @@ class Ensemble:
         self.train_time = time.time() - start_time
 
     def predict(self, X):
-        y_predicted = None
+        y_predicted_ensemble = None
         total_repeat = 0.0
+        print("predict ensemble, selected_models", self.selected_models)
         for selected in self.selected_models:
             model = selected["model"]
             repeat = selected["repeat"]
             total_repeat += repeat
-            y_predicted = (
-                model.predict(X) * repeat
-                if y_predicted is None
-                else y_predicted + model.predict(X) * repeat
+
+            y_predicted_from_model = model.predict(X)
+            prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
+            y_predicted_from_model = y_predicted_from_model[prediction_cols]
+            y_predicted_ensemble = (
+                y_predicted_from_model * repeat
+                if y_predicted_ensemble is None
+                else y_predicted_ensemble + y_predicted_from_model * repeat
             )
-        return y_predicted / total_repeat
+
+        y_predicted_ensemble /= total_repeat
+
+        if y_predicted_ensemble.shape[1] > 1:
+            print("Multi class ensemble")
+
+        return y_predicted_ensemble
 
     def to_json(self):
         models_json = []

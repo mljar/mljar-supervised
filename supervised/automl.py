@@ -229,8 +229,8 @@ class AutoML:
     def ensemble_step(self, y):
         if self._train_ensemble:
             self.ensemble = Ensemble(self._optimize_metric)
-            X_oof = self.ensemble.get_oof_matrix(self._models)
-            self.ensemble.fit(X_oof, y)
+            oofs = self.ensemble.get_oof_matrix(self._models)
+            self.ensemble.fit(oofs, y)
             self.keep_model(self.ensemble)
             self._progress_bar.update(1)
 
@@ -347,10 +347,12 @@ class AutoML:
 
     def predict(self, X):
         if self._best_model is not None:
+            print("best model predict in AutoML")
             predictions = self._best_model.predict(X)
-            
+
 
             if self.ml_task == BINARY_CLASSIFICATION:
+                # need to predict the label based on predictions and threshold
                 neg_label, pos_label = (
                     predictions.columns[0][2:],
                     predictions.columns[1][2:],

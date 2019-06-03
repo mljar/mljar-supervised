@@ -57,6 +57,8 @@ class XgbLearner(Learner):
         }
         if self.learner_params["objective"] == "multi:softprob":
             self.learner_params["num_class"] = 3
+            print("TODO: hard coded number of classes")
+            
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):
@@ -64,7 +66,6 @@ class XgbLearner(Learner):
         pass
 
     def fit(self, X, y):
-
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
@@ -75,7 +76,6 @@ class XgbLearner(Learner):
             raise XgbLearnerException("Xgboost model is None")
         dtrain = xgb.DMatrix(X, missing=np.NaN)
         a = self.model.predict(dtrain)
-
         return a
 
     def copy(self):

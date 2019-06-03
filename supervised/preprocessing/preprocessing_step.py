@@ -277,6 +277,7 @@ class PreprocessingStep(object):
                     {"p_{}".format(neg_label): 1 - y, "p_{}".format(pos_label): y}
                 )
             else:
+                # multiclass classification
                 labels = res = dict((v,k) for k,v in self._categorical_y.to_json().items())
                 d = {}
                 cols = []
