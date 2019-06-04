@@ -55,9 +55,10 @@ class XgbLearner(Learner):
             "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
         }
-        if self.learner_params["objective"] == "multi:softprob":
-            self.learner_params["num_class"] = 3
-            print("TODO: hard coded number of classes")
+
+        if "num_class" in self.params: # multiclass classification
+            self.learner_params["num_class"] = self.params.get("num_class")
+            
 
         log.debug("XgbLearner __init__")
 

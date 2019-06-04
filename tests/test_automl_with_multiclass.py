@@ -26,19 +26,17 @@ class AutoMLWithMulticlassTest(unittest.TestCase):
             X, y, test_size=0.3, random_state=seed
         )
         automl = AutoML(
-            total_time_limit=20,
-            algorithms=["Xgboost"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
-            start_random_models=10,
-            hill_climbing_steps=0,
-            # top_models_to_improve=3,
+            total_time_limit=320,
+            algorithms=["RF"], # ["LightGBM"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
+            start_random_models=2,
+            hill_climbing_steps=3,
+            top_models_to_improve=3,
             train_ensemble=True,
             verbose=True,
         )
         automl.fit(X_train, y_train)
 
         response = automl.predict(X_test)  # ["p_1"]
-
-        print("test response", response)
 
         # Compute the logloss on test dataset
         # ll = log_loss(y_test, response)

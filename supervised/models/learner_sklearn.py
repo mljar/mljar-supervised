@@ -60,4 +60,6 @@ class SklearnTreesClassifierLearner(SklearnLearner):
         self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):
+        if "num_class" in self.params:
+            return self.model.predict_proba(X)
         return self.model.predict_proba(X)[:, 1]

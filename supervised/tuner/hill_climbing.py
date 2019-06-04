@@ -17,18 +17,22 @@ class HillClimbing:
     """
 
     @staticmethod
-    def get(params, seed=1):
+    def get(params, ml_task, seed=1):
         np.random.seed(seed)
         keys = list(params.keys())
+        if "num_class" in keys:
+            keys.remove("num_class")
         keys.remove("model_type")
         keys.remove("seed")
         key_to_update = np.random.permutation(keys)[0]
 
         model_type = params["model_type"]
-        model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
+        model_info = ModelsRegistry.registry[ml_task][model_type]
         model_params = model_info["params"]
         left, right = None, None
         values = model_params[key_to_update]
+        print(values)
+        print(len(values))
         for i, v in enumerate(values):
             if v == params[key_to_update]:
                 if i + 1 < len(values):

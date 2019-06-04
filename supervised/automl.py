@@ -41,6 +41,7 @@ class AutoML:
         train_ensemble=True,
         verbose=True,
         optimize_metric=None,
+        ml_task = None,
         seed=1,
     ):
         self._total_time_limit = total_time_limit
@@ -71,6 +72,7 @@ class AutoML:
         )
         self._seed = seed
         self._user_set_optimize_metric = optimize_metric
+        self.ml_task = ml_task
 
     def estimate_training_times(self):
         # single models including models in the folds
@@ -126,15 +128,22 @@ class AutoML:
         preprocessing_params = PreprocessingTuner.get(
             required_preprocessing, {"train": {"X": X, "y": y}}, self.ml_task
         )
-        return {
+
+        model_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,
             "validation": self._validation,
+
             "learner": {
                 "model_type": model_info["class"].algorithm_short_name,
                 **model_params,
             },
         }
+        num_class = len(np.unique(y)) if self.ml_task == MULTICLASS_CLASSIFICATION else None
+        if num_class is not None:
+            model_params["learner"]["num_class"] = num_class
+
+        return model_params
 
     def keep_model(self, model):
         if model is None:
@@ -218,7 +227,7 @@ class AutoML:
             for i in range(min(self._top_models_to_improve, len(models))):
                 m = models[i][1]
                 for p in HillClimbing.get(
-                    m.params.get("learner"), len(self._models) + self._seed
+                    m.params.get("learner"), self.ml_task, len(self._models) + self._seed
                 ):
                     if p is not None:
                         all_params = copy.deepcopy(m.params)
@@ -245,7 +254,7 @@ class AutoML:
         else:
             self.ml_task = REGRESSION
 
-    def fit(self, X, y, ml_task=None):
+    def fit(self, X, y):
         start_time = time.time()
 
         X.reset_index(drop=True, inplace=True)
@@ -260,10 +269,8 @@ class AutoML:
         X, y = PreprocessingExcludeMissingValues.transform(X, y)
 
         # define the ml_task
-        if ml_task is None:
+        if self.ml_task is None:
             self.set_ml_task(y)
-        else:
-            self.ml_task = ml_task
 
         supported_ml_tasks = [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
         if self.ml_task not in supported_ml_tasks:
