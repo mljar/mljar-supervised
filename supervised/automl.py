@@ -111,7 +111,9 @@ class AutoML:
             oof_predictions["target"], oof_predictions[prediction_cols], self.ml_task
         )
         if self.ml_task == BINARY_CLASSIFICATION:
-            self._threshold = float(self._max_metrics["f1"]["threshold"]) # TODO: do need conversion
+            self._threshold = float(
+                self._max_metrics["f1"]["threshold"]
+            )  # TODO: do need conversion
         # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
 
     def _get_model_params(self, model_type, X, y):
@@ -228,7 +230,7 @@ class AutoML:
 
     def ensemble_step(self, y):
         if self._train_ensemble:
-            self.ensemble = Ensemble(self._optimize_metric)
+            self.ensemble = Ensemble(self._optimize_metric, self.ml_task)
             oofs = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, y)
             self.keep_model(self.ensemble)
@@ -318,7 +320,6 @@ class AutoML:
             else:
                 self._optimize_metric = self._user_set_optimize_metric
 
-
         # estimate training time
         self.estimate_training_times()
 
@@ -347,9 +348,8 @@ class AutoML:
 
     def predict(self, X):
         if self._best_model is not None:
-            print("best model predict in AutoML")
+
             predictions = self._best_model.predict(X)
-            print(predictions)
 
             if self.ml_task == BINARY_CLASSIFICATION:
                 # need to predict the label based on predictions and threshold
@@ -377,7 +377,11 @@ class AutoML:
         if self._best_model is None:
             return None
 
-        return {"best_model": self._best_model.to_json(), "threshold": self._threshold}
+        return {
+            "best_model": self._best_model.to_json(),
+            "threshold": self._threshold,
+            "ml_task": self.ml_task,
+        }
 
     def from_json(self, json_data):
         # pretty sure that this can be easily refactored
@@ -388,3 +392,5 @@ class AutoML:
             self._best_model = IterativeLearner(json_data["best_model"].get("params"))
             self._best_model.from_json(json_data["best_model"])
         self._threshold = json_data.get("threshold")
+
+        self.ml_task = json_data.get("ml_task")

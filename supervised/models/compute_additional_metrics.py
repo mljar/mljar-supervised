@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 class ComputeAdditionalMetrics:
     @staticmethod
     def compute_for_binary_classification(target, predictions):
-        
+
         predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
         STEPS = 100

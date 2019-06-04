@@ -17,7 +17,8 @@ class SimpleFramework:
         pass
 
     def predict(self, X):
-        return np.array([0.1, 0.2, 0.8, 0.9])
+        y = np.array([0.1, 0.2, 0.8, 0.9])
+        return pd.DataFrame({"p_0": 1 - y, "p_1": y})
 
     def to_json(self):
         return {
@@ -63,14 +64,15 @@ class EnsembleTest(unittest.TestCase):
         self.assertEqual(1, ensemble.selected_models[1]["repeat"])
         self.assertTrue(len(ensemble.selected_models) == 2)
         y = ensemble.predict(self.X)
-        assert_almost_equal(y[0], 0.1)
-        assert_almost_equal(y[1], 0.2)
-        assert_almost_equal(y[2], 0.8)
-        assert_almost_equal(y[3], 0.9)
+        print(y)
+        assert_almost_equal(y["p_1"][0], 0.1)
+        assert_almost_equal(y["p_1"][1], 0.2)
+        assert_almost_equal(y["p_1"][2], 0.8)
+        assert_almost_equal(y["p_1"][3], 0.9)
 
     """
     def test_save_load(self):
-        
+
         ensemble = Ensemble()
         ensemble.models = [SimpleFramework({})] * 5
         ensemble.fit(self.X, self.y)

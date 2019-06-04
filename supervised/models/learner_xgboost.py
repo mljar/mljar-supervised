@@ -58,7 +58,7 @@ class XgbLearner(Learner):
         if self.learner_params["objective"] == "multi:softprob":
             self.learner_params["num_class"] = 3
             print("TODO: hard coded number of classes")
-            
+
         log.debug("XgbLearner __init__")
 
     def update(self, update_params):

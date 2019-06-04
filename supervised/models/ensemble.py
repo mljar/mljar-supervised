@@ -10,6 +10,7 @@ from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 from supervised.models.learner_factory import LearnerFactory
 from supervised.iterative_learner_framework import IterativeLearner
 import operator
@@ -24,7 +25,7 @@ class Ensemble:
     algorithm_name = "Greedy Ensemble"
     algorithm_short_name = "Ensemble"
 
-    def __init__(self, optimize_metric="logloss"):
+    def __init__(self, optimize_metric="logloss", ml_task=BINARY_CLASSIFICATION):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
         self.model_file = self.uid + ".ensemble.model"
@@ -36,6 +37,7 @@ class Ensemble:
         self.train_time = None
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
         self.target = None
+        self.ml_task = ml_task
 
     def get_train_time(self):
         return self.train_time
@@ -49,13 +51,18 @@ class Ensemble:
     def get_out_of_folds(self):
         # single prediction (in case of binary classification and regression)
         if self.total_best_sum.shape[1] == 1:
-            return pd.DataFrame({"prediction": self.total_best_sum["prediction"], "target": self.target})
+            return pd.DataFrame(
+                {"prediction": self.total_best_sum["prediction"], "target": self.target}
+            )
 
-        ensemble_oof = pd.DataFrame(data=self.total_best_sum,
-                                    columns=["prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])])
+        ensemble_oof = pd.DataFrame(
+            data=self.total_best_sum,
+            columns=[
+                "prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
+            ],
+        )
         ensemble_oof["target"] = self.target
         return ensemble_oof
-
 
     def _get_mean(self, oofs, best_sum, best_count, selected):
         resp = copy.deepcopy(oofs[selected])
@@ -72,7 +79,7 @@ class Ensemble:
         for i, m in enumerate(models):
             oof = m.get_out_of_folds()
             prediction_cols = [c for c in oof.columns if "prediction" in c]
-            oofs["model_{}".format(i)] = oof[prediction_cols] # oof["prediction"]
+            oofs["model_{}".format(i)] = oof[prediction_cols]  # oof["prediction"]
             if self.target is None:
                 self.target = oof[
                     "target"
@@ -82,6 +89,7 @@ class Ensemble:
         return oofs
 
     def fit(self, oofs, y):
+
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
@@ -128,6 +136,7 @@ class Ensemble:
         y_predicted_ensemble = None
         total_repeat = 0.0
         print("predict ensemble, selected_models", self.selected_models)
+        print("ensemble", self.ml_task)
         for selected in self.selected_models:
             model = selected["model"]
             repeat = selected["repeat"]
@@ -135,8 +144,6 @@ class Ensemble:
 
             y_predicted_from_model = model.predict(X)
             prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
-            if len(prediction_cols) == 0:
-                prediction_cols = ["prediction"]
             y_predicted_from_model = y_predicted_from_model[prediction_cols]
             y_predicted_ensemble = (
                 y_predicted_from_model * repeat
@@ -146,11 +153,19 @@ class Ensemble:
 
         y_predicted_ensemble /= total_repeat
 
-
         # Ensemble needs to apply reverse transformation of target !!!
+        if self.ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
 
-        if y_predicted_ensemble.shape[1] > 1:
-            print("Multi class ensemble")
+            label = np.argmax(np.array(y_predicted_ensemble), axis=1)
+            prediction_labels = [c[2:] for c in y_predicted_ensemble if "p_" in c]
+
+            print(prediction_labels)
+            prediction_labels = dict((i, l) for i, l in enumerate(prediction_labels))
+            # df["label"] = df["label"]
+            y_predicted_ensemble["label"] = label
+            y_predicted_ensemble["label"] = y_predicted_ensemble["label"].map(
+                prediction_labels
+            )
 
         return y_predicted_ensemble
 

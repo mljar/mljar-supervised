@@ -33,15 +33,16 @@ class AutoMLTest(unittest.TestCase):
         automl = AutoML(
             total_time_limit=5,
             algorithms=["Xgboost"],
-            start_random_models=5,
+            start_random_models=12,
             hill_climbing_steps=0,
             seed=13,
         )
         automl.fit(self.X, self.y)
 
-        print("fit end")
-        #print(automl.predict(self.X))
-        y_predicted = automl.predict(self.X)["p_1"]
+        y_predicted = automl.predict(self.X)
+
+        # select column
+        y_predicted = y_predicted["p_1"]
 
         self.assertTrue(y_predicted is not None)
         loss = metric(self.y, y_predicted)
@@ -58,7 +59,6 @@ class AutoMLTest(unittest.TestCase):
 
         assert_almost_equal(automl._threshold, automl2._threshold)
 
-    '''
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         losses = []
@@ -127,7 +127,6 @@ class AutoMLTest(unittest.TestCase):
         for col in ["uid", "model_type", "metric_type", "metric_value", "train_time"]:
             self.assertTrue(col in ldb.columns)
 
-    '''
 
 if __name__ == "__main__":
     unittest.main()

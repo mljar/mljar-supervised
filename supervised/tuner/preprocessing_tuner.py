@@ -85,4 +85,5 @@ class PreprocessingTuner:
         return {
             "columns_preprocessing": columns_preprocessing,
             "target_preprocessing": target_preprocessing,
+            "ml_task": machinelearning_task,
         }

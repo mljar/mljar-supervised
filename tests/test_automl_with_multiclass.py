@@ -35,14 +35,14 @@ class AutoMLWithMulticlassTest(unittest.TestCase):
             verbose=True,
         )
         automl.fit(X_train, y_train)
-        #print(json.dumps(automl.to_json(), indent=4))
-        response = automl.predict(X_test) #["p_1"]
 
-        #print("response", response)
+        response = automl.predict(X_test)  # ["p_1"]
+
+        print("test response", response)
 
         # Compute the logloss on test dataset
-        #ll = log_loss(y_test, response)
-        #print("(*) Dataset id {} logloss {}".format(dataset_id, ll))
+        # ll = log_loss(y_test, response)
+        # print("(*) Dataset id {} logloss {}".format(dataset_id, ll))
 
 
 if __name__ == "__main__":
