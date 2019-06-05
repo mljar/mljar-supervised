@@ -27,7 +27,7 @@ class AutoMLWithMulticlassTest(unittest.TestCase):
         )
         automl = AutoML(
             total_time_limit=320,
-            algorithms=["RF"], # ["LightGBM"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
+            algorithms=["NN"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
             start_random_models=2,
             hill_climbing_steps=3,
             top_models_to_improve=3,

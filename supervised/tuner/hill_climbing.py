@@ -24,15 +24,19 @@ class HillClimbing:
             keys.remove("num_class")
         keys.remove("model_type")
         keys.remove("seed")
-        key_to_update = np.random.permutation(keys)[0]
 
         model_type = params["model_type"]
         model_info = ModelsRegistry.registry[ml_task][model_type]
         model_params = model_info["params"]
+
+        permuted_keys = np.random.permutation(keys)
+        key_to_update = None
+        for key_to_update in permuted_keys:
+            values = model_params[key_to_update]
+            if len(values) > 1:
+                break
+
         left, right = None, None
-        values = model_params[key_to_update]
-        print(values)
-        print(len(values))
         for i, v in enumerate(values):
             if v == params[key_to_update]:
                 if i + 1 < len(values):

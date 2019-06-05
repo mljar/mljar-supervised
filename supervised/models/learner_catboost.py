@@ -8,6 +8,7 @@ from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 
 import multiprocessing
 import operator
@@ -41,6 +42,7 @@ class CatBoostLearner(Learner):
             "bagging_temperature": self.params.get("bagging_temperature", 1),
             "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
             "random_seed": self.params.get("seed", 1),
+            "loss_function": self.params.get("loss_function", "Logloss")
         }
 
         log.debug("CatBoostLearner __init__")
@@ -53,7 +55,7 @@ class CatBoostLearner(Learner):
             random_strength=self.learner_params.get("random_strength"),
             bagging_temperature=self.learner_params.get("bagging_temperature"),
             l2_leaf_reg=self.learner_params.get("l2_leaf_reg"),
-            loss_function="Logloss",
+            loss_function=self.learner_params.get("loss_function"),
             verbose=False,
         )
 
@@ -66,6 +68,8 @@ class CatBoostLearner(Learner):
         self.model.fit(X, y, save_snapshot=True, snapshot_file=self.snapshot_file_path)
 
     def predict(self, X):
+        if "num_class" in self.params:
+            return self.model.predict_proba(X)
         return self.model.predict_proba(X)[:, 1]
 
     def copy(self):
@@ -109,6 +113,7 @@ class CatBoostLearner(Learner):
 
 
 CatBoostLearnerBinaryClassificationParams = {
+    "loss_function": ["Logloss"],
     "learning_rate": [
         0.0025,
         0.005,
@@ -144,6 +149,9 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
+CatBoostLearnerMulticlassClassificationParams = copy.deepcopy(CatBoostLearnerBinaryClassificationParams)
+CatBoostLearnerMulticlassClassificationParams["loss_function"] = ["MultiClass"]
+
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
     CatBoostLearner,
@@ -151,3 +159,16 @@ ModelsRegistry.add(
     required_preprocessing,
     additional,
 )
+
+
+# switch off for now
+# maybe my misuse or bug https://github.com/catboost/catboost/issues/861
+'''
+ModelsRegistry.add(
+    MULTICLASS_CLASSIFICATION,
+    CatBoostLearner,
+    CatBoostLearnerMulticlassClassificationParams,
+    required_preprocessing,
+    additional,
+)
+'''

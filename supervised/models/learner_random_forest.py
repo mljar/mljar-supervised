@@ -47,9 +47,9 @@ class RandomForestLearner(SklearnTreesClassifierLearner):
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 RandomForestBinaryClassificationParams = {
-    "criterion": ["gini"], #, "entropy"],
-    "max_features": [0.05], #, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
-    "min_samples_split": [2], #, 4, 6, 8, 10, 15, 20, 30, 40, 50],
+    "criterion": ["gini", "entropy"],
+    "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
+    "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
     "min_samples_leaf": range(1, 21),
 }
 

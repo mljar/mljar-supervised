@@ -32,8 +32,8 @@ class AutoMLTest(unittest.TestCase):
 
         automl = AutoML(
             total_time_limit=5,
-            algorithms=["Xgboost"],
-            start_random_models=12,
+            algorithms=["CatBoost"], # "Xgboost", 
+            start_random_models=5,
             hill_climbing_steps=0,
             seed=13,
         )

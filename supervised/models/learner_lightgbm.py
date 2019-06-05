@@ -8,6 +8,7 @@ from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 
 import multiprocessing
 import lightgbm as lgb
@@ -31,7 +32,7 @@ class LightgbmLearner(Learner):
         self.max_iters = additional.get("max_steps", 3)
         self.learner_params = {
             "boosting_type": "gbdt",
-            "objective": "binary",
+            "objective": self.params.get("objective", "binary"),
             "metric": self.params.get("metric", "binary_logloss"),
             "num_threads": multiprocessing.cpu_count(),
             "num_leaves": self.params.get("num_leaves", 16),
@@ -42,6 +43,8 @@ class LightgbmLearner(Learner):
             "verbose": -1,
             "seed": self.params.get("seed", 1),
         }
+        if "num_class" in self.params: # multiclass classification
+            self.learner_params["num_class"] = self.params.get("num_class")
 
         log.debug("LightgbmLearner __init__")
 
@@ -135,10 +138,23 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
+LightgbmLearnerMultiClassClassificationParams = copy.deepcopy(LightgbmLearnerBinaryClassificationParams)
+LightgbmLearnerMultiClassClassificationParams["objective"] = ["multiclass"]
+LightgbmLearnerMultiClassClassificationParams["metric"] = ["multi_logloss", "multi_error"]
+
+
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
     LightgbmLearner,
     LightgbmLearnerBinaryClassificationParams,
+    required_preprocessing,
+    additional,
+)
+
+ModelsRegistry.add(
+    MULTICLASS_CLASSIFICATION,
+    LightgbmLearner,
+    LightgbmLearnerMultiClassClassificationParams,
     required_preprocessing,
     additional,
 )
