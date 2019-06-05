@@ -275,7 +275,7 @@ class AutoML:
         if self.ml_task is None:
             self.set_ml_task(y)
 
-        supported_ml_tasks = [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+        supported_ml_tasks = [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION]
         if self.ml_task not in supported_ml_tasks:
             raise Exception(
                 "Unknow Machine Learning task {}. Supported tasks are: {}".format(

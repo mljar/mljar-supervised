@@ -33,6 +33,7 @@ class PreprocessingStep(object):
 
         # preprocssing step attributes
         self._categorical_y = None
+        self._scale_y = None
         self._missing_values = []
         self._categorical = []
         self._scale = []
@@ -92,7 +93,9 @@ class PreprocessingStep(object):
                     )
 
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
-                log.error("not implemented SCALE_LOG_AND_NORMAL")
+                print("we are going to do log and normal scaling! :)")
+                self._scale_y = None
+
                 raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
@@ -305,6 +308,8 @@ class PreprocessingStep(object):
             cat_y = self._categorical_y.to_json()
             if cat_y:
                 preprocessing_params["categorical_y"] = cat_y
+        if self._scale_y is not None:
+            print("remember to save scale Y")
         if "ml_task" in self._params:
             preprocessing_params["ml_task"] = self._params["ml_task"]
         return preprocessing_params

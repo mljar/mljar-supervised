@@ -147,6 +147,11 @@ XgbLearnerMulticlassClassificationParams["objective"] = ["multi:softprob"]
 XgbLearnerMulticlassClassificationParams["eval_metric"] = ["mlogloss"]
 
 
+
+XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
+XgbLearnerRegressionParams["objective"] = ["reg:squarederror", "count:poisson"]
+XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
+
 additional = {
     "one_step": 50,
     "train_cant_improve_limit": 5,
@@ -174,6 +179,7 @@ ModelsRegistry.add(
     required_preprocessing,
     additional,
 )
+
 ModelsRegistry.add(
     REGRESSION,
     XgbLearner,
