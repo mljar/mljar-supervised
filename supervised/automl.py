@@ -41,7 +41,7 @@ class AutoML:
         train_ensemble=True,
         verbose=True,
         optimize_metric=None,
-        ml_task = None,
+        ml_task=None,
         seed=1,
     ):
         self._total_time_limit = total_time_limit
@@ -133,13 +133,14 @@ class AutoML:
             "additional": model_additional,
             "preprocessing": preprocessing_params,
             "validation": self._validation,
-
             "learner": {
                 "model_type": model_info["class"].algorithm_short_name,
                 **model_params,
             },
         }
-        num_class = len(np.unique(y)) if self.ml_task == MULTICLASS_CLASSIFICATION else None
+        num_class = (
+            len(np.unique(y)) if self.ml_task == MULTICLASS_CLASSIFICATION else None
+        )
         if num_class is not None:
             model_params["learner"]["num_class"] = num_class
 
@@ -227,7 +228,9 @@ class AutoML:
             for i in range(min(self._top_models_to_improve, len(models))):
                 m = models[i][1]
                 for p in HillClimbing.get(
-                    m.params.get("learner"), self.ml_task, len(self._models) + self._seed
+                    m.params.get("learner"),
+                    self.ml_task,
+                    len(self._models) + self._seed,
                 ):
                     if p is not None:
                         all_params = copy.deepcopy(m.params)

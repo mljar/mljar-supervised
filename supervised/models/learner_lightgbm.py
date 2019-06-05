@@ -43,7 +43,7 @@ class LightgbmLearner(Learner):
             "verbose": -1,
             "seed": self.params.get("seed", 1),
         }
-        if "num_class" in self.params: # multiclass classification
+        if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
         log.debug("LightgbmLearner __init__")
@@ -138,9 +138,14 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-LightgbmLearnerMultiClassClassificationParams = copy.deepcopy(LightgbmLearnerBinaryClassificationParams)
+LightgbmLearnerMultiClassClassificationParams = copy.deepcopy(
+    LightgbmLearnerBinaryClassificationParams
+)
 LightgbmLearnerMultiClassClassificationParams["objective"] = ["multiclass"]
-LightgbmLearnerMultiClassClassificationParams["metric"] = ["multi_logloss", "multi_error"]
+LightgbmLearnerMultiClassClassificationParams["metric"] = [
+    "multi_logloss",
+    "multi_error",
+]
 
 
 ModelsRegistry.add(

@@ -56,9 +56,8 @@ class XgbLearner(Learner):
             "seed": self.params.get("seed", 1),
         }
 
-        if "num_class" in self.params: # multiclass classification
+        if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
-            
 
         log.debug("XgbLearner __init__")
 

@@ -42,7 +42,7 @@ class CatBoostLearner(Learner):
             "bagging_temperature": self.params.get("bagging_temperature", 1),
             "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
             "random_seed": self.params.get("seed", 1),
-            "loss_function": self.params.get("loss_function", "Logloss")
+            "loss_function": self.params.get("loss_function", "Logloss"),
         }
 
         log.debug("CatBoostLearner __init__")
@@ -149,7 +149,9 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-CatBoostLearnerMulticlassClassificationParams = copy.deepcopy(CatBoostLearnerBinaryClassificationParams)
+CatBoostLearnerMulticlassClassificationParams = copy.deepcopy(
+    CatBoostLearnerBinaryClassificationParams
+)
 CatBoostLearnerMulticlassClassificationParams["loss_function"] = ["MultiClass"]
 
 ModelsRegistry.add(
@@ -163,7 +165,7 @@ ModelsRegistry.add(
 
 # switch off for now
 # maybe my misuse or bug https://github.com/catboost/catboost/issues/861
-'''
+"""
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     CatBoostLearner,
@@ -171,4 +173,4 @@ ModelsRegistry.add(
     required_preprocessing,
     additional,
 )
-'''
+"""
