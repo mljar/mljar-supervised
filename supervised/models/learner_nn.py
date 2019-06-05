@@ -35,6 +35,7 @@ from supervised.config import storage_path
 from supervised.models.learner import Learner
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 
 import operator
 
@@ -44,7 +45,7 @@ from keras.optimizers import SGD
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.models import model_from_json
-
+from keras.utils import to_categorical
 log = logging.getLogger(__name__)
 
 
@@ -87,16 +88,28 @@ class NeuralNetworkLearner(Learner):
             )
             if self.learner_params.get("dropout"):
                 self.model.add(Dropout(rate=self.learner_params.get("dropout")))
-        self.model.add(Dense(1, activation="sigmoid"))
+
+        if "num_class" in self.params:
+            self.model.add(Dense(self.params["num_class"], activation="softmax"))
+        else:
+            self.model.add(Dense(1, activation="sigmoid"))
+
         sgd_opt = SGD(
             lr=self.learner_params.get("learning_rate"),
             momentum=self.learner_params.get("momentum"),
             decay=self.learner_params.get("decay"),
             nesterov=True,
         )
-        self.model.compile(
-            optimizer=sgd_opt, loss="binary_crossentropy", metrics=["accuracy"]
-        )
+
+        if "num_class" in self.params:
+            self.model.compile(
+                optimizer=sgd_opt, loss="categorical_crossentropy", metrics=["accuracy"]
+            )
+        else:
+            self.model.compile(
+                optimizer=sgd_opt, loss="binary_crossentropy", metrics=["accuracy"]
+            )
+
         # and the model is constructed :)
 
     def update(self, update_params):
@@ -106,10 +119,16 @@ class NeuralNetworkLearner(Learner):
         log.debug("NNLearner.fit")
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
+
         # rounds for learning are incremental
-        self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
+        if "num_class" in self.params:
+            self.model.fit(X, to_categorical(y), batch_size=256, epochs=self.rounds, verbose=False)
+        else:
+            self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
 
     def predict(self, X):
+        if "num_class" in self.params:
+            return self.model.predict(X)
         return np.ravel(self.model.predict(X))
 
     def copy(self):
@@ -182,6 +201,14 @@ required_preprocessing = [
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
+    NeuralNetworkLearner,
+    NeuralNetworkLearnerBinaryClassificationParams,
+    required_preprocessing,
+    additional,
+)
+
+ModelsRegistry.add(
+    MULTICLASS_CLASSIFICATION,
     NeuralNetworkLearner,
     NeuralNetworkLearnerBinaryClassificationParams,
     required_preprocessing,

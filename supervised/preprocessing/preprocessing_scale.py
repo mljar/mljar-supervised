@@ -19,10 +19,13 @@ class PreprocessingScale(object):
 
     def fit(self, X):
         if len(self.columns):
+            for c in self.columns:
+                X[c] = X[c].astype(float)
             self.scale.fit(X[self.columns])
 
     def transform(self, X):
         if len(self.columns):
+            X.loc[:, self.columns] = X.loc[:, self.columns].astype(float)
             X.loc[:, self.columns] = self.scale.transform(X[self.columns])
         return X
 
