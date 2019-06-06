@@ -53,6 +53,7 @@ class PreprocessingStep(object):
             X.index = range(X.shape[0])
         return X, y
 
+    # fit and transform
     def run(self, train_data=None, validation_data=None):
         log.debug("PreprocessingStep.run")
         X_train, y_train = None, None
@@ -94,9 +95,18 @@ class PreprocessingStep(object):
 
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 print("we are going to do log and normal scaling! :)")
-                self._scale_y = None
 
-                raise Exception("not implemented SCALE_LOG_AND_NORMAL")
+                self._scale_y = PreprocessingScale(["target"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL)
+                y_train = pd.DataFrame({"target": y_train})
+                self._scale_y.fit(y_train)
+                y_train = self._scale_y.transform(y_train)
+                y_train = y_train["target"]
+                if y_validation is not None:
+                    y_validation = pd.DataFrame({"target": y_validation})
+                    y_validation = self._scale_y.transform(y_validation)
+                    y_validation = y_validation["target"]
+
+                #raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
                 log.error("not implemented SCALE_NORMAL")
@@ -192,8 +202,15 @@ class PreprocessingStep(object):
                 y_validation = pd.Series(self._categorical_y.transform(y_validation))
 
         if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
-            log.error("not implemented SCALE_LOG_AND_NORMAL")
-            raise Exception("not implemented SCALE_LOG_AND_NORMAL")
+
+            print("we are going to do log and normal scaling! :) <transform>")
+            if y_validation is not None and self._scale_y is not None:
+                y_validation = pd.DataFrame({"target": y_validation})
+                y_validation = self._scale_y.transform(y_validation)
+                y_validation = y_validation["target"]
+
+            #log.error("not implemented SCALE_LOG_AND_NORMAL")
+            #raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
         if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
             log.error("not implemented SCALE_NORMAL")

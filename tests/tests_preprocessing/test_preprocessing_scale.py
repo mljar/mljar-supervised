@@ -10,7 +10,7 @@ from supervised.preprocessing.preprocessing_scale import PreprocessingScale
 
 class PreprocessingScaleTest(unittest.TestCase):
 
-    def test_fit(self):
+    def test_fit_log_and_normal(self):
         # training data
         d = {
             "col1": [1, 2, 3, 4, 5, 6, 7, 8000, 9000, 10000.0],
@@ -51,6 +51,10 @@ class PreprocessingScaleTest(unittest.TestCase):
 
         assert_almost_equal(np.mean(df["col1"]), 0)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
+
+        df = scale.inverse_transform(df)
+        assert_almost_equal(df["col1"][0],1)
+        assert_almost_equal(df["col1"][1],2)
 
     def test_to_and_from_json(self):
         # training data

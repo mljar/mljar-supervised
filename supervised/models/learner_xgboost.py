@@ -149,7 +149,7 @@ XgbLearnerMulticlassClassificationParams["eval_metric"] = ["mlogloss"]
 
 
 XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
-XgbLearnerRegressionParams["objective"] = ["reg:squarederror", "count:poisson"]
+XgbLearnerRegressionParams["objective"] = ["reg:linear", "count:poisson"]
 XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
 
 additional = {
