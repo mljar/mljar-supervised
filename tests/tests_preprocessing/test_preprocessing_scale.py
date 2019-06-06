@@ -13,9 +13,9 @@ class PreprocessingScaleTest(unittest.TestCase):
     def test_fit_log_and_normal(self):
         # training data
         d = {
-            "col1": [1, 2, 3, 4, 5, 6, 7, 8000, 9000, 10000.0],
+            "col1": [12, 13, 3, 4, 5, 6, 7, 8000, 9000, 10000.0],
             "col2": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30.0],
-            "col3": [1, 2, 3, 4, 5, 6, 7, 8000, 9000, 10000.0],
+            "col3": [12, 2, 3, 4, 5, 6, 7, 8000, 9000, 10000.0],
         }
         df = pd.DataFrame(data=d)
 

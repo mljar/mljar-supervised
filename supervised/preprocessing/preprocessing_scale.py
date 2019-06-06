@@ -19,6 +19,7 @@ class PreprocessingScale(object):
 
 
     def fit(self, X):
+
         if len(self.columns):
             for c in self.columns:
                 X[c] = X[c].astype(float)
@@ -26,16 +27,19 @@ class PreprocessingScale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 self.scale.fit(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
-                self.scale.fit(np.log(X[self.columns] - np.min(X[self.columns]) + 1))
+                self.X_min_values = np.min(X[self.columns])
+                self.scale.fit(np.log(X[self.columns] - self.X_min_values + 1))
+
 
     def transform(self, X):
+
         if len(self.columns):
             X.loc[:, self.columns] = X.loc[:, self.columns].astype(float)
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
 
-                self.X_min_values = np.min(X[self.columns])
+
                 X[self.columns] = np.log(X[self.columns] - self.X_min_values + 1)
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
         return X
@@ -43,12 +47,15 @@ class PreprocessingScale(object):
     def inverse_transform(self, X):
 
         if len(self.columns):
-            pass
+
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.inverse_transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
+        
                 X[self.columns] = self.scale.inverse_transform(X[self.columns])
-                X.loc[:, self.columns] = np.exp(X[self.columns] + self.X_min_values - 1)
+                X[self.columns] = np.exp(X[self.columns])
+
+                X.loc[:, self.columns] += self.X_min_values - 1
         return X
 
     def to_json(self):

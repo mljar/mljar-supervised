@@ -34,11 +34,25 @@ class IterativeLearner(LearnerFramework):
         return self.train_time
 
     def predictions(self, learner, train_data, validation_data):
+
+        y_train_true = train_data.get("y")
+        y_train_predicted = learner.predict(train_data.get("X"))
+        y_validation_true = validation_data.get("y")
+        y_validation_predicted = learner.predict(validation_data.get("X"))
+
+        if self.preprocessings[-1]._scale_y is not None:
+            y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
+            y_train_predicted = self.preprocessings[-1].inverse_scale_target(y_train_predicted)
+            y_validation_true = self.preprocessings[-1].inverse_scale_target(y_validation_true)
+            y_validation_predicted = self.preprocessings[-1].inverse_scale_target(y_validation_predicted)
+
+        print(y_validation_predicted)
+
         return {
-            "y_train_true": train_data.get("y"),
-            "y_train_predicted": learner.predict(train_data.get("X")),
-            "y_validation_true": validation_data.get("y"),
-            "y_validation_predicted": learner.predict(validation_data.get("X")),
+            "y_train_true": y_train_true,
+            "y_train_predicted": y_train_predicted,
+            "y_validation_true": y_validation_true,
+            "y_validation_predicted": y_validation_predicted,
             "validation_index": validation_data.get("X").index,
         }
 
@@ -52,6 +66,7 @@ class IterativeLearner(LearnerFramework):
         for train_data, validation_data in self.validation.split():
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
+
             train_data, _ = self.preprocessings[-1].run(train_data)
             validation_data = self.preprocessings[-1].transform(validation_data)
 
@@ -72,6 +87,7 @@ class IterativeLearner(LearnerFramework):
                 if learner.stop_training:
                     break
                 learner.update({"step": i})
+            print("model training end")
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
         # end of validation loop

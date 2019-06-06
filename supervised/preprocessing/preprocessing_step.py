@@ -252,11 +252,19 @@ class PreprocessingStep(object):
 
         return {"X": X_validation, "y": y_validation}
 
+    def inverse_scale_target(self, y):
+        y = pd.DataFrame({"target": y})
+        y = self._scale_y.inverse_transform(y)
+        y = y["target"]
+        return y
+
     def reverse_transform_target(self, y):
 
         # target_preprocessing = self._params.get("target_preprocessing")
         # assume for now that all tasks are binary classification
         # if there is no target preprocessing, assume that there is 0 and 1 target
+
+        print("reverse_transform_target !!!")
 
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
@@ -294,6 +302,12 @@ class PreprocessingStep(object):
                     return pd.DataFrame(
                         data=y, columns=["p_{}".format(i) for i in range(y.shape[1])]
                     )
+
+        if "ml_task" in self._params and self._params["ml_task"] == REGRESSION:
+            print("Apply reverse_transform_target (0)")
+            if self._scale_y is not None:
+                print("Apply reverse_transform_target")
+
 
         # regression
         # TODO: reverse transform for regression will be applied here

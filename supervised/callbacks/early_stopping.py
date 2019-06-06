@@ -46,9 +46,13 @@ class EarlyStopping(Callback):
     def on_framework_train_end(self, logs):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
+        print("early stopping on framework train end")
+
+        print(self.best_y_predicted.values())
 
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
+
         if "prediction" in self.best_y_oof:
             self.final_loss = self.metric(
                 self.best_y_oof["target"], self.best_y_oof["prediction"]
