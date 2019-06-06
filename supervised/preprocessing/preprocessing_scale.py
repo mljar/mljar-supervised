@@ -15,8 +15,7 @@ class PreprocessingScale(object):
         self.scale = preprocessing.StandardScaler(
             copy=True, with_mean=True, with_std=True
         )
-        if self.scale_method == self.SCALE_LOG_AND_NORMAL:
-            self.X_min_values = None
+        self.X_min_values = None # it is used in SCALE_LOG_AND_NORMAL
 
 
     def fit(self, X):
@@ -62,9 +61,10 @@ class PreprocessingScale(object):
             "var": list(self.scale.var_),
             "n_samples_seen": int(self.scale.n_samples_seen_),
             "columns": self.columns,
-            "scale_method": self.scale_method,
-            "X_min_values": list(self.X_min_values)
+            "scale_method": self.scale_method
         }
+        if self.X_min_values is not None:
+            data_json["X_min_values"] = list(self.X_min_values)
         return data_json
 
     def from_json(self, data_json):
