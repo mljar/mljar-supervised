@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 from supervised.models.learner import Learner
-from sklearn.externals import joblib
+import joblib
 import copy
 
 logger = logging.getLogger(__name__)
