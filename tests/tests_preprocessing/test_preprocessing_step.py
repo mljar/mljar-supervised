@@ -58,7 +58,7 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(3, X_train.shape[0])
         self.assertEqual(3, y_train.shape[0])
 
-    def test_run_exclude_missing_targets(self):
+    def test_fit_exclude_missing_targets(self):
         # training data
         d = {
             "col1": [1, 1, 1, 3],
@@ -72,12 +72,12 @@ class PreprocessingStepTest(unittest.TestCase):
         y_train = df.loc[:, "y"]
 
         ps = PreprocessingStep()
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        train_data, _ = ps.fit(train_data={"X": X_train, "y": y_train})
         X_train, y_train = train_data.get("X"), train_data.get("y")
         self.assertEqual(3, X_train.shape[0])
         self.assertEqual(3, y_train.shape[0])
 
-    def test_run_all_good(self):
+    def test_fit_all_good(self):
         # training data
         d = {
             "col1": [1, 1, 1, 3],
@@ -113,7 +113,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        train_data, _ = ps.fit(train_data={"X": X_train, "y": y_train})
         X_train, y_train = train_data.get("X"), train_data.get("y")
 
         for col in ["col1", "col2", "col3", "col4"]:
@@ -122,7 +122,7 @@ class PreprocessingStepTest(unittest.TestCase):
         params_json = ps.to_json()
         self.assertFalse(params_json)  # should be empty
 
-    def test_run_fill_median_convert_integer(self):
+    def test_fit_fill_median_convert_integer(self):
         # training data
         d = {
             "col1": [1, 1, np.nan, 3],
@@ -158,7 +158,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        train_data, _ = ps.fit(train_data={"X": X_train, "y": y_train})
         X_train, y_train = train_data.get("X"), train_data.get("y")
 
         for col in ["col1", "col2", "col3", "col4"]:
@@ -185,7 +185,7 @@ class PreprocessingStepTest(unittest.TestCase):
             "categorical_to_int", params_json["categorical"][0]["convert_method"]
         )
 
-    def test_run_fill_median_convert_integer_validation_dataset(self):
+    def test_fit_fill_median_convert_integer_validation_dataset(self):
         # training data
         d = {
             "col1": [1, 1, np.nan, 3],
@@ -232,7 +232,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(
+        train_data, validation_data = ps.fit(
             train_data={"X": X_train, "y": y_train},
             validation_data={"X": X_test, "y": y_test},
         )
@@ -248,7 +248,7 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(2, X_test.shape[0])
         self.assertEqual(2, y_test.shape[0])
 
-    def test_run_on_y_only(self):
+    def test_fit_on_y_only(self):
         d = {"y": ["a", "b", "a", "b"]}
         df = pd.DataFrame(data=d)
         y_train = df.loc[:, "y"]
@@ -262,14 +262,14 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, _ = ps.run(train_data={"y": y_train})
+        train_data, _ = ps.fit(train_data={"y": y_train})
         y_train = train_data.get("y")
 
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(0, y_train[0])
         self.assertEqual(1, y_train[1])
 
-    def test_run_on_y_only_validation(self):
+    def test_fit_on_y_only_validation(self):
         d = {"y": ["a", "b", "a", "b"]}
         df = pd.DataFrame(data=d)
         y_train = df.loc[:, "y"]
@@ -287,7 +287,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(
+        train_data, validation_data = ps.fit(
             train_data={"y": y_train}, validation_data={"y": y_test}
         )
         y_train = train_data.get("y")
@@ -300,7 +300,7 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(0, y_test[0])
         self.assertEqual(1, y_test[1])
 
-    def test_to_and_from_json_run_fill_median_convert_integer(self):
+    def test_to_and_from_json_fit_fill_median_convert_integer(self):
         # training data
         d = {
             "col1": [1, 1, np.nan, 3],
@@ -329,7 +329,7 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        train_data, _ = ps.fit(train_data={"X": X_train, "y": y_train})
 
         ps2 = PreprocessingStep()
         ps2.from_json(ps.to_json())
@@ -370,7 +370,7 @@ class PreprocessingStepTest(unittest.TestCase):
         preprocessing_params = {"columns_preprocessing": {"col1": ["remove_column"]}}
 
         ps = PreprocessingStep(preprocessing_params)
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        train_data, _ = ps.fit(train_data={"X": X_train, "y": y_train})
         X_train1 = train_data.get("X")
         self.assertTrue("col1" not in X_train1.columns)
         self.assertEqual(3, len(X_train1.columns))

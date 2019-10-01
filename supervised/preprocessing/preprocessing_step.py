@@ -49,8 +49,8 @@ class PreprocessingStep(object):
             X.index = range(X.shape[0])
         return X, y
 
-    def run(self, train_data=None, validation_data=None):
-        log.debug("PreprocessingStep.run")
+    def fit(self, train_data=None, validation_data=None):
+        log.debug("PreprocessingStep.fit")
         X_train, y_train = None, None
         if train_data is not None:
             if "X" in train_data:
