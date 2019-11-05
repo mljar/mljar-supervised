@@ -121,7 +121,6 @@ Don't miss updates and news from us.
 ## Roadmap
 
 The package is under active development! Please expect a lot of changes!
-For this package the graphical interface will be provided soon (also open source!). Please be tuned.
 
 To be added:
 - training single decision tree
