@@ -6,7 +6,7 @@
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/mljar/mljar-supervised/master/images/mljar-logo.png" width=300 />
+<img src="https://raw.githubusercontent.com/mljar/mljar-supervised/master/images/mljar-logo.png" width=450 />
 </p>
 
 ## The new standard in Machine Learning!
