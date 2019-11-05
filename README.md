@@ -5,9 +5,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-<p align="center">
-<img src="https://raw.githubusercontent.com/mljar/mljar-supervised/master/images/the-mljar.svg" width=300 />
-</p>
+
+[![Machine Learning for Humans](images/the-mljar.svg)](https://mljar.com)
 
 ## The new standard in Machine Learning!
 
