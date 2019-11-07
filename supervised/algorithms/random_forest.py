@@ -1,5 +1,5 @@
 import logging
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from sklearn.externals import joblib
 import copy
 import os
@@ -7,23 +7,25 @@ import os
 from supervised.config import storage_path
 
 logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
 import sklearn
 from sklearn.ensemble import RandomForestClassifier
-from supervised.models.learner_sklearn import SklearnTreesClassifierLearner
+from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
 
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 
 
-class RandomForestLearner(SklearnTreesClassifierLearner):
+class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
 
     algorithm_name = "Random Forest"
     algorithm_short_name = "RF"
 
     def __init__(self, params):
-        super(RandomForestLearner, self).__init__(params)
+        super(RandomForestAlgorithm, self).__init__(params)
 
         self.library_version = sklearn.__version__
 
@@ -68,7 +70,7 @@ required_preprocessing = [
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
-    RandomForestLearner,
+    RandomForestAlgorithm,
     RandomForestBinaryClassificationParams,
     required_preprocessing,
     additional,
@@ -76,7 +78,7 @@ ModelsRegistry.add(
 
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    RandomForestLearner,
+    RandomForestAlgorithm,
     RandomForestBinaryClassificationParams,
     required_preprocessing,
     additional,

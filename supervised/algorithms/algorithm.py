@@ -1,10 +1,10 @@
 import uuid
 
 
-class Learner:
+class BaseAlgorithm:
     """
-    This is a Learner base class.
-    All algorithms inherit from Learner.
+    This is an abstract class.
+    All algorithms inherit from BaseAlgorithm.
     """
 
     algorithm_name = "Unknown"

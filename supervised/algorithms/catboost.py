@@ -5,27 +5,25 @@ import pandas as pd
 import os
 
 from supervised.config import storage_path
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 
-import multiprocessing
-import operator
-
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 from catboost import CatBoostClassifier
 import catboost
 
 
-class CatBoostLearner(Learner):
+class CatBoostAlgorithm(BaseAlgorithm):
 
     algorithm_name = "CatBoost"
     algorithm_short_name = "CatBoost"
 
     def __init__(self, params):
-        super(CatBoostLearner, self).__init__(params)
+        super(CatBoostAlgorithm, self).__init__(params)
         self.library_version = catboost.__version__
         self.model_file = self.uid + ".cat.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
@@ -42,10 +40,10 @@ class CatBoostLearner(Learner):
             "bagging_temperature": self.params.get("bagging_temperature", 1),
             "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
             "random_seed": self.params.get("seed", 1),
-            "loss_function": self.params.get("loss_function", "Logloss"),
+            "loss_function": self.params.get("loss_function", "logloss"),
         }
 
-        log.debug("CatBoostLearner __init__")
+        logger.debug("CatBoostLearner __init__")
 
         self.model = CatBoostClassifier(
             iterations=0,
@@ -88,7 +86,7 @@ class CatBoostLearner(Learner):
             "params": self.params,
         }
 
-        log.debug("CatBoostLearner save model to %s" % self.model_file_path)
+        logger.debug("CatBoostLearner save model to %s" % self.model_file_path)
         return json_desc
 
     def load(self, json_desc):
@@ -103,7 +101,7 @@ class CatBoostLearner(Learner):
         self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
         self.params = json_desc.get("params", self.params)
 
-        log.debug("CatBoostLearner load model from %s" % self.model_file_path)
+        logger.debug("CatBoostLearner load model from %s" % self.model_file_path)
 
         self.model = CatBoostClassifier()
         self.model.load_model(self.model_file_path)
@@ -112,7 +110,7 @@ class CatBoostLearner(Learner):
         return None
 
 
-CatBoostLearnerBinaryClassificationParams = {
+bin_class_params = {
     "loss_function": ["Logloss"],
     "learning_rate": [
         0.0025,
@@ -149,15 +147,11 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-CatBoostLearnerMulticlassClassificationParams = copy.deepcopy(
-    CatBoostLearnerBinaryClassificationParams
-)
-CatBoostLearnerMulticlassClassificationParams["loss_function"] = ["MultiClass"]
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
-    CatBoostLearner,
-    CatBoostLearnerBinaryClassificationParams,
+    CatBoostAlgorithm,
+    bin_class_params,
     required_preprocessing,
     additional,
 )
@@ -166,10 +160,13 @@ ModelsRegistry.add(
 # switch off for now
 # maybe my misuse or bug https://github.com/catboost/catboost/issues/861
 """
+multi_class_params = copy.deepcopy(bin_class_params)
+multi_class_params["loss_function"] = ["MultiClass"]
+
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     CatBoostLearner,
-    CatBoostLearnerMulticlassClassificationParams,
+    multi_class_params,
     required_preprocessing,
     additional,
 )

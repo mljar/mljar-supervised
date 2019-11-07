@@ -1,15 +1,18 @@
 import numpy as np
-import logging
-from supervised.models.learner import Learner
+
+from supervised.algorithms.algorithm import BaseAlgorithm
 from sklearn.externals import joblib
 import copy
 
+import logging
+
 logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
-
-class SklearnLearner(Learner):
+class SklearnAlgorithm(BaseAlgorithm):
     def __init__(self, params):
-        super(SklearnLearner, self).__init__(params)
+        super(SklearnAlgorithm, self).__init__(params)
 
     def fit(self, X, y):
         self.model.fit(X, y)
@@ -30,7 +33,7 @@ class SklearnLearner(Learner):
             "params": self.params,
         }
 
-        logger.debug("SklearnLearner save to {0}".format(self.model_file_path))
+        logger.debug("SklearnAlgorithm save to {0}".format(self.model_file_path))
         return json_desc
 
     def load(self, json_desc):
@@ -47,13 +50,13 @@ class SklearnLearner(Learner):
         self.model = joblib.load(self.model_file_path)
 
         logger.debug(
-            "SklearnLearner loading model from {0}".format(self.model_file_path)
+            "SklearnAlgorithm loading model from {0}".format(self.model_file_path)
         )
 
 
-class SklearnTreesClassifierLearner(SklearnLearner):
+class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
-        super(SklearnTreesClassifierLearner, self).__init__(params)
+        super(SklearnTreesClassifierAlgorithm, self).__init__(params)
 
     def fit(self, X, y):
         self.model.fit(X, np.ravel(y))

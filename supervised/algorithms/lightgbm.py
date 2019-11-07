@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 from supervised.config import storage_path
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
@@ -14,10 +14,11 @@ import multiprocessing
 import lightgbm as lgb
 import operator
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
-
-class LightgbmLearner(Learner):
+class LightgbmAlgorithm(BaseAlgorithm):
 
     algorithm_name = "LightGBM"
     algorithm_short_name = "LightGBM"
@@ -46,7 +47,7 @@ class LightgbmLearner(Learner):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
-        log.debug("LightgbmLearner __init__")
+        logger.debug("LightgbmLearner __init__")
 
     def update(self, update_params):
         pass
@@ -79,7 +80,7 @@ class LightgbmLearner(Learner):
             "params": self.params,
         }
 
-        log.debug("LightgbmLearner save model to %s" % self.model_file_path)
+        logger.debug("LightgbmAlgorithm save model to %s" % self.model_file_path)
         return json_desc
 
     def load(self, json_desc):
@@ -94,7 +95,7 @@ class LightgbmLearner(Learner):
         self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
         self.params = json_desc.get("params", self.params)
 
-        log.debug("LightgbmLearner load model from %s" % self.model_file_path)
+        logger.debug("LightgbmLearner load model from %s" % self.model_file_path)
         self.model = lgb.Booster(model_file=self.model_file_path)
 
     def importance(self, column_names, normalize=True):
@@ -150,7 +151,7 @@ LightgbmLearnerMultiClassClassificationParams["metric"] = [
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
-    LightgbmLearner,
+    LightgbmAlgorithm,
     LightgbmLearnerBinaryClassificationParams,
     required_preprocessing,
     additional,
@@ -158,7 +159,7 @@ ModelsRegistry.add(
 
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    LightgbmLearner,
+    LightgbmAlgorithm,
     LightgbmLearnerMultiClassClassificationParams,
     required_preprocessing,
     additional,

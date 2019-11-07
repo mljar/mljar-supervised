@@ -112,7 +112,7 @@ class AutoMLTest(unittest.TestCase):
         self.assertTrue("A" in np.unique(y_predicted["label"]))
         self.assertTrue("B" in np.unique(y_predicted["label"]))
 
-    def test_predict_labels(self):
+    def test_predict_labels_2(self):
         automl = AutoML(
             total_time_limit=15,
             algorithms=["Xgboost"],

@@ -32,7 +32,7 @@ import pandas as pd
 import os
 
 from supervised.config import storage_path
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
@@ -46,16 +46,18 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.models import model_from_json
 from keras.utils import to_categorical
-log = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
-class NeuralNetworkLearner(Learner):
+class NeuralNetworkAlgorithm(BaseAlgorithm):
 
     algorithm_name = "Neural Network"
     algorithm_short_name = "NN"
 
     def __init__(self, params):
-        super(NeuralNetworkLearner, self).__init__(params)
+        super(NeuralNetworkAlgorithm, self).__init__(params)
 
         self.library_version = keras.__version__
         self.model_file = self.uid + ".nn.model"
@@ -74,7 +76,7 @@ class NeuralNetworkLearner(Learner):
             "decay": params.get("decay"),
         }
         self.model = None  # we need input data shape to construct model
-        log.debug("NeuralNetworkLearner __init__")
+        logger.debug("NeuralNetworkAlgorithm __init__")
 
     def create_model(self, input_dim):
         self.model = Sequential()
@@ -116,13 +118,15 @@ class NeuralNetworkLearner(Learner):
         pass
 
     def fit(self, X, y):
-        log.debug("NNLearner.fit")
+        logger.debug("NNLearner.fit")
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
 
         # rounds for learning are incremental
         if "num_class" in self.params:
-            self.model.fit(X, to_categorical(y), batch_size=256, epochs=self.rounds, verbose=False)
+            self.model.fit(
+                X, to_categorical(y), batch_size=256, epochs=self.rounds, verbose=False
+            )
         else:
             self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
 
@@ -149,7 +153,7 @@ class NeuralNetworkLearner(Learner):
             "model_architecture_json": self.model.to_json(),
         }
 
-        log.debug("NeuralNetworkLearner save model to %s" % self.model_file_path)
+        logger.debug("NeuralNetworkLearner save model to %s" % self.model_file_path)
         return json_desc
 
     def load(self, json_desc):
@@ -165,7 +169,7 @@ class NeuralNetworkLearner(Learner):
         self.params = json_desc.get("params", self.params)
         model_json = json_desc.get("model_architecture_json")
 
-        log.debug("NeuralNetworkLearner load model from %s" % self.model_file_path)
+        logger.debug("NeuralNetworkLearner load model from %s" % self.model_file_path)
 
         self.model = model_from_json(model_json)
         self.model.load_weights(self.model_file_path)
@@ -201,7 +205,7 @@ required_preprocessing = [
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
-    NeuralNetworkLearner,
+    NeuralNetworkAlgorithm,
     NeuralNetworkLearnerBinaryClassificationParams,
     required_preprocessing,
     additional,
@@ -209,7 +213,7 @@ ModelsRegistry.add(
 
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    NeuralNetworkLearner,
+    NeuralNetworkAlgorithm,
     NeuralNetworkLearnerBinaryClassificationParams,
     required_preprocessing,
     additional,

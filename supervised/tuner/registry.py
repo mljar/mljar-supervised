@@ -23,3 +23,7 @@ class ModelsRegistry:
         ModelsRegistry.registry[task_name][
             model_class.algorithm_short_name
         ] = model_information
+
+    @staticmethod
+    def get_supported_ml_tasks():
+        return ModelsRegistry.registry.keys()

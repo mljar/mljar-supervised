@@ -9,8 +9,7 @@ from tqdm.auto import tqdm
 
 tqdm.pandas()
 
-from supervised.models.learner_xgboost import XgbLearner
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.time_constraint import TimeConstraint
@@ -22,11 +21,24 @@ from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 from supervised.tuner.registry import REGRESSION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
-from supervised.models.ensemble import Ensemble
-from supervised.models.compute_additional_metrics import ComputeAdditionalMetrics
+from supervised.tuner.mljar_tuner import MljarTuner
+from supervised.algorithms.ensemble import Ensemble
+from supervised.algorithms.compute_additional_metrics import ComputeAdditionalMetrics
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
+
+import logging
+
+logging.basicConfig(format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+print("logger", logger)
+
+class AutoMLException(Exception):
+    def __init__(self, message):
+        super(AutoMLException, self).__init__(message)
+        logger.error(message)
 
 
 class AutoML:
@@ -44,6 +56,8 @@ class AutoML:
         ml_task=None,
         seed=1,
     ):
+        logger.debug("AutoML.__init__")
+
         self._total_time_limit = total_time_limit
         self._time_limit = (
             learner_time_limit
@@ -116,35 +130,11 @@ class AutoML:
             self._threshold = float(
                 self._max_metrics["f1"]["threshold"]
             )  # TODO: do need conversion
-        # print(self._metrics_details, self._max_metrics, self._confusion_matrix)
-
-    def _get_model_params(self, model_type, X, y):
-        model_info = ModelsRegistry.registry[self.ml_task][model_type]
-        model_params = RandomParameters.get(
-            model_info["params"], len(self._models) + self._seed
+        logger.info(
+            "Metric details:\n{}\nConfusion matrix:\n{}".format(
+                self._max_metrics.transpose(), self._confusion_matrix
+            )
         )
-        required_preprocessing = model_info["required_preprocessing"]
-        model_additional = model_info["additional"]
-        preprocessing_params = PreprocessingTuner.get(
-            required_preprocessing, {"train": {"X": X, "y": y}}, self.ml_task
-        )
-
-        model_params = {
-            "additional": model_additional,
-            "preprocessing": preprocessing_params,
-            "validation": self._validation,
-            "learner": {
-                "model_type": model_info["class"].algorithm_short_name,
-                **model_params,
-            },
-        }
-        num_class = (
-            len(np.unique(y)) if self.ml_task == MULTICLASS_CLASSIFICATION else None
-        )
-        if num_class is not None:
-            model_params["learner"]["num_class"] = num_class
-
-        return model_params
 
     def keep_model(self, model):
         if model is None:
@@ -165,18 +155,21 @@ class AutoML:
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         params["ml_task"] = self.ml_task
 
-        il = IterativeLearner(params, callbacks=[early_stop, time_constraint])
+        il = ModelFramework(params, callbacks=[early_stop, time_constraint])
+        # get learner unique hash
         il_key = il.get_params_key()
+        # if already trained model with such paramaters, just skip it
         if il_key in self._models_params_keys:
-            self._progress_bar.update(1)
-            return None
-        self._models_params_keys += [il_key]
-        if self.should_train_next(il.get_name()):
-            il.train({"train": {"X": X, "y": y}})
-            self._progress_bar.update(1)
-            return il
+            il = None
+        else:  # unique hash, train the model
+            self._models_params_keys += [il_key]
+            if self._enough_time_to_train(il.get_name()):
+                il.train({"train": {"X": X, "y": y}})
+            else:
+                il = None
+
         self._progress_bar.update(1)
-        return None
+        return il
 
     def verbose_print(self, msg):
         if self._verbose:
@@ -188,7 +181,7 @@ class AutoML:
         else:
             self._models_train_time[model_type] = [train_time]
 
-    def should_train_next(self, model_type):
+    def _enough_time_to_train(self, model_type):
         # no time limit, just train, dont ask
         if self._total_time_limit is None:
             return True
@@ -211,35 +204,6 @@ class AutoML:
             return True
         return False
 
-    def not_so_random_step(self, X, y):
-        for model_type in self._algorithms:
-            for i in range(self._start_random_models):
-                params = self._get_model_params(model_type, X, y)
-                m = self.train_model(params, X, y)
-                self.keep_model(m)
-
-    def hill_climbing_step(self, X, y):
-        for hill_climbing in range(self._hill_climbing_steps):
-            # get models orderer by loss
-            models = []
-            for m in self._models:
-                models += [(m.callbacks.callbacks[0].final_loss, m)]
-            models = sorted(models, key=lambda x: x[0])
-            for i in range(min(self._top_models_to_improve, len(models))):
-                m = models[i][1]
-                for p in HillClimbing.get(
-                    m.params.get("learner"),
-                    self.ml_task,
-                    len(self._models) + self._seed,
-                ):
-                    if p is not None:
-                        all_params = copy.deepcopy(m.params)
-                        all_params["learner"] = p
-                        new_model = self.train_model(all_params, X, y)
-                        self.keep_model(new_model)
-                    else:
-                        self._progress_bar.update(1)
-
     def ensemble_step(self, y):
         if self._train_ensemble:
             self.ensemble = Ensemble(self._optimize_metric, self.ml_task)
@@ -248,16 +212,86 @@ class AutoML:
             self.keep_model(self.ensemble)
             self._progress_bar.update(1)
 
-    def set_ml_task(self, y):
-        target_unique_cnt = len(np.unique(y))
-        if target_unique_cnt == 2:
-            self.ml_task = BINARY_CLASSIFICATION
-        elif target_unique_cnt <= 20:
-            self.ml_task = MULTICLASS_CLASSIFICATION
-        else:
-            self.ml_task = REGRESSION
+    def _set_ml_task(self, y):
+        """ Set and validate the ML task.
+        
+        If ML task is not set, it trys to guess ML task based on count of unique values in the target. 
+        Then it performs validation.
+        """
+        # if not set, guess
+        if self.ml_task is None:
+            target_unique_cnt = len(np.unique(y))
+            if target_unique_cnt == 2:
+                self.ml_task = BINARY_CLASSIFICATION
+            elif target_unique_cnt <= 20:
+                self.ml_task = MULTICLASS_CLASSIFICATION
+            else:
+                self.ml_task = REGRESSION
+        # validation
+        if self.ml_task not in ModelsRegistry.get_supported_ml_tasks():
+            raise Exception(
+                "Unknow Machine Learning task {}."
+                " Supported tasks are: {}".format(self.ml_task, supported_ml_tasks)
+            )
+        logger.info("AutoML task to be solved: {}".format(self.ml_task))
+
+    def _set_algorithms(self):
+        """ Set and validate available algorithms.
+
+        If algorithms are not set, all algorithms from registry are used.
+        Then perform vadlidation of algorithms.
+        """
+        if len(self._algorithms) == 0:
+            self._algorithms = list(ModelsRegistry.registry[self.ml_task].keys())
+
+        for a in self._algorithms:
+            if a not in list(ModelsRegistry.registry[self.ml_task].keys()):
+                raise AutoMLException(
+                    "The algorithm {} is not allowed to use for ML task: {}.".format(
+                        a, self.ml_task
+                    )
+                )
+        logger.info("AutoML will use algorithms: {}".format(self._algorithms))
+
+    def _set_metric(self):
+        """ Set and validate the metric to be optimized. """
+        if self.ml_task == BINARY_CLASSIFICATION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "logloss"
+            elif self._user_set_optimize_metric not in ["logloss", "auc"]:
+                raise AutoMLException(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+        elif self.ml_task == MULTICLASS_CLASSIFICATION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "logloss"
+            elif self._user_set_optimize_metric not in ["logloss"]:
+                raise AutoMLException(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+        elif self.ml_task == REGRESSION:
+            if self._user_set_optimize_metric is None:
+                self._optimize_metric = "mse"
+            elif self._user_set_optimize_metric not in ["mse"]:
+                raise AutoMLException(
+                    "Metric {} is not allowed in ML task: {}".format(
+                        self._user_set_optimize_metric, self.ml_task
+                    )
+                )
+            else:
+                self._optimize_metric = self._user_set_optimize_metric
+        logger.info("AutoML will optimize metric: {0}".format(self._optimize_metric))
 
     def fit(self, X, y):
+        logger.debug("AutoML.fit, X data {0}, y data {1}".format(X.shape, y.shape))
         start_time = time.time()
 
         X.reset_index(drop=True, inplace=True)
@@ -271,66 +305,10 @@ class AutoML:
         # TODO needs a better name for this preprocessing
         X, y = PreprocessingExcludeMissingValues.transform(X, y)
 
-        # define the ml_task
-        if self.ml_task is None:
-            self.set_ml_task(y)
+        self._set_ml_task(y)
+        self._set_algorithms()
+        self._set_metric()
 
-        supported_ml_tasks = [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION]
-        if self.ml_task not in supported_ml_tasks:
-            raise Exception(
-                "Unknow Machine Learning task {}. Supported tasks are: {}".format(
-                    self.ml_task, supported_ml_tasks
-                )
-            )
-        print("ML task: {}".format(self.ml_task))
-        # define available algorithms
-        if len(self._algorithms) == 0:
-            self._algorithms = list(ModelsRegistry.registry[self.ml_task].keys())
-
-        for a in self._algorithms:
-            if a not in list(ModelsRegistry.registry[self.ml_task].keys()):
-                raise Exception(
-                    "The algorithm {} is not allowed to use for ML task: {}.".format(
-                        a, self.ml_task
-                    )
-                )
-
-        # set metric to be optimized, TODO move this to registry with dict
-        if self.ml_task == BINARY_CLASSIFICATION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "logloss"
-            elif self._user_set_optimize_metric not in ["logloss", "auc"]:
-                raise Exception(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self.ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-        elif self.ml_task == MULTICLASS_CLASSIFICATION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "logloss"
-            elif self._user_set_optimize_metric not in ["logloss"]:
-                raise Exception(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self.ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-        elif self.ml_task == REGRESSION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "mse"
-            elif self._user_set_optimize_metric not in ["mse"]:
-                raise Exception(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self.ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-
-        # estimate training time
         self.estimate_training_times()
 
         self._progress_bar = tqdm(
@@ -339,11 +317,25 @@ class AutoML:
             unit="model",
         )
 
-        # start with not-so-random models
-        self.not_so_random_step(X, y)
-        # perform hill climbing steps on best models
-        self.hill_climbing_step(X, y)
-        # train ensemble
+        tuner = MljarTuner(
+            {
+                "start_random_models": self._start_random_models,
+                "hill_climbing_steps": self._hill_climbing_steps,
+                "top_models_to_improve": self._top_models_to_improve,
+            },
+            self._algorithms,
+            self.ml_task,
+            self._validation,
+            self._seed,
+        )
+
+        for params in tuner.get_params(X, y, self._models):
+            if params is not None:
+                new_model = self.train_model(params, X, y)
+                self.keep_model(new_model)
+            # always update progessbar, even for empty parameters, because they are counted in the progressbar
+            self._progress_bar.update(1)
+
         self.ensemble_step(y)
 
         max_loss = 10e12
@@ -399,7 +391,7 @@ class AutoML:
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
         else:
-            self._best_model = IterativeLearner(json_data["best_model"].get("params"))
+            self._best_model = ModelFramework(json_data["best_model"].get("params"))
             self._best_model.from_json(json_data["best_model"])
         self._threshold = json_data.get("threshold")
 

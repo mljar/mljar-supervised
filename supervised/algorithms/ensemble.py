@@ -7,16 +7,17 @@ import time
 import uuid
 
 from supervised.config import storage_path
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-from supervised.models.learner_factory import LearnerFactory
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.algorithms.algorithm_factory import AlgorithmFactory
+from supervised.model_framework import ModelFramework
 import operator
 
-log = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 from supervised.metric import Metric
 
 
@@ -198,7 +199,7 @@ class Ensemble:
             model = selected["model"]
             repeat = selected["repeat"]
 
-            il = IterativeLearner(model.get("params"))
+            il = ModelFramework(model.get("params"))
             il.from_json(model)
             self.selected_models += [
                 # {"model": LearnerFactory.load(model), "repeat": repeat}

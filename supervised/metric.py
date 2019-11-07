@@ -55,7 +55,7 @@ class Metric(object):
             raise MetricException("Unknown metric {0}".format(self.name))
 
     def __call__(self, y_true, y_predicted):
-        
+
         return self.metric(y_true, y_predicted)
 
     def improvement(self, previous, current):

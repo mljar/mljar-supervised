@@ -1,34 +1,66 @@
+import uuid
 import numpy as np
 import pandas as pd
 import time
 import zipfile
 import os
-
-from supervised.config import storage_path
-from supervised.learner_framework import LearnerFramework
-from supervised.validation.validation_step import ValidationStep
-from supervised.models.learner_factory import LearnerFactory
-
-from supervised.preprocessing.preprocessing_step import PreprocessingStep
 import logging
 
-log = logging.getLogger(__name__)
+from supervised.config import storage_path
+from supervised.callbacks.callback_list import CallbackList
+from supervised.validation.validation_step import ValidationStep
+from supervised.algorithms.algorithm_factory import AlgorithmFactory
+from supervised.preprocessing.preprocessing_step import PreprocessingStep
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
 
-
-class IterativeLearnerException(Exception):
-    def __init__(self, message):
-        super(IterativeLearnerException, self).__init__(message)
-        log.error(message)
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
 
-class IterativeLearner(LearnerFramework):
+class ModelFramework():
     def __init__(self, params, callbacks=[]):
-        LearnerFramework.__init__(self, params, callbacks)
+        logger.debug("ModelFramework __init__")
+        self.uid = str(uuid.uuid4())
+
+        self.framework_file = self.uid + ".framework"
+        self.framework_file_path = os.path.join(storage_path, self.framework_file)
+
+        for i in ["learner", "validation"]:  # mandatory parameters
+            if i not in params:
+                msg = "Missing {0} parameter in ModelFramework params".format(i)
+                logger.error(msg)
+                raise ValueError(msg)
+
+        self.params = params
+        self.callbacks = CallbackList(callbacks)
+
+        self.additional_params = params.get("additional")
+        self.preprocessing_params = params.get("preprocessing")
+        self.validation_params = params.get("validation")
+        self.learner_params = params.get("learner")
+
+        self.validation = None
+        self.preprocessings = []
+        self.learners = []
+
         self.train_time = None
-        log.debug("IterativeLearner.__init__")
+        logger.debug("IterativeLearner.__init__")
+
+
+        
+    def get_params_key(self):
+        key = "key_"
+        for main_key in ["additional", "preprocessing", "validation", "learner"]:
+            key += main_key
+            for k, v in self.params[main_key].items():
+                key += "_{}_{}".format(k, v)
+        return key
+
+
+
 
     def get_train_time(self):
         return self.train_time
@@ -42,11 +74,15 @@ class IterativeLearner(LearnerFramework):
 
         if self.preprocessings[-1]._scale_y is not None:
             y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
-            y_train_predicted = self.preprocessings[-1].inverse_scale_target(y_train_predicted)
-            y_validation_true = self.preprocessings[-1].inverse_scale_target(y_validation_true)
-            y_validation_predicted = self.preprocessings[-1].inverse_scale_target(y_validation_predicted)
-
-        print(y_validation_predicted)
+            y_train_predicted = self.preprocessings[-1].inverse_scale_target(
+                y_train_predicted
+            )
+            y_validation_true = self.preprocessings[-1].inverse_scale_target(
+                y_validation_true
+            )
+            y_validation_predicted = self.preprocessings[-1].inverse_scale_target(
+                y_validation_predicted
+            )
 
         return {
             "y_train_true": y_train_true,
@@ -58,7 +94,7 @@ class IterativeLearner(LearnerFramework):
 
     def train(self, data):
         start_time = time.time()
-        log.debug("IterativeLearner.train")
+        logger.debug("IterativeLearner.train")
         np.random.seed(self.learner_params["seed"])
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
@@ -70,7 +106,7 @@ class IterativeLearner(LearnerFramework):
             train_data, _ = self.preprocessings[-1].run(train_data)
             validation_data = self.preprocessings[-1].transform(validation_data)
 
-            self.learners += [LearnerFactory.get_learner(self.learner_params)]
+            self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
 
             self.callbacks.add_and_set_learner(learner)
@@ -87,12 +123,12 @@ class IterativeLearner(LearnerFramework):
                 if learner.stop_training:
                     break
                 learner.update({"step": i})
-            print("model training end")
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time
+        logger.debug("IterativeLearner.train end-of")
 
     def get_out_of_folds(self):
         early_stopping = self.callbacks.get("early_stopping")
@@ -117,7 +153,7 @@ class IterativeLearner(LearnerFramework):
 
     def predict(self, X):
         if self.learners is None or len(self.learners) == 0:
-            raise IterativeLearnerException("Learnes are not initialized")
+            raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):

@@ -96,7 +96,9 @@ class PreprocessingStep(object):
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 print("we are going to do log and normal scaling! :)")
 
-                self._scale_y = PreprocessingScale(["target"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL)
+                self._scale_y = PreprocessingScale(
+                    ["target"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL
+                )
                 y_train = pd.DataFrame({"target": y_train})
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
@@ -106,7 +108,7 @@ class PreprocessingStep(object):
                     y_validation = self._scale_y.transform(y_validation)
                     y_validation = y_validation["target"]
 
-                #raise Exception("not implemented SCALE_LOG_AND_NORMAL")
+                # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
                 log.error("not implemented SCALE_NORMAL")
@@ -209,8 +211,8 @@ class PreprocessingStep(object):
                 y_validation = self._scale_y.transform(y_validation)
                 y_validation = y_validation["target"]
 
-            #log.error("not implemented SCALE_LOG_AND_NORMAL")
-            #raise Exception("not implemented SCALE_LOG_AND_NORMAL")
+            # log.error("not implemented SCALE_LOG_AND_NORMAL")
+            # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
         if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
             log.error("not implemented SCALE_NORMAL")
@@ -307,7 +309,6 @@ class PreprocessingStep(object):
             print("Apply reverse_transform_target (0)")
             if self._scale_y is not None:
                 print("Apply reverse_transform_target")
-
 
         # regression
         # TODO: reverse transform for regression will be applied here

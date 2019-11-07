@@ -9,14 +9,13 @@ class PreprocessingScale(object):
     SCALE_NORMAL = "scale_normal"
     SCALE_LOG_AND_NORMAL = "scale_log_and_normal"
 
-    def __init__(self, columns=[], scale_method = SCALE_NORMAL):
+    def __init__(self, columns=[], scale_method=SCALE_NORMAL):
         self.scale_method = scale_method
         self.columns = columns
         self.scale = preprocessing.StandardScaler(
             copy=True, with_mean=True, with_std=True
         )
-        self.X_min_values = None # it is used in SCALE_LOG_AND_NORMAL
-
+        self.X_min_values = None  # it is used in SCALE_LOG_AND_NORMAL
 
     def fit(self, X):
 
@@ -30,7 +29,6 @@ class PreprocessingScale(object):
                 self.X_min_values = np.min(X[self.columns])
                 self.scale.fit(np.log(X[self.columns] - self.X_min_values + 1))
 
-
     def transform(self, X):
 
         if len(self.columns):
@@ -38,7 +36,6 @@ class PreprocessingScale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
-
 
                 X[self.columns] = np.log(X[self.columns] - self.X_min_values + 1)
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
@@ -51,7 +48,7 @@ class PreprocessingScale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.inverse_transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
-        
+
                 X[self.columns] = self.scale.inverse_transform(X[self.columns])
                 X[self.columns] = np.exp(X[self.columns])
 
@@ -68,7 +65,7 @@ class PreprocessingScale(object):
             "var": list(self.scale.var_),
             "n_samples_seen": int(self.scale.n_samples_seen_),
             "columns": self.columns,
-            "scale_method": self.scale_method
+            "scale_method": self.scale_method,
         }
         if self.X_min_values is not None:
             data_json["X_min_values"] = list(self.X_min_values)

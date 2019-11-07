@@ -16,8 +16,9 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-log = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
 class ComputeAdditionalMetrics:
     @staticmethod

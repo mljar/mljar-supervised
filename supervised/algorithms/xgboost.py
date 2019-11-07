@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 from supervised.config import storage_path
-from supervised.models.learner import Learner
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import (
     BINARY_CLASSIFICATION,
@@ -16,16 +16,17 @@ from supervised.tuner.registry import (
 import xgboost as xgb
 import operator
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
-
-class XgbLearnerException(Exception):
+class XgbAlgorithmException(Exception):
     def __init__(self, message):
-        super(XgbLearnerException, self).__init__(message)
-        log.error(message)
+        super(XgbAlgorithmException, self).__init__(message)
+        logger.error(message)
 
 
-class XgbLearner(Learner):
+class XgbAlgorithm(BaseAlgorithm):
     """
     This is a wrapper over xgboost algorithm.
     """
@@ -34,7 +35,7 @@ class XgbLearner(Learner):
     algorithm_short_name = "Xgboost"
 
     def __init__(self, params):
-        super(XgbLearner, self).__init__(params)
+        super(XgbAlgorithm, self).__init__(params)
         self.library_version = xgb.__version__
         self.model_file = self.uid + ".xgb.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
@@ -59,7 +60,7 @@ class XgbLearner(Learner):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
-        log.debug("XgbLearner __init__")
+        logger.debug("XgbLearner __init__")
 
     def update(self, update_params):
         # Dont need to update boosting rounds, it is adding rounds incrementally
@@ -73,7 +74,7 @@ class XgbLearner(Learner):
 
     def predict(self, X):
         if self.model is None:
-            raise XgbLearnerException("Xgboost model is None")
+            raise XgbAlgorithmException("Xgboost model is None")
         dtrain = xgb.DMatrix(X, missing=np.NaN)
         a = self.model.predict(dtrain)
         return a
@@ -94,7 +95,7 @@ class XgbLearner(Learner):
             "params": self.params,
         }
 
-        log.debug("XgbLearner save model to %s" % self.model_file_path)
+        logger.debug("XgbAlgorithm save model to %s" % self.model_file_path)
         return json_desc
 
     def load(self, json_desc):
@@ -109,7 +110,7 @@ class XgbLearner(Learner):
         self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
         self.params = json_desc.get("params", self.params)
 
-        log.debug("XgbLearner load model from %s" % self.model_file_path)
+        logger.debug("XgbLearner load model from %s" % self.model_file_path)
         self.model = xgb.Booster()  # init model
         self.model.load_model(self.model_file_path)
 
@@ -147,7 +148,6 @@ XgbLearnerMulticlassClassificationParams["objective"] = ["multi:softprob"]
 XgbLearnerMulticlassClassificationParams["eval_metric"] = ["mlogloss"]
 
 
-
 XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
 XgbLearnerRegressionParams["objective"] = ["reg:linear", "count:poisson"]
 XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
@@ -167,14 +167,14 @@ required_preprocessing = [
 
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
-    XgbLearner,
+    XgbAlgorithm,
     XgbLearnerBinaryClassificationParams,
     required_preprocessing,
     additional,
 )
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    XgbLearner,
+    XgbAlgorithm,
     XgbLearnerMulticlassClassificationParams,
     required_preprocessing,
     additional,
@@ -182,7 +182,7 @@ ModelsRegistry.add(
 
 ModelsRegistry.add(
     REGRESSION,
-    XgbLearner,
+    XgbAlgorithm,
     XgbLearnerRegressionParams,
     required_preprocessing,
     additional,
