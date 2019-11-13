@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.automl import AutoML
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 import sklearn.model_selection
 from sklearn.metrics import log_loss

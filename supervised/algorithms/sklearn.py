@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.externals import joblib
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.config import LOG_LEVEL
+from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)

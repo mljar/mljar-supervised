@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 
-from supervised.config import storage_path
+from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -163,7 +163,7 @@ AlgorithmsRegistry.add(
 multi_class_params = copy.deepcopy(bin_class_params)
 multi_class_params["loss_function"] = ["MultiClass"]
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     CatBoostLearner,
     multi_class_params,

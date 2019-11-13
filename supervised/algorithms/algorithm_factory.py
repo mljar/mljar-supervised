@@ -9,8 +9,6 @@ from supervised.algorithms.nn import NeuralNetworkAlgorithm
 import logging
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.ERROR)
-
 
 class AlgorithmFactoryException(Exception):
     def __init__(self, message):

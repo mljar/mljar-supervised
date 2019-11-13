@@ -6,7 +6,6 @@ import zipfile
 import os
 import logging
 
-from supervised.config import storage_path
 from supervised.callbacks.callback_list import CallbackList
 from supervised.validation.validation_step import ValidationStep
 from supervised.algorithms.algorithm_factory import AlgorithmFactory
@@ -15,9 +14,10 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
 
-logger = logging.getLogger(__name__)
-from supervised.config import LOG_LEVEL
+from supervised.utils.config import storage_path
+from supervised.utils.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 

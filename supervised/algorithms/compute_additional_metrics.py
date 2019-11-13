@@ -17,7 +17,7 @@ from sklearn.metrics import (
 )
 
 logger = logging.getLogger(__name__)
-from supervised.config import LOG_LEVEL
+from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
 

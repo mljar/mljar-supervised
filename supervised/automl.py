@@ -4,16 +4,16 @@ import copy
 import time
 import numpy as np
 import pandas as pd
+import logging
 
 from tqdm.auto import tqdm
-
 tqdm.pandas()
 
 from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.time_constraint import TimeConstraint
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -28,15 +28,13 @@ from supervised.algorithms.compute_additional_metrics import ComputeAdditionalMe
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
+from supervised.utils.config import LOG_LEVEL
 
-import logging
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
 )
 logger = logging.getLogger(__name__)
-from supervised.config import LOG_LEVEL
-
 logger.setLevel(LOG_LEVEL)
 
 
@@ -233,10 +231,10 @@ class AutoML:
             else:
                 self.ml_task = REGRESSION
         # validation
-        if self.ml_task not in ModelsRegistry.get_supported_ml_tasks():
+        if self.ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
             raise Exception(
                 "Unknow Machine Learning task {}."
-                " Supported tasks are: {}".format(self.ml_task, supported_ml_tasks)
+                " Supported tasks are: {}".format(self.ml_task, AlgorithmsRegistry.get_supported_ml_tasks())
             )
         logger.info("AutoML task to be solved: {}".format(self.ml_task))
 
@@ -247,10 +245,10 @@ class AutoML:
         Then perform vadlidation of algorithms.
         """
         if len(self._algorithms) == 0:
-            self._algorithms = list(ModelsRegistry.registry[self.ml_task].keys())
+            self._algorithms = list(AlgorithmsRegistry.registry[self.ml_task].keys())
 
         for a in self._algorithms:
-            if a not in list(ModelsRegistry.registry[self.ml_task].keys()):
+            if a not in list(AlgorithmsRegistry.registry[self.ml_task].keys()):
                 raise AutoMLException(
                     "The algorithm {} is not allowed to use for ML task: {}.".format(
                         a, self.ml_task

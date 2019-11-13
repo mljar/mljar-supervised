@@ -12,7 +12,7 @@ from supervised.algorithms.registry import (
 )
 
 import logging
-from supervised.config import LOG_LEVEL
+from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -65,7 +65,7 @@ class MljarTuner:
                         yield None  # empty paramaters
 
     def _get_model_params(self, model_type, X, y, current_models):
-        model_info = ModelsRegistry.registry[self._ml_task][model_type]
+        model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
         model_params = RandomParameters.get(
             model_info["params"], len(current_models) + self._seed
         )

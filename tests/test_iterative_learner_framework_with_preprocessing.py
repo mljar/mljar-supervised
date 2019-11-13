@@ -7,14 +7,14 @@ import copy
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
-from supervised.models.learner_xgboost import XgbLearner
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.algorithms.xgboost import XgbAlgorithm
+from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.metric import Metric
 from supervised.tuner.random_parameters import RandomParameters
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 
 
@@ -25,9 +25,9 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         df = pd.read_csv("tests/data/adult_missing_values_missing_target_500rows.csv")
         cls.data = {"train": {"X": df[df.columns[:-1]], "y": df["income"]}}
 
-        # available_models = list(ModelsRegistry.registry[BINARY_CLASSIFICATION].keys())
+        # available_models = list(AlgorithmsRegistry.registry[BINARY_CLASSIFICATION].keys())
         model_type = "Xgboost"  # np.random.permutation(available_models)[0]
-        model_info = ModelsRegistry.registry[BINARY_CLASSIFICATION][model_type]
+        model_info = AlgorithmsRegistry.registry[BINARY_CLASSIFICATION][model_type]
         model_params = RandomParameters.get(model_info["params"])
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]

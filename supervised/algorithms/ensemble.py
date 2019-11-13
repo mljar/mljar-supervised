@@ -7,15 +7,15 @@ import time
 import uuid
 import operator
 
-from supervised.config import storage_path
+from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.algorithm_factory import AlgorithmFactory
 from supervised.model_framework import ModelFramework
-from supervised.metric import Metric
-from supervised.config import LOG_LEVEL
+from supervised.utils.metric import Metric
+from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
