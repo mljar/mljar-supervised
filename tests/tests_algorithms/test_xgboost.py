@@ -30,7 +30,7 @@ class XgboostAlgorithmTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         params = {"objective": "binary:logistic", "eval_metric": "logloss", "seed": 1}
         prev_loss = None
-        for i in range(3):
+        for _ in range(3):
             xgb = XgbAlgorithm(params)
             xgb.fit(self.X, self.y)
             y_predicted = xgb.predict(self.X)
@@ -45,7 +45,7 @@ class XgboostAlgorithmTest(unittest.TestCase):
         xgb = XgbAlgorithm(params)
 
         loss_prev = None
-        for i in range(5):
+        for _ in range(5):
             xgb.fit(self.X, self.y)
             y_predicted = xgb.predict(self.X)
             loss = metric(self.y, y_predicted)

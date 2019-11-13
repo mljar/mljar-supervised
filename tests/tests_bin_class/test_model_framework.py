@@ -4,20 +4,19 @@ import json
 import numpy as np
 import pandas as pd
 
-from supervised.models.learner_xgboost import additional
-
+from supervised.algorithms.xgboost import additional
 additional["max_steps"] = 3
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 
-class IterativeLearnerTest(unittest.TestCase):
+class ModelFrameworkTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -58,8 +57,8 @@ class IterativeLearnerTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         losses = []
-        for i in range(2):
-            il = IterativeLearner(self.train_params, callbacks=[])
+        for _ in range(2):
+            il = ModelFramework(self.train_params, callbacks=[])
             il.train(self.data)
             y_predicted = il.predict(self.X)
             metric = Metric({"name": "logloss"})
@@ -67,7 +66,7 @@ class IterativeLearnerTest(unittest.TestCase):
         assert_almost_equal(losses[0], losses[1])
 
     def test_fit_and_predict(self):
-        il = IterativeLearner(self.train_params, callbacks=[])
+        il = ModelFramework(self.train_params, callbacks=[])
         il.train(self.data)
 
         y_predicted = il.predict(self.X)
@@ -76,14 +75,14 @@ class IterativeLearnerTest(unittest.TestCase):
         self.assertTrue(loss < 0.4)
 
     def test_save_and_load(self):
-        il = IterativeLearner(self.train_params, callbacks=[])
+        il = ModelFramework(self.train_params, callbacks=[])
         il.train(self.data)
 
         metric = Metric({"name": "logloss"})
         loss = metric(self.y, il.predict(self.X))
 
         json_desc = il.to_json()
-        il2 = IterativeLearner(json_desc.get("params"), callbacks=[])
+        il2 = ModelFramework(json_desc.get("params"), callbacks=[])
         self.assertTrue(il.uid != il2.uid)
 
         il2.from_json(json_desc)

@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.automl import AutoML
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 
 class AutoMLTest(unittest.TestCase):
@@ -25,14 +25,13 @@ class AutoMLTest(unittest.TestCase):
             random_state=0,
         )
         cls.X = pd.DataFrame(cls.X, columns=["f0", "f1", "f2", "f3", "f4"])
-        # cls.y = pd.DataFrame(cls.y)
 
     def test_fit_and_predict(self):
         metric = Metric({"name": "logloss"})
 
         automl = AutoML(
             total_time_limit=5,
-            algorithms=["CatBoost"],  # "Xgboost",
+            algorithms=["Xgboost"],
             start_random_models=5,
             hill_climbing_steps=0,
             seed=13,

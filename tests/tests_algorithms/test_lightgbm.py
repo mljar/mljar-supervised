@@ -64,7 +64,7 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         lgb = LightgbmAlgorithm(self.params)
 
         loss_prev = None
-        for i in range(5):
+        for _ in range(5):
             lgb.fit(self.X, self.y)
             y_predicted = lgb.predict(self.X)
             loss = metric(self.y, y_predicted)

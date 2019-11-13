@@ -136,8 +136,7 @@ class Ensemble:
     def predict(self, X):
         y_predicted_ensemble = None
         total_repeat = 0.0
-        print("predict ensemble, selected_models", self.selected_models)
-        print("ensemble", self.ml_task)
+
         for selected in self.selected_models:
             model = selected["model"]
             repeat = selected["repeat"]
@@ -160,7 +159,6 @@ class Ensemble:
             label = np.argmax(np.array(y_predicted_ensemble), axis=1)
             prediction_labels = [c[2:] for c in y_predicted_ensemble if "p_" in c]
 
-            print(prediction_labels)
             prediction_labels = dict((i, l) for i, l in enumerate(prediction_labels))
             # df["label"] = df["label"]
             y_predicted_ensemble["label"] = label

@@ -210,7 +210,7 @@ class ModelFramework:
             zip_ref.extractall(storage_path)
         self.learners = []
         for learner_desc in json_desc.get("learners"):
-            self.learners += [LearnerFactory.load(learner_desc)]
+            self.learners += [AlgorithmFactory.load(learner_desc)]
         preprocessing = json_desc.get("preprocessing", [])
 
         for p in preprocessing:

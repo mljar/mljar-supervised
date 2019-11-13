@@ -4,16 +4,16 @@ import json
 import numpy as np
 import pandas as pd
 
-from supervised.models.learner_xgboost import additional
+from supervised.algorithms.xgboost import additional
 
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 
 class MetricLoggerTest(unittest.TestCase):
@@ -59,7 +59,7 @@ class MetricLoggerTest(unittest.TestCase):
         MAX_STEPS = 10
         additional["max_steps"] = MAX_STEPS
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        il = IterativeLearner(self.train_params, callbacks=[metric_logger])
+        il = ModelFramework(self.train_params, callbacks=[metric_logger])
         il.train(self.data)
         metric_logs = il.get_metric_logs()
         self.assertEqual(

@@ -30,7 +30,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         params = {"trees_in_step": 1, "seed": 1}
         prev_loss = None
-        for i in range(3):
+        for _ in range(3):
             model = RandomForestAlgorithm(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)

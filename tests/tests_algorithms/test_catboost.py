@@ -39,7 +39,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         prev_loss = None
-        for i in range(3):
+        for _ in range(3):
             model = CatBoostAlgorithm(self.params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
@@ -52,7 +52,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         cat = CatBoostAlgorithm(self.params)
         loss_prev = None
-        for i in range(5):
+        for _ in range(5):
             cat.fit(self.X, self.y)
             y_predicted = cat.predict(self.X)
             loss = metric(self.y, y_predicted)

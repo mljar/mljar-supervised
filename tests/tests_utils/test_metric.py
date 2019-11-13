@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from metric import Metric
+from supervised.utils.metric import Metric
 
 
 class MetricTest(unittest.TestCase):

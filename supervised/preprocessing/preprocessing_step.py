@@ -288,7 +288,7 @@ class PreprocessingStep(object):
                 )
             else:
                 # multiclass classification
-                labels = res = dict(
+                labels = dict(
                     (v, k) for k, v in self._categorical_y.to_json().items()
                 )
                 d = {}

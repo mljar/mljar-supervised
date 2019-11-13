@@ -11,14 +11,14 @@ from supervised.algorithms.xgboost import XgbAlgorithm
 from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 
 
-class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
+class ModelFrameworkWithPreprocessingTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         np.random.seed(None)
@@ -56,7 +56,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
 
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
-        il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
+        il = ModelFramework(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
 
         self.assertTrue("Private" in list(self.data["train"]["X"]["workclass"]))
@@ -80,7 +80,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
             "k_folds": 5,
             "shuffle": True,
         }
-        il = IterativeLearner(params, callbacks=[early_stop, metric_logger])
+        il = ModelFramework(params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         oof = il.get_out_of_folds()
 
@@ -102,7 +102,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
         early_stop = EarlyStopping({"metric": {"name": "logloss"}})
         metric_logger = MetricLogger({"metric_names": ["logloss", "auc"]})
 
-        il = IterativeLearner(self.train_params, callbacks=[early_stop, metric_logger])
+        il = ModelFramework(self.train_params, callbacks=[early_stop, metric_logger])
         il.train(self.data)
         y_predicted = il.predict(self.data["train"]["X"])
         self.assertTrue(y_predicted is not None)
@@ -111,7 +111,7 @@ class IterativeLearnerWithPreprocessingTest(unittest.TestCase):
 
         json_desc = il.to_json()
 
-        il2 = IterativeLearner(self.train_params, callbacks=[])
+        il2 = ModelFramework(self.train_params, callbacks=[])
         self.assertTrue(il.uid != il2.uid)
         il2.from_json(json_desc)
         self.assertTrue(il.uid == il2.uid)

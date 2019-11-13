@@ -4,17 +4,17 @@ import json
 import numpy as np
 import pandas as pd
 
-from supervised.models.learner_xgboost import additional
+from supervised.algorithms.xgboost import additional
 
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.iterative_learner_framework import IterativeLearner
+from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.max_iters_constraint import MaxItersConstraint
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 
 class MaxItersConstraintTest(unittest.TestCase):
@@ -59,7 +59,7 @@ class MaxItersConstraintTest(unittest.TestCase):
         iters_cnt = 5
         max_iters = MaxItersConstraint({"max_iters": iters_cnt})
         metric_logger = MetricLogger({"metric_names": ["logloss"]})
-        il = IterativeLearner(self.train_params, callbacks=[max_iters, metric_logger])
+        il = ModelFramework(self.train_params, callbacks=[max_iters, metric_logger])
         il.train(self.data)
         metric_logs = il.get_metric_logs()
         for k in range(self.kfolds):

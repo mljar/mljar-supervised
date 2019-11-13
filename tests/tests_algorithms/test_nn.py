@@ -39,7 +39,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         nn = NeuralNetworkAlgorithm(self.params)
         loss_prev = None
-        for i in range(5):
+        for _ in range(5):
             nn.fit(self.X, self.y)
             y_predicted = nn.predict(self.X)
             loss = metric(self.y, y_predicted)
