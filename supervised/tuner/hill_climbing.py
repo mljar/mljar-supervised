@@ -1,7 +1,7 @@
 import numpy as np
 import copy
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
 
 
 class HillClimbing:
@@ -26,7 +26,7 @@ class HillClimbing:
         keys.remove("seed")
 
         model_type = params["model_type"]
-        model_info = ModelsRegistry.registry[ml_task][model_type]
+        model_info = AlgorithmsRegistry.registry[ml_task][model_type]
         model_params = model_info["params"]
 
         permuted_keys = np.random.permutation(keys)

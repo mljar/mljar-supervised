@@ -3,22 +3,19 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import xgboost as xgb
 
 from supervised.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import (
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-
-import xgboost as xgb
-import operator
-
-logger = logging.getLogger(__name__)
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
@@ -127,7 +124,7 @@ class XgbAlgorithm(BaseAlgorithm):
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
-XgbLearnerBinaryClassificationParams = {
+xgb_bin_class_params = {
     "booster": ["gbtree", "gblinear"],
     "objective": ["binary:logistic"],
     "eval_metric": ["auc", "logloss"],
@@ -138,21 +135,17 @@ XgbLearnerBinaryClassificationParams = {
     "colsample_bytree": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 }
 
-XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
-XgbLearnerRegressionParams["booster"] = ["gbtree"]
-XgbLearnerRegressionParams["objective"] = ["reg:linear", "reg:log"]
-XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
-XgbLearnerRegressionParams["max_depth"] = [1, 2, 3, 4]
+xgb_regression_params = dict(xgb_bin_class_params)
+xgb_regression_params["booster"] = ["gbtree"]
+xgb_regression_params["objective"] = ["reg:linear", "reg:log", "count:poisson"]
+xgb_regression_params["eval_metric"] = ["rmse", "mae"]
+xgb_regression_params["max_depth"] = [1, 2, 3, 4]
 
 
-XgbLearnerMulticlassClassificationParams = dict(XgbLearnerBinaryClassificationParams)
-XgbLearnerMulticlassClassificationParams["objective"] = ["multi:softprob"]
-XgbLearnerMulticlassClassificationParams["eval_metric"] = ["mlogloss"]
+xgb_multi_class_params = dict(xgb_bin_class_params)
+xgb_multi_class_params["objective"] = ["multi:softprob"]
+xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 
-
-XgbLearnerRegressionParams = dict(XgbLearnerBinaryClassificationParams)
-XgbLearnerRegressionParams["objective"] = ["reg:linear", "count:poisson"]
-XgbLearnerRegressionParams["eval_metric"] = ["rmse", "mae"]
 
 additional = {
     "one_step": 50,
@@ -167,25 +160,22 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     XgbAlgorithm,
-    XgbLearnerBinaryClassificationParams,
-    required_preprocessing,
-    additional,
-)
-ModelsRegistry.add(
-    MULTICLASS_CLASSIFICATION,
-    XgbAlgorithm,
-    XgbLearnerMulticlassClassificationParams,
+    xgb_bin_class_params,
     required_preprocessing,
     additional,
 )
 
-ModelsRegistry.add(
-    REGRESSION,
+AlgorithmsRegistry.add(
+    MULTICLASS_CLASSIFICATION,
     XgbAlgorithm,
-    XgbLearnerRegressionParams,
+    xgb_multi_class_params,
     required_preprocessing,
     additional,
+)
+
+AlgorithmsRegistry.add(
+    REGRESSION, XgbAlgorithm, xgb_regression_params, required_preprocessing, additional
 )

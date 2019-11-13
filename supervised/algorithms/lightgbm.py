@@ -3,20 +3,17 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import multiprocessing
+import lightgbm as lgb
 
 from supervised.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-
-import multiprocessing
-import lightgbm as lgb
-import operator
-
-logger = logging.getLogger(__name__)
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
@@ -104,7 +101,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         return None
 
 
-LightgbmLearnerBinaryClassificationParams = {
+lgbm_bin_params = {
     "objective": ["binary"],
     "metric": ["binary_logloss", "auc"],
     "num_leaves": [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
@@ -141,28 +138,23 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-LightgbmLearnerMultiClassClassificationParams = copy.deepcopy(
-    LightgbmLearnerBinaryClassificationParams
-)
-LightgbmLearnerMultiClassClassificationParams["objective"] = ["multiclass"]
-LightgbmLearnerMultiClassClassificationParams["metric"] = [
-    "multi_logloss",
-    "multi_error",
-]
+lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
+lgbm_multi_params["objective"] = ["multiclass"]
+lgbm_multi_params["metric"] = ["multi_logloss", "multi_error"]
 
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     LightgbmAlgorithm,
-    LightgbmLearnerBinaryClassificationParams,
+    lgbm_bin_params,
     required_preprocessing,
     additional,
 )
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     LightgbmAlgorithm,
-    LightgbmLearnerMultiClassClassificationParams,
+    lgbm_multi_params,
     required_preprocessing,
     additional,
 )

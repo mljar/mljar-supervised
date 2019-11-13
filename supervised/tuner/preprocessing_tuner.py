@@ -5,7 +5,7 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_scale import PreprocessingScale
 
-from supervised.tuner.registry import (
+from supervised.algorithms.registry import (
     REGRESSION,
     MULTICLASS_CLASSIFICATION,
     BINARY_CLASSIFICATION,

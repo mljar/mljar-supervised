@@ -14,11 +14,12 @@ from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.time_constraint import TimeConstraint
 from supervised.metric import Metric
-from supervised.tuner.random_parameters import RandomParameters
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-from supervised.tuner.registry import REGRESSION
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.tuner.mljar_tuner import MljarTuner
@@ -35,7 +36,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 from supervised.config import LOG_LEVEL
+
 logger.setLevel(LOG_LEVEL)
+
 
 class AutoMLException(Exception):
     def __init__(self, message):

@@ -6,9 +6,9 @@ import os
 
 from supervised.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
@@ -148,7 +148,7 @@ required_preprocessing = [
 ]
 
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     CatBoostAlgorithm,
     bin_class_params,

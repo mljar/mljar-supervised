@@ -30,15 +30,6 @@ import copy
 import numpy as np
 import pandas as pd
 import os
-
-from supervised.config import storage_path
-from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-
-import operator
-
 import keras
 
 from keras.optimizers import SGD
@@ -47,9 +38,14 @@ from keras.layers import Dense, Dropout
 from keras.models import model_from_json
 from keras.utils import to_categorical
 
-logger = logging.getLogger(__name__)
+from supervised.config import storage_path
+from supervised.algorithms.algorithm import BaseAlgorithm
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
@@ -180,7 +176,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         return None
 
 
-NeuralNetworkLearnerBinaryClassificationParams = {
+nn_params = {
     "dense_layers": [1, 2, 3],
     "dense_1_size": [4, 8, 16, 32, 64, 128],
     "dense_2_size": [4, 8, 16, 32, 64],
@@ -205,18 +201,18 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     NeuralNetworkAlgorithm,
-    NeuralNetworkLearnerBinaryClassificationParams,
+    nn_params,
     required_preprocessing,
     additional,
 )
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     NeuralNetworkAlgorithm,
-    NeuralNetworkLearnerBinaryClassificationParams,
+    nn_params,
     required_preprocessing,
     additional,
 )

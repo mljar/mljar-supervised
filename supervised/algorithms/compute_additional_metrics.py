@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from sklearn.metrics import (
     f1_score,
     accuracy_score,

@@ -11,16 +11,17 @@ from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-from supervised.tuner.registry import REGRESSION
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 
 import logging
 from supervised.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
-
 
 
 class PreprocessingStep(object):

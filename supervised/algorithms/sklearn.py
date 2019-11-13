@@ -1,14 +1,13 @@
+import copy
+import logging
 import numpy as np
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from sklearn.externals import joblib
-import copy
 
-import logging
-
-logger = logging.getLogger(__name__)
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 

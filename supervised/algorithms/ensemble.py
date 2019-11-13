@@ -5,21 +5,20 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
+import operator
 
 from supervised.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.algorithm_factory import AlgorithmFactory
 from supervised.model_framework import ModelFramework
-import operator
-
-logger = logging.getLogger(__name__)
+from supervised.metric import Metric
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
-from supervised.metric import Metric
 
 
 class Ensemble:

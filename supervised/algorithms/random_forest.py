@@ -1,22 +1,18 @@
 import logging
-from supervised.algorithms.algorithm import BaseAlgorithm
-from sklearn.externals import joblib
-import copy
 import os
-
-from supervised.config import storage_path
-
 import sklearn
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
+
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
-
-from supervised.tuner.registry import ModelsRegistry
-from supervised.tuner.registry import BINARY_CLASSIFICATION
-from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
-
-logger = logging.getLogger(__name__)
+from supervised.config import storage_path
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
@@ -69,7 +65,7 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     RandomForestAlgorithm,
     rf_params,
@@ -77,7 +73,7 @@ ModelsRegistry.add(
     additional,
 )
 
-ModelsRegistry.add(
+AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     RandomForestAlgorithm,
     rf_params,
