@@ -1,3 +1,4 @@
+import numpy as np
 import copy
 
 from supervised.tuner.random_parameters import RandomParameters
@@ -9,10 +10,10 @@ from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 from supervised.tuner.registry import REGRESSION
 
 import logging
+from supervised.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
+logger.setLevel(LOG_LEVEL)
 
 class MljarTuner:
     def __init__(self, tuner_params, algorithms, ml_task, validation, seed):

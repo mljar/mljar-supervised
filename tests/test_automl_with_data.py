@@ -26,11 +26,11 @@ class AutoMLTestWithData(unittest.TestCase):
                 X, y, test_size=0.3, random_state=seed
             )
             automl = AutoML(
-                total_time_limit=100,
+                total_time_limit=10,
                 algorithms=["RF"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
-                start_random_models=3,
-                hill_climbing_steps=2,
-                top_models_to_improve=2,
+                start_random_models=1,
+                hill_climbing_steps=0,
+                top_models_to_improve=0,
                 train_ensemble=False,
                 verbose=True,
             )

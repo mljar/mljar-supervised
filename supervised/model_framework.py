@@ -17,12 +17,13 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
 
 logger = logging.getLogger(__name__)
 from supervised.config import LOG_LEVEL
+
 logger.setLevel(LOG_LEVEL)
 
 
-class ModelFramework():
+class ModelFramework:
     def __init__(self, params, callbacks=[]):
-        logger.debug("ModelFramework __init__")
+        logger.debug("ModelFramework.__init__")
         self.uid = str(uuid.uuid4())
 
         self.framework_file = self.uid + ".framework"
@@ -47,10 +48,7 @@ class ModelFramework():
         self.learners = []
 
         self.train_time = None
-        logger.debug("IterativeLearner.__init__")
 
-
-        
     def get_params_key(self):
         key = "key_"
         for main_key in ["additional", "preprocessing", "validation", "learner"]:
@@ -58,9 +56,6 @@ class ModelFramework():
             for k, v in self.params[main_key].items():
                 key += "_{}_{}".format(k, v)
         return key
-
-
-
 
     def get_train_time(self):
         return self.train_time
@@ -93,13 +88,21 @@ class ModelFramework():
         }
 
     def train(self, data):
+        logger.debug("ModelFramework.train")
         start_time = time.time()
-        logger.debug("IterativeLearner.train")
         np.random.seed(self.learner_params["seed"])
         data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
+            logger.debug(
+                "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
+                    train_data["X"].shape,
+                    train_data["y"].shape,
+                    validation_data["X"].shape,
+                    validation_data["y"].shape,
+                )
+            )
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
 
@@ -128,7 +131,7 @@ class ModelFramework():
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time
-        logger.debug("IterativeLearner.train end-of")
+        logger.debug("ModelFramework end of training")
 
     def get_out_of_folds(self):
         early_stopping = self.callbacks.get("early_stopping")

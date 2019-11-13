@@ -6,10 +6,6 @@ import os
 
 from supervised.config import storage_path
 
-logger = logging.getLogger(__name__)
-from supervised.config import LOG_LEVEL
-logger.setLevel(LOG_LEVEL)
-
 import sklearn
 from sklearn.ensemble import RandomForestClassifier
 from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
@@ -17,6 +13,11 @@ from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
 from supervised.tuner.registry import ModelsRegistry
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
+
+logger = logging.getLogger(__name__)
+from supervised.config import LOG_LEVEL
+
+logger.setLevel(LOG_LEVEL)
 
 
 class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
@@ -26,6 +27,7 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
 
     def __init__(self, params):
         super(RandomForestAlgorithm, self).__init__(params)
+        logger.debug("RandomForestAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
 
@@ -44,11 +46,10 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
             n_jobs=-1,
             random_state=params.get("seed", 1),
         )
-        logger.debug("RandomForestLearner __init__")
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
-RandomForestBinaryClassificationParams = {
+rf_params = {
     "criterion": ["gini", "entropy"],
     "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
     "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
@@ -71,7 +72,7 @@ required_preprocessing = [
 ModelsRegistry.add(
     BINARY_CLASSIFICATION,
     RandomForestAlgorithm,
-    RandomForestBinaryClassificationParams,
+    rf_params,
     required_preprocessing,
     additional,
 )
@@ -79,7 +80,7 @@ ModelsRegistry.add(
 ModelsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     RandomForestAlgorithm,
-    RandomForestBinaryClassificationParams,
+    rf_params,
     required_preprocessing,
     additional,
 )

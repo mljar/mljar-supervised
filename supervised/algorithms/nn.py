@@ -49,7 +49,9 @@ from keras.utils import to_categorical
 
 logger = logging.getLogger(__name__)
 from supervised.config import LOG_LEVEL
+
 logger.setLevel(LOG_LEVEL)
+
 
 class NeuralNetworkAlgorithm(BaseAlgorithm):
 

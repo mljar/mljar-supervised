@@ -30,10 +30,12 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
 
 import logging
 
-logging.basicConfig(format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR)
+logging.basicConfig(
+    format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
+)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-print("logger", logger)
+from supervised.config import LOG_LEVEL
+logger.setLevel(LOG_LEVEL)
 
 class AutoMLException(Exception):
     def __init__(self, message):

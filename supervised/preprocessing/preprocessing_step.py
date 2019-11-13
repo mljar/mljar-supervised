@@ -14,9 +14,13 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
 from supervised.tuner.registry import BINARY_CLASSIFICATION
 from supervised.tuner.registry import MULTICLASS_CLASSIFICATION
 from supervised.tuner.registry import REGRESSION
-import logging
 
-log = logging.getLogger(__name__)
+import logging
+from supervised.config import LOG_LEVEL
+
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
+
 
 
 class PreprocessingStep(object):
@@ -55,7 +59,7 @@ class PreprocessingStep(object):
 
     # fit and transform
     def run(self, train_data=None, validation_data=None):
-        log.debug("PreprocessingStep.run")
+        logger.debug("PreprocessingStep.run")
         X_train, y_train = None, None
         if train_data is not None:
             if "X" in train_data:
@@ -73,7 +77,7 @@ class PreprocessingStep(object):
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
             target_preprocessing = self._params.get("target_preprocessing")
-            log.debug("target_preprocessing -> {}".format(target_preprocessing))
+            logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
             # if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
@@ -111,14 +115,14 @@ class PreprocessingStep(object):
                 # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
-                log.error("not implemented SCALE_NORMAL")
+                logger.error("not implemented SCALE_NORMAL")
                 raise Exception("not implemented SCALE_NORMAL")
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
-            log.debug("Preprocess column -> {}, {}".format(column, transforms))
+            logger.debug("Preprocess column -> {}, {}".format(column, transforms))
 
         # remove empty or constant columns
         cols_to_remove = list(
@@ -181,7 +185,7 @@ class PreprocessingStep(object):
         return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 
     def transform(self, validation_data=None):
-        log.debug("PreprocessingStep.transform")
+        logger.debug("PreprocessingStep.transform")
         X_validation, y_validation = None, None
         if validation_data is not None:
             if "X" in validation_data:
@@ -192,7 +196,7 @@ class PreprocessingStep(object):
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
         target_preprocessing = self._params.get("target_preprocessing")
-        log.debug("target_preprocessing -> {}".format(target_preprocessing))
+        logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
         if validation_data is not None:
             X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
@@ -215,7 +219,7 @@ class PreprocessingStep(object):
             # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
 
         if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
-            log.error("not implemented SCALE_NORMAL")
+            logger.error("not implemented SCALE_NORMAL")
             raise Exception("not implemented SCALE_NORMAL")
 
         # columns preprocessing

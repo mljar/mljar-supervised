@@ -16,7 +16,9 @@ import operator
 
 logger = logging.getLogger(__name__)
 from supervised.config import LOG_LEVEL
+
 logger.setLevel(LOG_LEVEL)
+
 
 class LightgbmAlgorithm(BaseAlgorithm):
 
@@ -24,7 +26,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
     algorithm_short_name = "LightGBM"
 
     def __init__(self, params):
-        super(LightgbmLearner, self).__init__(params)
+        super(LightgbmAlgorithm, self).__init__(params)
         self.library_version = lgb.__version__
         self.model_file = self.uid + ".lgbm.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
