@@ -61,7 +61,7 @@ class AutoMLTest(unittest.TestCase):
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
         losses = []
-        for i in range(2):
+        for _ in range(2):
             automl = AutoML(
                 total_time_limit=10000,  # the time limit should be big enough too not interrupt the training
                 algorithms=["Xgboost"],

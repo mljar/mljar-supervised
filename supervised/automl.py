@@ -24,7 +24,7 @@ from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.algorithms.ensemble import Ensemble
-from supervised.algorithms.compute_additional_metrics import ComputeAdditionalMetrics
+from supervised.utils.compute_additional_metrics import ComputeAdditionalMetrics
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
@@ -133,11 +133,18 @@ class AutoML:
             self._threshold = float(
                 self._max_metrics["f1"]["threshold"]
             )  # TODO: do need conversion
-        logger.info(
-            "Metric details:\n{}\nConfusion matrix:\n{}".format(
-                self._max_metrics.transpose(), self._confusion_matrix
+            logger.info(
+                "Metric details:\n{}\nConfusion matrix:\n{}".format(
+                    self._max_metrics.transpose(), self._confusion_matrix
+                )
             )
-        )
+        elif self.ml_task == MULTICLASS_CLASSIFICATION:
+            logger.info(
+                "Metric details:\n{}\nConfusion matrix:\n{}".format(
+                    self._max_metrics, self._confusion_matrix
+                )
+            )
+
 
     def keep_model(self, model):
         if model is None:
@@ -342,7 +349,7 @@ class AutoML:
         self.ensemble_step(y)
 
         max_loss = 10e12
-        for i, m in enumerate(self._models):
+        for m in self._models:
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()

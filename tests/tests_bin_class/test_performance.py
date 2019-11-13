@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.automl import AutoML
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 import sklearn.model_selection
 from sklearn.metrics import log_loss, f1_score
@@ -15,7 +15,7 @@ from sklearn.metrics import log_loss, f1_score
 
 class AutoMLTestWithData(unittest.TestCase):
     def test_fit_and_predict(self):
-
+        print("TODO set performance thresholds for each dataset")
         for dataset_id in [3, 24, 31, 38, 44, 179, 737, 720]:
             df = pd.read_csv("./tests/data/{0}.csv".format(dataset_id))
             x_cols = [c for c in df.columns if c != "target"]

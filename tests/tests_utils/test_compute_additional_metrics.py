@@ -7,7 +7,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.compute_additional_metrics import ComputeAdditionalMetrics
+from supervised.utils.compute_additional_metrics import ComputeAdditionalMetrics
 from supervised.utils.metric import Metric
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 
