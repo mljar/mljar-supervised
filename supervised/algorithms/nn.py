@@ -110,8 +110,6 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
                 optimizer=sgd_opt, loss="binary_crossentropy", metrics=["accuracy"]
             )
 
-        # and the model is constructed :)
-
     def update(self, update_params):
         pass
 
