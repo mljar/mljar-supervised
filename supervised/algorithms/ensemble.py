@@ -50,6 +50,7 @@ class Ensemble:
         return self.algorithm_short_name
 
     def get_out_of_folds(self):
+        """ Needed when ensemble is treated as model and we want to compute additional metrics for it."""
         # single prediction (in case of binary classification and regression)
         if self.total_best_sum.shape[1] == 1:
             return pd.DataFrame(
@@ -86,11 +87,12 @@ class Ensemble:
                     "target"
                 ]  # it will be needed for computing advance model statistics
                 # it can be a mess in the future when target will be transformed depending on each model
+                # For regression we should always the same target ...
 
-        return oofs
+        return oofs, self.target
 
     def fit(self, oofs, y):
-
+        logger.debug("Ensemble.fit")
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
@@ -134,6 +136,7 @@ class Ensemble:
         self.train_time = time.time() - start_time
 
     def predict(self, X):
+        logger.debug("Ensemble.predict")
         y_predicted_ensemble = None
         total_repeat = 0.0
 

@@ -36,6 +36,7 @@ class AutoMLTest(unittest.TestCase):
             hill_climbing_steps=0,
             seed=13,
         )
+        print("X", self.X.shape)
         automl.fit(self.X, self.y)
 
         y_predicted = automl.predict(self.X)

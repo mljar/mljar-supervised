@@ -213,11 +213,11 @@ class AutoML:
             return True
         return False
 
-    def ensemble_step(self, y):
+    def ensemble_step(self):
         if self._train_ensemble:
             self.ensemble = Ensemble(self._optimize_metric, self.ml_task)
-            oofs = self.ensemble.get_oof_matrix(self._models)
-            self.ensemble.fit(oofs, y)
+            oofs, target = self.ensemble.get_oof_matrix(self._models)
+            self.ensemble.fit(oofs, target)
             self.keep_model(self.ensemble)
             self._progress_bar.update(1)
 
@@ -229,7 +229,7 @@ class AutoML:
         """
         # if not set, guess
         if self.ml_task is None:
-            target_unique_cnt = len(np.unique(y))
+            target_unique_cnt = len(np.unique(y[~pd.isnull(y)]))
             if target_unique_cnt == 2:
                 self.ml_task = BINARY_CLASSIFICATION
             elif target_unique_cnt <= 20:
@@ -341,7 +341,7 @@ class AutoML:
             # always update progessbar, even for empty parameters, because they are counted in the progressbar
             self._progress_bar.update(1)
 
-        self.ensemble_step(y)
+        self.ensemble_step()
 
         max_loss = 10e12
         for m in self._models:

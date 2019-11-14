@@ -59,48 +59,32 @@ class PreprocessingStep(object):
         return X, y
 
     # fit and transform
-    def run(self, train_data=None, validation_data=None):
-        logger.debug("PreprocessingStep.run")
+    def fit_and_transform(self, X_train_org, y_train_org):
+        logger.debug("PreprocessingStep.fit_and_transform")
         X_train, y_train = None, None
-        if train_data is not None:
-            if "X" in train_data:
-                X_train = train_data.get("X").copy()
-            if "y" in train_data:
-                y_train = train_data.get("y").copy()
-        X_validation, y_validation = None, None
-        if validation_data is not None:
-            if "X" in validation_data:
-                X_validation = validation_data.get("X").copy()
-            if "y" in validation_data:
-                y_validation = validation_data.get("y").copy()
-
+        if X_train_org is not None:
+            X_train = X_train_org.copy()
+        if y_train_org is not None:
+            y_train = y_train_org.copy()
+        
         if y_train is not None:
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            # always PreprocessingMissingValues.NA_EXCLUDE from target_preprocessing:
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
                 X_train, y_train
             )
-            if validation_data is not None:
-                X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
-                    X_validation, y_validation
-                )
-
+            
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
                 self._categorical_y = LabelEncoder()
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
-                if y_validation is not None and self._categorical_y is not None:
-                    y_validation = pd.Series(
-                        self._categorical_y.transform(y_validation)
-                    )
-
+            
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
-                print("we are going to do log and normal scaling! :)")
+                logger.debug("Scale log and normal")
 
                 self._scale_y = PreprocessingScale(
                     ["target"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL
@@ -109,13 +93,7 @@ class PreprocessingStep(object):
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
                 y_train = y_train["target"]
-                if y_validation is not None:
-                    y_validation = pd.DataFrame({"target": y_validation})
-                    y_validation = self._scale_y.transform(y_validation)
-                    y_validation = y_validation["target"]
-
-                # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
-
+            
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
                 logger.error("not implemented SCALE_NORMAL")
                 raise Exception("not implemented SCALE_NORMAL")
@@ -124,7 +102,7 @@ class PreprocessingStep(object):
         columns_preprocessing = self._params.get("columns_preprocessing")
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
-            logger.debug("Preprocess column -> {}, {}".format(column, transforms))
+            logger.debug("Preprocess column {} with: {}".format(column, transforms))
 
         # remove empty or constant columns
         cols_to_remove = list(
@@ -136,8 +114,6 @@ class PreprocessingStep(object):
 
         if X_train is not None:
             X_train.drop(cols_to_remove, axis=1, inplace=True)
-        if X_validation is not None:
-            X_validation.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
 
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
@@ -150,8 +126,6 @@ class PreprocessingStep(object):
             missing = PreprocessingMissingValues(cols_to_process, missing_method)
             missing.fit(X_train)
             X_train = missing.transform(X_train)
-            if X_validation is not None:
-                X_validation = missing.transform(X_validation)
             self._missing_values += [missing]
 
         for convert_method in [PreprocessingCategorical.CONVERT_INTEGER]:
@@ -164,8 +138,6 @@ class PreprocessingStep(object):
             convert = PreprocessingCategorical(cols_to_process, convert_method)
             convert.fit(X_train)
             X_train = convert.transform(X_train)
-            if X_validation is not None:
-                X_validation = convert.transform(X_validation)
             self._categorical += [convert]
 
         # SCALE
@@ -180,30 +152,27 @@ class PreprocessingStep(object):
                 scale = PreprocessingScale(cols_to_process)
                 scale.fit(X_train)
                 X_train = scale.transform(X_train)
-                if X_validation is not None:
-                    X_validation = scale.transform(X_validation)
                 self._scale += [scale]
 
-        return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
+        return X_train, y_train
 
-    def transform(self, validation_data=None):
+    def transform(self, X_validation_org, y_validation_org):
         logger.debug("PreprocessingStep.transform")
         X_validation, y_validation = None, None
-        if validation_data is not None:
-            if "X" in validation_data:
-                X_validation = validation_data.get("X").copy()
-            if "y" in validation_data:
-                y_validation = validation_data.get("y").copy()
+        if X_validation_org is not None:
+            X_validation = X_validation_org.copy()
+        if y_validation_org is not None:
+            y_validation = y_validation_org.copy()
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
         target_preprocessing = self._params.get("target_preprocessing")
         logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-        if validation_data is not None:
-            X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
-                X_validation, y_validation
-            )
+        
+        X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
+            X_validation, y_validation
+        )
 
         if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
             if y_validation is not None and self._categorical_y is not None:
@@ -236,7 +205,7 @@ class PreprocessingStep(object):
                 X_validation = missing.transform(X_validation)
         # to be sure that all missing are filled
         # in case new data there can be gaps!
-        if np.sum(np.sum(pd.isnull(X_validation))) > 0:
+        if X_validation is not None and np.sum(np.sum(pd.isnull(X_validation))) > 0:
             # there is something missing, fill it
             # we should notice user about it!
             warnings.warn(
@@ -258,7 +227,7 @@ class PreprocessingStep(object):
             if X_validation is not None and scale is not None:
                 X_validation = scale.transform(X_validation)
 
-        return {"X": X_validation, "y": y_validation}
+        return X_validation, y_validation
 
     def inverse_scale_target(self, y):
         y = pd.DataFrame({"target": y})

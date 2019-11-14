@@ -43,7 +43,7 @@ class AutoMLTestWithData(unittest.TestCase):
 
             for i, m in enumerate(automl._models):
                 response = m.predict(X_test)
-                ll = log_loss(y_test, response)
+                ll = log_loss(y_test, response["p_1"])
                 print("{}) Dataset id {} logloss {}".format(i, dataset_id, ll))
 
 

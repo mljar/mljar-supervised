@@ -60,12 +60,12 @@ class ModelFramework:
     def get_train_time(self):
         return self.train_time
 
-    def predictions(self, learner, train_data, validation_data):
+    def predictions(self, learner, X_train, y_train, X_validation, y_validation):
 
-        y_train_true = train_data.get("y")
-        y_train_predicted = learner.predict(train_data.get("X"))
-        y_validation_true = validation_data.get("y")
-        y_validation_predicted = learner.predict(validation_data.get("X"))
+        y_train_true = y_train
+        y_train_predicted = learner.predict(X_train)
+        y_validation_true = y_validation
+        y_validation_predicted = learner.predict(X_validation)
 
         if self.preprocessings[-1]._scale_y is not None:
             y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
@@ -84,7 +84,7 @@ class ModelFramework:
             "y_train_predicted": y_train_predicted,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
-            "validation_index": validation_data.get("X").index,
+            "validation_index": X_validation.index, 
         }
 
     def train(self, data):
@@ -106,8 +106,8 @@ class ModelFramework:
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
 
-            train_data, _ = self.preprocessings[-1].run(train_data)
-            validation_data = self.preprocessings[-1].transform(validation_data)
+            X_train, y_train = self.preprocessings[-1].fit_and_transform(train_data["X"], train_data["y"])
+            X_validation, y_validation = self.preprocessings[-1].transform(validation_data["X"], validation_data["y"])
 
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
@@ -117,11 +117,11 @@ class ModelFramework:
 
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
-                learner.fit(train_data.get("X"), train_data.get("y"))
+                learner.fit(X_train, y_train)
                 # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
-                    self.predictions(learner, train_data, validation_data),
+                    self.predictions(learner, X_train, y_train, X_validation, y_validation),
                 )
                 if learner.stop_training:
                     break
@@ -155,14 +155,15 @@ class ModelFramework:
         return self.learner_params.get("model_type")
 
     def predict(self, X):
+        logger.debug("ModelFramework.predict")
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
             # preprocessing goes here
-            validation_data = self.preprocessings[ind].transform({"X": X})
-            y_p = learner.predict(validation_data.get("X"))
+            X_data, _ = self.preprocessings[ind].transform(X, None)
+            y_p = learner.predict(X_data)
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
             # y_predicted += learner.predict(validation_data.get("X"))
         y_predicted_average = y_predicted / float(len(self.learners))

@@ -72,8 +72,7 @@ class PreprocessingStepTest(unittest.TestCase):
         y_train = df.loc[:, "y"]
 
         ps = PreprocessingStep()
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
-        X_train, y_train = train_data.get("X"), train_data.get("y")
+        X_train, y_train = ps.fit_and_transform(X_train, y_train)
         self.assertEqual(3, X_train.shape[0])
         self.assertEqual(3, y_train.shape[0])
 
@@ -113,9 +112,8 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
-        X_train, y_train = train_data.get("X"), train_data.get("y")
-
+        X_train, y_train = ps.fit_and_transform(X_train, y_train)
+        
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
 
@@ -157,9 +155,7 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
-        X_train, y_train = train_data.get("X"), train_data.get("y")
+        X_train, y_train = ps.fit_and_transform(X_train, y_train)
 
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
@@ -232,13 +228,9 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(
-            train_data={"X": X_train, "y": y_train},
-            validation_data={"X": X_test, "y": y_test},
-        )
-        X_train, y_train = train_data.get("X"), train_data.get("y")
-        X_test, y_test = validation_data.get("X"), validation_data.get("y")
-
+        X_train, y_train = ps.fit_and_transform(X_train, y_train)
+        X_test, y_test = ps.transform(X_test, y_test)
+        
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
             self.assertTrue(col in X_test.columns)
@@ -261,10 +253,8 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-
-        train_data, _ = ps.run(train_data={"y": y_train})
-        y_train = train_data.get("y")
-
+        _, y_train = ps.fit_and_transform(None, y_train)
+        
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(0, y_train[0])
         self.assertEqual(1, y_train[1])
@@ -287,11 +277,8 @@ class PreprocessingStepTest(unittest.TestCase):
 
         ps = PreprocessingStep(preprocessing_params)
 
-        train_data, validation_data = ps.run(
-            train_data={"y": y_train}, validation_data={"y": y_test}
-        )
-        y_train = train_data.get("y")
-        y_test = validation_data.get("y")
+        _, y_train = ps.fit_and_transform(None, y_train)
+        _, y_test = ps.transform(None, y_test)
 
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(2, y_test.shape[0])
@@ -329,7 +316,7 @@ class PreprocessingStepTest(unittest.TestCase):
         }
 
         ps = PreprocessingStep(preprocessing_params)
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
+        _, _ = ps.fit_and_transform(X_train, y_train)
 
         ps2 = PreprocessingStep()
         ps2.from_json(ps.to_json())
@@ -346,13 +333,12 @@ class PreprocessingStepTest(unittest.TestCase):
         X_test = df_test.loc[:, ["col1", "col2", "col3", "col4"]]
         y_test = df_test.loc[:, "y"]
 
-        validation_data = ps2.transform(validation_data={"X": X_test, "y": y_test})
-        X_test, y_test = validation_data.get("X"), validation_data.get("y")
-
+        X_test, y_test = ps2.transform(X_test, y_test)
+        
         self.assertEqual(2, y_test.shape[0])
         self.assertEqual(2, np.sum(y_test))
-        self.assertEqual(1, X_test["col1"][0])
-        self.assertEqual(0, X_test["col2"][0])
+        self.assertEqual(1, X_test["col1"].iloc[0])
+        self.assertEqual(0, X_test["col2"].iloc[0])
 
     def test_empty_column(self):
         # training data
@@ -370,12 +356,11 @@ class PreprocessingStepTest(unittest.TestCase):
         preprocessing_params = {"columns_preprocessing": {"col1": ["remove_column"]}}
 
         ps = PreprocessingStep(preprocessing_params)
-        train_data, _ = ps.run(train_data={"X": X_train, "y": y_train})
-        X_train1 = train_data.get("X")
+        X_train1, _ = ps.fit_and_transform(X_train, y_train)
+        
         self.assertTrue("col1" not in X_train1.columns)
         self.assertEqual(3, len(X_train1.columns))
-        train_data2 = ps.transform(validation_data={"X": X_train, "y": y_train})
-        X_train2 = train_data2.get("X")
+        X_train2, _ = ps.transform(X_train, y_train)
         self.assertTrue("col1" not in X_train2.columns)
         self.assertEqual(3, len(X_train2.columns))
         for col in ["col2", "col3", "col4"]:
@@ -385,8 +370,7 @@ class PreprocessingStepTest(unittest.TestCase):
         ps2 = PreprocessingStep()
         ps2.from_json(params_json)
 
-        train_data3 = ps2.transform(validation_data={"X": X_train, "y": y_train})
-        X_train3 = train_data3.get("X")
+        X_train3, _ = ps2.transform(X_train, y_train)
         self.assertTrue("col1" not in X_train3.columns)
         self.assertEqual(3, len(X_train3.columns))
         for col in ["col2", "col3", "col4"]:
