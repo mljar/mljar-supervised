@@ -65,9 +65,22 @@ class PreprocessingTuner:
 
         target_preprocessing = []
         # always remove missing values from target,
-        # missing values might be in train and in validation datasets
+        # target with missing values might be in the train and in the validation datasets
         target_preprocessing += [PreprocessingMissingValues.NA_EXCLUDE]
 
+        if "target_as_integer" in required_preprocessing:
+            if machinelearning_task == BINARY_CLASSIFICATION:
+                if not PreprocessingUtils.is_0_1(y):
+                    target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
+
+            if machinelearning_task == MULTICLASS_CLASSIFICATION:
+                if PreprocessingUtils.is_categorical(y):
+                    target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
+        
+
+
+
+        '''    
         if machinelearning_task == BINARY_CLASSIFICATION:
             if not PreprocessingUtils.is_0_1(y):
                 target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
@@ -81,7 +94,7 @@ class PreprocessingTuner:
                 target_preprocessing += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
             elif PreprocessingUtils.is_scale_needed(y):
                 target_preprocessing += [PreprocessingScale.SCALE_NORMAL]
-
+        '''
         return {
             "columns_preprocessing": columns_preprocessing,
             "target_preprocessing": target_preprocessing,

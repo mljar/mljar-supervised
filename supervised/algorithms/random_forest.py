@@ -62,8 +62,9 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
-    "target_preprocessing",
+    "target_as_integer"
 ]
+# "target_preprocessing",
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,

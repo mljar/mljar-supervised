@@ -4,9 +4,10 @@ import numpy as np
 import pandas as pd
 
 import logging
+from supervised.utils.config import LOG_LEVEL
 
-log = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
 
 class PreprocessingExcludeMissingValues(object):
     @staticmethod
@@ -31,7 +32,7 @@ class PreprocessingExcludeMissingValues(object):
 
     @staticmethod
     def transform(X=None, y=None):
-        log.debug("Exclude rows with missing target values")
+        logger.debug("Exclude rows with missing target values")
         if y is None:
             return X, y
         y_missing = pd.isnull(y)

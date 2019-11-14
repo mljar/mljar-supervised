@@ -6,4 +6,4 @@ storage_path = tempfile.gettempdir()
 
 import logging
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG

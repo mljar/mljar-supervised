@@ -1,12 +1,13 @@
 import logging
-
-log = logging.getLogger(__name__)
-
 import numpy as np
 import pandas as pd
+
 from supervised.callbacks.callback import Callback
 from supervised.utils.metric import Metric
+from supervised.utils.config import LOG_LEVEL
 
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
 
 class EarlyStopping(Callback):
     def __init__(self, params):
@@ -46,7 +47,7 @@ class EarlyStopping(Callback):
     def on_framework_train_end(self, logs):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
-        print("early stopping on framework train end")
+        logger.debug("early stopping on framework train end")
 
         # print(self.best_y_predicted.values())
 
@@ -118,7 +119,7 @@ class EarlyStopping(Callback):
         if self.no_improvement_cnt > self.max_no_improvement_cnt:
             self.learner.stop_training = True
 
-        log.debug(
+        logger.info(
             "EarlyStopping.on_iteration_end, train loss: {}, validation loss: {}, "
             "no improvement cnt {}, iters {}".format(
                 train_loss,

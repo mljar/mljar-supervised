@@ -78,9 +78,9 @@ class PreprocessingStep(object):
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
             target_preprocessing = self._params.get("target_preprocessing")
-            logger.debug("target_preprocessing -> {}".format(target_preprocessing))
+            logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            # if PreprocessingMissingValues.NA_EXCLUDE in target_preprocessing:
+            # always PreprocessingMissingValues.NA_EXCLUDE from target_preprocessing:
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
                 X_train, y_train
             )
@@ -90,6 +90,7 @@ class PreprocessingStep(object):
                 )
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
+                logger.debug("Convert target to integer")
                 self._categorical_y = LabelEncoder()
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))

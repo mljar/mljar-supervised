@@ -91,7 +91,7 @@ class ModelFramework:
         logger.debug("ModelFramework.train")
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
-        data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
+        #data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():

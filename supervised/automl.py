@@ -62,17 +62,16 @@ class AutoML:
         logger.debug("AutoML.__init__")
 
         self._total_time_limit = total_time_limit
-        self._time_limit = (
-            learner_time_limit
-        )  # time limit in seconds for single learner
+        # time limit in seconds for single learner
+        self._time_limit = learner_time_limit
+        
         self._train_ensemble = train_ensemble
         self._models = []  # instances of iterative learner framework or ensemble
         self._models_params_keys = []
-        self._best_model = (
-            None
-        )  # it is instance of iterative learner framework or ensemble
+        # it is instance of model framework or ensemble
+        self._best_model = None
+        # default validation
         self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
-
         self._start_random_models = start_random_models
         self._hill_climbing_steps = hill_climbing_steps
         self._top_models_to_improve = top_models_to_improve
@@ -91,7 +90,7 @@ class AutoML:
         self._user_set_optimize_metric = optimize_metric
         self.ml_task = ml_task
 
-    def estimate_training_times(self):
+    def _estimate_training_times(self):
         # single models including models in the folds
         self._estimated_models_to_check = (
             len(self._algorithms) * self._start_random_models
@@ -305,24 +304,20 @@ class AutoML:
         start_time = time.time()
 
         X.reset_index(drop=True, inplace=True)
-        y = np.array(y)
         if not isinstance(y, pd.DataFrame):
-            y = pd.DataFrame({"target": y})
+            y = pd.DataFrame({"target": np.array(y)})
         y.reset_index(drop=True, inplace=True)
         y = y["target"]
-
-        # drops rows with missing target
-        # TODO needs a better name for this preprocessing
-        X, y = PreprocessingExcludeMissingValues.transform(X, y)
+        
+        #X, y = PreprocessingExcludeMissingValues.transform(X, y)
 
         self._set_ml_task(y)
         self._set_algorithms()
         self._set_metric()
-
-        self.estimate_training_times()
+        self._estimate_training_times()
 
         self._progress_bar = tqdm(
-            total=int(self._estimated_models_to_check / 5),
+            total=int(self._estimated_models_to_check / 5), # 5 ?
             desc="MLJAR AutoML",
             unit="model",
         )
