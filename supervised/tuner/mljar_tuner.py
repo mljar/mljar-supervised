@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 
 from supervised.tuner.random_parameters import RandomParameters
@@ -39,7 +40,7 @@ class MljarTuner:
                 params = self._get_model_params(model_type, X, y, current_models)
                 yield params
         # second, hill climbing
-        for hill_climbing in range(self._hill_climbing_steps):
+        for _ in range(self._hill_climbing_steps):
             # get models orderer by loss
             models = sorted(
                 [(m.callbacks.callbacks[0].final_loss, m) for m in current_models],
@@ -85,7 +86,7 @@ class MljarTuner:
             },
         }
         num_class = (
-            len(np.unique(y)) if self._ml_task == MULTICLASS_CLASSIFICATION else None
+            len(np.unique(y[~pd.isnull(y)])) if self._ml_task == MULTICLASS_CLASSIFICATION else None
         )
         if num_class is not None:
             model_params["learner"]["num_class"] = num_class

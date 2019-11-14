@@ -30,6 +30,8 @@ class EarlyStopping(Callback):
         )  # final score computed on combined predictions from all learners
         # path to best model local copy, only used if cannot deep copy
         self.best_model_paths = {}
+        self.multiple_target = False
+        self.target_columns = None
 
     def add_and_set_learner(self, learner):
         self.learners += [learner]
@@ -48,22 +50,24 @@ class EarlyStopping(Callback):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
         logger.debug("early stopping on framework train end")
+        print(self.multiple_target)
+        print(self.target_columns)
 
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
 
         if "prediction" in self.best_y_oof:
             self.final_loss = self.metric(
-                self.best_y_oof["target"], self.best_y_oof["prediction"]
+                self.best_y_oof[self.target_columns], self.best_y_oof["prediction"]
             )
         else:
-            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
+            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]            
             self.final_loss = self.metric(
-                self.best_y_oof["target"], self.best_y_oof[prediction_cols]
+                self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
             )
 
     def on_iteration_end(self, logs, predictions):
-
+        
         train_loss = self.metric(
             predictions.get("y_train_true"), predictions.get("y_train_predicted")
         )
@@ -84,14 +88,27 @@ class EarlyStopping(Callback):
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")
             self.best_loss[self.learner.uid] = validation_loss
 
-            self.best_y_predicted[self.learner.uid] = pd.DataFrame(
-                {
-                    "target": y_validation_true.values.reshape(
-                        y_validation_true.shape[0]
-                    )
-                },
-                index=predictions.get("validation_index"),
-            )
+            
+            
+            if len(y_validation_true.shape) == 1 or y_validation_true.shape[1] == 1:
+                self.best_y_predicted[self.learner.uid] = pd.DataFrame(
+                    {
+                        "target": y_validation_true.values.reshape(
+                            y_validation_true.shape[0]
+                        )
+                    },
+                    index=predictions.get("validation_index"),
+                )
+                self.multiple_target = False
+                self.target_columns = "target"
+            else:
+                self.best_y_predicted[self.learner.uid] = pd.DataFrame(
+                    y_validation_true,
+                    index=predictions.get("validation_index"),
+                )
+                self.multiple_target = True
+                self.target_columns = y_validation_true.columns
+
             y_validation_predicted = predictions.get("y_validation_predicted")
 
             if len(y_validation_predicted.shape) == 1:

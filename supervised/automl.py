@@ -125,8 +125,9 @@ class AutoML:
         # 'prediction' - out of folds predictions of model
         oof_predictions = self._best_model.get_out_of_folds()
         prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
+        target_cols = [c for c in oof_predictions.columns if "target" in c]
         self._metrics_details, self._max_metrics, self._confusion_matrix = ComputeAdditionalMetrics.compute(
-            oof_predictions["target"], oof_predictions[prediction_cols], self.ml_task
+            oof_predictions[target_cols], oof_predictions[prediction_cols], self.ml_task
         )
         if self.ml_task == BINARY_CLASSIFICATION:
             self._threshold = float(

@@ -38,6 +38,7 @@ class Ensemble:
         self.train_time = None
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
         self.target = None
+        self.target_columns = None
         self.ml_task = ml_task
 
     def get_train_time(self):
@@ -52,10 +53,17 @@ class Ensemble:
     def get_out_of_folds(self):
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it."""
         # single prediction (in case of binary classification and regression)
+        logger.debug(self.total_best_sum.shape)
+        logger.debug(self.total_best_sum.head())
+        logger.debug(self.target.shape)
+        logger.debug(self.target.head())
+        
         if self.total_best_sum.shape[1] == 1:
-            return pd.DataFrame(
-                {"prediction": self.total_best_sum["prediction"], "target": self.target}
+            tmp_df =  pd.DataFrame(
+                {"prediction": self.total_best_sum["prediction"]}
             )
+            tmp_df["target"] = self.target[self.target_columns]
+            return tmp_df
 
         ensemble_oof = pd.DataFrame(
             data=self.total_best_sum,
@@ -83,8 +91,10 @@ class Ensemble:
             prediction_cols = [c for c in oof.columns if "prediction" in c]
             oofs["model_{}".format(i)] = oof[prediction_cols]  # oof["prediction"]
             if self.target is None:
+
+                self.target_columns = [c for c in oof.columns if "target" in c]
                 self.target = oof[
-                    "target"
+                    self.target_columns
                 ]  # it will be needed for computing advance model statistics
                 # it can be a mess in the future when target will be transformed depending on each model
                 # For regression we should always the same target ...
@@ -136,7 +146,7 @@ class Ensemble:
         self.train_time = time.time() - start_time
 
     def predict(self, X):
-        logger.debug("Ensemble.predict")
+        logger.debug("Ensemble.predict with {} models".format(len(self.selected_models)))
         y_predicted_ensemble = None
         total_repeat = 0.0
 

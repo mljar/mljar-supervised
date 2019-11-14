@@ -26,21 +26,28 @@ class AutoMLWithMulticlassTest(unittest.TestCase):
             X, y, test_size=0.3, random_state=seed
         )
         automl = AutoML(
-            total_time_limit=320,
-            algorithms=["NN"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
-            start_random_models=2,
-            hill_climbing_steps=3,
-            top_models_to_improve=3,
+            total_time_limit=10,
+            algorithms=["RF", "Xgboost", "NN"],  # ["LightGBM", "RF", "NN", "CatBoost", "Xgboost"],
+            start_random_models=1,
+            hill_climbing_steps=0,
+            top_models_to_improve=0,
             train_ensemble=True,
             verbose=True,
         )
         automl.fit(X_train, y_train)
 
         response = automl.predict(X_test)  # ["p_1"]
+        print("response", response.head())
+        # Compute the logloss on test dataset 
+        not_null_index = ~pd.isnull(y_test)
+        ll = log_loss(y_test[not_null_index], response[["p_Iris-setosa", "p_Iris-versicolor", "p_Iris-virginica"]][list(not_null_index)])
+        print("logloss {}".format(ll))
 
-        # Compute the logloss on test dataset
-        # ll = log_loss(y_test, response)
-        # print("(*) Dataset id {} logloss {}".format(dataset_id, ll))
+        for i, m in enumerate(automl._models):
+            response = m.predict(X_test)
+            not_null_index = ~pd.isnull(y_test)
+            ll = log_loss(y_test[not_null_index], response[["p_Iris-setosa", "p_Iris-versicolor", "p_Iris-virginica"]][list(not_null_index)])
+            print("Model {}) logloss {}".format(i, ll))
 
 
 if __name__ == "__main__":

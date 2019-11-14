@@ -8,6 +8,7 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_scale import PreprocessingScale
 from supervised.preprocessing.label_encoder import LabelEncoder
+from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
@@ -83,6 +84,12 @@ class PreprocessingStep(object):
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
             
+            if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
+                logger.debug("Convert target to one-hot coding")
+                self._categorical_y = LabelBinarizer()
+                self._categorical_y.fit(pd.DataFrame({"target":y_train}), "target")
+                y_train = self._categorical_y.transform(pd.DataFrame({"target":y_train}), "target")
+                
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 logger.debug("Scale log and normal")
 
@@ -178,6 +185,10 @@ class PreprocessingStep(object):
             if y_validation is not None and self._categorical_y is not None:
                 y_validation = pd.Series(self._categorical_y.transform(y_validation))
 
+        if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
+            if y_validation is not None and self._categorical_y is not None:
+                y_validation = self._categorical_y.transform(pd.DataFrame({"target":y_validation}), "target")        
+
         if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
 
             print("we are going to do log and normal scaling! :) <transform>")
@@ -241,7 +252,7 @@ class PreprocessingStep(object):
         # assume for now that all tasks are binary classification
         # if there is no target preprocessing, assume that there is 0 and 1 target
 
-        print("reverse_transform_target !!!")
+        logger.debug("PreprocessingStep.reverse_transform_target")
 
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
@@ -258,9 +269,13 @@ class PreprocessingStep(object):
                 )
             else:
                 # multiclass classification
-                labels = dict(
-                    (v, k) for k, v in self._categorical_y.to_json().items()
-                )
+                logger.debug(self._categorical_y.to_json())
+                if "unique_values" not in self._categorical_y.to_json():
+                    labels = dict(
+                        (v, k) for k, v in self._categorical_y.to_json().items()
+                    )
+                else:
+                    labels = {i: v for i, v in enumerate(self._categorical_y.to_json()["unique_values"])}
                 d = {}
                 cols = []
                 for i in range(y.shape[1]):

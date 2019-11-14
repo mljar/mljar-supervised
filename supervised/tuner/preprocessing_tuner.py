@@ -77,6 +77,8 @@ class PreprocessingTuner:
                 if PreprocessingUtils.is_categorical(y):
                     target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
         
+        elif "target_as_one_hot" in required_preprocessing:
+            target_preprocessing += [PreprocessingCategorical.CONVERT_ONE_HOT]
 
 
 

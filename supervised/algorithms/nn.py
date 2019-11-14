@@ -115,16 +115,19 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
 
     def fit(self, X, y):
         logger.debug("NNLearner.fit")
+        
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
 
         # rounds for learning are incremental
-        if "num_class" in self.params:
-            self.model.fit(
-                X, to_categorical(y), batch_size=256, epochs=self.rounds, verbose=False
-            )
-        else:
-            self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
+        #if "num_class" in self.params:
+        #    self.model.fit(
+        #        X, to_categorical(y), batch_size=256, epochs=self.rounds, verbose=False
+        #    )
+        #else:
+        
+        self.model.fit(X, y, batch_size=256, epochs=self.rounds, verbose=False)
+        logger.debug("NNLearner.fit end")
 
     def predict(self, X):
         if "num_class" in self.params:
@@ -196,7 +199,7 @@ required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
     "scale",
-    "target_preprocessing",
+    "target_as_integer",
 ]
 
 AlgorithmsRegistry.add(
@@ -207,6 +210,12 @@ AlgorithmsRegistry.add(
     additional,
 )
 
+required_preprocessing = [
+    "missing_values_inputation",
+    "convert_categorical",
+    "scale",
+    "target_as_one_hot",
+]
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     NeuralNetworkAlgorithm,
