@@ -38,6 +38,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
+print("DUppa")
+
 class AutoMLException(Exception):
     def __init__(self, message):
         super(AutoMLException, self).__init__(message)

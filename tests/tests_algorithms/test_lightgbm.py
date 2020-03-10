@@ -60,11 +60,9 @@ class LightgbmAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-
         lgb = LightgbmAlgorithm(self.params)
-
         loss_prev = None
-        for _ in range(5):
+        for _ in range(3):
             lgb.fit(self.X, self.y)
             y_predicted = lgb.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -89,16 +87,7 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         y_predicted = lgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
-        # fit model #1, there should be improvement in loss
-        lgb.fit(self.X, self.y)
-        y_predicted = lgb.predict(self.X)
-        loss3 = metric(self.y, y_predicted)
-        self.assertTrue(loss3 < loss)
-        # the loss of model #2 should not change
-        y_predicted = lgb2.predict(self.X)
-        loss4 = metric(self.y, y_predicted)
-        assert_almost_equal(loss2, loss4)
-
+        
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
         lgb = LightgbmAlgorithm(self.params)

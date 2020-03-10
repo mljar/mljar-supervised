@@ -62,14 +62,6 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
-        rf.fit(self.X, self.y)
-        y_predicted = rf.predict(self.X)
-        loss3 = metric(self.y, y_predicted)
-        self.assertNotEqual(loss3, loss)
-
-        y_predicted = rf2.predict(self.X)
-        loss4 = metric(self.y, y_predicted)
-        assert_almost_equal(loss2, loss4)
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
