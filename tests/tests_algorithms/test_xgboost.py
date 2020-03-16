@@ -89,6 +89,5 @@ class XgboostAlgorithmTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
-
 if __name__ == "__main__":
     unittest.main()

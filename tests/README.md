@@ -1,8 +1,14 @@
-# Tests
+# Running tests
 
 
 To run all tests:
 
 ```
-python tests/run_unit_tests.py -v -f
+pytest tests -v -x
+```
+
+To run tests for `algorithms`:
+
+```
+pytest tests//tests_algorithms -v -x
 ```

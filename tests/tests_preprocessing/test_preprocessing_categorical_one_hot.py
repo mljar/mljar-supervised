@@ -2,8 +2,8 @@ import unittest
 import tempfile
 import numpy as np
 import pandas as pd
-from preprocessing_utils import PreprocessingUtils
-from preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 
 
 class PreprocessingCategoricalOneHotTest(unittest.TestCase):
