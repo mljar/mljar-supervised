@@ -9,6 +9,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+
 class EarlyStopping(Callback):
     def __init__(self, params):
         super(EarlyStopping, self).__init__(params)
@@ -61,13 +62,13 @@ class EarlyStopping(Callback):
                 self.best_y_oof[self.target_columns], self.best_y_oof["prediction"]
             )
         else:
-            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]            
+            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
             self.final_loss = self.metric(
                 self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
             )
 
     def on_iteration_end(self, logs, predictions):
-        
+
         train_loss = self.metric(
             predictions.get("y_train_true"), predictions.get("y_train_predicted")
         )
@@ -88,8 +89,6 @@ class EarlyStopping(Callback):
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")
             self.best_loss[self.learner.uid] = validation_loss
 
-            
-            
             if len(y_validation_true.shape) == 1 or y_validation_true.shape[1] == 1:
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                     {
@@ -103,8 +102,7 @@ class EarlyStopping(Callback):
                 self.target_columns = "target"
             else:
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
-                    y_validation_true,
-                    index=predictions.get("validation_index"),
+                    y_validation_true, index=predictions.get("validation_index")
                 )
                 self.multiple_target = True
                 self.target_columns = y_validation_true.columns

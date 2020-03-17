@@ -10,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class AlgorithmFactoryException(Exception):
     def __init__(self, message):
         super(AlgorithmFactoryException, self).__init__(message)
@@ -20,7 +21,7 @@ class AlgorithmFactory(object):
 
     algorithms = {
         "Xgboost": XgbAlgorithm,
-        "RF": RandomForestAlgorithm,
+        "Random Forest": RandomForestAlgorithm,
         "LightGBM": LightgbmAlgorithm,
         "CatBoost": CatBoostAlgorithm,
         "NN": NeuralNetworkAlgorithm,

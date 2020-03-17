@@ -147,7 +147,7 @@ required_preprocessing = [
     "target_preprocessing",
 ]
 
-'''
+"""
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     CatBoostAlgorithm,
@@ -155,7 +155,7 @@ AlgorithmsRegistry.add(
     required_preprocessing,
     additional,
 )
-'''
+"""
 
 # switch off for now
 # maybe my misuse or bug https://github.com/catboost/catboost/issues/861

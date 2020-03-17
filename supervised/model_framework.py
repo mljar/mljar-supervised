@@ -49,14 +49,6 @@ class ModelFramework:
 
         self.train_time = None
 
-    def get_params_key(self):
-        key = "key_"
-        for main_key in ["additional", "preprocessing", "validation", "learner"]:
-            key += main_key
-            for k, v in self.params[main_key].items():
-                key += "_{}_{}".format(k, v)
-        return key
-
     def get_train_time(self):
         return self.train_time
 
@@ -84,14 +76,16 @@ class ModelFramework:
             "y_train_predicted": y_train_predicted,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
-            "validation_index": X_validation.index, 
+            "validation_index": X_validation.index,
         }
 
     def train(self, data):
         logger.debug("ModelFramework.train")
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
+        
         #data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
+        
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
@@ -106,8 +100,12 @@ class ModelFramework:
             # the proprocessing is done at every validation step
             self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
 
-            X_train, y_train = self.preprocessings[-1].fit_and_transform(train_data["X"], train_data["y"])
-            X_validation, y_validation = self.preprocessings[-1].transform(validation_data["X"], validation_data["y"])
+            X_train, y_train = self.preprocessings[-1].fit_and_transform(
+                train_data["X"], train_data["y"]
+            )
+            X_validation, y_validation = self.preprocessings[-1].transform(
+                validation_data["X"], validation_data["y"]
+            )
 
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
@@ -121,7 +119,9 @@ class ModelFramework:
                 # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
-                    self.predictions(learner, X_train, y_train, X_validation, y_validation),
+                    self.predictions(
+                        learner, X_train, y_train, X_validation, y_validation
+                    ),
                 )
                 if learner.stop_training:
                     break

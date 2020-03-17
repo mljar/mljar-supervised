@@ -22,7 +22,7 @@ from supervised.utils.config import LOG_LEVEL
 logger.setLevel(LOG_LEVEL)
 
 
-class ComputeAdditionalMetrics:
+class AdditionalMetrics:
     @staticmethod
     def compute_for_binary_classification(target, predictions):
 

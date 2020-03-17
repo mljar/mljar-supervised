@@ -86,9 +86,22 @@ class MljarTuner:
             },
         }
         num_class = (
-            len(np.unique(y[~pd.isnull(y)])) if self._ml_task == MULTICLASS_CLASSIFICATION else None
+            len(np.unique(y[~pd.isnull(y)]))
+            if self._ml_task == MULTICLASS_CLASSIFICATION
+            else None
         )
         if num_class is not None:
             model_params["learner"]["num_class"] = num_class
 
+        model_params["ml_task"] = self._ml_task
+
         return model_params
+
+    @staticmethod
+    def get_params_key(params):
+        key = "key_"
+        for main_key in ["additional", "preprocessing", "validation", "learner"]:
+            key += main_key
+            for k, v in params[main_key].items():
+                key += "_{}_{}".format(k, v)
+        return key

@@ -142,7 +142,7 @@ lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
 lgbm_multi_params["objective"] = ["multiclass"]
 lgbm_multi_params["metric"] = ["multi_logloss", "multi_error"]
 
-'''
+"""
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     LightgbmAlgorithm,
@@ -158,4 +158,4 @@ AlgorithmsRegistry.add(
     required_preprocessing,
     additional,
 )
-'''
+"""

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from supervised.callbacks.callback import Callback
 
+
 class MaxItersConstraint(Callback):
     def __init__(self, params):
         super(MaxItersConstraint, self).__init__(params)

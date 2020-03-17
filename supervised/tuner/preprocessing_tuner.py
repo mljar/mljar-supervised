@@ -76,13 +76,11 @@ class PreprocessingTuner:
             if machinelearning_task == MULTICLASS_CLASSIFICATION:
                 if PreprocessingUtils.is_categorical(y):
                     target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
-        
+
         elif "target_as_one_hot" in required_preprocessing:
             target_preprocessing += [PreprocessingCategorical.CONVERT_ONE_HOT]
 
-
-
-        '''    
+        """    
         if machinelearning_task == BINARY_CLASSIFICATION:
             if not PreprocessingUtils.is_0_1(y):
                 target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
@@ -96,7 +94,7 @@ class PreprocessingTuner:
                 target_preprocessing += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
             elif PreprocessingUtils.is_scale_needed(y):
                 target_preprocessing += [PreprocessingScale.SCALE_NORMAL]
-        '''
+        """
         return {
             "columns_preprocessing": columns_preprocessing,
             "target_preprocessing": target_preprocessing,

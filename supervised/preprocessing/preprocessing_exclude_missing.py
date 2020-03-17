@@ -9,6 +9,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+
 class PreprocessingExcludeMissingValues(object):
     @staticmethod
     def remove_rows_without_target(data):
@@ -39,8 +40,8 @@ class PreprocessingExcludeMissingValues(object):
         if np.sum(np.array(y_missing)) == 0:
             return X, y
         y = y.drop(y.index[y_missing])
-        #y.index = range(y.shape[0])
+        # y.index = range(y.shape[0])
         if X is not None:
             X = X.drop(X.index[y_missing])
-            #X.index = range(X.shape[0])
+            # X.index = range(X.shape[0])
         return X, y

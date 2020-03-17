@@ -19,7 +19,7 @@ logger.setLevel(LOG_LEVEL)
 class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
 
     algorithm_name = "Random Forest"
-    algorithm_short_name = "RF"
+    algorithm_short_name = "Random Forest"
 
     def __init__(self, params):
         super(RandomForestAlgorithm, self).__init__(params)
@@ -62,7 +62,7 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
-    "target_as_integer"
+    "target_as_integer",
 ]
 # "target_preprocessing",
 

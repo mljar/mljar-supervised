@@ -57,11 +57,9 @@ class Ensemble:
         logger.debug(self.total_best_sum.head())
         logger.debug(self.target.shape)
         logger.debug(self.target.head())
-        
+
         if self.total_best_sum.shape[1] == 1:
-            tmp_df =  pd.DataFrame(
-                {"prediction": self.total_best_sum["prediction"]}
-            )
+            tmp_df = pd.DataFrame({"prediction": self.total_best_sum["prediction"]})
             tmp_df["target"] = self.target[self.target_columns]
             return tmp_df
 
@@ -146,7 +144,9 @@ class Ensemble:
         self.train_time = time.time() - start_time
 
     def predict(self, X):
-        logger.debug("Ensemble.predict with {} models".format(len(self.selected_models)))
+        logger.debug(
+            "Ensemble.predict with {} models".format(len(self.selected_models))
+        )
         y_predicted_ensemble = None
         total_repeat = 0.0
 

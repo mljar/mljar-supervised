@@ -67,7 +67,7 @@ class PreprocessingStep(object):
             X_train = X_train_org.copy()
         if y_train_org is not None:
             y_train = y_train_org.copy()
-        
+
         if y_train is not None:
             # target preprocessing
             # this must be used first, maybe we will drop some rows because of missing target values
@@ -77,19 +77,21 @@ class PreprocessingStep(object):
             X_train, y_train = PreprocessingExcludeMissingValues.transform(
                 X_train, y_train
             )
-            
+
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
                 self._categorical_y = LabelEncoder()
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
-            
+
             if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
                 logger.debug("Convert target to one-hot coding")
                 self._categorical_y = LabelBinarizer()
-                self._categorical_y.fit(pd.DataFrame({"target":y_train}), "target")
-                y_train = self._categorical_y.transform(pd.DataFrame({"target":y_train}), "target")
-                
+                self._categorical_y.fit(pd.DataFrame({"target": y_train}), "target")
+                y_train = self._categorical_y.transform(
+                    pd.DataFrame({"target": y_train}), "target"
+                )
+
             if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 logger.debug("Scale log and normal")
 
@@ -100,7 +102,7 @@ class PreprocessingStep(object):
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
                 y_train = y_train["target"]
-            
+
             if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
                 logger.error("not implemented SCALE_NORMAL")
                 raise Exception("not implemented SCALE_NORMAL")
@@ -176,7 +178,6 @@ class PreprocessingStep(object):
         target_preprocessing = self._params.get("target_preprocessing")
         logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-        
         X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
             X_validation, y_validation
         )
@@ -187,7 +188,9 @@ class PreprocessingStep(object):
 
         if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
             if y_validation is not None and self._categorical_y is not None:
-                y_validation = self._categorical_y.transform(pd.DataFrame({"target":y_validation}), "target")        
+                y_validation = self._categorical_y.transform(
+                    pd.DataFrame({"target": y_validation}), "target"
+                )
 
         if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
 
@@ -275,7 +278,12 @@ class PreprocessingStep(object):
                         (v, k) for k, v in self._categorical_y.to_json().items()
                     )
                 else:
-                    labels = {i: v for i, v in enumerate(self._categorical_y.to_json()["unique_values"])}
+                    labels = {
+                        i: v
+                        for i, v in enumerate(
+                            self._categorical_y.to_json()["unique_values"]
+                        )
+                    }
                 d = {}
                 cols = []
                 for i in range(y.shape[1]):
