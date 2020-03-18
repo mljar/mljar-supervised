@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
+
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION)
 from sklearn.metrics import (
     f1_score,
     accuracy_score,
@@ -96,14 +96,12 @@ class AdditionalMetrics:
 
     @staticmethod
     def compute(target, predictions, ml_task):
-        if ml_task not in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
-            raise Exception(
-                "Machine Learning task {} is not allowed (yet, ;)".format(ml_task)
-            )
 
         if ml_task == BINARY_CLASSIFICATION:
-            return ComputeAdditionalMetrics.compute_for_binary_classification(
+            return AdditionalMetrics.compute_for_binary_classification(
                 target, predictions
             )
         elif ml_task == MULTICLASS_CLASSIFICATION:
+            return None, None, None
+        elif ml_task == REGRESSION:
             return None, None, None

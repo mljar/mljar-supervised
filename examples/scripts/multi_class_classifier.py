@@ -1,10 +1,13 @@
 import pandas as pd
 from supervised.automl import AutoML
+from sklearn.datasets import load_iris
 
-df = pd.read_csv("https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv", skipinitialspace=True)
+iris = load_iris()
 
-X = df[df.columns[:-1]]
-y = df["income"]
+X = pd.DataFrame(iris.data)
+y = iris.target
+
+print(X)
 
 automl = AutoML(total_time_limit=10)
 automl.fit(X, y)

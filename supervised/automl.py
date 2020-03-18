@@ -40,7 +40,7 @@ class AutoML:
     def __init__(
         self,
         total_time_limit=60 * 60,
-        algorithms=["Xgboost"], #, "Random Forest"],
+        algorithms=["Xgboost"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -81,11 +81,10 @@ class AutoML:
         self._user_set_optimize_metric = optimize_metric
         self._ml_task = ml_task
         self._tuner_params = {
-                "start_random_models": self._start_random_models,
-                "hill_climbing_steps": self._hill_climbing_steps,
-                "top_models_to_improve": self._top_models_to_improve,
-            }
-
+            "start_random_models": self._start_random_models,
+            "hill_climbing_steps": self._hill_climbing_steps,
+            "top_models_to_improve": self._top_models_to_improve,
+        }
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -153,8 +152,9 @@ class AutoML:
             return
         self._models += [model]
         self.verbose_print(
-            "{} final loss {} time {} seconds".format(
+            "{} final {} {} time {} seconds".format(
                 model.get_name(),
+                self._optimize_metric,
                 model.get_final_loss(),
                 np.round(model.get_train_time(), 2),
             )
@@ -309,7 +309,7 @@ class AutoML:
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
 
-        #X_train, y_train = PreprocessingExcludeMissingValues.transform(X_train, y_train)
+        # X_train, y_train = PreprocessingExcludeMissingValues.transform(X_train, y_train)
         # wtf ???
         X_train.reset_index(drop=True, inplace=True)
         if not isinstance(y_train, pd.DataFrame):

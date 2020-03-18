@@ -17,7 +17,6 @@ class SplitValidatorTest(unittest.TestCase):
         self.assertEqual(1, vl.get_n_splits())
         cnt = 0
         for X_train, y_train, X_validation, y_validation in vl.split():
-            print(X_train.shape, X_validation.shape)
             self.assertEqual(X_train.shape[0], 3)
             self.assertEqual(y_train.shape[0], 3)
             self.assertEqual(X_validation.shape[0], 1)
