@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import copy
@@ -5,6 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+import shutil
 
 from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
@@ -39,6 +41,8 @@ class AutoMLException(Exception):
 class AutoML:
     def __init__(
         self,
+        results_path = None,
+        overwrite = False,
         total_time_limit=60 * 60,
         algorithms=["Xgboost"],  # , "Random Forest"],
         start_random_models=10,
@@ -51,6 +55,11 @@ class AutoML:
         seed=1,
     ):
         logger.debug("AutoML.__init__")
+
+        self._results_path = results_path
+        self._overwrite = overwrite
+
+        self._set_results_dir()
 
         self._total_time_limit = total_time_limit
         # time limit in seconds for single learner
@@ -85,6 +94,25 @@ class AutoML:
             "hill_climbing_steps": self._hill_climbing_steps,
             "top_models_to_improve": self._top_models_to_improve,
         }
+
+    def _set_results_dir(self):
+        if self._results_path is None:
+            for i in range(100):
+                self._results_path = f"AutoML_{i}"
+                if not os.path.exists(self._results_path):
+                    break
+        if self._results_path is not None and self._overwrite:
+            if os.path.exists(self._results_path):
+                try:
+                    shutil.rmtree(self._results_path)
+                except Exception as e:
+                    raise AutoMLException(f"Cannot remove directory {self._results_path} before overwrite")
+        if not self._overwrite and self._results_path is not None:
+            try:
+                os.mkdir(self._results_path)
+            except Exception as e:
+                raise AutoMLException(f"Cannot set directory {self._results_path}")
+
 
     def _estimate_training_times(self):
         # single models including models in the folds

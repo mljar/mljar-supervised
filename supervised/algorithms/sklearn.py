@@ -2,7 +2,7 @@ import copy
 import logging
 import numpy as np
 
-from sklearn.externals import joblib
+import joblib
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.utils.config import LOG_LEVEL

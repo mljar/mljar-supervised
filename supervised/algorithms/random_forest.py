@@ -2,7 +2,6 @@ import logging
 import os
 import sklearn
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.externals import joblib
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
