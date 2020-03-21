@@ -36,8 +36,6 @@ class XgbAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(XgbAlgorithm, self).__init__(params)
         self.library_version = xgb.__version__
-        self.model_file = self.uid + ".xgb.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.boosting_rounds = additional.get(
             "one_step", 50
@@ -81,46 +79,39 @@ class XgbAlgorithm(BaseAlgorithm):
     def copy(self):
         return copy.deepcopy(self)
 
-    def save(self):
-        self.model.save_model(self.model_file_path)
+    def save(self, model_file_path):
+        self.model.save_model(model_file_path)
+        logger.debug("XgbAlgorithm save model to %s" % model_file_path)
 
+    def load(self, model_file_path):
+        logger.debug("XgbLearner load model from %s" % model_file_path)
+        self.model = xgb.Booster()  # init model
+        self.model.load_model(self.model_file_path)
+
+    def get_params(self):
         json_desc = {
             "library_version": self.library_version,
             "algorithm_name": self.algorithm_name,
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
-            "model_file": self.model_file,
-            "model_file_path": self.model_file_path,
             "params": self.params,
         }
-
-        logger.debug("XgbAlgorithm save model to %s" % self.model_file_path)
         return json_desc
 
-    def load(self, json_desc):
-
+    def set_params(self, json_desc):
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
         self.algorithm_short_name = json_desc.get(
             "algorithm_short_name", self.algorithm_short_name
         )
         self.uid = json_desc.get("uid", self.uid)
-        self.model_file = json_desc.get("model_file", self.model_file)
-        self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
         self.params = json_desc.get("params", self.params)
 
-        logger.debug("XgbLearner load model from %s" % self.model_file_path)
-        self.model = xgb.Booster()  # init model
-        self.model.load_model(self.model_file_path)
+    def file_extenstion(self):
+        return "xgboost"
 
     def importance(self, column_names, normalize=True):
         return None
-
-    def get_params_key(self):
-        params_key = "key"
-        for p, v in self.params.items():
-            params_key += "_{}_{}".format(p, str(v))
-        return params_key
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
@@ -137,7 +128,11 @@ xgb_bin_class_params = {
 
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["booster"] = ["gbtree"]
-xgb_regression_params["objective"] = ["reg:squarederror", "reg:squaredlogerror", "count:poisson"]
+xgb_regression_params["objective"] = [
+    "reg:squarederror",
+    "reg:squaredlogerror",
+    "count:poisson",
+]
 xgb_regression_params["eval_metric"] = ["rmse", "rmsle", "mae"]
 xgb_regression_params["max_depth"] = [1, 2, 3, 4]
 

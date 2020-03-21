@@ -1,3 +1,4 @@
+import os
 import logging
 import numpy as np
 import pandas as pd
@@ -16,6 +17,7 @@ class EarlyStopping(Callback):
         self.name = params.get("name", "early_stopping")
         self.metric = Metric(params.get("metric"))
         self.max_no_improvement_cnt = params.get("max_no_improvement_cnt", 5)
+        self.log_to_dir = params.get("log_to_dir")
 
         self.keep_best_model = params.get("keep_best_model", True)
         self.best_iter = {}
@@ -51,7 +53,6 @@ class EarlyStopping(Callback):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
         logger.debug("early stopping on framework train end")
-        
 
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
@@ -140,6 +141,18 @@ class EarlyStopping(Callback):
                 len(self.loss_values[self.learner.uid]["iters"]),
             )
         )
+        if self.log_to_dir is not None:
+
+            with open(
+                os.path.join(
+                    self.log_to_dir, f"learner_{len(self.learners)}_training.log"
+                ),
+                "a",
+            ) as fout:
+                iteration = len(self.loss_values[self.learner.uid]["iters"])
+                fout.write(
+                    f"iteration: {iteration} train: {train_loss} validation: {validation_loss} no_improvement: {self.no_improvement_cnt}\n"
+                )
 
     def get_status(self):
         return "Train loss: {}, Validation loss: {} @ iteration {}".format(

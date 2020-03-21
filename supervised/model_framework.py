@@ -5,6 +5,7 @@ import time
 import zipfile
 import os
 import logging
+import json
 
 from supervised.callbacks.callback_list import CallbackList
 from supervised.validation.validation_step import ValidationStep
@@ -14,6 +15,7 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
     PreprocessingExcludeMissingValues,
 )
 
+from supervised.exceptions import AutoMLException
 from supervised.utils.config import storage_path
 from supervised.utils.config import LOG_LEVEL
 
@@ -89,6 +91,7 @@ class ModelFramework:
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
+            logger.debug("-" * 51)
             logger.debug(
                 "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
                     train_data["X"].shape,
@@ -199,6 +202,27 @@ class ModelFramework:
             "params": self.params,  # this is needed while constructing new Iterative Learner Framework
         }
         return desc
+
+    def save(self, model_path):
+        logger.info(f"Save the model {model_path}")
+
+        with open(os.path.join(model_path, "framework.json"), "w") as fout:
+            preprocessing = [p.to_json() for p in self.preprocessings]
+            learners_params = [learner.get_params() for learner in self.learners]
+            desc = {
+                "uid": self.uid,
+                "preprocessing": preprocessing,
+                "learners": learners_params,
+                "params": self.params,  
+            }
+            fout.write(json.dumps(desc, indent=4))
+
+        for i, l in enumerate(self.learners):
+            l.save(os.path.join(model_path, f"learner_{i+1}.{l.file_extenstion()}"))
+
+        with open(os.path.join(model_path, "status.txt"), "w") as fout:
+            fout.write("ALL OK!")
+
 
     def from_json(self, json_desc):
         self.uid = json_desc.get("uid", self.uid)

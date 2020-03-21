@@ -29,13 +29,10 @@ class BaseAlgorithm:
     def copy(self):
         pass
 
-    def save(self):
+    def save(self, model_file_path):
         pass
 
-    def load(self, model_path):
-        pass
-
-    def get_params_key(self):
+    def load(self, model_file_path):
         pass
 
     # def importance(self, column_names, normalize = True):

@@ -25,10 +25,6 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
         logger.debug("RandomForestAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-
-        self.model_file = self.uid + ".rf.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
-
         self.trees_in_step = additional.get("trees_in_step", 5)
         self.max_iters = additional.get("max_steps", 3)
         self.model = RandomForestClassifier(
@@ -41,6 +37,9 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
             n_jobs=-1,
             random_state=params.get("seed", 1),
         )
+
+    def file_extenstion(self):
+        return "random_forest"
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.

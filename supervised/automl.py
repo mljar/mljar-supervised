@@ -31,18 +31,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-
-class AutoMLException(Exception):
-    def __init__(self, message):
-        super(AutoMLException, self).__init__(message)
-        logger.error(message)
+from supervised.exceptions import AutoMLException
 
 
 class AutoML:
     def __init__(
         self,
-        results_path = None,
-        overwrite = False,
+        results_path=None,
         total_time_limit=60 * 60,
         algorithms=["Xgboost"],  # , "Random Forest"],
         start_random_models=10,
@@ -57,8 +52,6 @@ class AutoML:
         logger.debug("AutoML.__init__")
 
         self._results_path = results_path
-        self._overwrite = overwrite
-
         self._set_results_dir()
 
         self._total_time_limit = total_time_limit
@@ -97,22 +90,18 @@ class AutoML:
 
     def _set_results_dir(self):
         if self._results_path is None:
-            for i in range(100):
+            for i in range(1,101):
                 self._results_path = f"AutoML_{i}"
                 if not os.path.exists(self._results_path):
                     break
-        if self._results_path is not None and self._overwrite:
-            if os.path.exists(self._results_path):
-                try:
-                    shutil.rmtree(self._results_path)
-                except Exception as e:
-                    raise AutoMLException(f"Cannot remove directory {self._results_path} before overwrite")
-        if not self._overwrite and self._results_path is not None:
+        if os.path.exists(self._results_path):
+            print(f"Directory {self._results_path} already exists")
+        if self._results_path is not None:
+            print(f"Create directory {self._results_path}")
             try:
                 os.mkdir(self._results_path)
             except Exception as e:
-                raise AutoMLException(f"Cannot set directory {self._results_path}")
-
+                raise AutoMLException(f"Cannot create directory {self._results_path}")
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -164,10 +153,17 @@ class AutoML:
                 self._max_metrics["f1"]["threshold"]
             )  # TODO: do need conversion
             logger.info(
-                "Metric details:\n{}\nConfusion matrix:\n{}".format(
+                "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
                     self._max_metrics.transpose(), self._confusion_matrix
                 )
             )
+            with open(os.path.join(self._results_path, "best_model_metrics.txt"), "w") as fout:
+                fout.write(
+                    "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
+                        self._max_metrics.transpose(), self._confusion_matrix
+                    )
+                )
+
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
             logger.info(
                 "Metric details:\n{}\nConfusion matrix:\n{}".format(
@@ -190,18 +186,31 @@ class AutoML:
         self.log_train_time(model.get_name(), model.get_train_time())
 
     def train_model(self, params, X, y):
-        early_stop = EarlyStopping({"metric": {"name": self._optimize_metric}})
+        model_path = os.path.join(self._results_path, f"model_{len(self._models)+1}")
+
+        early_stop = EarlyStopping(
+            {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
+        )
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
 
         if self._enough_time_to_train(mf.get_name()):
-            print(f"Train model #{len(self._models)+1}")
+            logger.info(f"Train model #{len(self._models)+1}")
+
+            try:
+                os.mkdir(model_path)
+            except Exception as e:
+                raise AutoMLException(f"Cannot create directory {model_path}")
+
             mf.train({"train": {"X": X, "y": y}})
+
+            mf.save(model_path)
+
+            self.keep_model(mf)
+
         else:
-            mf = None
-            print("Can not check more models because of time constraint")
+            logger.info(f"Cannot check more models of {mf.get_name()} because of time constraint")
         # self._progress_bar.update(1)
-        return mf
 
     def verbose_print(self, msg):
         if self._verbose:
@@ -364,8 +373,7 @@ class AutoML:
                 if unique_params_key in self._models_params_keys:
                     continue  # if already trained model with such paramaters, just skip it
                 self._models_params_keys += [unique_params_key]
-                new_model = self.train_model(params, X_train, y_train)
-                self.keep_model(new_model)
+                self.train_model(params, X_train, y_train)
 
         self.ensemble_step()
 

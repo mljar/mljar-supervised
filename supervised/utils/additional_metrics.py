@@ -5,7 +5,11 @@ import pandas as pd
 import time
 import uuid
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from sklearn.metrics import (
     f1_score,
     accuracy_score,
