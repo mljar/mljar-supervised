@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
+import json
 import operator
 
 from supervised.utils.config import storage_path
@@ -16,6 +17,7 @@ from supervised.algorithms.algorithm_factory import AlgorithmFactory
 from supervised.model_framework import ModelFramework
 from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.additional_metrics import AdditionalMetrics
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -39,7 +41,10 @@ class Ensemble:
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
         self.target = None
         self.target_columns = None
-        self.ml_task = ml_task
+        self._ml_task = ml_task
+
+        self._additional_metrics = None 
+        self._threshold = None
 
     def get_train_time(self):
         return self.train_time
@@ -55,6 +60,7 @@ class Ensemble:
         # single prediction (in case of binary classification and regression)
         logger.debug(self.total_best_sum.shape)
         logger.debug(self.total_best_sum.head())
+        
         logger.debug(self.target.shape)
         logger.debug(self.target.head())
 
@@ -94,10 +100,26 @@ class Ensemble:
                 self.target = oof[
                     self.target_columns
                 ]  # it will be needed for computing advance model statistics
-                # it can be a mess in the future when target will be transformed depending on each model
-                # For regression we should always the same target ...
-
+                
         return oofs, self.target
+
+    def get_additional_metrics(self):
+        if self._additional_metrics is None:
+            # 'target' - the target after processing used for model training
+            # 'prediction' - out of folds predictions of the model
+            oof_predictions = self.get_out_of_folds()
+            prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
+            target_cols = [c for c in oof_predictions.columns if "target" in c]
+            self._additional_metrics = AdditionalMetrics.compute(
+                oof_predictions[target_cols],
+                oof_predictions[prediction_cols],
+                self._ml_task,
+            )
+            if self._ml_task == BINARY_CLASSIFICATION:
+                self._threshold = float(self._additional_metrics["threshold"])
+                print(self._additional_metrics["max_metrics"])
+                print(self._threshold)
+        return self._additional_metrics
 
     def fit(self, oofs, y):
         logger.debug("Ensemble.fit")
@@ -137,10 +159,13 @@ class Ensemble:
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)
         self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
+        logger.debug("Selected models for ensemble:")
         for i in np.unique(self.best_algs):
             self.selected_models += [
-                {"model": self.models[i], "repeat": np.sum(self.best_algs == i)}
+                {"model": self.models[i], "repeat": float(np.sum(self.best_algs == i))}
             ]
+            logger.debug(f"model_{i}")
+        self.get_additional_metrics()
         self.train_time = time.time() - start_time
 
     def predict(self, X):
@@ -165,9 +190,9 @@ class Ensemble:
             )
 
         y_predicted_ensemble /= total_repeat
-
+        '''
         # Ensemble needs to apply reverse transformation of target !!!
-        if self.ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+        if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
 
             label = np.argmax(np.array(y_predicted_ensemble), axis=1)
             prediction_labels = [c[2:] for c in y_predicted_ensemble if "p_" in c]
@@ -178,7 +203,7 @@ class Ensemble:
             y_predicted_ensemble["label"] = y_predicted_ensemble["label"].map(
                 prediction_labels
             )
-
+        '''
         return y_predicted_ensemble
 
     def to_json(self):
@@ -216,3 +241,65 @@ class Ensemble:
                 # {"model": LearnerFactory.load(model), "repeat": repeat}
                 {"model": il, "repeat": repeat}
             ]
+
+
+
+
+    def save(self, model_path):
+        logger.info(f"Save the ensemble {model_path}")
+
+        with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
+            desc = []
+            for selected in self.selected_models:
+                desc = {"model": selected["model"]._name, "repeat": selected["repeat"]}
+            fout.write(json.dumps(desc, indent=4))
+
+        
+        predictions = self.get_out_of_folds()
+        predictions.to_csv(
+            os.path.join(model_path, f"predictions_ensemble.csv"),
+            index=False,
+        )
+
+        self._additional_metrics = self.get_additional_metrics()
+
+        with open(os.path.join(model_path, "ensemble_metrics.txt"), "w") as fout:
+            if self._ml_task == BINARY_CLASSIFICATION:
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+                threshold = self._additional_metrics["threshold"]
+
+                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
+                fout.write(
+                    "Confusion matrix (at threshold={}):\n{}".format(
+                        np.round(threshold, 6), confusion_matrix
+                    )
+                )
+            elif self._ml_task == MULTICLASS_CLASSIFICATION:
+                fout.write("TODO")
+
+        with open(os.path.join(model_path, "status.txt"), "w") as fout:
+            fout.write("ALL OK!")
+
+    @staticmethod
+    def load(model_path):
+        logger.info("Loading model framework")
+
+        json_desc = json.load(open(os.path.join(model_path, "framework.json")))
+        mf = ModelFramework(json_desc["params"])
+        mf.uid = json_desc.get("uid", mf.uid)
+        mf._name = json_desc.get("name", mf.uid)
+        mf._threshold = json_desc.get("threshold")
+        mf.learners = []
+        for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):
+            
+            l = AlgorithmFactory.load(learner_desc, learner_path)     
+            mf.learners += [l]
+        
+        mf.preprocessings = []
+        for p in json_desc.get("preprocessing"):
+            ps = PreprocessingStep()
+            ps.from_json(p) 
+            mf.preprocessings += [ps]
+
+        return mf

@@ -19,6 +19,7 @@ from sklearn.metrics import (
     roc_auc_score,
     confusion_matrix,
 )
+from supervised.utils.metric import logloss
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
@@ -28,11 +29,11 @@ logger.setLevel(LOG_LEVEL)
 
 class AdditionalMetrics:
     @staticmethod
-    def compute_for_binary_classification(target, predictions):
+    def binary_classification(target, predictions):
 
         predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
-        STEPS = 100
+        STEPS = 100  # can go lower for speed increase ???
         details = {
             "threshold": [],
             "f1": [],
@@ -61,29 +62,33 @@ class AdditionalMetrics:
 
         # max metrics
         max_metrics = {
+            "logloss": {
+                "score": logloss(target, predictions),
+                "threshold": None,
+            },  # there is no threshold for LogLoss
             "auc": {
                 "score": roc_auc_score(target, predictions),
                 "threshold": None,
-            },  # there is no threshold for AUC :)
+            },  # there is no threshold for AUC
             "f1": {
                 "score": np.max(details["f1"]),
-                "threshold": details["threshold"][np.argmax(details["f1"])],
+                "threshold": details["threshold"][np.argmax(details["f1"])][0],
             },
             "accuracy": {
                 "score": np.max(details["accuracy"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "threshold": details["threshold"][np.argmax(details["accuracy"])][0],
             },
             "precision": {
                 "score": np.max(details["precision"]),
-                "threshold": details["threshold"][np.argmax(details["precision"])],
+                "threshold": details["threshold"][np.argmax(details["precision"])][0],
             },
             "recall": {
                 "score": np.max(details["recall"]),
-                "threshold": details["threshold"][np.argmax(details["recall"])],
+                "threshold": details["threshold"][np.argmax(details["recall"])][0],
             },
             "mcc": {
                 "score": np.max(details["mcc"]),
-                "threshold": details["threshold"][np.argmax(details["mcc"])],
+                "threshold": details["threshold"][np.argmax(details["mcc"])][0],
             },
         }
         # confusion matrix
@@ -96,16 +101,19 @@ class AdditionalMetrics:
             index=["Labeled as negative", "Labeled as positive"],
         )
 
-        return pd.DataFrame(details), pd.DataFrame(max_metrics), conf_matrix
+        return {
+            "metric_details": pd.DataFrame(details),
+            "max_metrics": pd.DataFrame(max_metrics),
+            "confusion_matrix": conf_matrix,
+            "threshold": float(max_metrics["f1"]["threshold"]),
+        }
 
     @staticmethod
     def compute(target, predictions, ml_task):
 
         if ml_task == BINARY_CLASSIFICATION:
-            return AdditionalMetrics.compute_for_binary_classification(
-                target, predictions
-            )
+            return AdditionalMetrics.binary_classification(target, predictions)
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            return None, None, None
+            return None
         elif ml_task == REGRESSION:
-            return None, None, None
+            return None

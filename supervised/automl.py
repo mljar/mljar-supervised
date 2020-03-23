@@ -51,9 +51,6 @@ class AutoML:
     ):
         logger.debug("AutoML.__init__")
 
-        self._results_path = results_path
-        self._set_results_dir()
-
         self._total_time_limit = total_time_limit
         # time limit in seconds for single learner
         self._time_limit = 1  # wtf
@@ -88,20 +85,46 @@ class AutoML:
             "top_models_to_improve": self._top_models_to_improve,
         }
 
+        self._results_path = results_path
+        self._set_results_dir()
+        self._model_paths = []
+
     def _set_results_dir(self):
         if self._results_path is None:
-            for i in range(1,101):
+            for i in range(1, 101):
                 self._results_path = f"AutoML_{i}"
                 if not os.path.exists(self._results_path):
                     break
         if os.path.exists(self._results_path):
             print(f"Directory {self._results_path} already exists")
-        if self._results_path is not None:
+            self.load()
+        elif self._results_path is not None:
             print(f"Create directory {self._results_path}")
             try:
                 os.mkdir(self._results_path)
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {self._results_path}")
+
+
+    def load(self):
+        logger.info("Loading AutoML models ...")
+
+        params = json.load(open(os.path.join(self._results_path, "params.json")))
+
+        self._model_paths = params["saved"]
+        self._ml_task = params["ml_task"]
+        self._optimize_metric = params["optimize_metric"]
+
+        for model_path in self._model_paths:
+            logger.info(f"Reading model from {model_path}")
+            m = ModelFramework.load(model_path)
+            self._models += [m]
+        
+        best_model_index = 0
+        with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
+            best_model_index = int(fin.read().split("_")[1]) -1
+        self._best_model = self._models[best_model_index]
+
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -143,21 +166,26 @@ class AutoML:
         oof_predictions = self._best_model.get_out_of_folds()
         prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
         target_cols = [c for c in oof_predictions.columns if "target" in c]
-        self._metrics_details, self._max_metrics, self._confusion_matrix = AdditionalMetrics.compute(
+
+        additional_metrics = AdditionalMetrics.compute(
             oof_predictions[target_cols],
             oof_predictions[prediction_cols],
             self._ml_task,
         )
         if self._ml_task == BINARY_CLASSIFICATION:
-            self._threshold = float(
-                self._max_metrics["f1"]["threshold"]
-            )  # TODO: do need conversion
+
+            self._metrics_details = additional_metrics["metric_details"]
+            self._max_metrics = additional_metrics["max_metrics"]
+            self._confusion_matrix = additional_metrics["confusion_matrix"]
+            self._threshold = additional_metrics["threshold"]
             logger.info(
                 "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
                     self._max_metrics.transpose(), self._confusion_matrix
                 )
             )
-            with open(os.path.join(self._results_path, "best_model_metrics.txt"), "w") as fout:
+            with open(
+                os.path.join(self._results_path, "best_model_metrics.txt"), "w"
+            ) as fout:
                 fout.write(
                     "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
                         self._max_metrics.transpose(), self._confusion_matrix
@@ -205,11 +233,14 @@ class AutoML:
             mf.train({"train": {"X": X, "y": y}})
 
             mf.save(model_path)
+            self._model_paths += [model_path]
 
             self.keep_model(mf)
 
         else:
-            logger.info(f"Cannot check more models of {mf.get_name()} because of time constraint")
+            logger.info(
+                f"Cannot check more models of {mf.get_name()} because of time constraint"
+            )
         # self._progress_bar.update(1)
 
     def verbose_print(self, msg):
@@ -252,7 +283,7 @@ class AutoML:
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
             self.keep_model(self.ensemble)
-            # self._progress_bar.update(1)
+            
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -340,6 +371,11 @@ class AutoML:
         print(f"AutoML will optimize for metric: {self._optimize_metric}")
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
+
+        if self._best_model is not None:
+            print("Best model is already set, no need to run fit. Skipping ...")
+            return
+
         start_time = time.time()
         if not isinstance(X_train, pd.DataFrame):
             raise AutoMLException(
@@ -378,14 +414,30 @@ class AutoML:
         self.ensemble_step()
 
         max_loss = 10e12
-        for m in self._models:
+        best_model_i = None
+        for i, m in enumerate(self._models):
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()
+                best_model_i = i
+
+        
 
         self.get_additional_metrics()
         self._fit_time = time.time() - start_time
         # self._progress_bar.close()
+
+        with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
+            fout.write(f"model_{best_model_i+1}")
+
+        with open(os.path.join(self._results_path, "params.json"), "w") as fout:
+            params = {
+                "ml_task": self._ml_task,
+                "optimize_metric": self._optimize_metric,
+                "saved": self._model_paths
+            }
+            fout.write(json.dumps(params, indent=4))
+        
 
     def predict(self, X):
         if self._best_model is not None:
@@ -401,7 +453,7 @@ class AutoML:
                 if neg_label == "0" and pos_label == "1":
                     neg_label, pos_label = 0, 1
                 # assume that it is binary classification
-                predictions["label"] = predictions.iloc[:, 1] > self._threshold
+                predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
                 predictions["label"] = predictions["label"].map(
                     {True: pos_label, False: neg_label}
                 )

@@ -18,6 +18,13 @@ from supervised.preprocessing.preprocessing_exclude_missing import (
 from supervised.exceptions import AutoMLException
 from supervised.utils.config import storage_path
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.additional_metrics import AdditionalMetrics
+
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -28,9 +35,6 @@ class ModelFramework:
         logger.debug("ModelFramework.__init__")
         self.uid = str(uuid.uuid4())
 
-        self.framework_file = self.uid + ".framework"
-        self.framework_file_path = os.path.join(storage_path, self.framework_file)
-
         for i in ["learner", "validation"]:  # mandatory parameters
             if i not in params:
                 msg = "Missing {0} parameter in ModelFramework params".format(i)
@@ -40,16 +44,21 @@ class ModelFramework:
         self.params = params
         self.callbacks = CallbackList(callbacks)
 
+        self._name = params.get("name", "model")
         self.additional_params = params.get("additional")
         self.preprocessing_params = params.get("preprocessing")
         self.validation_params = params.get("validation")
         self.learner_params = params.get("learner")
+
+        self._ml_task = params.get("ml_task")
 
         self.validation = None
         self.preprocessings = []
         self.learners = []
 
         self.train_time = None
+        self._additional_metrics = None
+        self._threshold = None # used only for binary classifiers
 
     def get_train_time(self):
         return self.train_time
@@ -134,6 +143,7 @@ class ModelFramework:
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time
+        self.get_additional_metrics()
         logger.debug("ModelFramework end of training")
 
     def get_out_of_folds(self):
@@ -176,7 +186,7 @@ class ModelFramework:
             y_predicted_average
         )
         return y_predicted_final
-
+    '''
     def to_json(self):
         preprocessing = []
         for p in self.preprocessings:
@@ -203,27 +213,6 @@ class ModelFramework:
         }
         return desc
 
-    def save(self, model_path):
-        logger.info(f"Save the model {model_path}")
-
-        with open(os.path.join(model_path, "framework.json"), "w") as fout:
-            preprocessing = [p.to_json() for p in self.preprocessings]
-            learners_params = [learner.get_params() for learner in self.learners]
-            desc = {
-                "uid": self.uid,
-                "preprocessing": preprocessing,
-                "learners": learners_params,
-                "params": self.params,  
-            }
-            fout.write(json.dumps(desc, indent=4))
-
-        for i, l in enumerate(self.learners):
-            l.save(os.path.join(model_path, f"learner_{i+1}.{l.file_extenstion()}"))
-
-        with open(os.path.join(model_path, "status.txt"), "w") as fout:
-            fout.write("ALL OK!")
-
-
     def from_json(self, json_desc):
         self.uid = json_desc.get("uid", self.uid)
         self.framework_file = json_desc.get("framework_file", self.framework_file)
@@ -242,3 +231,97 @@ class ModelFramework:
             preproc = PreprocessingStep()
             preproc.from_json(p)
             self.preprocessings += [preproc]
+    '''
+    def get_additional_metrics(self):
+        if self._additional_metrics is None:
+            # 'target' - the target after processing used for model training
+            # 'prediction' - out of folds predictions of the model
+            oof_predictions = self.get_out_of_folds()
+            prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
+            target_cols = [c for c in oof_predictions.columns if "target" in c]
+            self._additional_metrics = AdditionalMetrics.compute(
+                oof_predictions[target_cols],
+                oof_predictions[prediction_cols],
+                self._ml_task,
+            )
+            if self._ml_task == BINARY_CLASSIFICATION:
+                self._threshold = float(self._additional_metrics["threshold"])
+        return self._additional_metrics
+
+    def save(self, model_path):
+        logger.info(f"Save the model {model_path}")
+
+        saved = []
+        for i, l in enumerate(self.learners):
+            p = os.path.join(model_path, f"learner_{i+1}.{l.file_extenstion()}")
+            l.save(p)
+            saved += [p]
+
+        with open(os.path.join(model_path, "framework.json"), "w") as fout:
+            preprocessing = [p.to_json() for p in self.preprocessings]
+            learners_params = [learner.get_params() for learner in self.learners]
+            desc = {
+                "uid": self.uid,
+                "name": self._name,
+                "preprocessing": preprocessing,
+                "learners": learners_params,
+                "params": self.params,
+                "saved": saved
+            }
+            if self._threshold is not None:
+                desc["threshold"] = self._threshold
+            fout.write(json.dumps(desc, indent=4))
+
+        
+
+        type_of_predictions = (
+            "validation" if "k_folds" not in self.validation_params else "out_of_folds"
+        )
+        predictions = self.get_out_of_folds()
+        predictions.to_csv(
+            os.path.join(model_path, f"predictions_{type_of_predictions}.csv"),
+            index=False,
+        )
+
+        self._additional_metrics = self.get_additional_metrics()
+
+        with open(os.path.join(model_path, "metrics.txt"), "w") as fout:
+            if self._ml_task == BINARY_CLASSIFICATION:
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+                threshold = self._additional_metrics["threshold"]
+
+                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
+                fout.write(
+                    "Confusion matrix (at threshold={}):\n{}".format(
+                        np.round(threshold, 6), confusion_matrix
+                    )
+                )
+            elif self._ml_task == MULTICLASS_CLASSIFICATION:
+                fout.write("TODO")
+
+        with open(os.path.join(model_path, "status.txt"), "w") as fout:
+            fout.write("ALL OK!")
+
+    @staticmethod
+    def load(model_path):
+        logger.info("Loading model framework")
+
+        json_desc = json.load(open(os.path.join(model_path, "framework.json")))
+        mf = ModelFramework(json_desc["params"])
+        mf.uid = json_desc.get("uid", mf.uid)
+        mf._name = json_desc.get("name", mf.uid)
+        mf._threshold = json_desc.get("threshold")
+        mf.learners = []
+        for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):
+            
+            l = AlgorithmFactory.load(learner_desc, learner_path)     
+            mf.learners += [l]
+        
+        mf.preprocessings = []
+        for p in json_desc.get("preprocessing"):
+            ps = PreprocessingStep()
+            ps.from_json(p) 
+            mf.preprocessings += [ps]
+
+        return mf

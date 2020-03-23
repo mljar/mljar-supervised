@@ -38,7 +38,7 @@ class AlgorithmFactory(object):
             raise AlgorithmFactoryException(msg)
 
     @classmethod
-    def load(cls, json_desc):
+    def load(cls, json_desc, model_file_path):
         learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
-        learner.load(json_desc)
+        learner.load(model_file_path)
         return learner

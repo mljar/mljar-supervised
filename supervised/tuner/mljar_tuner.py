@@ -38,6 +38,7 @@ class MljarTuner:
                     "Not so random step, for model #{0}".format(len(current_models) + 1)
                 )
                 params = self._get_model_params(model_type, X, y, current_models)
+                params["name"] = f"model_{len(current_models) + 1}"
                 yield params
         # second, hill climbing
         for _ in range(self._hill_climbing_steps):
@@ -61,6 +62,7 @@ class MljarTuner:
                     if p is not None:
                         all_params = copy.deepcopy(m.params)
                         all_params["learner"] = p
+                        all_params["name"] = f"model_{len(current_models) + 1}"
                         yield all_params
                     else:
                         yield None  # empty paramaters

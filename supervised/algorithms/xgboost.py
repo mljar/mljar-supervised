@@ -86,7 +86,7 @@ class XgbAlgorithm(BaseAlgorithm):
     def load(self, model_file_path):
         logger.debug("XgbLearner load model from %s" % model_file_path)
         self.model = xgb.Booster()  # init model
-        self.model.load_model(self.model_file_path)
+        self.model.load_model(model_file_path)
 
     def get_params(self):
         json_desc = {
