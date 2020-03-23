@@ -141,6 +141,7 @@ class Ensemble:
                     best_index = i
 
             # there is improvement, save it
+            print(j, self.best_loss, min_score)
             if self.metric.improvement(previous=self.best_loss, current=min_score):
                 self.best_loss = min_score
                 selected_algs_cnt = j
@@ -251,7 +252,7 @@ class Ensemble:
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             desc = []
             for selected in self.selected_models:
-                desc = {"model": selected["model"]._name, "repeat": selected["repeat"]}
+                desc += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
             fout.write(json.dumps(desc, indent=4))
 
         

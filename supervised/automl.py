@@ -20,7 +20,7 @@ from supervised.algorithms.registry import (
     REGRESSION,
 )
 from supervised.tuner.mljar_tuner import MljarTuner
-from supervised.algorithms.ensemble import Ensemble
+from supervised.ensemble import Ensemble
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 

@@ -1,6 +1,6 @@
 import pandas as pd
 from supervised.automl import AutoML
-from supervised.algorithms.ensemble import Ensemble
+from supervised.ensemble import Ensemble
 import os
 
 df = pd.read_csv("https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv", skipinitialspace=True)
@@ -23,7 +23,7 @@ ensemble.models = automl._models
 
 oofs = {}
 target = None
-for i in range(1,10):
+for i in range(1,11):
     oof = pd.read_csv(os.path.join(results_path, f"model_{i}", "predictions_out_of_folds.csv"))
     prediction_cols = [c for c in oof.columns if "prediction" in c]
     oofs[f"model_{i-1}"] = oof[prediction_cols]
