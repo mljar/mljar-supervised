@@ -35,17 +35,18 @@ class Ensemble:
         self.model_file_path = os.path.join(storage_path, self.model_file)
         self.metric = Metric({"name": optimize_metric})
         self.best_loss = self.metric.get_maximum()  # the best loss obtained by ensemble
-        self.models = None
+        self.models_map = None
         self.selected_models = []
         self.train_time = None
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
         self.target = None
         self.target_columns = None
         self._ml_task = ml_task
+        self._optimize_metric = optimize_metric
 
         self._additional_metrics = None 
         self._threshold = None
-        self._name = None
+        self._name = "ensemble"
 
     def get_train_time(self):
         return self.train_time
@@ -53,8 +54,11 @@ class Ensemble:
     def get_final_loss(self):
         return self.best_loss
 
-    def get_name(self):
+    def get_type(self):
         return self.algorithm_short_name
+
+    def get_name(self):
+        return self._name
 
     def get_out_of_folds(self):
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
@@ -79,8 +83,8 @@ class Ensemble:
         ensemble_oof["target"] = self.target
         return ensemble_oof
 
-    def _get_mean(self, oofs, best_sum, best_count, selected):
-        resp = copy.deepcopy(oofs[selected])
+    def _get_mean(self, oof_selected, best_sum, best_count):
+        resp = copy.deepcopy(oof_selected)
         if best_count > 1:
             resp += best_sum
             resp /= float(best_count)
@@ -88,13 +92,13 @@ class Ensemble:
 
     def get_oof_matrix(self, models):
         # remeber models, will be needed in predictions
-        self.models = models
+        self.models_map = {m.get_name(): m for m in models}
 
         oofs = {}
-        for i, m in enumerate(models):
+        for m in models:
             oof = m.get_out_of_folds()
             prediction_cols = [c for c in oof.columns if "prediction" in c]
-            oofs["model_{}".format(i)] = oof[prediction_cols]  # oof["prediction"]
+            oofs[m.get_name()] = oof[prediction_cols]  # oof["prediction"]
             if self.target is None:
 
                 self.target_columns = [c for c in oof.columns if "target" in c]
@@ -131,15 +135,15 @@ class Ensemble:
         best_sum = None  # sum of best algorihtms
         for j in range(len(oofs)):  # iterate over all solutions
             min_score = self.metric.get_maximum()
-            best_index = -1
+            best_model = None
             # try to add some algorithm to the best_sum to minimize metric
-            for i in range(len(oofs)):
-                y_ens = self._get_mean(oofs, best_sum, j + 1, "model_{}".format(i))
+            for model_name in oofs.keys():
+                y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
                 score = self.metric(y, y_ens)
 
                 if self.metric.improvement(previous=min_score, current=score):
                     min_score = score
-                    best_index = i
+                    best_model = model_name
 
             # there is improvement, save it
             print(j, self.best_loss, min_score)
@@ -147,12 +151,12 @@ class Ensemble:
                 self.best_loss = min_score
                 selected_algs_cnt = j
 
-            self.best_algs.append(best_index)  # save the best algoritm index
+            self.best_algs.append(best_model)  # save the best algoritm 
             # update best_sum value
             best_sum = (
-                oofs["model_{}".format(best_index)]
+                oofs[best_model]
                 if best_sum is None
-                else best_sum + oofs["model_{}".format(best_index)]
+                else best_sum + oofs[best_model]
             )
             if j == selected_algs_cnt:
                 self.total_best_sum = copy.deepcopy(best_sum)
@@ -161,12 +165,14 @@ class Ensemble:
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)
         self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
+        print(self.best_algs)
         logger.debug("Selected models for ensemble:")
-        for i in np.unique(self.best_algs):
+        for model_name in np.unique(self.best_algs):
             self.selected_models += [
-                {"model": self.models[i], "repeat": float(np.sum(self.best_algs == i))}
+                {"model": self.models_map[model_name], "repeat": float(self.best_algs.count(model_name))}
             ]
-            logger.debug(f"model_{i}")
+            logger.debug(f"{model_name} {self.best_algs.count(model_name)}")
+
         self.get_additional_metrics()
         self.train_time = time.time() - start_time
 
@@ -248,12 +254,21 @@ class Ensemble:
 
 
     def save(self, model_path):
-        logger.info(f"Save the ensemble {model_path}")
+        logger.info(f"Save the ensemble to {model_path}")
 
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
-            desc = []
+            ms = []
             for selected in self.selected_models:
-                desc += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
+                ms += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
+            
+            desc = {
+                "name": self._name,
+                "ml_task": self._ml_task,
+                "optimize_metric": self._optimize_metric,
+                "selected_models": ms
+            }
+            if self._threshold is not None:
+                desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
 
         
@@ -284,24 +299,16 @@ class Ensemble:
             fout.write("ALL OK!")
 
     @staticmethod
-    def load(model_path):
-        logger.info("Loading model framework")
+    def load(model_path, models_map):
+        logger.info(f"Loading ensemble from {model_path}")
 
-        json_desc = json.load(open(os.path.join(model_path, "framework.json")))
-        mf = ModelFramework(json_desc["params"])
-        mf.uid = json_desc.get("uid", mf.uid)
-        mf._name = json_desc.get("name", mf._name)
-        mf._threshold = json_desc.get("threshold")
-        mf.learners = []
-        for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):
-            
-            l = AlgorithmFactory.load(learner_desc, learner_path)     
-            mf.learners += [l]
+        json_desc = json.load(open(os.path.join(model_path, "ensemble.json")))
+       
+        ensemble = Ensemble(json_desc.get("optimize_metric"), json_desc.get("ml_task"))
+        ensemble._name = json_desc.get("name", ensemble._name)
+        ensemble._threshold = json_desc.get("threshold", ensemble._threshold)
+        for m in json_desc.get("selected_models", []):
+            ensemble.selected_models += [{"model": models_map[m["model"]],
+                                            "repeat": m["repeat"]}]
         
-        mf.preprocessings = []
-        for p in json_desc.get("preprocessing"):
-            ps = PreprocessingStep()
-            ps.from_json(p) 
-            mf.preprocessings += [ps]
-
-        return mf
+        return ensemble

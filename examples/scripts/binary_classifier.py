@@ -9,11 +9,12 @@ y = df["income"]
 
 
 automl = AutoML(
-        total_time_limit=600,
-        start_random_models=30,
+        results_path = "AutoML_8",
+        total_time_limit=500,
+        start_random_models=15,
         hill_climbing_steps=0,
         top_models_to_improve=0,
-        train_ensemble=False)
+        train_ensemble=True)
 
 automl.fit(X, y)
 

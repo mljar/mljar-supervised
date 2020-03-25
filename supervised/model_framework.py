@@ -164,8 +164,11 @@ class ModelFramework:
             return None
         return metric_logger.loss_values
 
-    def get_name(self):
+    def get_type(self):
         return self.learner_params.get("model_type")
+
+    def get_name(self):
+        return self._name
 
     def predict(self, X):
         logger.debug("ModelFramework.predict")
@@ -204,7 +207,7 @@ class ModelFramework:
             zf.close()
         desc = {
             "uid": self.uid,
-            "algorithm_short_name": self.get_name(),
+            "algorithm_short_name": self.get_type(),
             "framework_file": self.framework_file,
             "framework_file_path": self.framework_file_path,
             "preprocessing": preprocessing,

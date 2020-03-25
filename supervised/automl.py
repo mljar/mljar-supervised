@@ -115,15 +115,21 @@ class AutoML:
         self._ml_task = params["ml_task"]
         self._optimize_metric = params["optimize_metric"]
 
+        models_map = {}
         for model_path in self._model_paths:
-            logger.info(f"Reading model from {model_path}")
-            m = ModelFramework.load(model_path)
-            self._models += [m]
-        
-        best_model_index = 0
+            if model_path.endswith("ensemble"):
+                ens = Ensemble.load(model_path, models_map)    
+                models_map[ens.get_name()] = ens
+            else:
+                m = ModelFramework.load(model_path)
+                self._models += [m]
+                models_map[m.get_name()] = m
+
+        best_model_name = None
         with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
-            best_model_index = int(fin.read().split("_")[1]) -1
-        self._best_model = self._models[best_model_index]
+            best_model_name = fin.read()
+
+        self._best_model = models_map[best_model_name]
 
 
     def _estimate_training_times(self):
@@ -154,7 +160,7 @@ class AutoML:
         }
         for m in self._models:
             ldb["uid"] += [m.uid]
-            ldb["model_type"] += [m.get_name()]
+            ldb["model_type"] += [m.get_type()]
             ldb["metric_type"] += [self._optimize_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [m.get_train_time()]
@@ -205,13 +211,13 @@ class AutoML:
         self._models += [model]
         self.verbose_print(
             "{} final {} {} time {} seconds".format(
-                model.get_name(),
+                model.get_type(),
                 self._optimize_metric,
                 model.get_final_loss(),
                 np.round(model.get_train_time(), 2),
             )
         )
-        self.log_train_time(model.get_name(), model.get_train_time())
+        self.log_train_time(model.get_type(), model.get_train_time())
 
     def train_model(self, params, X, y):
         model_path = os.path.join(self._results_path, f"model_{len(self._models)+1}")
@@ -222,7 +228,7 @@ class AutoML:
         time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
         mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
 
-        if self._enough_time_to_train(mf.get_name()):
+        if self._enough_time_to_train(mf.get_type()):
             logger.info(f"Train model #{len(self._models)+1}")
 
             try:
@@ -239,7 +245,7 @@ class AutoML:
 
         else:
             logger.info(
-                f"Cannot check more models of {mf.get_name()} because of time constraint"
+                f"Cannot check more models of {mf.get_type()} because of time constraint"
             )
         # self._progress_bar.update(1)
 
@@ -284,6 +290,15 @@ class AutoML:
             self.ensemble.fit(oofs, target)
             self.keep_model(self.ensemble)
             
+
+            ensemble_path = os.path.join(self._results_path, "ensemble")
+            try:
+                os.mkdir(ensemble_path)
+            except Exception as e:
+                raise AutoMLException(f"Cannot create directory {ensemble_path}")
+            self.ensemble.save(ensemble_path)
+            self._model_paths += [ensemble_path]
+
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -414,21 +429,18 @@ class AutoML:
         self.ensemble_step()
 
         max_loss = 10e12
-        best_model_i = None
         for i, m in enumerate(self._models):
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()
-                best_model_i = i
-
-        
+                
 
         self.get_additional_metrics()
         self._fit_time = time.time() - start_time
         # self._progress_bar.close()
 
         with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
-            fout.write(f"model_{best_model_i+1}")
+            fout.write(f"{self._best_model.get_name()}")
 
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
