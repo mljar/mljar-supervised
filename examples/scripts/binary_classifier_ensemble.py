@@ -8,7 +8,7 @@ df = pd.read_csv("https://raw.githubusercontent.com/pplonski/datasets-for-start/
 X = df[df.columns[:-1]]
 y = df["income"]
 
-results_path = "AutoML_1"
+results_path = "AutoML_2"
 automl = AutoML(
         results_path=results_path,
         total_time_limit=400,
@@ -23,7 +23,7 @@ ensemble.models = automl._models
 
 oofs = {}
 target = None
-for i in range(1,11):
+for i in range(1,30):
     oof = pd.read_csv(os.path.join(results_path, f"model_{i}", "predictions_out_of_folds.csv"))
     prediction_cols = [c for c in oof.columns if "prediction" in c]
     oofs[f"model_{i-1}"] = oof[prediction_cols]
@@ -39,3 +39,12 @@ ensemble.fit(oofs, target)
 ensemble.save(os.path.join(results_path, "ensemble"))
 predictions = ensemble.predict(X)
 print(predictions.head())
+
+'''
+    p_<=50K    p_>50K
+0  0.982940  0.017060
+1  0.722781  0.277219
+2  0.972687  0.027313
+3  0.903021  0.096979
+4  0.591373  0.408627
+'''

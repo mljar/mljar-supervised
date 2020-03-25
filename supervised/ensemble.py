@@ -45,6 +45,7 @@ class Ensemble:
 
         self._additional_metrics = None 
         self._threshold = None
+        self._name = None
 
     def get_train_time(self):
         return self.train_time
@@ -56,7 +57,7 @@ class Ensemble:
         return self.algorithm_short_name
 
     def get_out_of_folds(self):
-        """ Needed when ensemble is treated as model and we want to compute additional metrics for it."""
+        """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
         # single prediction (in case of binary classification and regression)
         logger.debug(self.total_best_sum.shape)
         logger.debug(self.total_best_sum.head())
@@ -289,7 +290,7 @@ class Ensemble:
         json_desc = json.load(open(os.path.join(model_path, "framework.json")))
         mf = ModelFramework(json_desc["params"])
         mf.uid = json_desc.get("uid", mf.uid)
-        mf._name = json_desc.get("name", mf.uid)
+        mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.learners = []
         for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):

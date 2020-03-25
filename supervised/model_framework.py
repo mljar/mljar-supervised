@@ -305,12 +305,12 @@ class ModelFramework:
 
     @staticmethod
     def load(model_path):
-        logger.info("Loading model framework")
+        logger.info(f"Loading model framework from {model_path}")
 
         json_desc = json.load(open(os.path.join(model_path, "framework.json")))
         mf = ModelFramework(json_desc["params"])
         mf.uid = json_desc.get("uid", mf.uid)
-        mf._name = json_desc.get("name", mf.uid)
+        mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.learners = []
         for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):
