@@ -9,9 +9,9 @@ y = df["income"]
 
 
 automl = AutoML(
-        results_path = "AutoML_8",
-        total_time_limit=500,
-        start_random_models=15,
+        #results_path = "AutoML_8",
+        total_time_limit=50,
+        start_random_models=5,
         hill_climbing_steps=0,
         top_models_to_improve=0,
         train_ensemble=True)

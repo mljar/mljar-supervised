@@ -4,7 +4,7 @@ import numpy as np
 from sklearn import preprocessing
 
 
-class PreprocessingScale(object):
+class Scale(object):
 
     SCALE_NORMAL = "scale_normal"
     SCALE_LOG_AND_NORMAL = "scale_log_and_normal"

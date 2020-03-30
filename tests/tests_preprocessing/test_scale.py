@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 from numpy.testing import assert_almost_equal
 
-from supervised.preprocessing.preprocessing_scale import PreprocessingScale
+from supervised.preprocessing.scale import Scale
 
 
-class PreprocessingScaleTest(unittest.TestCase):
+class ScaleTest(unittest.TestCase):
 
     def test_fit_log_and_normal(self):
         # training data
@@ -19,7 +19,7 @@ class PreprocessingScaleTest(unittest.TestCase):
         }
         df = pd.DataFrame(data=d)
 
-        scale = PreprocessingScale(["col1", "col3"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL)
+        scale = Scale(["col1", "col3"], scale_method=Scale.SCALE_LOG_AND_NORMAL)
         scale.fit(df)
         df = scale.transform(df)
         val = float(df["col1"][0])
@@ -29,7 +29,7 @@ class PreprocessingScaleTest(unittest.TestCase):
 
         df = scale.inverse_transform(df)
 
-        scale2 = PreprocessingScale()
+        scale2 = Scale()
         scale_params = scale.to_json()
 
         scale2.from_json(scale_params)
@@ -45,7 +45,7 @@ class PreprocessingScaleTest(unittest.TestCase):
         }
         df = pd.DataFrame(data=d)
 
-        scale = PreprocessingScale(["col1"])
+        scale = Scale(["col1"])
         scale.fit(df)
         df = scale.transform(df)
 
@@ -64,7 +64,7 @@ class PreprocessingScaleTest(unittest.TestCase):
         }
         df = pd.DataFrame(data=d)
 
-        scale = PreprocessingScale(["col1"])
+        scale = Scale(["col1"])
         scale.fit(df)
         # do not transform
         assert_almost_equal(np.mean(df["col1"]), 5.5)
@@ -72,13 +72,10 @@ class PreprocessingScaleTest(unittest.TestCase):
         # to and from json
 
         json_data = scale.to_json()
-        scale2 = PreprocessingScale()
+        scale2 = Scale()
         scale2.from_json(json_data)
         # transform with loaded scaler
         df = scale2.transform(df)
         assert_almost_equal(np.mean(df["col1"]), 0)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
 
-
-if __name__ == "__main__":
-    unittest.main()

@@ -3,7 +3,7 @@ import pandas as pd
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
-from supervised.preprocessing.preprocessing_scale import PreprocessingScale
+from supervised.preprocessing.scale import Scale
 
 from supervised.algorithms.registry import (
     REGRESSION,
@@ -53,11 +53,11 @@ class PreprocessingTuner:
 
             if "scale" in required_preprocessing:
                 if convert_to_integer_will_be_applied:
-                    preprocessing_to_apply += [PreprocessingScale.SCALE_NORMAL]
+                    preprocessing_to_apply += [Scale.SCALE_NORMAL]
                 # elif PreprocessingUtils.is_log_scale_needed(X[col]):
-                #    preprocessing_to_apply += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
+                #    preprocessing_to_apply += [Scale.SCALE_LOG_AND_NORMAL]
                 elif PreprocessingUtils.is_scale_needed(X[col]):
-                    preprocessing_to_apply += [PreprocessingScale.SCALE_NORMAL]
+                    preprocessing_to_apply += [Scale.SCALE_NORMAL]
 
             # remeber which preprocessing we need to apply
             if preprocessing_to_apply:
@@ -80,6 +80,12 @@ class PreprocessingTuner:
         elif "target_as_one_hot" in required_preprocessing:
             target_preprocessing += [PreprocessingCategorical.CONVERT_ONE_HOT]
 
+        if machinelearning_task == REGRESSION:
+            if PreprocessingUtils.is_log_scale_needed(y):
+                target_preprocessing += [Scale.SCALE_LOG_AND_NORMAL]
+            elif PreprocessingUtils.is_scale_needed(y):
+                target_preprocessing += [Scale.SCALE_NORMAL]
+
         """    
         if machinelearning_task == BINARY_CLASSIFICATION:
             if not PreprocessingUtils.is_0_1(y):
@@ -89,11 +95,6 @@ class PreprocessingTuner:
             if PreprocessingUtils.is_categorical(y):
                 target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
 
-        if machinelearning_task == REGRESSION:
-            if PreprocessingUtils.is_log_scale_needed(y):
-                target_preprocessing += [PreprocessingScale.SCALE_LOG_AND_NORMAL]
-            elif PreprocessingUtils.is_scale_needed(y):
-                target_preprocessing += [PreprocessingScale.SCALE_NORMAL]
         """
         return {
             "columns_preprocessing": columns_preprocessing,

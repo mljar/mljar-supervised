@@ -6,7 +6,7 @@ import warnings
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
-from supervised.preprocessing.preprocessing_scale import PreprocessingScale
+from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.preprocessing_exclude_missing import (
@@ -92,18 +92,18 @@ class PreprocessingStep(object):
                     pd.DataFrame({"target": y_train}), "target"
                 )
 
-            if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
+            if Scale.SCALE_LOG_AND_NORMAL in target_preprocessing:
                 logger.debug("Scale log and normal")
 
-                self._scale_y = PreprocessingScale(
-                    ["target"], scale_method=PreprocessingScale.SCALE_LOG_AND_NORMAL
+                self._scale_y = Scale(
+                    ["target"], scale_method=Scale.SCALE_LOG_AND_NORMAL
                 )
                 y_train = pd.DataFrame({"target": y_train})
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
                 y_train = y_train["target"]
 
-            if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
+            if Scale.SCALE_NORMAL in target_preprocessing:
                 logger.error("not implemented SCALE_NORMAL")
                 raise Exception("not implemented SCALE_NORMAL")
 
@@ -150,7 +150,7 @@ class PreprocessingStep(object):
             self._categorical += [convert]
 
         # SCALE
-        for scale_method in [PreprocessingScale.SCALE_NORMAL]:
+        for scale_method in [Scale.SCALE_NORMAL]:
             cols_to_process = list(
                 filter(
                     lambda k: scale_method in columns_preprocessing[k],
@@ -158,7 +158,7 @@ class PreprocessingStep(object):
                 )
             )
             if len(cols_to_process):
-                scale = PreprocessingScale(cols_to_process)
+                scale = Scale(cols_to_process)
                 scale.fit(X_train)
                 X_train = scale.transform(X_train)
                 self._scale += [scale]
@@ -192,18 +192,14 @@ class PreprocessingStep(object):
                     pd.DataFrame({"target": y_validation}), "target"
                 )
 
-        if PreprocessingScale.SCALE_LOG_AND_NORMAL in target_preprocessing:
-
-            print("we are going to do log and normal scaling! :) <transform>")
-            if y_validation is not None and self._scale_y is not None:
+        if Scale.SCALE_LOG_AND_NORMAL in target_preprocessing:
+            if self._scale_y is not None and y_validation is not None:
+                logger.debug("Transform log and normalize")
                 y_validation = pd.DataFrame({"target": y_validation})
                 y_validation = self._scale_y.transform(y_validation)
                 y_validation = y_validation["target"]
 
-            # log.error("not implemented SCALE_LOG_AND_NORMAL")
-            # raise Exception("not implemented SCALE_LOG_AND_NORMAL")
-
-        if PreprocessingScale.SCALE_NORMAL in target_preprocessing:
+        if Scale.SCALE_NORMAL in target_preprocessing:
             logger.error("not implemented SCALE_NORMAL")
             raise Exception("not implemented SCALE_NORMAL")
 
@@ -244,18 +240,15 @@ class PreprocessingStep(object):
         return X_validation, y_validation
 
     def inverse_scale_target(self, y):
-        y = pd.DataFrame({"target": y})
-        y = self._scale_y.inverse_transform(y)
-        y = y["target"]
+        if self._scale_y is not None:
+            y = pd.DataFrame({"target": y})
+            y = self._scale_y.inverse_transform(y)
+            y = y["target"]
         return y
 
-    def reverse_transform_target(self, y):
+    def prepare_target_labels(self, y):
 
-        # target_preprocessing = self._params.get("target_preprocessing")
-        # assume for now that all tasks are binary classification
-        # if there is no target preprocessing, assume that there is 0 and 1 target
-
-        logger.debug("PreprocessingStep.reverse_transform_target")
+        logger.debug("PreprocessingStep.prepare_target_labels")
 
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
@@ -303,13 +296,7 @@ class PreprocessingStep(object):
                         data=y, columns=["p_{}".format(i) for i in range(y.shape[1])]
                     )
 
-        if "ml_task" in self._params and self._params["ml_task"] == REGRESSION:
-            print("Apply reverse_transform_target (0)")
-            if self._scale_y is not None:
-                print("Apply reverse_transform_target")
 
-        # regression
-        # TODO: reverse transform for regression will be applied here
         return pd.DataFrame({"prediction": y})
 
     def to_json(self):
@@ -339,7 +326,8 @@ class PreprocessingStep(object):
             if cat_y:
                 preprocessing_params["categorical_y"] = cat_y
         if self._scale_y is not None:
-            print("remember to save scale Y")
+            preprocessing_params["scale_y"] = self._scale_y.to_json()
+
         if "ml_task" in self._params:
             preprocessing_params["ml_task"] = self._params["ml_task"]
         return preprocessing_params
@@ -362,11 +350,14 @@ class PreprocessingStep(object):
         if "scale" in data_json:
             self._scale = []
             for scale_data in data_json["scale"]:
-                sc = PreprocessingScale()
+                sc = Scale()
                 sc.from_json(scale_data)
                 self._scale += [sc]
         if "categorical_y" in data_json:
             self._categorical_y = LabelEncoder()
             self._categorical_y.from_json(data_json["categorical_y"])
+        if "scale_y" in data_json:
+            self._scale_y = Scale()
+            self._scale_y.from_json(data_json["scale_y"])
         if "ml_task" in data_json:
             self._params["ml_task"] = data_json["ml_task"]

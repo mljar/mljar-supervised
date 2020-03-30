@@ -129,9 +129,7 @@ xgb_bin_class_params = {
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["booster"] = ["gbtree"]
 xgb_regression_params["objective"] = [
-    "reg:squarederror",
-    "reg:squaredlogerror",
-    "count:poisson",
+    "reg:squarederror"
 ]
 xgb_regression_params["eval_metric"] = ["rmse", "rmsle", "mae"]
 xgb_regression_params["max_depth"] = [1, 2, 3, 4]

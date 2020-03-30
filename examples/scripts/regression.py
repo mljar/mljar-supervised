@@ -12,6 +12,7 @@ automl = AutoML(total_time_limit=10, start_random_models=5,
         top_models_to_improve=0)
 automl.fit(X, y)
 
+
 df["predictions"] = automl.predict(X)
 print("Predictions")
 print(df[["MEDV", "predictions"]].head())

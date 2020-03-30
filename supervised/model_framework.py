@@ -70,17 +70,16 @@ class ModelFramework:
         y_validation_true = y_validation
         y_validation_predicted = learner.predict(X_validation)
 
-        if self.preprocessings[-1]._scale_y is not None:
-            y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
-            y_train_predicted = self.preprocessings[-1].inverse_scale_target(
-                y_train_predicted
-            )
-            y_validation_true = self.preprocessings[-1].inverse_scale_target(
-                y_validation_true
-            )
-            y_validation_predicted = self.preprocessings[-1].inverse_scale_target(
-                y_validation_predicted
-            )
+        y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
+        y_train_predicted = self.preprocessings[-1].inverse_scale_target(
+            y_train_predicted
+        )
+        y_validation_true = self.preprocessings[-1].inverse_scale_target(
+            y_validation_true
+        )
+        y_validation_predicted = self.preprocessings[-1].inverse_scale_target(
+            y_validation_predicted
+        )
 
         return {
             "y_train_true": y_train_true,
@@ -180,12 +179,15 @@ class ModelFramework:
             # preprocessing goes here
             X_data, _ = self.preprocessings[ind].transform(X, None)
             y_p = learner.predict(X_data)
+         
+            y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
             # y_predicted += learner.predict(validation_data.get("X"))
         y_predicted_average = y_predicted / float(len(self.learners))
         # get first preprocessing and reverse transform target
         # we can use the preprocessing of the first model, because for target they are all the same
-        y_predicted_final = self.preprocessings[0].reverse_transform_target(
+        y_predicted_final = self.preprocessings[0].prepare_target_labels(
             y_predicted_average
         )
         return y_predicted_final

@@ -53,7 +53,6 @@ class EarlyStopping(Callback):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
         logger.debug("early stopping on framework train end")
-
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
 
@@ -101,6 +100,7 @@ class EarlyStopping(Callback):
                 self.multiple_target = False
                 self.target_columns = "target"
             else:
+                # in case of Neural Networks and multi-class classification
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                     y_validation_true, index=predictions.get("validation_index")
                 )
@@ -109,13 +109,15 @@ class EarlyStopping(Callback):
 
             y_validation_predicted = predictions.get("y_validation_predicted")
 
+
+
             if len(y_validation_predicted.shape) == 1:
                 # only one prediction column (binary classification or regression)
                 self.best_y_predicted[self.learner.uid][
                     "prediction"
-                ] = y_validation_predicted
+                ] = np.array(y_validation_predicted)
             else:
-                # several columns (multiclass classification)
+                # several columns (multiclass classification in Neural Networks)
                 for i_col in range(y_validation_predicted.shape[1]):
                     self.best_y_predicted[self.learner.uid][
                         "prediction_{}".format(i_col)

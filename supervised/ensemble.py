@@ -165,7 +165,7 @@ class Ensemble:
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)
         self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
-        print(self.best_algs)
+        
         logger.debug("Selected models for ensemble:")
         for model_name in np.unique(self.best_algs):
             self.selected_models += [
@@ -189,14 +189,18 @@ class Ensemble:
             total_repeat += repeat
 
             y_predicted_from_model = model.predict(X)
-            prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
+            prediction_cols = []
+            if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+                prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
+            else: # REGRESSION
+                prediction_cols = ["prediction"]
             y_predicted_from_model = y_predicted_from_model[prediction_cols]
             y_predicted_ensemble = (
                 y_predicted_from_model * repeat
                 if y_predicted_ensemble is None
                 else y_predicted_ensemble + y_predicted_from_model * repeat
             )
-
+            
         y_predicted_ensemble /= total_repeat
         '''
         # Ensemble needs to apply reverse transformation of target !!!

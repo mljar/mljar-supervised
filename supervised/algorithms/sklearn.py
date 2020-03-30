@@ -21,7 +21,7 @@ class SklearnAlgorithm(BaseAlgorithm):
     def copy(self):
         return copy.deepcopy(self)
 
-    def save(self):
+    def save(self, model_file_path):
         logger.debug("SklearnAlgorithm save to {0}".format(model_file_path))
         joblib.dump(self.model, model_file_path, compress=True)
 
@@ -62,3 +62,17 @@ class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
         if "num_class" in self.params:
             return self.model.predict_proba(X)
         return self.model.predict_proba(X)[:, 1]
+
+
+class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
+    def __init__(self, params):
+        super(SklearnTreesRegressorAlgorithm, self).__init__(params)
+
+    def fit(self, X, y):
+        logger.debug("SklearnTreesRegressorAlgorithm.fit")
+        self.model.fit(X, np.ravel(y))
+        self.model.n_estimators += self.trees_in_step
+
+    def predict(self, X):
+        logger.debug("SklearnTreesRegressorAlgorithm.predict")
+        return self.model.predict(X)
