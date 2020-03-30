@@ -245,6 +245,14 @@ class PreprocessingStep(object):
             y = self._scale_y.inverse_transform(y)
             y = y["target"]
         return y
+    
+    def inverse_categorical_target(self, y):
+        if self._categorical_y is not None:
+            y = self._categorical_y.inverse_transform(
+                    pd.DataFrame({"target": np.array(y)}) 
+                )
+        return y
+    
 
     def prepare_target_labels(self, y):
 

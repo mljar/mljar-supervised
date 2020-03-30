@@ -1,6 +1,7 @@
 from supervised.algorithms.xgboost import XgbAlgorithm
 
 from supervised.algorithms.random_forest import RandomForestAlgorithm
+from supervised.algorithms.random_forest import RandomForestRegressorAlgorithm
 from supervised.algorithms.lightgbm import LightgbmAlgorithm
 from supervised.algorithms.catboost import CatBoostAlgorithm
 from supervised.algorithms.nn import NeuralNetworkAlgorithm
@@ -22,6 +23,7 @@ class AlgorithmFactory(object):
     algorithms = {
         "Xgboost": XgbAlgorithm,
         "Random Forest": RandomForestAlgorithm,
+        "Random Forest Regressor": RandomForestRegressorAlgorithm,
         "LightGBM": LightgbmAlgorithm,
         "CatBoost": CatBoostAlgorithm,
         "NN": NeuralNetworkAlgorithm,
@@ -29,6 +31,7 @@ class AlgorithmFactory(object):
 
     @classmethod
     def get_algorithm(cls, params):
+    
         alg_type = params.get("model_type", "Xgboost")
 
         if alg_type in cls.algorithms:

@@ -115,9 +115,16 @@ class Ensemble:
             oof_predictions = self.get_out_of_folds()
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
+
+            print("ensemble")
+            print(oof_predictions[prediction_cols])
+            oof_preds = self.preprocessings[0].prepare_target_labels(
+                oof_predictions[prediction_cols].values
+            )
+
             self._additional_metrics = AdditionalMetrics.compute(
                 oof_predictions[target_cols],
-                oof_predictions[prediction_cols],
+                oof_preds, #oof_predictions[prediction_cols],
                 self._ml_task,
             )
             if self._ml_task == BINARY_CLASSIFICATION:

@@ -62,6 +62,22 @@ class PreprocessingCategorical(object):
 
         return X
 
+    def inverse_transform(self, X):
+        for column, lbl_params in self._convert_params.items():
+            if "unique_values" in lbl_params and "new_columns" in lbl_params:
+                # convert to one hot
+                lbl = LabelBinarizer()
+                lbl.from_json(lbl_params)
+                X = lbl.inverse_transform(X, column) # should raise exception
+            else:
+                # convert to integer
+                lbl = LabelEncoder()
+                lbl.from_json(lbl_params)
+                X.loc[:, column] = lbl.inverse_transform(X.loc[:, column])
+
+        return X
+        
+
     def to_json(self):
         if len(self._convert_params) == 0:
             return {}

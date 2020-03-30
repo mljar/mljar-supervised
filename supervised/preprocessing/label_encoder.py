@@ -19,6 +19,10 @@ class LabelEncoder(object):
             self.lbl.classes_ = np.concatenate((self.lbl.classes_, diff))
             return self.lbl.transform(list(x.values))
 
+    def inverse_transform(self, x):
+        return self.lbl.inverse_transform(list(x.values))
+        
+
     def to_json(self):
         data_json = {}
         for i, cl in enumerate(self.lbl.classes_):

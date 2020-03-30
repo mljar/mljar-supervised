@@ -91,9 +91,10 @@ class EarlyStopping(Callback):
             if len(y_validation_true.shape) == 1 or y_validation_true.shape[1] == 1:
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                     {
-                        "target": y_validation_true.values.reshape(
-                            y_validation_true.shape[0]
-                        )
+                        "target": np.array(y_validation_true)
+                        #y_validation_true.values.reshape(
+                        #    y_validation_true.shape[0]
+                        #)
                     },
                     index=predictions.get("validation_index"),
                 )

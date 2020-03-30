@@ -53,12 +53,12 @@ class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
         super(SklearnTreesClassifierAlgorithm, self).__init__(params)
 
     def fit(self, X, y):
-        logger.debug("SklearnTreesClassifierAlgorithm.fit")
+        #logger.debug("SklearnTreesClassifierAlgorithm.fit")
         self.model.fit(X, np.ravel(y))
         self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):
-        logger.debug("SklearnTreesClassifierAlgorithm.predict")
+        #logger.debug("SklearnTreesClassifierAlgorithm.predict")
         if "num_class" in self.params:
             return self.model.predict_proba(X)
         return self.model.predict_proba(X)[:, 1]
@@ -69,10 +69,10 @@ class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
         super(SklearnTreesRegressorAlgorithm, self).__init__(params)
 
     def fit(self, X, y):
-        logger.debug("SklearnTreesRegressorAlgorithm.fit")
+        #logger.debug("SklearnTreesRegressorAlgorithm.fit")
         self.model.fit(X, np.ravel(y))
         self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):
-        logger.debug("SklearnTreesRegressorAlgorithm.predict")
+        #logger.debug("SklearnTreesRegressorAlgorithm.predict")
         return self.model.predict(X)
