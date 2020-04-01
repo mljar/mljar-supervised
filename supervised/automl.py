@@ -39,7 +39,7 @@ class AutoML:
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms=["Random Forest"],  # , "Random Forest"],
+        algorithms=["Xgboost", "Random Forest"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -155,32 +155,33 @@ class AutoML:
 
     def get_leaderboard(self):
         ldb = {
-            "uid": [],
+            "name": [],
             "model_type": [],
             "metric_type": [],
             "metric_value": [],
             "train_time": [],
         }
         for m in self._models:
-            ldb["uid"] += [m.uid]
+            ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
             ldb["metric_type"] += [self._optimize_metric]
             ldb["metric_value"] += [m.get_final_loss()]
-            ldb["train_time"] += [m.get_train_time()]
+            ldb["train_time"] += [np.round(m.get_train_time(),2)]
         return pd.DataFrame(ldb)
 
     def get_additional_metrics(self):
         # 'target' - the target after processing used for model training
         # 'prediction' - out of folds predictions of the model
-        oof_predictions = self._best_model.get_out_of_folds()
-        prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
-        target_cols = [c for c in oof_predictions.columns if "target" in c]
+        #oof_predictions = self._best_model.get_out_of_folds()
+        #prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
+        #target_cols = [c for c in oof_predictions.columns if "target" in c]
 
-        additional_metrics = AdditionalMetrics.compute(
-            oof_predictions[target_cols],
-            oof_predictions[prediction_cols],
-            self._ml_task,
-        )
+        additional_metrics = self._best_model.get_additional_metrics()
+        #AdditionalMetrics.compute(
+        #    oof_predictions[target_cols],
+        #    oof_predictions[prediction_cols],
+        #    self._ml_task,
+        #)
         if self._ml_task == BINARY_CLASSIFICATION:
 
             self._metrics_details = additional_metrics["metric_details"]
@@ -202,11 +203,20 @@ class AutoML:
                 )
 
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
+
+            max_metrics = additional_metrics["max_metrics"]
+            confusion_matrix = additional_metrics["confusion_matrix"]
+
             logger.info(
                 "Metric details:\n{}\nConfusion matrix:\n{}".format(
-                    self._max_metrics, self._confusion_matrix
+                    max_metrics, confusion_matrix
                 )
             )
+            with open(
+                os.path.join(self._results_path, "best_model_metrics.txt"), "w"
+            ) as fout:
+                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
+                fout.write("Confusion matrix:\n{}".format(confusion_matrix))
 
     def keep_model(self, model):
         if model is None:
@@ -468,6 +478,9 @@ class AutoML:
             }
             fout.write(json.dumps(params, indent=4))
 
+        ldb = self.get_leaderboard()
+        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+
     def predict(self, X):
         if self._best_model is not None:
 
@@ -476,8 +489,8 @@ class AutoML:
             if self._ml_task == BINARY_CLASSIFICATION:
                 # need to predict the label based on predictions and threshold
                 neg_label, pos_label = (
-                    predictions.columns[0][2:],
-                    predictions.columns[1][2:],
+                    predictions.columns[0][11:],
+                    predictions.columns[1][11:],
                 )
                 if neg_label == "0" and pos_label == "1":
                     neg_label, pos_label = 0, 1

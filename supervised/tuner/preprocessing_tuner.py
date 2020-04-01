@@ -74,8 +74,12 @@ class PreprocessingTuner:
                     target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
 
             if machinelearning_task == MULTICLASS_CLASSIFICATION:
-                if PreprocessingUtils.is_categorical(y):
-                    target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
+                # if PreprocessingUtils.is_categorical(y):
+                # always convert to integer, there can be many situations that can break
+                # for example, classes starting from 1, ...
+                # or classes not for every number, for example 0,2,3,4
+                # just always convert
+                target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
 
         elif "target_as_one_hot" in required_preprocessing:
             target_preprocessing += [PreprocessingCategorical.CONVERT_ONE_HOT]

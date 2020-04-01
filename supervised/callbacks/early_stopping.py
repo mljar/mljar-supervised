@@ -116,10 +116,14 @@ class EarlyStopping(Callback):
                     y_validation_predicted
                 )
             else:
-                # several columns (multiclass classification in Neural Networks)
+                # several columns in multiclass classification
+                cols = predictions.get("validation_columns")
+                print(cols)
+
                 for i_col in range(y_validation_predicted.shape[1]):
                     self.best_y_predicted[self.learner.uid][
-                        "prediction_{}".format(i_col)
+                        # "prediction_{}".format(i_col)
+                        cols[i_col]
                     ] = y_validation_predicted[:, i_col]
 
             self.best_models[self.learner.uid] = self.learner.copy()

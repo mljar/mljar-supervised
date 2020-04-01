@@ -247,12 +247,10 @@ class Preprocessing(object):
             y = self._categorical_y.inverse_transform(
                 pd.DataFrame({"target": np.array(y)})
             )
+            y = y.astype(str)
         return y
 
     def prepare_target_labels(self, y):
-
-        logger.debug("Preprocessing.prepare_target_labels")
-
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
             if len(y.shape) == 1:
@@ -264,11 +262,14 @@ class Preprocessing(object):
                         neg_label = label
                 # threshold is applied in AutoML class
                 return pd.DataFrame(
-                    {"p_{}".format(neg_label): 1 - y, "p_{}".format(pos_label): y}
+                    {
+                        "prediction_{}".format(neg_label): 1 - y,
+                        "prediction_{}".format(pos_label): y,
+                    }
                 )
             else:
                 # multiclass classification
-                logger.debug(self._categorical_y.to_json())
+                #logger.debug(self._categorical_y.to_json())
                 if "unique_values" not in self._categorical_y.to_json():
                     labels = dict(
                         (v, k) for k, v in self._categorical_y.to_json().items()
@@ -283,8 +284,8 @@ class Preprocessing(object):
                 d = {}
                 cols = []
                 for i in range(y.shape[1]):
-                    d["p_{}".format(labels[i])] = y[:, i]
-                    cols += ["p_{}".format(labels[i])]
+                    d["prediction_{}".format(labels[i])] = y[:, i]
+                    cols += ["prediction_{}".format(labels[i])]
                 df = pd.DataFrame(d)
                 df["label"] = np.argmax(np.array(df[cols]), axis=1)
 
@@ -293,10 +294,11 @@ class Preprocessing(object):
         else:  # self._categorical_y is None
             if "ml_task" in self._params:
                 if self._params["ml_task"] == BINARY_CLASSIFICATION:
-                    return pd.DataFrame({"p_0": 1 - y, "p_1": y})
+                    return pd.DataFrame({"prediction_0": 1 - y, "prediction_1": y})
                 elif self._params["ml_task"] == MULTICLASS_CLASSIFICATION:
                     return pd.DataFrame(
-                        data=y, columns=["p_{}".format(i) for i in range(y.shape[1])]
+                        data=y,
+                        columns=["prediction_{}".format(i) for i in range(y.shape[1])],
                     )
 
         return pd.DataFrame({"prediction": y})

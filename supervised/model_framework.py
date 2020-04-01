@@ -61,38 +61,37 @@ class ModelFramework:
     def get_train_time(self):
         return self.train_time
 
-    def predictions(self, learner, X_train, y_train, X_validation, y_validation):
+    def predictions(
+        self, learner, preproces, X_train, y_train, X_validation, y_validation
+    ):
 
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
         y_validation_predicted = learner.predict(X_validation)
 
-        y_train_true = self.preprocessings[-1].inverse_scale_target(y_train_true)
-        y_train_predicted = self.preprocessings[-1].inverse_scale_target(
-            y_train_predicted
-        )
-        y_validation_true = self.preprocessings[-1].inverse_scale_target(
-            y_validation_true
-        )
-        y_validation_predicted = self.preprocessings[-1].inverse_scale_target(
-            y_validation_predicted
-        )
+        y_train_true = preproces.inverse_scale_target(y_train_true)
+        y_train_predicted = preproces.inverse_scale_target(y_train_predicted)
+        y_validation_true = preproces.inverse_scale_target(y_validation_true)
+        y_validation_predicted = preproces.inverse_scale_target(y_validation_predicted)
 
+        y_validation_columns = []
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-            y_train_true = self.preprocessings[-1].inverse_categorical_target(
-                y_train_true
-            )
-            y_validation_true = self.preprocessings[-1].inverse_categorical_target(
-                y_validation_true
-            )
+            #y_train_true = preproces.inverse_categorical_target(y_train_true)
+            #y_validation_true = preproces.inverse_categorical_target(y_validation_true)
+            # get columns, omit the last one (it is label)
+            y_validation_columns = preproces.prepare_target_labels(
+                y_validation_predicted
+            ).columns.tolist()[:-1]
 
+ 
         return {
             "y_train_true": y_train_true,
             "y_train_predicted": y_train_predicted,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
             "validation_index": X_validation.index,
+            "validation_columns": y_validation_columns,
         }
 
     def train(self, data):
@@ -128,19 +127,20 @@ class ModelFramework:
             self.callbacks.add_and_set_learner(learner)
             self.callbacks.on_learner_train_start()
 
-            print(y_train)
-
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
+
                 learner.fit(X_train, y_train)
 
-                print(learner.model.classes_)
-                print("-" * 33)
-                # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
                     self.predictions(
-                        learner, X_train, y_train, X_validation, y_validation
+                        learner,
+                        self.preprocessings[-1],
+                        X_train,
+                        y_train,
+                        X_validation,
+                        y_validation,
                     ),
                 )
                 if learner.stop_training:
@@ -256,16 +256,20 @@ class ModelFramework:
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
+            target = oof_predictions[target_cols]
+            
+
             oof_preds = None
             if self._ml_task == MULTICLASS_CLASSIFICATION:
                 oof_preds = self.preprocessings[0].prepare_target_labels(
                     oof_predictions[prediction_cols].values
                 )
+
             else:
                 oof_preds = oof_predictions[prediction_cols]
 
             self._additional_metrics = AdditionalMetrics.compute(
-                oof_predictions[target_cols], oof_preds, self._ml_task
+                target, oof_preds, self._ml_task
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
@@ -307,6 +311,7 @@ class ModelFramework:
         self._additional_metrics = self.get_additional_metrics()
 
         with open(os.path.join(model_path, "metrics.txt"), "w") as fout:
+
             if self._ml_task == BINARY_CLASSIFICATION:
                 max_metrics = self._additional_metrics["max_metrics"]
                 confusion_matrix = self._additional_metrics["confusion_matrix"]
@@ -319,7 +324,11 @@ class ModelFramework:
                     )
                 )
             elif self._ml_task == MULTICLASS_CLASSIFICATION:
-                fout.write("TODO")
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+
+                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
+                fout.write("Confusion matrix:\n{}".format(confusion_matrix))
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")

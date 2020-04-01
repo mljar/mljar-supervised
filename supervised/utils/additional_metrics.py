@@ -111,8 +111,15 @@ class AdditionalMetrics:
 
     @staticmethod
     def multiclass_classification(target, predictions):
+    
+        all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
-        all_labels = np.unique(target)
+        ll = logloss(target, predictions[predictions.columns[:-1]])
+        
+
+        labels = {i:l for i, l in enumerate(all_labels)}
+        predictions = predictions["label"]
+        target = target["target"].map(labels)
         # Print the confusion matrix
         conf_matrix = confusion_matrix(target, predictions, labels=all_labels)
 
@@ -124,10 +131,8 @@ class AdditionalMetrics:
         max_metrics = classification_report(
             target, predictions, digits=6, labels=all_labels, output_dict=True
         )
-
-        print(pd.DataFrame(max_metrics).transpose())
-        print(conf_matrix)
-
+        max_metrics["logloss"] = ll
+        
         return {
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
@@ -140,7 +145,7 @@ class AdditionalMetrics:
             return AdditionalMetrics.binary_classification(target, predictions)
         elif ml_task == MULTICLASS_CLASSIFICATION:
             return AdditionalMetrics.multiclass_classification(
-                target, predictions["label"]
+                target, predictions
             )
         elif ml_task == REGRESSION:
             return None

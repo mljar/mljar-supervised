@@ -31,12 +31,12 @@ class ExcludeRowsMissingTarget(object):
 
     @staticmethod
     def transform(X=None, y=None):
-        logger.debug("Exclude rows with missing target values")
         if y is None:
             return X, y
         y_missing = pd.isnull(y)
         if np.sum(np.array(y_missing)) == 0:
             return X, y
+        logger.debug("Exclude rows with missing target values")
         y = y.drop(y.index[y_missing])
         # y.index = range(y.shape[0])
         if X is not None:

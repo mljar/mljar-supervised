@@ -76,9 +76,11 @@ class Ensemble:
 
         ensemble_oof = pd.DataFrame(
             data=self.total_best_sum,
-            columns=[
-                "prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
-            ],
+            columns=self.total_best_sum.columns
+                #[
+                #"prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
+                #]
+            
         )
         ensemble_oof["target"] = self.target
         return ensemble_oof
@@ -110,17 +112,33 @@ class Ensemble:
 
     def get_additional_metrics(self):
         if self._additional_metrics is None:
+            logger.debug("Get additional metrics for Ensemble")
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
             oof_predictions = self.get_out_of_folds()
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
-            print("ensemble")
-            print(oof_predictions[prediction_cols])
-            oof_preds = self.preprocessings[0].prepare_target_labels(
-                oof_predictions[prediction_cols].values
-            )
+            print(oof_predictions)
+            print(prediction_cols)
+            print(target_cols)
+
+            # need to prepare label for multiclass
+            # print("ensemble")
+            # print(oof_predictions[prediction_cols])
+            # oof_preds = self.preprocessings[0].prepare_target_labels(
+            #    oof_predictions[prediction_cols].values
+            # )
+            oof_preds = oof_predictions[prediction_cols]
+            if self._ml_task == MULTICLASS_CLASSIFICATION:
+                cols = oof_preds.columns.tolist()
+                # prediction_
+                labels = {i: v[11:] for i, v in enumerate(cols)}
+
+                oof_preds["label"] = np.argmax(
+                    np.array(oof_preds[prediction_cols]), axis=1
+                )
+                oof_preds["label"] = oof_preds["label"].map(labels)
 
             self._additional_metrics = AdditionalMetrics.compute(
                 oof_predictions[target_cols],
@@ -197,10 +215,11 @@ class Ensemble:
             total_repeat += repeat
 
             y_predicted_from_model = model.predict(X)
+            
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
                 prediction_cols = [
-                    c for c in y_predicted_from_model.columns if "p_" in c
+                    c for c in y_predicted_from_model.columns if "prediction_" in c
                 ]
             else:  # REGRESSION
                 prediction_cols = ["prediction"]
@@ -212,20 +231,7 @@ class Ensemble:
             )
 
         y_predicted_ensemble /= total_repeat
-        """
-        # Ensemble needs to apply reverse transformation of target !!!
-        if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
 
-            label = np.argmax(np.array(y_predicted_ensemble), axis=1)
-            prediction_labels = [c[2:] for c in y_predicted_ensemble if "p_" in c]
-
-            prediction_labels = dict((i, l) for i, l in enumerate(prediction_labels))
-            # df["label"] = df["label"]
-            y_predicted_ensemble["label"] = label
-            y_predicted_ensemble["label"] = y_predicted_ensemble["label"].map(
-                prediction_labels
-            )
-        """
         return y_predicted_ensemble
 
     def to_json(self):
@@ -302,7 +308,11 @@ class Ensemble:
                     )
                 )
             elif self._ml_task == MULTICLASS_CLASSIFICATION:
-                fout.write("TODO")
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+
+                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
+                fout.write("Confusion matrix:\n{}".format(confusion_matrix))
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")

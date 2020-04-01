@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 from supervised.automl import AutoML
+from sklearn.datasets import load_digits
 
 
-#df = pd.read_csv("tests/data/iris_classes_missing_values_missing_target.csv")
-df = pd.read_csv("tests/data/iris_missing_values_missing_target.csv")
-X = df[["feature_1","feature_2","feature_3","feature_4"]]
-y = df["class"]
+digits = load_digits()
+X = pd.DataFrame(digits.data)
+y = digits.target
 
 automl = AutoML(
 #        results_path="AutoML_1",
