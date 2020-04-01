@@ -10,8 +10,8 @@ y = digits.target
 
 automl = AutoML(
 #        results_path="AutoML_1",
-        total_time_limit=30,
-        start_random_models=5,
+        total_time_limit=10,
+        start_random_models=1,
         hill_climbing_steps=0,
         top_models_to_improve=0,
         train_ensemble=True)

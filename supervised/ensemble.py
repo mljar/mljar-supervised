@@ -232,6 +232,16 @@ class Ensemble:
 
         y_predicted_ensemble /= total_repeat
 
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            cols = y_predicted_ensemble.columns.tolist()
+            # prediction_
+            labels = {i: v[11:] for i, v in enumerate(cols)}
+
+            y_predicted_ensemble["label"] = np.argmax(
+                np.array(y_predicted_ensemble[prediction_cols]), axis=1
+            )
+            y_predicted_ensemble["label"] = oof_preds["label"].map(labels)
+
         return y_predicted_ensemble
 
     def to_json(self):
