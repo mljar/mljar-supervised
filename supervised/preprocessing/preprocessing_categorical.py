@@ -68,7 +68,7 @@ class PreprocessingCategorical(object):
                 # convert to one hot
                 lbl = LabelBinarizer()
                 lbl.from_json(lbl_params)
-                X = lbl.inverse_transform(X, column) # should raise exception
+                X = lbl.inverse_transform(X, column)  # should raise exception
             else:
                 # convert to integer
                 lbl = LabelEncoder()
@@ -76,7 +76,6 @@ class PreprocessingCategorical(object):
                 X.loc[:, column] = lbl.inverse_transform(X.loc[:, column])
 
         return X
-        
 
     def to_json(self):
         if len(self._convert_params) == 0:

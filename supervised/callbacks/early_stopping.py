@@ -92,9 +92,9 @@ class EarlyStopping(Callback):
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                     {
                         "target": np.array(y_validation_true)
-                        #y_validation_true.values.reshape(
+                        # y_validation_true.values.reshape(
                         #    y_validation_true.shape[0]
-                        #)
+                        # )
                     },
                     index=predictions.get("validation_index"),
                 )
@@ -110,13 +110,11 @@ class EarlyStopping(Callback):
 
             y_validation_predicted = predictions.get("y_validation_predicted")
 
-
-
             if len(y_validation_predicted.shape) == 1:
                 # only one prediction column (binary classification or regression)
-                self.best_y_predicted[self.learner.uid][
-                    "prediction"
-                ] = np.array(y_validation_predicted)
+                self.best_y_predicted[self.learner.uid]["prediction"] = np.array(
+                    y_validation_predicted
+                )
             else:
                 # several columns (multiclass classification in Neural Networks)
                 for i_col in range(y_validation_predicted.shape[1]):

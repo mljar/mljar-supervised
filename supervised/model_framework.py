@@ -10,10 +10,8 @@ import json
 from supervised.callbacks.callback_list import CallbackList
 from supervised.validation.validation_step import ValidationStep
 from supervised.algorithms.algorithm_factory import AlgorithmFactory
-from supervised.preprocessing.preprocessing_step import PreprocessingStep
-from supervised.preprocessing.preprocessing_exclude_missing import (
-    PreprocessingExcludeMissingValues,
-)
+from supervised.preprocessing.preprocessing import Preprocessing
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 
 from supervised.exceptions import AutoMLException
 from supervised.utils.config import storage_path
@@ -58,7 +56,7 @@ class ModelFramework:
 
         self.train_time = None
         self._additional_metrics = None
-        self._threshold = None # used only for binary classifiers
+        self._threshold = None  # used only for binary classifiers
 
     def get_train_time(self):
         return self.train_time
@@ -80,10 +78,14 @@ class ModelFramework:
         y_validation_predicted = self.preprocessings[-1].inverse_scale_target(
             y_validation_predicted
         )
- 
-        if self._ml_task == MULTICLASS_CLASSIFICATION:   
-            y_train_true = self.preprocessings[-1].inverse_categorical_target(y_train_true)
-            y_validation_true = self.preprocessings[-1].inverse_categorical_target(y_validation_true)
+
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            y_train_true = self.preprocessings[-1].inverse_categorical_target(
+                y_train_true
+            )
+            y_validation_true = self.preprocessings[-1].inverse_categorical_target(
+                y_validation_true
+            )
 
         return {
             "y_train_true": y_train_true,
@@ -94,11 +96,9 @@ class ModelFramework:
         }
 
     def train(self, data):
-        logger.debug("ModelFramework.train")
+        logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
-
-        # data = PreprocessingExcludeMissingValues.remove_rows_without_target(data)
 
         self.validation = ValidationStep(self.validation_params, data)
 
@@ -113,7 +113,7 @@ class ModelFramework:
                 )
             )
             # the proprocessing is done at every validation step
-            self.preprocessings += [PreprocessingStep(self.preprocessing_params)]
+            self.preprocessings += [Preprocessing(self.preprocessing_params)]
 
             X_train, y_train = self.preprocessings[-1].fit_and_transform(
                 train_data["X"], train_data["y"]
@@ -128,9 +128,14 @@ class ModelFramework:
             self.callbacks.add_and_set_learner(learner)
             self.callbacks.on_learner_train_start()
 
+            print(y_train)
+
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
                 learner.fit(X_train, y_train)
+
+                print(learner.model.classes_)
+                print("-" * 33)
                 # do a target postprocessing here
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
@@ -183,21 +188,20 @@ class ModelFramework:
             # preprocessing goes here
             X_data, _ = self.preprocessings[ind].transform(X, None)
             y_p = learner.predict(X_data)
-         
+
             y_p = self.preprocessings[ind].inverse_scale_target(y_p)
 
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
 
-
         y_predicted_average = y_predicted / float(len(self.learners))
-        
-         
+
         y_predicted_final = self.preprocessings[0].prepare_target_labels(
             y_predicted_average
         )
-         
+
         return y_predicted_final
-    '''
+
+    """
     def to_json(self):
         preprocessing = []
         for p in self.preprocessings:
@@ -239,10 +243,11 @@ class ModelFramework:
         preprocessing = json_desc.get("preprocessing", [])
 
         for p in preprocessing:
-            preproc = PreprocessingStep()
+            preproc = Preprocessing()
             preproc.from_json(p)
             self.preprocessings += [preproc]
-    '''
+    """
+
     def get_additional_metrics(self):
         if self._additional_metrics is None:
             # 'target' - the target after processing used for model training
@@ -252,17 +257,15 @@ class ModelFramework:
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
             oof_preds = None
-            if self._ml_task == MULTICLASS_CLASSIFICATION:   
+            if self._ml_task == MULTICLASS_CLASSIFICATION:
                 oof_preds = self.preprocessings[0].prepare_target_labels(
                     oof_predictions[prediction_cols].values
                 )
             else:
                 oof_preds = oof_predictions[prediction_cols]
-            
+
             self._additional_metrics = AdditionalMetrics.compute(
-                oof_predictions[target_cols],
-                oof_preds,
-                self._ml_task,
+                oof_predictions[target_cols], oof_preds, self._ml_task
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
@@ -286,13 +289,11 @@ class ModelFramework:
                 "preprocessing": preprocessing,
                 "learners": learners_params,
                 "params": self.params,
-                "saved": saved
+                "saved": saved,
             }
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
-
-        
 
         type_of_predictions = (
             "validation" if "k_folds" not in self.validation_params else "out_of_folds"
@@ -333,15 +334,17 @@ class ModelFramework:
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.learners = []
-        for learner_desc, learner_path in zip(json_desc.get("learners"), json_desc.get("saved")):
-            
-            l = AlgorithmFactory.load(learner_desc, learner_path)     
+        for learner_desc, learner_path in zip(
+            json_desc.get("learners"), json_desc.get("saved")
+        ):
+
+            l = AlgorithmFactory.load(learner_desc, learner_path)
             mf.learners += [l]
-        
+
         mf.preprocessings = []
         for p in json_desc.get("preprocessing"):
-            ps = PreprocessingStep()
-            ps.from_json(p) 
+            ps = Preprocessing()
+            ps.from_json(p)
             mf.preprocessings += [ps]
 
         return mf

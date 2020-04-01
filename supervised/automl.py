@@ -91,10 +91,15 @@ class AutoML:
 
     def _set_results_dir(self):
         if self._results_path is None:
+            found = False
             for i in range(1, 101):
                 self._results_path = f"AutoML_{i}"
                 if not os.path.exists(self._results_path):
+                    found = True
                     break
+            if not found:
+                raise AutoMLException("Cannot create directory for AutoML results")
+
         if os.path.exists(self._results_path):
             print(f"Directory {self._results_path} already exists")
             self.load()
@@ -104,7 +109,6 @@ class AutoML:
                 os.mkdir(self._results_path)
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {self._results_path}")
-
 
     def load(self):
         logger.info("Loading AutoML models ...")
@@ -118,7 +122,7 @@ class AutoML:
         models_map = {}
         for model_path in self._model_paths:
             if model_path.endswith("ensemble"):
-                ens = Ensemble.load(model_path, models_map)    
+                ens = Ensemble.load(model_path, models_map)
                 models_map[ens.get_name()] = ens
             else:
                 m = ModelFramework.load(model_path)
@@ -130,7 +134,6 @@ class AutoML:
             best_model_name = fin.read()
 
         self._best_model = models_map[best_model_name]
-
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -289,7 +292,6 @@ class AutoML:
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
             self.keep_model(self.ensemble)
-            
 
             ensemble_path = os.path.join(self._results_path, "ensemble")
             try:
@@ -298,7 +300,6 @@ class AutoML:
                 raise AutoMLException(f"Cannot create directory {ensemble_path}")
             self.ensemble.save(ensemble_path)
             self._model_paths += [ensemble_path]
-
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -385,6 +386,22 @@ class AutoML:
         )
         print(f"AutoML will optimize for metric: {self._optimize_metric}")
 
+    def _check_imbalanced(self, y):
+        v = y.value_counts()
+        # at least 10 samples of each class
+        ii = v < 10
+        if np.sum(ii):
+            raise AutoMLException(
+                f"There need to be at least 10 samples of each class, for class {list(v[ii].index)} there is {v[ii].values} samples"
+            )
+        # at least 1% of all samples for each class
+        v = y.value_counts(normalize=True) * 100.0
+        ii = v < 1.0
+        if np.sum(ii):
+            raise AutoMLException(
+                f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
+            )
+
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
 
         if self._best_model is not None:
@@ -397,7 +414,6 @@ class AutoML:
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
 
-        # X_train, y_train = PreprocessingExcludeMissingValues.transform(X_train, y_train)
         # wtf ???
         X_train.reset_index(drop=True, inplace=True)
         if not isinstance(y_train, pd.DataFrame):
@@ -409,6 +425,9 @@ class AutoML:
         self._set_algorithms()
         self._set_metric()
         self._estimate_training_times()
+
+        if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+            self._check_imbalanced(y_train)
 
         tuner = MljarTuner(
             self._tuner_params,
@@ -433,7 +452,6 @@ class AutoML:
             if m.get_final_loss() < max_loss:
                 self._best_model = m
                 max_loss = m.get_final_loss()
-                
 
         self.get_additional_metrics()
         self._fit_time = time.time() - start_time
@@ -446,10 +464,9 @@ class AutoML:
             params = {
                 "ml_task": self._ml_task,
                 "optimize_metric": self._optimize_metric,
-                "saved": self._model_paths
+                "saved": self._model_paths,
             }
             fout.write(json.dumps(params, indent=4))
-        
 
     def predict(self, X):
         if self._best_model is not None:
@@ -465,7 +482,9 @@ class AutoML:
                 if neg_label == "0" and pos_label == "1":
                     neg_label, pos_label = 0, 1
                 # assume that it is binary classification
-                predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
+                predictions["label"] = (
+                    predictions.iloc[:, 1] > self._best_model._threshold
+                )
                 predictions["label"] = predictions["label"].map(
                     {True: pos_label, False: neg_label}
                 )

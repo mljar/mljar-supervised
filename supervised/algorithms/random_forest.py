@@ -90,7 +90,7 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
-    "target_as_integer",
+    # "target_as_integer",
 ]
 # "target_preprocessing",
 
@@ -129,10 +129,7 @@ regression_additional = {
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
-regression_required_preprocessing = [
-    "missing_values_inputation",
-    "convert_categorical",
-]
+regression_required_preprocessing = ["missing_values_inputation", "convert_categorical"]
 
 AlgorithmsRegistry.add(
     REGRESSION,

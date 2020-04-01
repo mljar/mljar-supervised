@@ -9,9 +9,7 @@ from supervised.preprocessing.preprocessing_missing import PreprocessingMissingV
 from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
-from supervised.preprocessing.preprocessing_exclude_missing import (
-    PreprocessingExcludeMissingValues,
-)
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -25,7 +23,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class PreprocessingStep(object):
+class Preprocessing(object):
     def __init__(
         self,
         preprocessing_params={"target_preprocessing": [], "columns_preprocessing": {}},
@@ -61,7 +59,7 @@ class PreprocessingStep(object):
 
     # fit and transform
     def fit_and_transform(self, X_train_org, y_train_org):
-        logger.debug("PreprocessingStep.fit_and_transform")
+        logger.debug("Preprocessing.fit_and_transform")
         X_train, y_train = None, None
         if X_train_org is not None:
             X_train = X_train_org.copy()
@@ -74,9 +72,7 @@ class PreprocessingStep(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            X_train, y_train = PreprocessingExcludeMissingValues.transform(
-                X_train, y_train
-            )
+            X_train, y_train = ExcludeRowsMissingTarget.transform(X_train, y_train)
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
@@ -166,7 +162,7 @@ class PreprocessingStep(object):
         return X_train, y_train
 
     def transform(self, X_validation_org, y_validation_org):
-        logger.debug("PreprocessingStep.transform")
+        logger.debug("Preprocessing.transform")
         X_validation, y_validation = None, None
         if X_validation_org is not None:
             X_validation = X_validation_org.copy()
@@ -178,7 +174,7 @@ class PreprocessingStep(object):
         target_preprocessing = self._params.get("target_preprocessing")
         logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-        X_validation, y_validation = PreprocessingExcludeMissingValues.transform(
+        X_validation, y_validation = ExcludeRowsMissingTarget.transform(
             X_validation, y_validation
         )
 
@@ -245,18 +241,17 @@ class PreprocessingStep(object):
             y = self._scale_y.inverse_transform(y)
             y = y["target"]
         return y
-    
+
     def inverse_categorical_target(self, y):
         if self._categorical_y is not None:
             y = self._categorical_y.inverse_transform(
-                    pd.DataFrame({"target": np.array(y)}) 
-                )
+                pd.DataFrame({"target": np.array(y)})
+            )
         return y
-    
 
     def prepare_target_labels(self, y):
 
-        logger.debug("PreprocessingStep.prepare_target_labels")
+        logger.debug("Preprocessing.prepare_target_labels")
 
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
@@ -303,7 +298,6 @@ class PreprocessingStep(object):
                     return pd.DataFrame(
                         data=y, columns=["p_{}".format(i) for i in range(y.shape[1])]
                     )
-
 
         return pd.DataFrame({"prediction": y})
 

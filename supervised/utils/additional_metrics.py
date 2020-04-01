@@ -18,7 +18,7 @@ from sklearn.metrics import (
     matthews_corrcoef,
     roc_auc_score,
     confusion_matrix,
-    classification_report
+    classification_report,
 )
 from supervised.utils.metric import logloss
 
@@ -109,24 +109,21 @@ class AdditionalMetrics:
             "threshold": float(max_metrics["f1"]["threshold"]),
         }
 
-
     @staticmethod
     def multiclass_classification(target, predictions):
 
         all_labels = np.unique(target)
         # Print the confusion matrix
         conf_matrix = confusion_matrix(target, predictions, labels=all_labels)
-        
+
         rows = [f"Predicted as {a}" for a in all_labels]
         cols = [f"Labeled as {a}" for a in all_labels]
 
-        conf_matrix = pd.DataFrame(
-                    conf_matrix,
-                    columns=rows,
-                    index=cols,
-                )
+        conf_matrix = pd.DataFrame(conf_matrix, columns=rows, index=cols)
 
-        max_metrics = classification_report(target, predictions, digits=6, labels=all_labels, output_dict=True)
+        max_metrics = classification_report(
+            target, predictions, digits=6, labels=all_labels, output_dict=True
+        )
 
         print(pd.DataFrame(max_metrics).transpose())
         print(conf_matrix)
@@ -135,13 +132,15 @@ class AdditionalMetrics:
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
         }
-        
+
     @staticmethod
     def compute(target, predictions, ml_task):
         print(target, predictions, ml_task)
         if ml_task == BINARY_CLASSIFICATION:
             return AdditionalMetrics.binary_classification(target, predictions)
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            return AdditionalMetrics.multiclass_classification(target, predictions["label"])
+            return AdditionalMetrics.multiclass_classification(
+                target, predictions["label"]
+            )
         elif ml_task == REGRESSION:
             return None

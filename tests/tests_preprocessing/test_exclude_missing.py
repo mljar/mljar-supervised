@@ -2,12 +2,12 @@ import unittest
 import tempfile
 import numpy as np
 import pandas as pd
-from supervised.preprocessing.preprocessing_exclude_missing import (
-    PreprocessingExcludeMissingValues,
+from supervised.preprocessing.exclude_missing_target import (
+    ExcludeRowsMissingTarget,
 )
 
 
-class PreprocessingExcludeMissingValuesTest(unittest.TestCase):
+class ExcludeRowsMissingTargetTest(unittest.TestCase):
     def test_transform(self):
         d_test = {
             "col1": [1, 1, np.nan, 3],
@@ -22,12 +22,9 @@ class PreprocessingExcludeMissingValuesTest(unittest.TestCase):
 
         self.assertEqual(X.shape[0], 4)
         self.assertEqual(y.shape[0], 4)
-        X, y = PreprocessingExcludeMissingValues.transform(X, y)
+        X, y = ExcludeRowsMissingTarget.transform(X, y)
         self.assertEqual(X.shape[0], 2)
         self.assertEqual(y.shape[0], 2)
         self.assertEqual(y[0], 1)
         self.assertEqual(y[1], 2)
 
-
-if __name__ == "__main__":
-    unittest.main()

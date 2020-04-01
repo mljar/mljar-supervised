@@ -44,7 +44,7 @@ class Ensemble:
         self._ml_task = ml_task
         self._optimize_metric = optimize_metric
 
-        self._additional_metrics = None 
+        self._additional_metrics = None
         self._threshold = None
         self._name = "ensemble"
 
@@ -65,7 +65,7 @@ class Ensemble:
         # single prediction (in case of binary classification and regression)
         logger.debug(self.total_best_sum.shape)
         logger.debug(self.total_best_sum.head())
-        
+
         logger.debug(self.target.shape)
         logger.debug(self.target.head())
 
@@ -105,7 +105,7 @@ class Ensemble:
                 self.target = oof[
                     self.target_columns
                 ]  # it will be needed for computing advance model statistics
-                
+
         return oofs, self.target
 
     def get_additional_metrics(self):
@@ -124,7 +124,7 @@ class Ensemble:
 
             self._additional_metrics = AdditionalMetrics.compute(
                 oof_predictions[target_cols],
-                oof_preds, #oof_predictions[prediction_cols],
+                oof_preds,  # oof_predictions[prediction_cols],
                 self._ml_task,
             )
             if self._ml_task == BINARY_CLASSIFICATION:
@@ -158,12 +158,10 @@ class Ensemble:
                 self.best_loss = min_score
                 selected_algs_cnt = j
 
-            self.best_algs.append(best_model)  # save the best algoritm 
+            self.best_algs.append(best_model)  # save the best algoritm
             # update best_sum value
             best_sum = (
-                oofs[best_model]
-                if best_sum is None
-                else best_sum + oofs[best_model]
+                oofs[best_model] if best_sum is None else best_sum + oofs[best_model]
             )
             if j == selected_algs_cnt:
                 self.total_best_sum = copy.deepcopy(best_sum)
@@ -172,11 +170,14 @@ class Ensemble:
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)
         self.best_algs = self.best_algs[: (selected_algs_cnt + 1)]
-        
+
         logger.debug("Selected models for ensemble:")
         for model_name in np.unique(self.best_algs):
             self.selected_models += [
-                {"model": self.models_map[model_name], "repeat": float(self.best_algs.count(model_name))}
+                {
+                    "model": self.models_map[model_name],
+                    "repeat": float(self.best_algs.count(model_name)),
+                }
             ]
             logger.debug(f"{model_name} {self.best_algs.count(model_name)}")
 
@@ -198,8 +199,10 @@ class Ensemble:
             y_predicted_from_model = model.predict(X)
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
-                prediction_cols = [c for c in y_predicted_from_model.columns if "p_" in c]
-            else: # REGRESSION
+                prediction_cols = [
+                    c for c in y_predicted_from_model.columns if "p_" in c
+                ]
+            else:  # REGRESSION
                 prediction_cols = ["prediction"]
             y_predicted_from_model = y_predicted_from_model[prediction_cols]
             y_predicted_ensemble = (
@@ -207,9 +210,9 @@ class Ensemble:
                 if y_predicted_ensemble is None
                 else y_predicted_ensemble + y_predicted_from_model * repeat
             )
-            
+
         y_predicted_ensemble /= total_repeat
-        '''
+        """
         # Ensemble needs to apply reverse transformation of target !!!
         if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
 
@@ -222,7 +225,7 @@ class Ensemble:
             y_predicted_ensemble["label"] = y_predicted_ensemble["label"].map(
                 prediction_labels
             )
-        '''
+        """
         return y_predicted_ensemble
 
     def to_json(self):
@@ -261,9 +264,6 @@ class Ensemble:
                 {"model": il, "repeat": repeat}
             ]
 
-
-
-
     def save(self, model_path):
         logger.info(f"Save the ensemble to {model_path}")
 
@@ -271,22 +271,20 @@ class Ensemble:
             ms = []
             for selected in self.selected_models:
                 ms += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
-            
+
             desc = {
                 "name": self._name,
                 "ml_task": self._ml_task,
                 "optimize_metric": self._optimize_metric,
-                "selected_models": ms
+                "selected_models": ms,
             }
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
 
-        
         predictions = self.get_out_of_folds()
         predictions.to_csv(
-            os.path.join(model_path, f"predictions_ensemble.csv"),
-            index=False,
+            os.path.join(model_path, f"predictions_ensemble.csv"), index=False
         )
 
         self._additional_metrics = self.get_additional_metrics()
@@ -314,12 +312,13 @@ class Ensemble:
         logger.info(f"Loading ensemble from {model_path}")
 
         json_desc = json.load(open(os.path.join(model_path, "ensemble.json")))
-       
+
         ensemble = Ensemble(json_desc.get("optimize_metric"), json_desc.get("ml_task"))
         ensemble._name = json_desc.get("name", ensemble._name)
         ensemble._threshold = json_desc.get("threshold", ensemble._threshold)
         for m in json_desc.get("selected_models", []):
-            ensemble.selected_models += [{"model": models_map[m["model"]],
-                                            "repeat": m["repeat"]}]
-        
+            ensemble.selected_models += [
+                {"model": models_map[m["model"]], "repeat": m["repeat"]}
+            ]
+
         return ensemble

@@ -8,13 +8,13 @@ import uuid
 
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
-from supervised.preprocessing.preprocessing_step import PreprocessingStep
+from supervised.preprocessing.preprocessing import Preprocessing
 
 
-class PreprocessingStepTest(unittest.TestCase):
+class PreprocessingTest(unittest.TestCase):
     def test_constructor_preprocessing_step(self):
         preprocessing_params = {}
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
 
         self.assertTrue(len(ps._missing_values) == 0)
         self.assertTrue(len(ps._categorical) == 0)
@@ -33,7 +33,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        ps = PreprocessingStep()
+        ps = Preprocessing()
         X_train, y_train = ps._exclude_missing_targets(X_train, y_train)
 
         self.assertEqual(4, X_train.shape[0])
@@ -52,7 +52,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        ps = PreprocessingStep()
+        ps = Preprocessing()
         X_train, y_train = ps._exclude_missing_targets(X_train, y_train)
 
         self.assertEqual(3, X_train.shape[0])
@@ -71,7 +71,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        ps = PreprocessingStep()
+        ps = Preprocessing()
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
         self.assertEqual(3, X_train.shape[0])
         self.assertEqual(3, y_train.shape[0])
@@ -110,7 +110,7 @@ class PreprocessingStepTest(unittest.TestCase):
             }
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
 
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
         
@@ -154,7 +154,7 @@ class PreprocessingStepTest(unittest.TestCase):
             }
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
 
         for col in ["col1", "col2", "col3", "col4"]:
@@ -226,7 +226,7 @@ class PreprocessingStepTest(unittest.TestCase):
             }
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
 
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
         X_test, y_test = ps.transform(X_test, y_test)
@@ -252,7 +252,7 @@ class PreprocessingStepTest(unittest.TestCase):
             ]
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
         _, y_train = ps.fit_and_transform(None, y_train)
         
         self.assertEqual(4, y_train.shape[0])
@@ -275,7 +275,7 @@ class PreprocessingStepTest(unittest.TestCase):
             ]
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
 
         _, y_train = ps.fit_and_transform(None, y_train)
         _, y_test = ps.transform(None, y_test)
@@ -315,10 +315,10 @@ class PreprocessingStepTest(unittest.TestCase):
             "target_preprocessing": [],
         }
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
         _, _ = ps.fit_and_transform(X_train, y_train)
 
-        ps2 = PreprocessingStep()
+        ps2 = Preprocessing()
         ps2.from_json(ps.to_json())
         del ps
 
@@ -355,7 +355,7 @@ class PreprocessingStepTest(unittest.TestCase):
 
         preprocessing_params = {"columns_preprocessing": {"col1": ["remove_column"]}}
 
-        ps = PreprocessingStep(preprocessing_params)
+        ps = Preprocessing(preprocessing_params)
         X_train1, _ = ps.fit_and_transform(X_train, y_train)
         
         self.assertTrue("col1" not in X_train1.columns)
@@ -367,7 +367,7 @@ class PreprocessingStepTest(unittest.TestCase):
             self.assertTrue(col in X_train2.columns)
 
         params_json = ps.to_json()
-        ps2 = PreprocessingStep()
+        ps2 = Preprocessing()
         ps2.from_json(params_json)
 
         X_train3, _ = ps2.transform(X_train, y_train)
@@ -402,7 +402,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_test = df_test.loc[:, ["col1", "col2", "col3", "col4"]]
         y_test = df_test.loc[:, "y"]
 
-        ps = PreprocessingStep(
+        ps = Preprocessing(
             missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,
             categorical_method=PreprocessingCategorical.CONVERT_ONE_HOT,
         )
@@ -441,7 +441,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         X_train_2 = copy.deepcopy(X_train)
 
-        ps = PreprocessingStep(
+        ps = Preprocessing(
             missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,
             categorical_method=PreprocessingCategorical.CONVERT_ONE_HOT,
         )
@@ -456,7 +456,7 @@ class PreprocessingStepTest(unittest.TestCase):
         self.assertEqual(np.max(X_train["col2_b"]), 1)
         self.assertEqual(np.sum(X_train["col2_b"]), a_lot / 2)
 
-        ps2 = PreprocessingStep()
+        ps2 = Preprocessing()
         ps2.from_json(ps.to_json())
         del ps
         # apply preprocessing loaded from json
@@ -482,7 +482,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        ps = PreprocessingStep(
+        ps = Preprocessing(
             missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,
             categorical_method=PreprocessingCategorical.CONVERT_ONE_HOT,
             project_task="PROJECT_BIN_CLASS",
@@ -505,7 +505,7 @@ class PreprocessingStepTest(unittest.TestCase):
         X_train = df.loc[:, ["col1", "col2", "col3", "col4"]]
         y_train = df.loc[:, "y"]
 
-        ps = PreprocessingStep(
+        ps = Preprocessing(
             missing_values_method=PreprocessingMissingValues.FILL_NA_MEDIAN,
             categorical_method=PreprocessingCategorical.CONVERT_ONE_HOT,
             project_task="PROJECT_REGRESSION",

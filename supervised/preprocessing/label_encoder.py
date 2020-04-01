@@ -21,7 +21,6 @@ class LabelEncoder(object):
 
     def inverse_transform(self, x):
         return self.lbl.inverse_transform(list(x.values))
-        
 
     def to_json(self):
         data_json = {}

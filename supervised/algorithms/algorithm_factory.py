@@ -31,7 +31,7 @@ class AlgorithmFactory(object):
 
     @classmethod
     def get_algorithm(cls, params):
-    
+
         alg_type = params.get("model_type", "Xgboost")
 
         if alg_type in cls.algorithms:
