@@ -39,7 +39,7 @@ class AutoML:
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms=["Xgboost", "Random Forest"],  # , "Random Forest"],
+        algorithms=["Xgboost", "Random Forest Regressor"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
