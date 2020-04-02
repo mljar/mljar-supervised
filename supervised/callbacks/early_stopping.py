@@ -10,6 +10,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+from supervised.utils.config import mem
 
 class EarlyStopping(Callback):
     def __init__(self, params):
@@ -118,16 +119,17 @@ class EarlyStopping(Callback):
             else:
                 # several columns in multiclass classification
                 cols = predictions.get("validation_columns")
-                print(cols)
-
                 for i_col in range(y_validation_predicted.shape[1]):
                     self.best_y_predicted[self.learner.uid][
                         # "prediction_{}".format(i_col)
                         cols[i_col]
                     ] = y_validation_predicted[:, i_col]
 
+            print("before copy")
+            mem()
             self.best_models[self.learner.uid] = self.learner.copy()
-
+            print("after copy")
+            mem()
             # if local copy is not available, save model and keep path
             if self.best_models[self.learner.uid] is None:
                 self.best_model_paths[self.learner.uid] = self.learner.save()

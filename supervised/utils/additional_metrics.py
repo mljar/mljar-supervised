@@ -140,7 +140,7 @@ class AdditionalMetrics:
 
     @staticmethod
     def compute(target, predictions, ml_task):
-        print(target, predictions, ml_task)
+        
         if ml_task == BINARY_CLASSIFICATION:
             return AdditionalMetrics.binary_classification(target, predictions)
         elif ml_task == MULTICLASS_CLASSIFICATION:

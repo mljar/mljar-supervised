@@ -34,12 +34,14 @@ logger.setLevel(LOG_LEVEL)
 from supervised.exceptions import AutoMLException
 
 
+from supervised.utils.config import mem
+
 class AutoML:
     def __init__(
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms=["Xgboost", "Random Forest Regressor"],  # , "Random Forest"],
+        algorithms= ["Xgboost"], #, "Random Forest"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -414,6 +416,9 @@ class AutoML:
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
 
+        print("AutoML fit")
+        mem()
+
         if self._best_model is not None:
             print("Best model is already set, no need to run fit. Skipping ...")
             return
@@ -431,6 +436,9 @@ class AutoML:
         y_train.reset_index(drop=True, inplace=True)
         y_train = y_train["target"]
 
+        print("AutoML data wtf")
+        mem()
+
         self._set_ml_task(y_train)
         self._set_algorithms()
         self._set_metric()
@@ -438,6 +446,9 @@ class AutoML:
 
         if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
             self._check_imbalanced(y_train)
+
+        print("AutoML TUNER")
+        mem()
 
         tuner = MljarTuner(
             self._tuner_params,
@@ -452,6 +463,8 @@ class AutoML:
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key in self._models_params_keys:
                     continue  # if already trained model with such paramaters, just skip it
+                print("AutoML TRAIN MODEL -----------------")
+                mem()
                 self._models_params_keys += [unique_params_key]
                 self.train_model(params, X_train, y_train)
 

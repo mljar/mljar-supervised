@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
+from supervised.utils.config import mem
+
 class ModelFramework:
     def __init__(self, params, callbacks=[]):
         logger.debug("ModelFramework.__init__")
@@ -96,12 +98,19 @@ class ModelFramework:
 
     def train(self, data):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
+
+        print("model_framework train start")
+        mem()
+
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
 
         self.validation = ValidationStep(self.validation_params, data)
 
         for train_data, validation_data in self.validation.split():
+
+            print("validation step")
+            mem()
             logger.debug("-" * 51)
             logger.debug(
                 "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
@@ -121,6 +130,8 @@ class ModelFramework:
                 validation_data["X"], validation_data["y"]
             )
 
+            print("PREPROCESSED")
+            mem()
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
 
@@ -128,10 +139,14 @@ class ModelFramework:
             self.callbacks.on_learner_train_start()
 
             for i in range(learner.max_iters):
+                print("iter", i)
+                mem()
                 self.callbacks.on_iteration_start()
 
                 learner.fit(X_train, y_train)
 
+                print("predicts iter", i)
+                mem()
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
                     self.predictions(
@@ -146,8 +161,12 @@ class ModelFramework:
                 if learner.stop_training:
                     break
                 learner.update({"step": i})
+                print("iter end")
+                mem()
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
+            print("train end")
+            mem()
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time

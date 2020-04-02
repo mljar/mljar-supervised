@@ -107,7 +107,7 @@ class Preprocessing(object):
         columns_preprocessing = self._params.get("columns_preprocessing")
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
-            logger.debug("Preprocess column {} with: {}".format(column, transforms))
+            #logger.debug("Preprocess column {} with: {}".format(column, transforms))
 
         # remove empty or constant columns
         cols_to_remove = list(
