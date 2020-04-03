@@ -30,6 +30,61 @@ class MljarTuner:
         self._validation = validation
         self._seed = seed
 
+        self._unique_params_keys = []
+
+    def get_not_so_random_params(self, X, y):
+        models_cnt = 0
+        generated_params = []
+        for model_type in self._algorithms:
+            for i in range(self._start_random_models):
+                logger.info(
+                    "Not so random step, for model #{0}".format(models_cnt + 1)
+                )
+                params = self._get_model_params(model_type, X, y, models_cnt + 1)
+                if params is None:
+                    continue
+                params["name"] = f"model_{models_cnt + 1}"
+    
+                unique_params_key = MljarTuner.get_params_key(params)
+                if unique_params_key not in self._unique_params_keys:
+                    generated_params += [params]
+                    self._unique_params_keys += [unique_params_key]
+                    models_cnt += 1
+        return generated_params
+
+    def get_hill_climbing_params(self, current_models):
+
+        # second, hill climbing
+        for _ in range(self._hill_climbing_steps):
+            # get models orderer by loss
+            # TODO: refactor this callbacks.callbacks[0]
+            models = sorted(
+                [(m.callbacks.callbacks[0].final_loss, m) for m in current_models],
+                key=lambda x: x[0],
+            )
+            for i in range(min(self._top_models_to_improve, len(models))):
+                m = models[i][1]
+                for p in HillClimbing.get(
+                    m.params.get("learner"),
+                    self._ml_task,
+                    len(current_models) + self._seed,
+                ):
+                    logger.info(
+                        "Hill climbing step, for model #{0}".format(
+                            len(current_models) + 1
+                        )
+                    )
+                    if p is not None:
+                        all_params = copy.deepcopy(m.params)
+                        all_params["learner"] = p
+                        all_params["name"] = f"model_{len(current_models) + 1}"
+
+                        unique_params_key = MljarTuner.get_params_key(all_params)
+                        if unique_params_key not in self._unique_params_keys:
+                            self._unique_params_keys += [unique_params_key]
+                            yield all_params
+
+    '''
     def get_params(self, X, y, current_models):
         # first, not so random step
         for model_type in self._algorithms:
@@ -66,11 +121,13 @@ class MljarTuner:
                         yield all_params
                     else:
                         yield None  # empty paramaters
+    '''
 
-    def _get_model_params(self, model_type, X, y, current_models):
+
+    def _get_model_params(self, model_type, X, y, models_cnt):
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
         model_params = RandomParameters.get(
-            model_info["params"], len(current_models) + self._seed
+            model_info["params"], models_cnt + self._seed
         )
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]

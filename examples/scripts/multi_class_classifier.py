@@ -9,11 +9,11 @@ X = df[["feature_1","feature_2","feature_3","feature_4"]]
 y = df["class"]
 
 automl = AutoML(
-#        results_path="AutoML_1",
-        total_time_limit=30,
+        #results_path="AutoML_2",
+        total_time_limit=800,
         start_random_models=5,
-        hill_climbing_steps=0,
-        top_models_to_improve=0,
+        hill_climbing_steps=4,
+        top_models_to_improve=3,
         train_ensemble=True)
 automl.fit(X, y)
 

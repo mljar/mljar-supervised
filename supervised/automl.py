@@ -59,7 +59,7 @@ class AutoML:
 
         self._train_ensemble = train_ensemble
         self._models = []  # instances of iterative learner framework or ensemble
-        self._models_params_keys = []
+        
         # it is instance of model framework or ensemble
         self._best_model = None
         # default validation
@@ -90,6 +90,10 @@ class AutoML:
         self._results_path = results_path
         self._set_results_dir()
         self._model_paths = []
+
+        self._X_train_path, self._y_train_path = None, None
+        self._X_validation_path, self._y_validation_path = None, None
+        
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -414,6 +418,36 @@ class AutoML:
                 f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
             )
 
+
+    def _initial_prep(self, X_train, y_train, X_validation=None, y_validation=None):
+        
+        X_train.reset_index(drop=True, inplace=True)
+        
+        if not isinstance(y_train, pd.DataFrame):
+            y_train = pd.DataFrame({"target": np.array(y_train)})
+        else:
+            if "target" not in y_train.columns:
+                raise AutoMLException("There should be target column in y_train")
+        y_train.reset_index(drop=True, inplace=True)
+        y_train = y_train["target"]
+
+        return X_train, y_train, X_validation, y_validation
+
+
+    def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
+
+        self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
+        self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
+        
+        X_train.to_parquet(self._X_train_path, index=False)
+        
+        pd.DataFrame({"target": y_train}).to_parquet(self._y_train_path, index=False)
+        
+        self._validation["X_train_path"] = self._X_train_path
+        self._validation["y_train_path"] = self._y_train_path
+
+
+        
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
 
         print("AutoML fit")
@@ -429,13 +463,10 @@ class AutoML:
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
 
-        # wtf ???
-        X_train.reset_index(drop=True, inplace=True)
-        if not isinstance(y_train, pd.DataFrame):
-            y_train = pd.DataFrame({"target": np.array(y_train)})
-        y_train.reset_index(drop=True, inplace=True)
-        y_train = y_train["target"]
-
+        
+        X_train, y_train, X_validation, y_validation = self._initial_prep(X_train, y_train, X_validation, y_validation)
+        self._save_data(X_train, y_train, X_validation, y_validation)
+        
         print("AutoML data wtf")
         mem()
 
@@ -458,15 +489,21 @@ class AutoML:
             self._seed,
         )
 
-        for params in tuner.get_params(X_train, y_train, self._models):
-            if params is not None:
-                unique_params_key = MljarTuner.get_params_key(params)
-                if unique_params_key in self._models_params_keys:
-                    continue  # if already trained model with such paramaters, just skip it
-                print("AutoML TRAIN MODEL -----------------")
-                mem()
-                self._models_params_keys += [unique_params_key]
-                self.train_model(params, X_train, y_train)
+        # not so random step
+        for params in tuner.get_not_so_random_params(X_train, y_train):
+            print("AutoML TRAIN MODEL -----------------")
+            mem()
+            self.train_model(params, X_train, y_train)
+            print("END ------- AutoML TRAIN MODEL -----------------")
+            mem()
+        # hill climbing
+        for params in tuner.get_hill_climbing_params(self._models):
+            print("AutoML TRAIN MODEL -----------------")
+            mem()
+            self.train_model(params, X_train, y_train)
+            print("END ------- AutoML TRAIN MODEL -----------------")
+            mem()
+        
 
         self.ensemble_step()
 

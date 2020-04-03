@@ -107,6 +107,8 @@ class ModelFramework:
 
         self.validation = ValidationStep(self.validation_params, data)
 
+        print("validation before for loop")
+        mem()
         for train_data, validation_data in self.validation.split():
 
             print("validation step")

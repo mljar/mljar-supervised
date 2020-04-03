@@ -240,7 +240,7 @@ class Ensemble:
             y_predicted_ensemble["label"] = np.argmax(
                 np.array(y_predicted_ensemble[prediction_cols]), axis=1
             )
-            y_predicted_ensemble["label"] = oof_preds["label"].map(labels)
+            y_predicted_ensemble["label"] = y_predicted_ensemble["label"].map(labels)
 
         return y_predicted_ensemble
 
