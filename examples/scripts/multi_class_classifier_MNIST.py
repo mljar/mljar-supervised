@@ -24,8 +24,8 @@ mem()
 
 automl = AutoML(
         #results_path="AutoML_12",
-        total_time_limit=60*60,
-        start_random_models=1,
+        total_time_limit=100,
+        start_random_models=5,
         hill_climbing_steps=0,
         top_models_to_improve=0,
         train_ensemble=True)

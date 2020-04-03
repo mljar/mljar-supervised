@@ -96,7 +96,7 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
-    def train(self, data):
+    def train(self): #, data):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         print("model_framework train start")
@@ -105,14 +105,18 @@ class ModelFramework:
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
 
-        self.validation = ValidationStep(self.validation_params, data)
+        self.validation = ValidationStep(self.validation_params)
 
         print("validation before for loop")
         mem()
-        for train_data, validation_data in self.validation.split():
+        for k_fold in range(self.validation.get_n_splits()):
+            train_data, validation_data = self.validation.get_split(k_fold)
 
             print("validation step")
             mem()
+            time.sleep(3)
+            mem()
+
             logger.debug("-" * 51)
             logger.debug(
                 "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
@@ -134,6 +138,9 @@ class ModelFramework:
 
             print("PREPROCESSED")
             mem()
+            time.sleep(3)
+            mem()
+            print("START LEARNER")
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
 
@@ -201,6 +208,10 @@ class ModelFramework:
 
     def predict(self, X):
         logger.debug("ModelFramework.predict")
+
+        print(X)
+        print("@"*21)
+
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average

@@ -58,13 +58,13 @@ class Preprocessing(object):
         return X, y
 
     # fit and transform
-    def fit_and_transform(self, X_train_org, y_train_org):
+    def fit_and_transform(self, X_train, y_train):
         logger.debug("Preprocessing.fit_and_transform")
-        X_train, y_train = None, None
-        if X_train_org is not None:
-            X_train = X_train_org.copy()
-        if y_train_org is not None:
-            y_train = y_train_org.copy()
+        #X_train, y_train = None, None
+        #if X_train_org is not None:
+        #    X_train = X_train_org.copy()
+        #if y_train_org is not None:
+        #    y_train = y_train_org.copy()
 
         if y_train is not None:
             # target preprocessing
@@ -161,43 +161,50 @@ class Preprocessing(object):
 
         return X_train, y_train
 
-    def transform(self, X_validation_org, y_validation_org):
+    def transform(self, X_validation, y_validation):
         logger.debug("Preprocessing.transform")
-        X_validation, y_validation = None, None
-        if X_validation_org is not None:
-            X_validation = X_validation_org.copy()
-        if y_validation_org is not None:
-            y_validation = y_validation_org.copy()
+        #X_validation, y_validation = None, None
+        #if X_validation_org is not None:
+        #    X_validation = X_validation_org.copy()
+        #if y_validation_org is not None:
+        #    y_validation = y_validation_org.copy()
+
+        # doing copy to avoid SettingWithCopyWarning
+        X_validation = X_validation.copy(deep=False)
+        if y_validation is not None:
+            y_validation = y_validation.copy(deep=False)
+
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
-        target_preprocessing = self._params.get("target_preprocessing")
-        logger.debug("target_preprocessing -> {}".format(target_preprocessing))
+        if y_validation is not None:
+            target_preprocessing = self._params.get("target_preprocessing")
+            logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-        X_validation, y_validation = ExcludeRowsMissingTarget.transform(
-            X_validation, y_validation
-        )
+            X_validation, y_validation = ExcludeRowsMissingTarget.transform(
+                X_validation, y_validation
+            )
 
-        if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
-            if y_validation is not None and self._categorical_y is not None:
-                y_validation = pd.Series(self._categorical_y.transform(y_validation))
+            if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
+                if y_validation is not None and self._categorical_y is not None:
+                    y_validation = pd.Series(self._categorical_y.transform(y_validation))
 
-        if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
-            if y_validation is not None and self._categorical_y is not None:
-                y_validation = self._categorical_y.transform(
-                    pd.DataFrame({"target": y_validation}), "target"
-                )
+            if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
+                if y_validation is not None and self._categorical_y is not None:
+                    y_validation = self._categorical_y.transform(
+                        pd.DataFrame({"target": y_validation}), "target"
+                    )
 
-        if Scale.SCALE_LOG_AND_NORMAL in target_preprocessing:
-            if self._scale_y is not None and y_validation is not None:
-                logger.debug("Transform log and normalize")
-                y_validation = pd.DataFrame({"target": y_validation})
-                y_validation = self._scale_y.transform(y_validation)
-                y_validation = y_validation["target"]
+            if Scale.SCALE_LOG_AND_NORMAL in target_preprocessing:
+                if self._scale_y is not None and y_validation is not None:
+                    logger.debug("Transform log and normalize")
+                    y_validation = pd.DataFrame({"target": y_validation})
+                    y_validation = self._scale_y.transform(y_validation)
+                    y_validation = y_validation["target"]
 
-        if Scale.SCALE_NORMAL in target_preprocessing:
-            logger.error("not implemented SCALE_NORMAL")
-            raise Exception("not implemented SCALE_NORMAL")
+            if Scale.SCALE_NORMAL in target_preprocessing:
+                logger.error("not implemented SCALE_NORMAL")
+                raise Exception("not implemented SCALE_NORMAL")
 
         # columns preprocessing
         if len(self._remove_columns) and X_validation is not None:

@@ -12,11 +12,17 @@ automl = AutoML(
         #results_path = "AutoML_8",
         total_time_limit=50,
         start_random_models=5,
-        hill_climbing_steps=0,
-        top_models_to_improve=0,
+        hill_climbing_steps=3,
+        top_models_to_improve=3,
         train_ensemble=True)
 
+print(X)
+print(y)
+
 automl.fit(X, y)
+
+print(X)
+print(y)
 
 predictions = automl.predict(X)
 print(predictions.head())

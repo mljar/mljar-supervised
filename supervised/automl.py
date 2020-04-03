@@ -33,7 +33,7 @@ logger.setLevel(LOG_LEVEL)
 
 from supervised.exceptions import AutoMLException
 
-
+import gc
 from supervised.utils.config import mem
 
 class AutoML:
@@ -41,7 +41,7 @@ class AutoML:
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms= ["Xgboost"], #, "Random Forest"],  # , "Random Forest"],
+        algorithms= [  "Random Forest"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -238,7 +238,7 @@ class AutoML:
         )
         self.log_train_time(model.get_type(), model.get_train_time())
 
-    def train_model(self, params, X, y):
+    def train_model(self, params):
         model_path = os.path.join(self._results_path, f"model_{len(self._models)+1}")
 
         early_stop = EarlyStopping(
@@ -255,7 +255,7 @@ class AutoML:
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {model_path}")
 
-            mf.train({"train": {"X": X, "y": y}})
+            mf.train() #{"train": {"X": X, "y": y}})
 
             mf.save(model_path)
             self._model_paths += [model_path]
@@ -429,9 +429,8 @@ class AutoML:
             if "target" not in y_train.columns:
                 raise AutoMLException("There should be target column in y_train")
         y_train.reset_index(drop=True, inplace=True)
-        y_train = y_train["target"]
-
-        return X_train, y_train, X_validation, y_validation
+        
+        return X_train, y_train["target"], X_validation, y_validation
 
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
@@ -445,9 +444,31 @@ class AutoML:
         
         self._validation["X_train_path"] = self._X_train_path
         self._validation["y_train_path"] = self._y_train_path
+        self._validation["results_path"] = self._results_path
+
+    def _del_data_variables(self, X_train, y_train):
+        print("del variables")
+        mem()
+        X_train.drop(X_train.columns, axis=1, inplace=True)
+        #del X_train 
+        #del y_train 
+        #gc.collect()
+        mem()
+
+    def _load_data_variables(self, X_train):
+        print("LOAD variables")
+        mem()
+        X = pd.read_parquet(self._X_train_path)
+
+        for c in X.columns:
+            X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
+        mem()
+
+        os.remove(self._X_train_path)
+        os.remove(self._y_train_path)
 
 
-        
+
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
 
         print("AutoML fit")
@@ -490,17 +511,22 @@ class AutoML:
         )
 
         # not so random step
-        for params in tuner.get_not_so_random_params(X_train, y_train):
+        generated_params = tuner.get_not_so_random_params(X_train, y_train)    
+        print("len(generated_params)", len(generated_params))
+        self._del_data_variables(X_train, y_train)
+        
+
+        for params in generated_params:
             print("AutoML TRAIN MODEL -----------------")
             mem()
-            self.train_model(params, X_train, y_train)
+            self.train_model(params )
             print("END ------- AutoML TRAIN MODEL -----------------")
             mem()
         # hill climbing
         for params in tuner.get_hill_climbing_params(self._models):
             print("AutoML TRAIN MODEL -----------------")
             mem()
-            self.train_model(params, X_train, y_train)
+            self.train_model(params )
             print("END ------- AutoML TRAIN MODEL -----------------")
             mem()
         
@@ -530,6 +556,8 @@ class AutoML:
 
         ldb = self.get_leaderboard()
         ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+
+        self._load_data_variables(X_train)
 
     def predict(self, X):
         if self._best_model is not None:
