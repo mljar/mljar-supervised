@@ -465,30 +465,18 @@ class AutoML:
             fout.write(json.dumps(self._data_info, indent=4))
 
     def _del_data_variables(self, X_train, y_train):
-        print("del variables")
-        mem()
         X_train.drop(X_train.columns, axis=1, inplace=True)
-        # del X_train
-        # del y_train
-        # gc.collect()
-        mem()
-
+        
     def _load_data_variables(self, X_train):
-        print("LOAD variables")
-        mem()
         X = pd.read_parquet(self._X_train_path)
 
         for c in X.columns:
             X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
-        mem()
-
+        
         os.remove(self._X_train_path)
         os.remove(self._y_train_path)
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
-
-        print("AutoML fit")
-        mem()
 
         if self._best_model is not None:
             print("Best model is already set, no need to run fit. Skipping ...")
@@ -505,9 +493,6 @@ class AutoML:
         )
         self._save_data(X_train, y_train, X_validation, y_validation)
 
-        print("AutoML data wtf")
-        mem()
-
         self._set_ml_task(y_train)
         self._set_algorithms()
         self._set_metric()
@@ -515,9 +500,6 @@ class AutoML:
 
         if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
             self._check_imbalanced(y_train)
-
-        print("AutoML TUNER")
-        mem()
 
         tuner = MljarTuner(
             self._tuner_params,
@@ -533,18 +515,10 @@ class AutoML:
         self._del_data_variables(X_train, y_train)
 
         for params in generated_params:
-            print("AutoML TRAIN MODEL -----------------")
-            mem()
             self.train_model(params)
-            print("END ------- AutoML TRAIN MODEL -----------------")
-            mem()
         # hill climbing
         for params in tuner.get_hill_climbing_params(self._models):
-            print("AutoML TRAIN MODEL -----------------")
-            mem()
             self.train_model(params)
-            print("END ------- AutoML TRAIN MODEL -----------------")
-            mem()
 
         self.ensemble_step()
 

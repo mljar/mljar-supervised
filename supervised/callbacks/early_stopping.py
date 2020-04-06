@@ -126,11 +126,7 @@ class EarlyStopping(Callback):
                         cols[i_col]
                     ] = y_validation_predicted[:, i_col]
 
-            print("before copy")
-            mem()
             self.best_models[self.learner.uid] = self.learner.copy()
-            print("after copy")
-            mem()
             # if local copy is not available, save model and keep path
             if self.best_models[self.learner.uid] is None:
                 self.best_model_paths[self.learner.uid] = self.learner.save()

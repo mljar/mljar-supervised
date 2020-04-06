@@ -51,16 +51,9 @@ class KFoldValidator(BaseValidator):
 
             os.mkdir(folds_path)
 
-            print("SPLIT")
-            mem()
-            print("reading data")
             X = pd.read_parquet(self._X_train_path)
             y = pd.read_parquet(self._y_train_path)
             y = y["target"]
-
-            mem()
-            time.sleep(3)
-            mem()
 
             for fold_cnt, (train_index, validation_index) in enumerate(
                 self.skf.split(X, y)
@@ -81,7 +74,7 @@ class KFoldValidator(BaseValidator):
             del X
             del y
             gc.collect()
-            mem()
+
         else:
             log.debug("Folds split already done, reuse it")
 
@@ -100,30 +93,11 @@ class KFoldValidator(BaseValidator):
         X = pd.read_parquet(self._X_train_path)
         y = pd.read_parquet(self._y_train_path)
         y = y["target"]
-        print("for k folds")
-        mem()
-
-        time.sleep(3)
-        mem()
+        
         return (
             {"X": X.loc[train_index], "y": y.loc[train_index]},
             {"X": X.loc[validation_index], "y": y.loc[validation_index]},
         )
-
-        """
-        for train_index, validation_index in self.skf.split(X, y):
-
-            print("train_index", train_index)
-            print("validation_index", validation_index)
-
-            print(X.index)
-            print(y.index)
-            X_train = X.loc[train_index]
-            y_train = y.loc[train_index]
-            X_validation = X.loc[validation_index]
-            y_validation = y.loc[validation_index]
-            yield {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
-        """
 
     def get_n_splits(self):
         return self.k_folds

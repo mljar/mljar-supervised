@@ -11,13 +11,10 @@ df = pd.read_csv("tests/data/MNIST/train.csv")
 X = df[[f for f in df.columns if "pixel" in f]]
 y = df["label"]
 
-print(X.shape)
 for _ in range(4):
     X = pd.concat([X, X], axis=0)
     y = pd.concat([y, y], axis=0)
 
-
-print(y.shape)
 
 mem()
 
