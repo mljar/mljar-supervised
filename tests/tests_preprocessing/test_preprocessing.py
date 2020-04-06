@@ -113,7 +113,7 @@ class PreprocessingTest(unittest.TestCase):
         ps = Preprocessing(preprocessing_params)
 
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
-        
+
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
 
@@ -230,7 +230,7 @@ class PreprocessingTest(unittest.TestCase):
 
         X_train, y_train = ps.fit_and_transform(X_train, y_train)
         X_test, y_test = ps.transform(X_test, y_test)
-        
+
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
             self.assertTrue(col in X_test.columns)
@@ -254,7 +254,7 @@ class PreprocessingTest(unittest.TestCase):
 
         ps = Preprocessing(preprocessing_params)
         _, y_train = ps.fit_and_transform(None, y_train)
-        
+
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(0, y_train[0])
         self.assertEqual(1, y_train[1])
@@ -334,7 +334,7 @@ class PreprocessingTest(unittest.TestCase):
         y_test = df_test.loc[:, "y"]
 
         X_test, y_test = ps2.transform(X_test, y_test)
-        
+
         self.assertEqual(2, y_test.shape[0])
         self.assertEqual(2, np.sum(y_test))
         self.assertEqual(1, X_test["col1"].iloc[0])
@@ -357,7 +357,7 @@ class PreprocessingTest(unittest.TestCase):
 
         ps = Preprocessing(preprocessing_params)
         X_train1, _ = ps.fit_and_transform(X_train, y_train)
-        
+
         self.assertTrue("col1" not in X_train1.columns)
         self.assertEqual(3, len(X_train1.columns))
         X_train2, _ = ps.transform(X_train, y_train)

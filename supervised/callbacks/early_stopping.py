@@ -12,6 +12,7 @@ logger.setLevel(LOG_LEVEL)
 
 from supervised.utils.config import mem
 
+
 class EarlyStopping(Callback):
     def __init__(self, params):
         super(EarlyStopping, self).__init__(params)

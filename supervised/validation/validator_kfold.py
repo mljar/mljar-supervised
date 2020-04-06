@@ -1,5 +1,5 @@
 import os
-import gc 
+import gc
 import logging
 import numpy as np
 import pandas as pd
@@ -10,10 +10,11 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
 
 from supervised.validation.validator_base import BaseValidator
-from supervised.exceptions import AutoMLException 
+from supervised.exceptions import AutoMLException
 
 from supervised.utils.config import mem
 import time
+
 
 class KFoldValidator(BaseValidator):
     def __init__(self, params):
@@ -44,11 +45,10 @@ class KFoldValidator(BaseValidator):
         if self._X_train_path is None or self._y_train_path is None:
             raise AutoMLException("No training data path set in KFoldValidator params")
 
-        
         folds_path = os.path.join(self._results_path, "folds")
-        
+
         if not os.path.exists(folds_path):
-        
+
             os.mkdir(folds_path)
 
             print("SPLIT")
@@ -62,25 +62,37 @@ class KFoldValidator(BaseValidator):
             time.sleep(3)
             mem()
 
-            for fold_cnt, (train_index, validation_index) in enumerate(self.skf.split(X, y)):
+            for fold_cnt, (train_index, validation_index) in enumerate(
+                self.skf.split(X, y)
+            ):
 
-                train_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_train_indices.npy")
-                validation_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_validation_indices.npy")
-                
+                train_index_file = os.path.join(
+                    self._results_path, "folds", f"fold_{fold_cnt}_train_indices.npy"
+                )
+                validation_index_file = os.path.join(
+                    self._results_path,
+                    "folds",
+                    f"fold_{fold_cnt}_validation_indices.npy",
+                )
+
                 np.save(train_index_file, train_index)
                 np.save(validation_index_file, validation_index)
-                
-            del X 
-            del y 
+
+            del X
+            del y
             gc.collect()
             mem()
         else:
             log.debug("Folds split already done, reuse it")
 
     def get_split(self, k):
-        
-        train_index_file = os.path.join(self._results_path, "folds", f"fold_{k}_train_indices.npy")
-        validation_index_file = os.path.join(self._results_path, "folds", f"fold_{k}_validation_indices.npy")
+
+        train_index_file = os.path.join(
+            self._results_path, "folds", f"fold_{k}_train_indices.npy"
+        )
+        validation_index_file = os.path.join(
+            self._results_path, "folds", f"fold_{k}_validation_indices.npy"
+        )
 
         train_index = np.load(train_index_file)
         validation_index = np.load(validation_index_file)
@@ -93,10 +105,12 @@ class KFoldValidator(BaseValidator):
 
         time.sleep(3)
         mem()
-        return {"X": X.loc[train_index], "y": y.loc[train_index]}, \
-                {"X": X.loc[validation_index], "y": y.loc[validation_index]}
+        return (
+            {"X": X.loc[train_index], "y": y.loc[train_index]},
+            {"X": X.loc[validation_index], "y": y.loc[validation_index]},
+        )
 
-        '''
+        """
         for train_index, validation_index in self.skf.split(X, y):
 
             print("train_index", train_index)
@@ -109,6 +123,7 @@ class KFoldValidator(BaseValidator):
             X_validation = X.loc[validation_index]
             y_validation = y.loc[validation_index]
             yield {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
-        '''
+        """
+
     def get_n_splits(self):
         return self.k_folds

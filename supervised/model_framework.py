@@ -30,6 +30,7 @@ logger.setLevel(LOG_LEVEL)
 
 from supervised.utils.config import mem
 
+
 class ModelFramework:
     def __init__(self, params, callbacks=[]):
         logger.debug("ModelFramework.__init__")
@@ -79,14 +80,13 @@ class ModelFramework:
 
         y_validation_columns = []
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-            #y_train_true = preproces.inverse_categorical_target(y_train_true)
-            #y_validation_true = preproces.inverse_categorical_target(y_validation_true)
+            # y_train_true = preproces.inverse_categorical_target(y_train_true)
+            # y_validation_true = preproces.inverse_categorical_target(y_validation_true)
             # get columns, omit the last one (it is label)
             y_validation_columns = preproces.prepare_target_labels(
                 y_validation_predicted
             ).columns.tolist()[:-1]
 
- 
         return {
             "y_train_true": y_train_true,
             "y_train_predicted": y_train_predicted,
@@ -96,7 +96,7 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
-    def train(self): #, data):
+    def train(self):  # , data):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         print("model_framework train start")
@@ -210,7 +210,7 @@ class ModelFramework:
         logger.debug("ModelFramework.predict")
 
         print(X)
-        print("@"*21)
+        print("@" * 21)
 
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
@@ -289,7 +289,6 @@ class ModelFramework:
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
             target = oof_predictions[target_cols]
-            
 
             oof_preds = None
             if self._ml_task == MULTICLASS_CLASSIFICATION:

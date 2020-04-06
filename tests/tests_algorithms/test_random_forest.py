@@ -12,6 +12,7 @@ from supervised.utils.metric import Metric
 
 import tempfile
 
+
 class RandomForestAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -63,7 +64,6 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
-
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
         rf = RandomForestAlgorithm({})
@@ -72,7 +72,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         loss = metric(self.y, y_predicted)
 
         with tempfile.NamedTemporaryFile() as tmp:
-            
+
             rf.save(tmp.name)
             rf2 = RandomForestAlgorithm({})
             rf2.load(tmp.name)

@@ -49,7 +49,7 @@ class AdditionalMetrics:
             idx = int(i * samples_per_step)
             if idx + 1 >= predictions.shape[0]:
                 break
-            th = 0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1])
+            th = float(0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1]))
             if np.sum(predictions > th) < 1:
                 break
             response = (predictions > th).astype(int)
@@ -60,6 +60,11 @@ class AdditionalMetrics:
             details["precision"] += [precision_score(target, response)]
             details["recall"] += [recall_score(target, response)]
             details["mcc"] += [matthews_corrcoef(target, response)]
+
+        print(details)
+        print(np.argmax(details["f1"]))
+        print(details["threshold"][np.argmax(details["f1"])])
+
 
         # max metrics
         max_metrics = {
@@ -73,25 +78,28 @@ class AdditionalMetrics:
             },  # there is no threshold for AUC
             "f1": {
                 "score": np.max(details["f1"]),
-                "threshold": details["threshold"][np.argmax(details["f1"])][0],
+                "threshold": details["threshold"][np.argmax(details["f1"])],
             },
             "accuracy": {
                 "score": np.max(details["accuracy"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])][0],
+                "threshold": details["threshold"][np.argmax(details["accuracy"])],
             },
             "precision": {
                 "score": np.max(details["precision"]),
-                "threshold": details["threshold"][np.argmax(details["precision"])][0],
+                "threshold": details["threshold"][np.argmax(details["precision"])],
             },
             "recall": {
                 "score": np.max(details["recall"]),
-                "threshold": details["threshold"][np.argmax(details["recall"])][0],
+                "threshold": details["threshold"][np.argmax(details["recall"])],
             },
             "mcc": {
                 "score": np.max(details["mcc"]),
-                "threshold": details["threshold"][np.argmax(details["mcc"])][0],
+                "threshold": details["threshold"][np.argmax(details["mcc"])],
             },
         }
+
+        print(max_metrics)
+
         # confusion matrix
         conf_matrix = confusion_matrix(
             target, predictions > max_metrics["f1"]["threshold"]
@@ -111,13 +119,12 @@ class AdditionalMetrics:
 
     @staticmethod
     def multiclass_classification(target, predictions):
-    
+
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
         ll = logloss(target, predictions[predictions.columns[:-1]])
-        
 
-        labels = {i:l for i, l in enumerate(all_labels)}
+        labels = {i: l for i, l in enumerate(all_labels)}
         predictions = predictions["label"]
         target = target["target"].map(labels)
         # Print the confusion matrix
@@ -132,7 +139,7 @@ class AdditionalMetrics:
             target, predictions, digits=6, labels=all_labels, output_dict=True
         )
         max_metrics["logloss"] = ll
-        
+
         return {
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
@@ -140,12 +147,10 @@ class AdditionalMetrics:
 
     @staticmethod
     def compute(target, predictions, ml_task):
-        
+
         if ml_task == BINARY_CLASSIFICATION:
             return AdditionalMetrics.binary_classification(target, predictions)
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            return AdditionalMetrics.multiclass_classification(
-                target, predictions
-            )
+            return AdditionalMetrics.multiclass_classification(target, predictions)
         elif ml_task == REGRESSION:
             return None

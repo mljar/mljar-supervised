@@ -9,7 +9,7 @@ import json
 import operator
 
 from supervised.utils.config import storage_path
-from supervised.algorithms.algorithm import BaseAlgorithm 
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.factory import AlgorithmFactory
@@ -76,10 +76,9 @@ class Ensemble:
         ensemble_oof = pd.DataFrame(
             data=self.total_best_sum,
             columns=self.total_best_sum.columns
-                #[
-                #"prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
-                #]
-            
+            # [
+            # "prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
+            # ]
         )
         ensemble_oof["target"] = self.target
         return ensemble_oof
@@ -214,7 +213,7 @@ class Ensemble:
             total_repeat += repeat
 
             y_predicted_from_model = model.predict(X)
-            
+
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
                 prediction_cols = [

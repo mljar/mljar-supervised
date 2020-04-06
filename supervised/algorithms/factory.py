@@ -13,16 +13,17 @@ logger = logging.getLogger(__name__)
 
 from supervised.exceptions import AutoMLException
 
+
 class AlgorithmFactory(object):
 
-    #algorithms = {
+    # algorithms = {
     #    "Xgboost": XgbAlgorithm,
     #    "Random Forest": RandomForestAlgorithm,
     #    "Random Forest Regressor": RandomForestRegressorAlgorithm,
     #    "LightGBM": LightgbmAlgorithm,
     #    "CatBoost": CatBoostAlgorithm,
     #    "NN": NeuralNetworkAlgorithm,
-    #}
+    # }
 
     @classmethod
     def get_algorithm(cls, params):
@@ -37,9 +38,9 @@ class AlgorithmFactory(object):
         except Exception as e:
             raise AutoMLException(f"Cannot get algorithm class. {str(e)}")
 
-        #if alg_type in cls.algorithms:
+        # if alg_type in cls.algorithms:
         #    return cls.algorithms[alg_type](params)
-        #else:
+        # else:
         #    msg = "Algorithm {0} not defined".format(alg_type)
         #    raise AlgorithmFactoryException(msg)
 

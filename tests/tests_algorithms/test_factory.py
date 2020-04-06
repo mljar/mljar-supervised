@@ -17,7 +17,9 @@ class AlgorithmFactoryTest(unittest.TestCase):
             "eval_metric": "logloss",
         }
         learner = AlgorithmFactory.get_algorithm(params)
-        self.assertEqual(learner.algorithm_short_name, XgbAlgorithm.algorithm_short_name)
+        self.assertEqual(
+            learner.algorithm_short_name, XgbAlgorithm.algorithm_short_name
+        )
 
 
 if __name__ == "__main__":

@@ -20,7 +20,6 @@ logger.setLevel(LOG_LEVEL)
 
 import tempfile
 
-from supervised.utils.config import mem
 
 class XgbAlgorithmException(Exception):
     def __init__(self, message):
@@ -68,33 +67,25 @@ class XgbAlgorithm(BaseAlgorithm):
         pass
 
     def fit(self, X, y):
-        print("xgboost fit")
-        mem()
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
-        mem()
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
         )
-        mem()
-        # fix high memory consumption in xgboost, 
+        
+        # fix high memory consumption in xgboost,
         # waiting for release with fix
-        # https://github.com/dmlc/xgboost/issues/5474 
+        # https://github.com/dmlc/xgboost/issues/5474
         with tempfile.NamedTemporaryFile() as tmp:
             self.model.save_model(tmp.name)
-            del self.model 
+            del self.model
             self.model = xgb.Booster()
             self.model.load_model(tmp.name)
-        mem()
-        print("fit end")
-
+        
     def predict(self, X):
-        print("xgboost predict")
-        mem()
         if self.model is None:
             raise XgbAlgorithmException("Xgboost model is None")
         dtrain = xgb.DMatrix(X, missing=np.NaN)
         a = self.model.predict(dtrain)
-        mem()
         return a
 
     def copy(self):

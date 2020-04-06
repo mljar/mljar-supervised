@@ -60,11 +60,6 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train):
         logger.debug("Preprocessing.fit_and_transform")
-        #X_train, y_train = None, None
-        #if X_train_org is not None:
-        #    X_train = X_train_org.copy()
-        #if y_train_org is not None:
-        #    y_train = y_train_org.copy()
 
         if y_train is not None:
             # target preprocessing
@@ -107,7 +102,7 @@ class Preprocessing(object):
         columns_preprocessing = self._params.get("columns_preprocessing")
         for column in columns_preprocessing:
             transforms = columns_preprocessing[column]
-            #logger.debug("Preprocess column {} with: {}".format(column, transforms))
+            # logger.debug("Preprocess column {} with: {}".format(column, transforms))
 
         # remove empty or constant columns
         cols_to_remove = list(
@@ -163,17 +158,12 @@ class Preprocessing(object):
 
     def transform(self, X_validation, y_validation):
         logger.debug("Preprocessing.transform")
-        #X_validation, y_validation = None, None
-        #if X_validation_org is not None:
-        #    X_validation = X_validation_org.copy()
-        #if y_validation_org is not None:
-        #    y_validation = y_validation_org.copy()
 
         # doing copy to avoid SettingWithCopyWarning
-        X_validation = X_validation.copy(deep=False)
+        if X_validation is not None:
+            X_validation = X_validation.copy(deep=False)
         if y_validation is not None:
             y_validation = y_validation.copy(deep=False)
-
 
         # target preprocessing
         # this must be used first, maybe we will drop some rows because of missing target values
@@ -187,7 +177,9 @@ class Preprocessing(object):
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 if y_validation is not None and self._categorical_y is not None:
-                    y_validation = pd.Series(self._categorical_y.transform(y_validation))
+                    y_validation = pd.Series(
+                        self._categorical_y.transform(y_validation)
+                    )
 
             if PreprocessingCategorical.CONVERT_ONE_HOT in target_preprocessing:
                 if y_validation is not None and self._categorical_y is not None:
@@ -276,7 +268,7 @@ class Preprocessing(object):
                 )
             else:
                 # multiclass classification
-                #logger.debug(self._categorical_y.to_json())
+                # logger.debug(self._categorical_y.to_json())
                 if "unique_values" not in self._categorical_y.to_json():
                     labels = dict(
                         (v, k) for k, v in self._categorical_y.to_json().items()

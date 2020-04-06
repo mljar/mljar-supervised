@@ -5,7 +5,7 @@ import pandas as pd
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 
 
-class PreprocessingCategoricalIntegersTest(unittest.TestCase):
+class CategoricalIntegersTest(unittest.TestCase):
     def test_constructor_preprocessing_categorical(self):
         """
             Check if PreprocessingCategorical object is properly initialized

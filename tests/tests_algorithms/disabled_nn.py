@@ -25,7 +25,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        
+
         cls.params = {
             "dense_layers": 2,
             "dense_1_size": 8,

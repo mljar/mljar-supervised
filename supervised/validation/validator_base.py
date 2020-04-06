@@ -12,9 +12,9 @@ class BaseValidatorException(Exception):
 class BaseValidator(object):
     def __init__(self, params):
         self.params = params
-        #self.validate()
+        # self.validate()
 
-    '''
+    """
     def validate(self):
         if self.data.get("train") is None:
             msg = "Missing train data"
@@ -23,7 +23,8 @@ class BaseValidator(object):
             if self.data["train"].get(i) is None:
                 msg = "Missing {0} in train data".format(i)
                 raise BaseValidatorException(msg)
-    '''
+    """
+
     def split(self):
         pass
 

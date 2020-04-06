@@ -17,7 +17,9 @@ class AutoMLWithRegressionTest(unittest.TestCase):
     def test_fit_and_predict(self):
         seed = 1709
 
-        df = pd.read_csv("./tests/data/housing_regression_missing_values_missing_target.csv")
+        df = pd.read_csv(
+            "./tests/data/housing_regression_missing_values_missing_target.csv"
+        )
         print(df.columns)
         x_cols = [c for c in df.columns if c != "MEDV"]
         X = df[x_cols]

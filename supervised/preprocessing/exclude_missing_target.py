@@ -38,8 +38,10 @@ class ExcludeRowsMissingTarget(object):
             return X, y
         logger.debug("Exclude rows with missing target values")
         y = y.drop(y.index[y_missing])
+        y.reset_index(drop=True, inplace=True)
         # y.index = range(y.shape[0])
         if X is not None:
             X = X.drop(X.index[y_missing])
+            X.reset_index(drop=True, inplace=True)
             # X.index = range(X.shape[0])
         return X, y

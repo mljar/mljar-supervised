@@ -6,7 +6,6 @@ import time
 import numpy as np
 import pandas as pd
 import logging
-import shutil
 
 from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
@@ -36,12 +35,13 @@ from supervised.exceptions import AutoMLException
 import gc
 from supervised.utils.config import mem
 
+
 class AutoML:
     def __init__(
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms= ["Random Forest", "Xgboost"],  # , "Random Forest"],
+        algorithms=["Random Forest", "Xgboost"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -59,7 +59,7 @@ class AutoML:
 
         self._train_ensemble = train_ensemble
         self._models = []  # instances of iterative learner framework or ensemble
-        
+
         # it is instance of model framework or ensemble
         self._best_model = None
         # default validation
@@ -87,17 +87,14 @@ class AutoML:
             "top_models_to_improve": self._top_models_to_improve,
         }
 
-
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
-        
+
         self._data_info = None
         self._model_paths = []
 
         self._results_path = results_path
         self._set_results_dir()
-        
-
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -145,11 +142,9 @@ class AutoML:
 
         self._best_model = models_map[best_model_name]
 
-        
         data_info_path = os.path.join(self._results_path, "data_info.json")
         self._data_info = json.load(open(data_info_path))
         print("data info", self._data_info)
-
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -182,22 +177,22 @@ class AutoML:
             ldb["model_type"] += [m.get_type()]
             ldb["metric_type"] += [self._optimize_metric]
             ldb["metric_value"] += [m.get_final_loss()]
-            ldb["train_time"] += [np.round(m.get_train_time(),2)]
+            ldb["train_time"] += [np.round(m.get_train_time(), 2)]
         return pd.DataFrame(ldb)
 
     def get_additional_metrics(self):
         # 'target' - the target after processing used for model training
         # 'prediction' - out of folds predictions of the model
-        #oof_predictions = self._best_model.get_out_of_folds()
-        #prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
-        #target_cols = [c for c in oof_predictions.columns if "target" in c]
+        # oof_predictions = self._best_model.get_out_of_folds()
+        # prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
+        # target_cols = [c for c in oof_predictions.columns if "target" in c]
 
         additional_metrics = self._best_model.get_additional_metrics()
-        #AdditionalMetrics.compute(
+        # AdditionalMetrics.compute(
         #    oof_predictions[target_cols],
         #    oof_predictions[prediction_cols],
         #    self._ml_task,
-        #)
+        # )
         if self._ml_task == BINARY_CLASSIFICATION:
 
             self._metrics_details = additional_metrics["metric_details"]
@@ -265,7 +260,7 @@ class AutoML:
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {model_path}")
 
-            mf.train() #{"train": {"X": X, "y": y}})
+            mf.train()  # {"train": {"X": X, "y": y}})
 
             mf.save(model_path)
             self._model_paths += [model_path]
@@ -428,36 +423,34 @@ class AutoML:
                 f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
             )
 
-
     def _initial_prep(self, X_train, y_train, X_validation=None, y_validation=None):
 
         if not isinstance(X_train, pd.DataFrame):
             X_train = pd.DataFrame(X_train)
-        
+
         if not isinstance(X_train.columns[0], str):
             X_train.columns = [str(c) for c in X_train.columns]
 
         X_train.reset_index(drop=True, inplace=True)
-        
+
         if not isinstance(y_train, pd.DataFrame):
             y_train = pd.DataFrame({"target": np.array(y_train)})
         else:
             if "target" not in y_train.columns:
                 raise AutoMLException("There should be target column in y_train")
         y_train.reset_index(drop=True, inplace=True)
-        
-        return X_train, y_train["target"], X_validation, y_validation
 
+        return X_train, y_train["target"], X_validation, y_validation
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
 
         self._X_train_path = os.path.join(self._results_path, "X_train.csv")
         self._y_train_path = os.path.join(self._results_path, "y_train.csv")
-        
+
         X_train.to_parquet(self._X_train_path, index=False)
-        
+
         pd.DataFrame({"target": y_train}).to_parquet(self._y_train_path, index=False)
-        
+
         self._validation["X_train_path"] = self._X_train_path
         self._validation["y_train_path"] = self._y_train_path
         self._validation["results_path"] = self._results_path
@@ -475,9 +468,9 @@ class AutoML:
         print("del variables")
         mem()
         X_train.drop(X_train.columns, axis=1, inplace=True)
-        #del X_train 
-        #del y_train 
-        #gc.collect()
+        # del X_train
+        # del y_train
+        # gc.collect()
         mem()
 
     def _load_data_variables(self, X_train):
@@ -491,8 +484,6 @@ class AutoML:
 
         os.remove(self._X_train_path)
         os.remove(self._y_train_path)
-
-
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
 
@@ -509,10 +500,11 @@ class AutoML:
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
 
-        
-        X_train, y_train, X_validation, y_validation = self._initial_prep(X_train, y_train, X_validation, y_validation)
+        X_train, y_train, X_validation, y_validation = self._initial_prep(
+            X_train, y_train, X_validation, y_validation
+        )
         self._save_data(X_train, y_train, X_validation, y_validation)
-        
+
         print("AutoML data wtf")
         mem()
 
@@ -536,25 +528,23 @@ class AutoML:
         )
 
         # not so random step
-        generated_params = tuner.get_not_so_random_params(X_train, y_train)    
+        generated_params = tuner.get_not_so_random_params(X_train, y_train)
         print("len(generated_params)", len(generated_params))
         self._del_data_variables(X_train, y_train)
-        
 
         for params in generated_params:
             print("AutoML TRAIN MODEL -----------------")
             mem()
-            self.train_model(params )
+            self.train_model(params)
             print("END ------- AutoML TRAIN MODEL -----------------")
             mem()
         # hill climbing
         for params in tuner.get_hill_climbing_params(self._models):
             print("AutoML TRAIN MODEL -----------------")
             mem()
-            self.train_model(params )
+            self.train_model(params)
             print("END ------- AutoML TRAIN MODEL -----------------")
             mem()
-        
 
         self.ensemble_step()
 
@@ -587,12 +577,14 @@ class AutoML:
     def predict(self, X):
         if self._best_model is None:
             return None
-            
+
         input_columns = X.columns.tolist()
         for column in self._data_info["columns"]:
             if column not in input_columns:
-                raise AutoMLException(f"Missing column: {column} in input data. Cannot predict")
-        X = X[self._data_info["columns"]]        
+                raise AutoMLException(
+                    f"Missing column: {column} in input data. Cannot predict"
+                )
+        X = X[self._data_info["columns"]]
 
         predictions = self._best_model.predict(X)
 
@@ -605,9 +597,7 @@ class AutoML:
             if neg_label == "0" and pos_label == "1":
                 neg_label, pos_label = 0, 1
             # assume that it is binary classification
-            predictions["label"] = (
-                predictions.iloc[:, 1] > self._best_model._threshold
-            )
+            predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
             predictions["label"] = predictions["label"].map(
                 {True: pos_label, False: neg_label}
             )
@@ -617,8 +607,6 @@ class AutoML:
             return predictions
         else:
             return predictions
-
-        
 
     def to_json(self):
         if self._best_model is None:

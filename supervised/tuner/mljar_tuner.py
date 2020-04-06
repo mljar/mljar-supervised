@@ -37,14 +37,12 @@ class MljarTuner:
         generated_params = []
         for model_type in self._algorithms:
             for i in range(self._start_random_models):
-                logger.info(
-                    "Generate parameters for model #{0}".format(models_cnt + 1)
-                )
+                logger.info("Generate parameters for model #{0}".format(models_cnt + 1))
                 params = self._get_model_params(model_type, X, y, models_cnt + 1)
                 if params is None:
                     continue
                 params["name"] = f"model_{models_cnt + 1}"
-    
+
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     generated_params += [params]

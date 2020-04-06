@@ -13,8 +13,8 @@ class PreprocessingCategorical(object):
     CONVERT_ONE_HOT = "categorical_to_onehot"
     CONVERT_INTEGER = "categorical_to_int"
 
-    def __init__(self, columns=[], convert_categorical_method=CONVERT_INTEGER):
-        self._convert_method = convert_categorical_method
+    def __init__(self, columns=[], method=CONVERT_INTEGER):
+        self._convert_method = method
         self._convert_params = {}
         self._columns = columns
 

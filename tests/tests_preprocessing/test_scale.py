@@ -9,7 +9,6 @@ from supervised.preprocessing.scale import Scale
 
 
 class ScaleTest(unittest.TestCase):
-
     def test_fit_log_and_normal(self):
         # training data
         d = {
@@ -25,7 +24,9 @@ class ScaleTest(unittest.TestCase):
         val = float(df["col1"][0])
 
         assert_almost_equal(np.mean(df["col1"]), 0)
-        self.assertTrue(df["col1"][0] + 0.01 < df["col1"][1]) # in case of wrong scaling the small values will be squeezed
+        self.assertTrue(
+            df["col1"][0] + 0.01 < df["col1"][1]
+        )  # in case of wrong scaling the small values will be squeezed
 
         df = scale.inverse_transform(df)
 
@@ -35,7 +36,6 @@ class ScaleTest(unittest.TestCase):
         scale2.from_json(scale_params)
         df = scale2.transform(df)
         assert_almost_equal(df["col1"][0], val)
-
 
     def test_fit(self):
         # training data
@@ -53,8 +53,8 @@ class ScaleTest(unittest.TestCase):
         assert_almost_equal(np.mean(df["col2"]), 25.5)
 
         df = scale.inverse_transform(df)
-        assert_almost_equal(df["col1"][0],1)
-        assert_almost_equal(df["col1"][1],2)
+        assert_almost_equal(df["col1"][0], 1)
+        assert_almost_equal(df["col1"][1], 2)
 
     def test_to_and_from_json(self):
         # training data
@@ -78,4 +78,3 @@ class ScaleTest(unittest.TestCase):
         df = scale2.transform(df)
         assert_almost_equal(np.mean(df["col1"]), 0)
         assert_almost_equal(np.mean(df["col2"]), 25.5)
-

@@ -15,7 +15,7 @@ class ValidationStepException(Exception):
 
 class ValidationStep:
     def __init__(self, params):
-        
+
         # kfold is default validation technique
         self.validation_type = params.get("validation_type", "kfold")
 
@@ -23,7 +23,7 @@ class ValidationStep:
             self.validator = KFoldValidator(params)
         else:
             raise Exception("Other validation types are not implemented yet!")
-        '''
+        """
         elif self.validation_type == "split":
             self.validator = SplitValidator(params, data)
         elif self.validation_type == "with_dataset":
@@ -31,7 +31,7 @@ class ValidationStep:
         else:
             msg = "Unknown validation type: {0}".format(self.validation_type)
             raise ValidationStepException(msg)
-        '''
+        """
 
     def get_split(self, k):
         return self.validator.get_split(k)
