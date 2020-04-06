@@ -47,8 +47,8 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
 
 class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 
-    algorithm_name = "Random Forest Regressor"
-    algorithm_short_name = "Random Forest Regressor"
+    algorithm_name = "Random Forest"
+    algorithm_short_name = "Random Forest"
 
     def __init__(self, params):
         super(RandomForestRegressorAlgorithm, self).__init__(params)

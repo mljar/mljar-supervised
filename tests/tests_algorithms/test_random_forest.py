@@ -10,6 +10,7 @@ from sklearn import datasets
 from supervised.algorithms.random_forest import RandomForestAlgorithm
 from supervised.utils.metric import Metric
 
+import tempfile
 
 class RandomForestAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -70,15 +71,15 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        json_desc = rf.save()
-        rf2 = RandomForestAlgorithm({})
-        self.assertTrue(rf.uid != rf2.uid)
-        rf2.load(json_desc)
-        self.assertTrue(rf.uid == rf2.uid)
+        with tempfile.NamedTemporaryFile() as tmp:
+            
+            rf.save(tmp.name)
+            rf2 = RandomForestAlgorithm({})
+            rf2.load(tmp.name)
 
-        y_predicted = rf2.predict(self.X)
-        loss2 = metric(self.y, y_predicted)
-        assert_almost_equal(loss, loss2)
+            y_predicted = rf2.predict(self.X)
+            loss2 = metric(self.y, y_predicted)
+            assert_almost_equal(loss, loss2)
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ class AutoML:
         self,
         results_path=None,
         total_time_limit=60 * 60,
-        algorithms= [  "Random Forest"],  # , "Random Forest"],
+        algorithms= ["Random Forest", "Xgboost"],  # , "Random Forest"],
         start_random_models=10,
         hill_climbing_steps=3,
         top_models_to_improve=5,
@@ -87,13 +87,17 @@ class AutoML:
             "top_models_to_improve": self._top_models_to_improve,
         }
 
-        self._results_path = results_path
-        self._set_results_dir()
-        self._model_paths = []
 
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
         
+        self._data_info = None
+        self._model_paths = []
+
+        self._results_path = results_path
+        self._set_results_dir()
+        
+
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -140,6 +144,12 @@ class AutoML:
             best_model_name = fin.read()
 
         self._best_model = models_map[best_model_name]
+
+        
+        data_info_path = os.path.join(self._results_path, "data_info.json")
+        self._data_info = json.load(open(data_info_path))
+        print("data info", self._data_info)
+
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -420,7 +430,13 @@ class AutoML:
 
 
     def _initial_prep(self, X_train, y_train, X_validation=None, y_validation=None):
+
+        if not isinstance(X_train, pd.DataFrame):
+            X_train = pd.DataFrame(X_train)
         
+        if not isinstance(X_train.columns[0], str):
+            X_train.columns = [str(c) for c in X_train.columns]
+
         X_train.reset_index(drop=True, inplace=True)
         
         if not isinstance(y_train, pd.DataFrame):
@@ -435,8 +451,8 @@ class AutoML:
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
 
-        self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
-        self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
+        self._X_train_path = os.path.join(self._results_path, "X_train.csv")
+        self._y_train_path = os.path.join(self._results_path, "y_train.csv")
         
         X_train.to_parquet(self._X_train_path, index=False)
         
@@ -445,6 +461,15 @@ class AutoML:
         self._validation["X_train_path"] = self._X_train_path
         self._validation["y_train_path"] = self._y_train_path
         self._validation["results_path"] = self._results_path
+
+        self._data_info = {
+            "columns": X_train.columns.tolist(),
+            "rows": X_train.shape[0],
+            "cols": X_train.shape[1],
+        }
+        data_info_path = os.path.join(self._results_path, "data_info.json")
+        with open(data_info_path, "w") as fout:
+            fout.write(json.dumps(self._data_info, indent=4))
 
     def _del_data_variables(self, X_train, y_train):
         print("del variables")
@@ -560,33 +585,40 @@ class AutoML:
         self._load_data_variables(X_train)
 
     def predict(self, X):
-        if self._best_model is not None:
+        if self._best_model is None:
+            return None
+            
+        input_columns = X.columns.tolist()
+        for column in self._data_info["columns"]:
+            if column not in input_columns:
+                raise AutoMLException(f"Missing column: {column} in input data. Cannot predict")
+        X = X[self._data_info["columns"]]        
 
-            predictions = self._best_model.predict(X)
+        predictions = self._best_model.predict(X)
 
-            if self._ml_task == BINARY_CLASSIFICATION:
-                # need to predict the label based on predictions and threshold
-                neg_label, pos_label = (
-                    predictions.columns[0][11:],
-                    predictions.columns[1][11:],
-                )
-                if neg_label == "0" and pos_label == "1":
-                    neg_label, pos_label = 0, 1
-                # assume that it is binary classification
-                predictions["label"] = (
-                    predictions.iloc[:, 1] > self._best_model._threshold
-                )
-                predictions["label"] = predictions["label"].map(
-                    {True: pos_label, False: neg_label}
-                )
-                return predictions
-            elif self._ml_task == MULTICLASS_CLASSIFICATION:
+        if self._ml_task == BINARY_CLASSIFICATION:
+            # need to predict the label based on predictions and threshold
+            neg_label, pos_label = (
+                predictions.columns[0][11:],
+                predictions.columns[1][11:],
+            )
+            if neg_label == "0" and pos_label == "1":
+                neg_label, pos_label = 0, 1
+            # assume that it is binary classification
+            predictions["label"] = (
+                predictions.iloc[:, 1] > self._best_model._threshold
+            )
+            predictions["label"] = predictions["label"].map(
+                {True: pos_label, False: neg_label}
+            )
+            return predictions
+        elif self._ml_task == MULTICLASS_CLASSIFICATION:
 
-                return predictions
-            else:
-                return predictions
+            return predictions
+        else:
+            return predictions
 
-        return None
+        
 
     def to_json(self):
         if self._best_model is None:

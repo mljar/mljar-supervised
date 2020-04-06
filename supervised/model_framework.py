@@ -9,7 +9,7 @@ import json
 
 from supervised.callbacks.callback_list import CallbackList
 from supervised.validation.validation_step import ValidationStep
-from supervised.algorithms.algorithm_factory import AlgorithmFactory
+from supervised.algorithms.factory import AlgorithmFactory
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 

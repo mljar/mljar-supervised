@@ -8,6 +8,8 @@ digits = load_digits()
 X = pd.DataFrame(digits.data)
 y = digits.target
 
+print(X)
+
 automl = AutoML(
 #        results_path="AutoML_1",
         total_time_limit=10,

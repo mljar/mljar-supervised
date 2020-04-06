@@ -10,6 +10,7 @@ from sklearn import datasets
 from supervised.algorithms.xgboost import XgbAlgorithm
 from supervised.utils.metric import Metric
 
+import tempfile 
 
 class XgboostAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -78,16 +79,16 @@ class XgboostAlgorithmTest(unittest.TestCase):
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        json_desc = xgb.save()
-        xgb2 = XgbAlgorithm(params)
-        self.assertTrue(xgb.uid != xgb2.uid)
-        self.assertTrue(xgb2.model is None)
-        xgb2.load(json_desc)
-        self.assertTrue(xgb.uid == xgb2.uid)
+        with tempfile.NamedTemporaryFile() as tmp:
+            xgb.save(tmp.name)
 
-        y_predicted = xgb2.predict(self.X)
-        loss2 = metric(self.y, y_predicted)
-        assert_almost_equal(loss, loss2)
+            xgb2 = XgbAlgorithm(params)
+            self.assertTrue(xgb2.model is None)
+            xgb2.load(tmp.name)
+            
+            y_predicted = xgb2.predict(self.X)
+            loss2 = metric(self.y, y_predicted)
+            assert_almost_equal(loss, loss2)
 
 if __name__ == "__main__":
     unittest.main()

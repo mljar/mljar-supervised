@@ -44,32 +44,38 @@ class KFoldValidator(BaseValidator):
         if self._X_train_path is None or self._y_train_path is None:
             raise AutoMLException("No training data path set in KFoldValidator params")
 
-        print("SPLIT")
-        mem()
-        print("reading data")
-        X = pd.read_parquet(self._X_train_path)
-        y = pd.read_parquet(self._y_train_path)
-        y = y["target"]
+        
+        folds_path = os.path.join(self._results_path, "folds")
+        
+        if not os.path.exists(folds_path):
+        
+            os.mkdir(folds_path)
 
-        mem()
-        time.sleep(3)
-        mem()
+            print("SPLIT")
+            mem()
+            print("reading data")
+            X = pd.read_parquet(self._X_train_path)
+            y = pd.read_parquet(self._y_train_path)
+            y = y["target"]
 
-        os.mkdir(os.path.join(self._results_path, "folds"))
+            mem()
+            time.sleep(3)
+            mem()
 
-        for fold_cnt, (train_index, validation_index) in enumerate(self.skf.split(X, y)):
+            for fold_cnt, (train_index, validation_index) in enumerate(self.skf.split(X, y)):
 
-            train_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_train_indices.npy")
-            validation_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_validation_indices.npy")
-            
-            np.save(train_index_file, train_index)
-            np.save(validation_index_file, validation_index)
-            
-        del X 
-        del y 
-        gc.collect()
-        mem()
-
+                train_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_train_indices.npy")
+                validation_index_file = os.path.join(self._results_path, "folds", f"fold_{fold_cnt}_validation_indices.npy")
+                
+                np.save(train_index_file, train_index)
+                np.save(validation_index_file, validation_index)
+                
+            del X 
+            del y 
+            gc.collect()
+            mem()
+        else:
+            log.debug("Folds split already done, reuse it")
 
     def get_split(self, k):
         

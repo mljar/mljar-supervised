@@ -27,3 +27,7 @@ class AlgorithmsRegistry:
     @staticmethod
     def get_supported_ml_tasks():
         return AlgorithmsRegistry.registry.keys()
+
+    @staticmethod
+    def get_algorithm_class(ml_task, algorithm_name):
+        return AlgorithmsRegistry.registry[ml_task][algorithm_name]["class"]
