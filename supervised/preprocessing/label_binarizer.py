@@ -28,6 +28,9 @@ class LabelBinarizer(object):
         X.drop(column, axis=1, inplace=True)
         return X
 
+    def inverse_transform(self, X, column):
+        raise Exception("NotImplemented: inverse_transform in LabelBinarizer")
+
     def to_json(self):
         self._uniq_values = [
             i if type(i) != np.bool_ else bool(i) for i in list(self._uniq_values)

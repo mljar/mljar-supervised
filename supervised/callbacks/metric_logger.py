@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 import numpy as np
 
 from supervised.callbacks.callback import Callback
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
 
 
 class MetricLogger(Callback):

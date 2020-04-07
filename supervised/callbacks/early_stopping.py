@@ -1,11 +1,16 @@
+import os
 import logging
-
-log = logging.getLogger(__name__)
-
 import numpy as np
 import pandas as pd
+
 from supervised.callbacks.callback import Callback
-from supervised.metric import Metric
+from supervised.utils.metric import Metric
+from supervised.utils.config import LOG_LEVEL
+
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
+
+from supervised.utils.config import mem
 
 
 class EarlyStopping(Callback):
@@ -14,6 +19,7 @@ class EarlyStopping(Callback):
         self.name = params.get("name", "early_stopping")
         self.metric = Metric(params.get("metric"))
         self.max_no_improvement_cnt = params.get("max_no_improvement_cnt", 5)
+        self.log_to_dir = params.get("log_to_dir")
 
         self.keep_best_model = params.get("keep_best_model", True)
         self.best_iter = {}
@@ -29,6 +35,8 @@ class EarlyStopping(Callback):
         )  # final score computed on combined predictions from all learners
         # path to best model local copy, only used if cannot deep copy
         self.best_model_paths = {}
+        self.multiple_target = False
+        self.target_columns = None
 
     def add_and_set_learner(self, learner):
         self.learners += [learner]
@@ -46,12 +54,19 @@ class EarlyStopping(Callback):
     def on_framework_train_end(self, logs):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
-
+        logger.debug("early stopping on framework train end")
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
-        self.final_loss = self.metric(
-            self.best_y_oof["target"], self.best_y_oof["prediction"]
-        )
+
+        if "prediction" in self.best_y_oof:
+            self.final_loss = self.metric(
+                self.best_y_oof[self.target_columns], self.best_y_oof["prediction"]
+            )
+        else:
+            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
+            self.final_loss = self.metric(
+                self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
+            )
 
     def on_iteration_end(self, logs, predictions):
 
@@ -74,17 +89,44 @@ class EarlyStopping(Callback):
             self.no_improvement_cnt = 0
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")
             self.best_loss[self.learner.uid] = validation_loss
-            self.best_y_predicted[self.learner.uid] = pd.DataFrame(
-                {
-                    "prediction": predictions.get("y_validation_predicted"),
-                    "target": y_validation_true.values.reshape(
-                        y_validation_true.shape[0]
-                    ),
-                },
-                index=predictions.get("validation_index"),
-            )
-            self.best_models[self.learner.uid] = self.learner.copy()
 
+            if len(y_validation_true.shape) == 1 or y_validation_true.shape[1] == 1:
+                self.best_y_predicted[self.learner.uid] = pd.DataFrame(
+                    {
+                        "target": np.array(y_validation_true)
+                        # y_validation_true.values.reshape(
+                        #    y_validation_true.shape[0]
+                        # )
+                    },
+                    index=predictions.get("validation_index"),
+                )
+                self.multiple_target = False
+                self.target_columns = "target"
+            else:
+                # in case of Neural Networks and multi-class classification
+                self.best_y_predicted[self.learner.uid] = pd.DataFrame(
+                    y_validation_true, index=predictions.get("validation_index")
+                )
+                self.multiple_target = True
+                self.target_columns = y_validation_true.columns
+
+            y_validation_predicted = predictions.get("y_validation_predicted")
+
+            if len(y_validation_predicted.shape) == 1:
+                # only one prediction column (binary classification or regression)
+                self.best_y_predicted[self.learner.uid]["prediction"] = np.array(
+                    y_validation_predicted
+                )
+            else:
+                # several columns in multiclass classification
+                cols = predictions.get("validation_columns")
+                for i_col in range(y_validation_predicted.shape[1]):
+                    self.best_y_predicted[self.learner.uid][
+                        # "prediction_{}".format(i_col)
+                        cols[i_col]
+                    ] = y_validation_predicted[:, i_col]
+
+            self.best_models[self.learner.uid] = self.learner.copy()
             # if local copy is not available, save model and keep path
             if self.best_models[self.learner.uid] is None:
                 self.best_model_paths[self.learner.uid] = self.learner.save()
@@ -94,7 +136,7 @@ class EarlyStopping(Callback):
         if self.no_improvement_cnt > self.max_no_improvement_cnt:
             self.learner.stop_training = True
 
-        log.debug(
+        logger.info(
             "EarlyStopping.on_iteration_end, train loss: {}, validation loss: {}, "
             "no improvement cnt {}, iters {}".format(
                 train_loss,
@@ -103,6 +145,18 @@ class EarlyStopping(Callback):
                 len(self.loss_values[self.learner.uid]["iters"]),
             )
         )
+        if self.log_to_dir is not None:
+
+            with open(
+                os.path.join(
+                    self.log_to_dir, f"learner_{len(self.learners)}_training.log"
+                ),
+                "a",
+            ) as fout:
+                iteration = len(self.loss_values[self.learner.uid]["iters"])
+                fout.write(
+                    f"iteration: {iteration} train: {train_loss} validation: {validation_loss} no_improvement: {self.no_improvement_cnt}\n"
+                )
 
     def get_status(self):
         return "Train loss: {}, Validation loss: {} @ iteration {}".format(

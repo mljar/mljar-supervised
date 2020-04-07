@@ -52,7 +52,7 @@ class PreprocessingUtils(object):
 
     @staticmethod
     def is_log_scale_needed(x_org):
-        x = x_org[~pd.isnull(x_org)]
+        x = np.array(x_org[~pd.isnull(x_org)])
         # first scale on raw data
         x = preprocessing.scale(x)
         # second scale on log data
