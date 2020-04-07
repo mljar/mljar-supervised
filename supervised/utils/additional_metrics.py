@@ -19,6 +19,9 @@ from sklearn.metrics import (
     roc_auc_score,
     confusion_matrix,
     classification_report,
+    r2_score,
+    mean_squared_error,
+    mean_absolute_error,
 )
 from supervised.utils.metric import logloss
 
@@ -138,6 +141,27 @@ class AdditionalMetrics:
         }
 
     @staticmethod
+    def regression(target, predictions):
+        regression_metrics = {
+            "MAE": mean_absolute_error,
+            "MSE": mean_squared_error,
+            "RMSE": lambda t, p: np.sqrt(mean_squared_error(t, p)),
+            "R2": r2_score,
+        }
+        max_metrics = {}
+        for k, v in regression_metrics.items():
+            max_metrics[k] = v(target, predictions)
+
+        return {
+            "max_metrics": pd.DataFrame(
+                {
+                    "Metric": list(max_metrics.keys()),
+                    "Score": list(max_metrics.values()),
+                }
+            )
+        }
+
+    @staticmethod
     def compute(target, predictions, ml_task):
 
         if ml_task == BINARY_CLASSIFICATION:
@@ -145,4 +169,4 @@ class AdditionalMetrics:
         elif ml_task == MULTICLASS_CLASSIFICATION:
             return AdditionalMetrics.multiclass_classification(target, predictions)
         elif ml_task == REGRESSION:
-            return None
+            return AdditionalMetrics.regression(target, predictions)

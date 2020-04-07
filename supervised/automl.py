@@ -35,7 +35,8 @@ from supervised.exceptions import AutoMLException
 import gc
 from supervised.utils.config import mem
 
-from tabulate import tabulate 
+from tabulate import tabulate
+
 
 class AutoML:
     def __init__(
@@ -145,7 +146,6 @@ class AutoML:
 
         data_info_path = os.path.join(self._results_path, "data_info.json")
         self._data_info = json.load(open(data_info_path))
-        print("data info", self._data_info)
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -362,7 +362,9 @@ class AutoML:
             if a not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
                 raise AutoMLException(
                     "The algorithm {} is not allowed to use for ML task: {}. Allowed algorithms: {}".format(
-                        a, self._ml_task, list(AlgorithmsRegistry.registry[self._ml_task].keys())
+                        a,
+                        self._ml_task,
+                        list(AlgorithmsRegistry.registry[self._ml_task].keys()),
                     )
                 )
         logger.info("AutoML will use algorithms: {}".format(self._algorithms))
@@ -466,15 +468,15 @@ class AutoML:
             fout.write(json.dumps(self._data_info, indent=4))
 
     def _del_data_variables(self, X_train, y_train):
-        
+
         X_train.drop(X_train.columns, axis=1, inplace=True)
-        
+
     def _load_data_variables(self, X_train):
         X = pd.read_parquet(self._X_train_path)
 
         for c in X.columns:
             X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
-        
+
         os.remove(self._X_train_path)
         os.remove(self._y_train_path)
 
@@ -557,7 +559,6 @@ class AutoML:
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-
 
         self._load_data_variables(X_train)
 

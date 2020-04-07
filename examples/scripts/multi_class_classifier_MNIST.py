@@ -20,12 +20,13 @@ mem()
 
 
 automl = AutoML(
-        #results_path="AutoML_12",
-        total_time_limit=60*60,
-        start_random_models=5,
-        hill_climbing_steps=2,
-        top_models_to_improve=3,
-        train_ensemble=True)
+    # results_path="AutoML_12",
+    total_time_limit=60 * 60,
+    start_random_models=5,
+    hill_climbing_steps=2,
+    top_models_to_improve=3,
+    train_ensemble=True,
+)
 
 mem()
 print("Start fit")
@@ -37,6 +38,6 @@ predictions = automl.predict(test)
 print(predictions.head())
 print(predictions.tail())
 
-sub = pd.DataFrame({"ImageId":0, "Label": predictions["label"]})
+sub = pd.DataFrame({"ImageId": 0, "Label": predictions["label"]})
 sub["ImageId"] = sub.index + 1
 sub.to_csv("sub1.csv", index=False)

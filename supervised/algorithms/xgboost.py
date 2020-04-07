@@ -71,7 +71,7 @@ class XgbAlgorithm(BaseAlgorithm):
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
         )
-        
+
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
@@ -80,7 +80,7 @@ class XgbAlgorithm(BaseAlgorithm):
             del self.model
             self.model = xgb.Booster()
             self.model.load_model(tmp.name)
-        
+
     def predict(self, X):
         if self.model is None:
             raise XgbAlgorithmException("Xgboost model is None")

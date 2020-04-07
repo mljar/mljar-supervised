@@ -1,4 +1,3 @@
-
 from supervised.algorithms.registry import AlgorithmsRegistry, BINARY_CLASSIFICATION
 
 import logging
@@ -9,7 +8,6 @@ from supervised.exceptions import AutoMLException
 
 
 class AlgorithmFactory(object):
-
     @classmethod
     def get_algorithm(cls, params):
         alg_type = params.get("model_type", "Xgboost")

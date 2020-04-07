@@ -33,7 +33,9 @@ from tabulate import tabulate
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+
 MY_COLORS = list(mcolors.TABLEAU_COLORS.values())
+
 
 class ModelFramework:
     def __init__(self, params, callbacks=[]):
@@ -168,7 +170,6 @@ class ModelFramework:
             return None
         return early_stopping.metric.name
 
-
     def get_out_of_folds(self):
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
@@ -297,7 +298,10 @@ class ModelFramework:
 
                 fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
                 fout.write("Confusion matrix:\n{}".format(confusion_matrix))
+            elif self._ml_task == REGRESSION:
+                max_metrics = self._additional_metrics["max_metrics"]
 
+                fout.write("Metric details:\n{}\n\n".format(max_metrics))
 
         with open(os.path.join(model_path, "README.md"), "w") as fout:
 
@@ -305,26 +309,22 @@ class ModelFramework:
 
             fout.write(f"\n ## {self.get_type()}\n")
 
-            for k,v in self.learner_params.items():
+            for k, v in self.learner_params.items():
                 if k in ["model_type", "ml_task", "seed"]:
                     continue
                 fout.write(f"- **{k}**: {v}\n")
 
             fout.write("\n# Validation\n")
-            #fout.write(f" - validation type: {self.validation.validation_type}\n")
-            for k,v in self.validation_params.items():
+            # fout.write(f" - validation type: {self.validation.validation_type}\n")
+            for k, v in self.validation_params.items():
                 if "path" not in k:
                     fout.write(f" - **{k}**: {v}\n")
-            
-            
-
 
             if self._ml_task == BINARY_CLASSIFICATION:
                 max_metrics = self._additional_metrics["max_metrics"]
                 confusion_matrix = self._additional_metrics["confusion_matrix"]
                 threshold = self._additional_metrics["threshold"]
 
-                
                 mm = max_metrics.transpose()
                 fout.write("\n## Metric details\n{}\n\n".format(mm.to_markdown()))
                 fout.write(
@@ -336,21 +336,38 @@ class ModelFramework:
                 max_metrics = self._additional_metrics["max_metrics"]
                 confusion_matrix = self._additional_metrics["confusion_matrix"]
 
-                
                 mm = max_metrics.transpose()
                 fout.write("\n### Metric details\n{}\n\n".format(mm.to_markdown()))
                 fout.write(
-                    "\n## Confusion matrix\n{}".format(
-                        confusion_matrix.to_markdown()
+                    "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
+                )
+            elif self._ml_task == REGRESSION:
+                max_metrics = self._additional_metrics["max_metrics"]
+
+                fout.write(
+                    "\n### Metric details:\n{}\n\n".format(
+                        tabulate(
+                            max_metrics.values, max_metrics.columns, tablefmt="pipe"
+                        )
                     )
                 )
 
-
-            plt.figure(figsize=(10,7))
+            plt.figure(figsize=(10, 7))
             for l in range(self.validation.get_n_splits()):
-                df = pd.read_csv(os.path.join(model_path,  f"./learner_{l+1}_training.log"), names=["iteration", "train", "test", "no_improvement"])
-                plt.plot(df.iteration, df.train, "--", color=MY_COLORS[l], label=f"Fold {l}, train")
-                plt.plot(df.iteration, df.test, color=MY_COLORS[l], label=f"Fold {l}, test")
+                df = pd.read_csv(
+                    os.path.join(model_path, f"./learner_{l+1}_training.log"),
+                    names=["iteration", "train", "test", "no_improvement"],
+                )
+                plt.plot(
+                    df.iteration,
+                    df.train,
+                    "--",
+                    color=MY_COLORS[l],
+                    label=f"Fold {l}, train",
+                )
+                plt.plot(
+                    df.iteration, df.test, color=MY_COLORS[l], label=f"Fold {l}, test"
+                )
             plt.xlabel("#Iteration")
             plt.ylabel(self.get_metric_name())
             plt.legend(loc="best")
@@ -359,7 +376,6 @@ class ModelFramework:
 
             fout.write("\n\n## Learning curves\n")
             fout.write(f"![Learning curves](learning_curves.png)")
-
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")

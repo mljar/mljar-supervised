@@ -24,6 +24,7 @@ logger.setLevel(LOG_LEVEL)
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+
 class Ensemble:
 
     algorithm_name = "Greedy Ensemble"
@@ -332,7 +333,7 @@ class Ensemble:
 
             fout.write(f"# Summary of {self.get_name()}\n\n")
 
-            fout.write("## Ensemble structure")
+            fout.write("## Ensemble structure\n")
             selected = pd.DataFrame(select_models_desc)
             fout.write(tabulate(selected.values, ["Model", "Weight"], tablefmt="pipe"))
 
@@ -343,7 +344,6 @@ class Ensemble:
                 confusion_matrix = self._additional_metrics["confusion_matrix"]
                 threshold = self._additional_metrics["threshold"]
 
-                
                 mm = max_metrics.transpose()
                 fout.write("\n## Metric details\n{}\n\n".format(mm.to_markdown()))
                 fout.write(
@@ -355,18 +355,15 @@ class Ensemble:
                 max_metrics = self._additional_metrics["max_metrics"]
                 confusion_matrix = self._additional_metrics["confusion_matrix"]
 
-                
                 mm = max_metrics.transpose()
                 fout.write("\n### Metric details\n{}\n\n".format(mm.to_markdown()))
                 fout.write(
-                    "\n## Confusion matrix\n{}".format(
-                        confusion_matrix.to_markdown()
-                    )
+                    "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
                 )
 
-            plt.figure(figsize=(10,7))
-            plt.plot(range(1, len(self._scores)+1), self._scores, label=f"Ensemble")
-            
+            plt.figure(figsize=(10, 7))
+            plt.plot(range(1, len(self._scores) + 1), self._scores, label=f"Ensemble")
+
             plt.xlabel("#Iteration")
             plt.ylabel(self.metric.name)
             plt.legend(loc="best")
@@ -375,8 +372,6 @@ class Ensemble:
 
             fout.write("\n\n## Learning curves\n")
             fout.write(f"![Learning curves](learning_curves.png)")
-
-
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")

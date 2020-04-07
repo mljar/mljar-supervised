@@ -93,7 +93,7 @@ class KFoldValidator(BaseValidator):
         X = pd.read_parquet(self._X_train_path)
         y = pd.read_parquet(self._y_train_path)
         y = y["target"]
-        
+
         return (
             {"X": X.loc[train_index], "y": y.loc[train_index]},
             {"X": X.loc[validation_index], "y": y.loc[validation_index]},
