@@ -24,6 +24,7 @@ class HillClimbing:
             keys.remove("num_class")
         keys.remove("model_type")
         keys.remove("seed")
+        keys.remove("ml_task")
 
         model_type = params["model_type"]
         model_info = AlgorithmsRegistry.registry[ml_task][model_type]

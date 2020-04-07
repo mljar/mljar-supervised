@@ -31,3 +31,8 @@ class AlgorithmsRegistry:
     @staticmethod
     def get_algorithm_class(ml_task, algorithm_name):
         return AlgorithmsRegistry.registry[ml_task][algorithm_name]["class"]
+
+
+# Import algorithm to be registered
+import supervised.algorithms.random_forest 
+import supervised.algorithms.xgboost

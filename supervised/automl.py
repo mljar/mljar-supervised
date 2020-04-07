@@ -360,8 +360,8 @@ class AutoML:
         for a in self._algorithms:
             if a not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
                 raise AutoMLException(
-                    "The algorithm {} is not allowed to use for ML task: {}.".format(
-                        a, self._ml_task
+                    "The algorithm {} is not allowed to use for ML task: {}. Allowed algorithms: {}".format(
+                        a, self._ml_task, list(AlgorithmsRegistry.registry[self._ml_task].keys())
                     )
                 )
         logger.info("AutoML will use algorithms: {}".format(self._algorithms))
@@ -465,6 +465,7 @@ class AutoML:
             fout.write(json.dumps(self._data_info, indent=4))
 
     def _del_data_variables(self, X_train, y_train):
+        
         X_train.drop(X_train.columns, axis=1, inplace=True)
         
     def _load_data_variables(self, X_train):
@@ -487,6 +488,9 @@ class AutoML:
             raise AutoMLException(
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
+
+        if X_train is not None:
+            X_train = X_train.copy(deep=False)
 
         X_train, y_train, X_validation, y_validation = self._initial_prep(
             X_train, y_train, X_validation, y_validation
@@ -511,7 +515,6 @@ class AutoML:
 
         # not so random step
         generated_params = tuner.get_not_so_random_params(X_train, y_train)
-        print("len(generated_params)", len(generated_params))
         self._del_data_variables(X_train, y_train)
 
         for params in generated_params:
@@ -551,6 +554,9 @@ class AutoML:
     def predict(self, X):
         if self._best_model is None:
             return None
+
+        if not isinstance(X.columns[0], str):
+            X.columns = [str(c) for c in X.columns]
 
         input_columns = X.columns.tolist()
         for column in self._data_info["columns"]:

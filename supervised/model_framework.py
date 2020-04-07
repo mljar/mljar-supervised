@@ -99,25 +99,13 @@ class ModelFramework:
     def train(self):  # , data):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
-        print("model_framework train start")
-        mem()
-
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
 
         self.validation = ValidationStep(self.validation_params)
 
-        print("validation before for loop")
-        mem()
         for k_fold in range(self.validation.get_n_splits()):
             train_data, validation_data = self.validation.get_split(k_fold)
-
-            print("validation step")
-            mem()
-            time.sleep(3)
-            mem()
-
-            logger.debug("-" * 51)
             logger.debug(
                 "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
                     train_data["X"].shape,
@@ -136,11 +124,6 @@ class ModelFramework:
                 validation_data["X"], validation_data["y"]
             )
 
-            print("PREPROCESSED")
-            mem()
-            time.sleep(3)
-            mem()
-            print("START LEARNER")
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
 
@@ -148,14 +131,10 @@ class ModelFramework:
             self.callbacks.on_learner_train_start()
 
             for i in range(learner.max_iters):
-                print("iter", i)
-                mem()
                 self.callbacks.on_iteration_start()
 
                 learner.fit(X_train, y_train)
 
-                print("predicts iter", i)
-                mem()
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
                     self.predictions(
@@ -170,12 +149,9 @@ class ModelFramework:
                 if learner.stop_training:
                     break
                 learner.update({"step": i})
-                print("iter end")
-                mem()
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
-            print("train end")
-            mem()
+
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time
@@ -209,9 +185,6 @@ class ModelFramework:
     def predict(self, X):
         logger.debug("ModelFramework.predict")
 
-        print(X)
-        print("@" * 21)
-
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average
@@ -232,53 +205,6 @@ class ModelFramework:
         )
 
         return y_predicted_final
-
-    """
-    def to_json(self):
-        preprocessing = []
-        for p in self.preprocessings:
-            preprocessing += [p.to_json()]
-
-        learners_desc = []
-        for learner in self.learners:
-            learners_desc += [learner.save()]
-
-        zf = zipfile.ZipFile(self.framework_file_path, mode="w")
-        try:
-            for lf in learners_desc:
-                zf.write(lf["model_file_path"])
-        finally:
-            zf.close()
-        desc = {
-            "uid": self.uid,
-            "algorithm_short_name": self.get_type(),
-            "framework_file": self.framework_file,
-            "framework_file_path": self.framework_file_path,
-            "preprocessing": preprocessing,
-            "learners": learners_desc,
-            "params": self.params,  # this is needed while constructing new Iterative Learner Framework
-        }
-        return desc
-
-    def from_json(self, json_desc):
-        self.uid = json_desc.get("uid", self.uid)
-        self.framework_file = json_desc.get("framework_file", self.framework_file)
-        self.framework_file_path = json_desc.get(
-            "framework_file_path", self.framework_file_path
-        )
-
-        with zipfile.ZipFile(json_desc.get("framework_file_path"), "r") as zip_ref:
-            zip_ref.extractall(storage_path)
-        self.learners = []
-        for learner_desc in json_desc.get("learners"):
-            self.learners += [AlgorithmFactory.load(learner_desc)]
-        preprocessing = json_desc.get("preprocessing", [])
-
-        for p in preprocessing:
-            preproc = Preprocessing()
-            preproc.from_json(p)
-            self.preprocessings += [preproc]
-    """
 
     def get_additional_metrics(self):
         if self._additional_metrics is None:

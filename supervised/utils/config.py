@@ -6,7 +6,7 @@ storage_path = tempfile.gettempdir()
 
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.ERROR
 
 import numpy as np
 

@@ -61,11 +61,6 @@ class AdditionalMetrics:
             details["recall"] += [recall_score(target, response)]
             details["mcc"] += [matthews_corrcoef(target, response)]
 
-        print(details)
-        print(np.argmax(details["f1"]))
-        print(details["threshold"][np.argmax(details["f1"])])
-
-
         # max metrics
         max_metrics = {
             "logloss": {
@@ -97,9 +92,6 @@ class AdditionalMetrics:
                 "threshold": details["threshold"][np.argmax(details["mcc"])],
             },
         }
-
-        print(max_metrics)
-
         # confusion matrix
         conf_matrix = confusion_matrix(
             target, predictions > max_metrics["f1"]["threshold"]
