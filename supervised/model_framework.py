@@ -29,7 +29,11 @@ logger.setLevel(LOG_LEVEL)
 
 
 from supervised.utils.config import mem
+from tabulate import tabulate
 
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+MY_COLORS = list(mcolors.TABLEAU_COLORS.values())
 
 class ModelFramework:
     def __init__(self, params, callbacks=[]):
@@ -157,6 +161,13 @@ class ModelFramework:
         self.train_time = time.time() - start_time
         self.get_additional_metrics()
         logger.debug("ModelFramework end of training")
+
+    def get_metric_name(self):
+        early_stopping = self.callbacks.get("early_stopping")
+        if early_stopping is None:
+            return None
+        return early_stopping.metric.name
+
 
     def get_out_of_folds(self):
         early_stopping = self.callbacks.get("early_stopping")
@@ -286,6 +297,69 @@ class ModelFramework:
 
                 fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
                 fout.write("Confusion matrix:\n{}".format(confusion_matrix))
+
+
+        with open(os.path.join(model_path, "README.md"), "w") as fout:
+
+            fout.write(f"# Summary of {self.get_name()}\n")
+
+            fout.write(f"\n ## {self.get_type()}\n")
+
+            for k,v in self.learner_params.items():
+                if k in ["model_type", "ml_task", "seed"]:
+                    continue
+                fout.write(f"- **{k}**: {v}\n")
+
+            fout.write("\n# Validation\n")
+            #fout.write(f" - validation type: {self.validation.validation_type}\n")
+            for k,v in self.validation_params.items():
+                if "path" not in k:
+                    fout.write(f" - **{k}**: {v}\n")
+            
+            
+
+
+            if self._ml_task == BINARY_CLASSIFICATION:
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+                threshold = self._additional_metrics["threshold"]
+
+                
+                mm = max_metrics.transpose()
+                fout.write("\n## Metric details\n{}\n\n".format(mm.to_markdown()))
+                fout.write(
+                    "\n## Confusion matrix (at threshold={})\n{}".format(
+                        np.round(threshold, 6), confusion_matrix.to_markdown()
+                    )
+                )
+            elif self._ml_task == MULTICLASS_CLASSIFICATION:
+                max_metrics = self._additional_metrics["max_metrics"]
+                confusion_matrix = self._additional_metrics["confusion_matrix"]
+
+                
+                mm = max_metrics.transpose()
+                fout.write("\n### Metric details\n{}\n\n".format(mm.to_markdown()))
+                fout.write(
+                    "\n## Confusion matrix\n{}".format(
+                        confusion_matrix.to_markdown()
+                    )
+                )
+
+
+            plt.figure(figsize=(10,7))
+            for l in range(self.validation.get_n_splits()):
+                df = pd.read_csv(os.path.join(model_path,  f"./learner_{l+1}_training.log"), names=["iteration", "train", "test", "no_improvement"])
+                plt.plot(df.iteration, df.train, "--", color=MY_COLORS[l], label=f"Fold {l}, train")
+                plt.plot(df.iteration, df.test, color=MY_COLORS[l], label=f"Fold {l}, test")
+            plt.xlabel("#Iteration")
+            plt.ylabel(self.get_metric_name())
+            plt.legend(loc="best")
+            plot_path = os.path.join(model_path, "learning_curves.png")
+            plt.savefig(plot_path)
+
+            fout.write("\n\n## Learning curves\n")
+            fout.write(f"![Learning curves](learning_curves.png)")
+
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")

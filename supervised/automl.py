@@ -35,6 +35,7 @@ from supervised.exceptions import AutoMLException
 import gc
 from supervised.utils.config import mem
 
+from tabulate import tabulate 
 
 class AutoML:
     def __init__(
@@ -548,6 +549,15 @@ class AutoML:
 
         ldb = self.get_leaderboard()
         ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+
+        # save report
+        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+        ldb.insert(loc=0, column="Best model", value="")
+        ldb["Best model"][ldb.name == self._best_model.get_name()] = "*** the best ***"
+        with open(os.path.join(self._results_path, "README.md"), "w") as fout:
+            fout.write(f"# AutoML Leaderboard\n\n")
+            fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+
 
         self._load_data_variables(X_train)
 

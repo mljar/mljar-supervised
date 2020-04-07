@@ -155,7 +155,7 @@ class EarlyStopping(Callback):
             ) as fout:
                 iteration = len(self.loss_values[self.learner.uid]["iters"])
                 fout.write(
-                    f"iteration: {iteration} train: {train_loss} validation: {validation_loss} no_improvement: {self.no_improvement_cnt}\n"
+                    f"{iteration},{train_loss},{validation_loss},{self.no_improvement_cnt}\n"
                 )
 
     def get_status(self):
