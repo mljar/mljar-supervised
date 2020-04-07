@@ -42,7 +42,7 @@ cd mljar-supervised
 python setup.py install
 ```
 
-From PyPi repository:
+From PyPi repository (PyPi can be not updated, it is better to install from source):
 
 ```
 pip install mljar-supervised

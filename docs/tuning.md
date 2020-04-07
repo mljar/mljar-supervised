@@ -1,5 +1,5 @@
 
-## The tuning algorithm
+# Hyper-paremeters tuning 
 
 The tuning algorithm was created and developed by Piotr Płoński. It is heuristic algorithm created from combination of:
 

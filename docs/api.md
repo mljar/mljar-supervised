@@ -1,8 +1,4 @@
-## Usage
-
-This is Automated Machine Learning package, so all hard tasks is done for you. The interface is simple but if necessary it gives you ability to control the training process.
-
-#### Train and predict
+# API
 
 ```python
 automl = AutoML()
@@ -10,14 +6,6 @@ automl.fit(X, y)
 predictions = automl.predict(X)
 ```
 
-By the default, the training should finish in less than 1 hour and as ML algorithms will be checked:
-
-- Random Forest
-- Xgboost
-- CatBoost
-- LightGBM
-- Neural Network
-- Ensemble
 
 The parameters that you can use to control the training process are:
 
