@@ -2,6 +2,7 @@ language: python
 python:
   - "3.6"
 install:
+  - pip install --upgrade setuptools
   - pip install -U -r requirements.txt
   - pip install -U -r requirements_dev.txt
   - python setup.py install
