@@ -3,6 +3,6 @@ python:
   - "3.6"
 install:
   - pip install -U -r requirements.txt
-  - pip install coveralls
-script: pwd && ls && coverage run --source='/home/travis/build/mljar/mljar-supervised' -m tests.run_all -v
-after_success: coveralls
+  - pip install -U -r requirements_dev.txt
+script: pytest tests
+
