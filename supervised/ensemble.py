@@ -26,6 +26,7 @@ from tabulate import tabulate
 
 from supervised.utils.learning_curves import LearningCurves
 
+
 class Ensemble:
 
     algorithm_name = "Greedy Ensemble"
@@ -287,7 +288,6 @@ class Ensemble:
     def save(self, model_path):
         logger.info(f"Save the ensemble to {model_path}")
 
-        
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
             for selected in self.selected_models:
@@ -299,7 +299,7 @@ class Ensemble:
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
             }
-            
+
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
@@ -313,7 +313,9 @@ class Ensemble:
 
         self._additional_metrics = self.get_additional_metrics()
 
-        AdditionalMetrics.save(self._additional_metrics, self._ml_task, self.model_markdown(), model_path)
+        AdditionalMetrics.save(
+            self._additional_metrics, self._ml_task, self.model_markdown(), model_path
+        )
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")
@@ -321,7 +323,9 @@ class Ensemble:
     def model_markdown(self):
         select_models_desc = []
         for selected in self.selected_models:
-            select_models_desc += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
+            select_models_desc += [
+                {"model": selected["model"]._name, "repeat": selected["repeat"]}
+            ]
         desc = f"# Summary of {self.get_name()}\n"
         desc += "\n## Ensemble structure\n"
         selected = pd.DataFrame(select_models_desc)

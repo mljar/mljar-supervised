@@ -33,6 +33,7 @@ logger.setLevel(LOG_LEVEL)
 from supervised.utils.learning_curves import LearningCurves
 from tabulate import tabulate
 
+
 class AdditionalMetrics:
     @staticmethod
     def binary_classification(target, predictions):

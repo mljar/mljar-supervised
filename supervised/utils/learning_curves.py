@@ -39,8 +39,7 @@ class LearningCurves:
         plt.legend(loc="best")
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
-        plt.close('all')
-
+        plt.close("all")
 
     @staticmethod
     def plot_for_ensemble(scores, metric_name, model_path):
@@ -51,4 +50,4 @@ class LearningCurves:
         plt.legend(loc="best")
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
-        plt.close('all')
+        plt.close("all")

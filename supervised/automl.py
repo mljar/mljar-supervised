@@ -109,43 +109,54 @@ class AutoML:
             if not found:
                 raise AutoMLException("Cannot create directory for AutoML results")
 
-        if os.path.exists(self._results_path):
+        if os.path.exists(self._results_path) and os.path.exists(
+            os.path.join(self._results_path, "params.json")
+        ):
             print(f"Directory {self._results_path} already exists")
             self.load()
         elif self._results_path is not None:
-            print(f"Create directory {self._results_path}")
-            try:
-                os.mkdir(self._results_path)
-            except Exception as e:
-                raise AutoMLException(f"Cannot create directory {self._results_path}")
+        
+            if not os.path.exists(self._results_path):
+                print(f"Create directory {self._results_path}")
+                try:
+                    os.mkdir(self._results_path)
+                except Exception as e:
+                    raise AutoMLException(f"Cannot create directory {self._results_path}")
+            elif os.path.exists(self._results_path) and len(os.listdir(self._results_path)):
+                raise AutoMLException(f"Cannot set directory for AutoML. Directory {self._results_path} is not empty.")
+        else:
+            raise AutoMLException("Cannot set directory for AutoML results")
+        
 
     def load(self):
         logger.info("Loading AutoML models ...")
+        try:
+            params = json.load(open(os.path.join(self._results_path, "params.json")))
 
-        params = json.load(open(os.path.join(self._results_path, "params.json")))
+            self._model_paths = params["saved"]
+            self._ml_task = params["ml_task"]
+            self._optimize_metric = params["optimize_metric"]
 
-        self._model_paths = params["saved"]
-        self._ml_task = params["ml_task"]
-        self._optimize_metric = params["optimize_metric"]
+            models_map = {}
+            for model_path in self._model_paths:
+                if model_path.endswith("ensemble"):
+                    ens = Ensemble.load(model_path, models_map)
+                    models_map[ens.get_name()] = ens
+                else:
+                    m = ModelFramework.load(model_path)
+                    self._models += [m]
+                    models_map[m.get_name()] = m
 
-        models_map = {}
-        for model_path in self._model_paths:
-            if model_path.endswith("ensemble"):
-                ens = Ensemble.load(model_path, models_map)
-                models_map[ens.get_name()] = ens
-            else:
-                m = ModelFramework.load(model_path)
-                self._models += [m]
-                models_map[m.get_name()] = m
+            best_model_name = None
+            with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
+                best_model_name = fin.read()
 
-        best_model_name = None
-        with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
-            best_model_name = fin.read()
+            self._best_model = models_map[best_model_name]
 
-        self._best_model = models_map[best_model_name]
-
-        data_info_path = os.path.join(self._results_path, "data_info.json")
-        self._data_info = json.load(open(data_info_path))
+            data_info_path = os.path.join(self._results_path, "data_info.json")
+            self._data_info = json.load(open(data_info_path))
+        except Exception as e:
+            raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
     def _estimate_training_times(self):
         # single models including models in the folds
@@ -555,7 +566,9 @@ class AutoML:
         # save report
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "*** the best ***"
+        ldb.loc[
+            ldb.name == self._best_model.get_name(), "Best model"
+        ] = "*** the best ***"
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
