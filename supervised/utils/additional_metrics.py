@@ -216,7 +216,7 @@ class AdditionalMetrics:
 
         with open(os.path.join(model_path, "README.md"), "w") as fout:
             fout.write(model_desc)
-            fout.write("\n### Metric details\n{}\n\n".format(max_metrics))
+            fout.write("\n### Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
                 "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
             )

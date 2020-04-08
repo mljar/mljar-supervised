@@ -39,6 +39,7 @@ class LearningCurves:
         plt.legend(loc="best")
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
+        plt.close('all')
 
 
     @staticmethod
@@ -50,3 +51,4 @@ class LearningCurves:
         plt.legend(loc="best")
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
+        plt.close('all')

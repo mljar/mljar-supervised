@@ -555,7 +555,7 @@ class AutoML:
         # save report
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
-        ldb["Best model"][ldb.name == self._best_model.get_name()] = "*** the best ***"
+        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "*** the best ***"
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
