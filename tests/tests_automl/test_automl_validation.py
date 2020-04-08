@@ -12,7 +12,7 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLValidationTest(unittest.TestCase):
-    
+
     automl_dir = "automl_tests"
 
     def tearDown(self):
@@ -39,7 +39,7 @@ class AutoMLValidationTest(unittest.TestCase):
             results_path=self.automl_dir,
             total_time_limit=1,
             algorithms=["Xgboost"],
-            train_ensemble=False
+            train_ensemble=False,
         )
         automl._validation = {
             "validation_type": "kfold",

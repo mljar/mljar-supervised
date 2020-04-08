@@ -20,7 +20,7 @@ class LearningCurves:
 
     @staticmethod
     def plot(validation_splits, metric_name, model_path):
-        colors = MY_COLORS 
+        colors = MY_COLORS
         if validation_splits > len(colors):
             repeat_colors = int(np.ceil(validation_splits / len(colors)))
             colors = colors * repeat_colors

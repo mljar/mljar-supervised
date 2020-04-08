@@ -43,32 +43,36 @@ class AutoML:
         self,
         results_path=None,
         total_time_limit=60 * 60,
+        model_time_limit=None,
         algorithms=["Random Forest", "Xgboost"],  # , "Random Forest"],
-        start_random_models=10,
-        hill_climbing_steps=3,
-        top_models_to_improve=5,
+        tuning_mode="Sport",
         train_ensemble=True,
-        verbose=True,
         optimize_metric=None,
+        validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True},
+        verbose=True,
         ml_task=None,
         seed=1,
     ):
         logger.debug("AutoML.__init__")
 
+        # total_time_limit is the time for computing for all models
+        # model_time_limit is the time for computing a single model
+        # if model_time_limit is None then its value is computed from total_time_limit
+        # if total_time_limit is set and model_time_limit is set, then total_time_limit constraint will be omitted
         self._total_time_limit = total_time_limit
-        # time limit in seconds for single learner
-        self._time_limit = 1  # wtf
+        self._model_time_limit = model_time_limit
+        # time limit in seconds for single learner (model consists of learners)
+        # the value is computed before fit, initilize with any number
+        self._time_limit = 1
 
         self._train_ensemble = train_ensemble
         self._models = []  # instances of iterative learner framework or ensemble
 
         # it is instance of model framework or ensemble
         self._best_model = None
-        # default validation
-        self._validation = {"validation_type": "kfold", "k_folds": 5, "shuffle": True}
-        self._start_random_models = start_random_models
-        self._hill_climbing_steps = hill_climbing_steps
-        self._top_models_to_improve = top_models_to_improve
+        self._validation = validation
+        self.set_tuning_mode("Sport")
+
         self._algorithms = algorithms
         self._verbose = verbose
 
@@ -97,6 +101,31 @@ class AutoML:
 
         self._results_path = results_path
         self._set_results_dir()
+
+    def set_tuning_mode(self, mode="Normal"):
+        if mode == "Sport":
+            self._start_random_models = 10
+            self._hill_climbing_steps = 2
+            self._top_models_to_improve = 3
+        if mode == "Insane":
+            self._start_random_models = 15
+            self._hill_climbing_steps = 3
+            self._top_models_to_improve = 4
+        if mode == "Perfect":
+            self._start_random_models = 25
+            self._hill_climbing_steps = 5
+            self._top_models_to_improve = 5
+        else:  # Normal
+            self._start_random_models = 5
+            self._hill_climbing_steps = 1
+            self._top_models_to_improve = 2
+
+    def set_advanced(self, start_random_models=10, 
+                        hill_climbing_steps=2, top_models_to_improve=3):
+        self._start_random_models = start_random_models
+        self._hill_climbing_steps = hill_climbing_steps
+        self._top_models_to_improve = top_models_to_improve
+
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -169,10 +198,13 @@ class AutoML:
             len(self._algorithms) * self._start_random_models
             + self._top_models_to_improve * self._hill_climbing_steps * 2
         )
-
-        if self._total_time_limit is not None:
+        if self._model_time_limit is not None:
+            k = self._validation.get("k_folds", 1.0)
+            self._time_limit = self._model_time_limit / k
+        elif self._total_time_limit is not None:
             # set time limit for single model training
             # the 0.85 is safe scale factor, to not exceed time limit
+            # scaling is added because number of models to be trained are estimate
             k = self._validation.get("k_folds", 1.0)
             self._time_limit = (
                 self._total_time_limit * 0.85 / self._estimated_models_to_check / k
@@ -261,7 +293,8 @@ class AutoML:
         self.log_train_time(model.get_type(), model.get_train_time())
 
     def train_model(self, params):
-        model_path = os.path.join(self._results_path, f"model_{len(self._models)+1}")
+        
+        model_path = os.path.join(self._results_path, params["name"])
 
         early_stop = EarlyStopping(
             {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
@@ -270,7 +303,8 @@ class AutoML:
         mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
 
         if self._enough_time_to_train(mf.get_type()):
-            logger.info(f"Train model #{len(self._models)+1}")
+
+            logger.info(f"Train model #{len(self._models)+1} / Model name: {params['name']}")
 
             try:
                 os.mkdir(model_path)
@@ -302,7 +336,11 @@ class AutoML:
             self._models_train_time[model_type] = [train_time]
 
     def _enough_time_to_train(self, model_type):
-        # no time limit, just train, dont ask
+        # if model_time_limit is set, train every model
+        # do not apply total_time_limit
+        if self._model_time_limit is not None:
+            return True
+        # no total time limit, just train, dont ask
         if self._total_time_limit is None:
             return True
 

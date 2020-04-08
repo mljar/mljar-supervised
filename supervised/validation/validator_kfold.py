@@ -33,9 +33,7 @@ class KFoldValidator(BaseValidator):
                     random_state=self.random_seed,
                 )
             else:
-                self.skf = StratifiedKFold(
-                    n_splits=self.k_folds,
-                    shuffle=self.shuffle)
+                self.skf = StratifiedKFold(n_splits=self.k_folds, shuffle=self.shuffle)
         else:
             self.skf = KFold(
                 n_splits=self.k_folds,
