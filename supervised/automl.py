@@ -115,18 +115,23 @@ class AutoML:
             print(f"Directory {self._results_path} already exists")
             self.load()
         elif self._results_path is not None:
-        
+
             if not os.path.exists(self._results_path):
                 print(f"Create directory {self._results_path}")
                 try:
                     os.mkdir(self._results_path)
                 except Exception as e:
-                    raise AutoMLException(f"Cannot create directory {self._results_path}")
-            elif os.path.exists(self._results_path) and len(os.listdir(self._results_path)):
-                raise AutoMLException(f"Cannot set directory for AutoML. Directory {self._results_path} is not empty.")
+                    raise AutoMLException(
+                        f"Cannot create directory {self._results_path}"
+                    )
+            elif os.path.exists(self._results_path) and len(
+                os.listdir(self._results_path)
+            ):
+                raise AutoMLException(
+                    f"Cannot set directory for AutoML. Directory {self._results_path} is not empty."
+                )
         else:
             raise AutoMLException("Cannot set directory for AutoML results")
-        
 
     def load(self):
         logger.info("Loading AutoML models ...")

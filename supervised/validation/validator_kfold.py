@@ -26,11 +26,16 @@ class KFoldValidator(BaseValidator):
         self.random_seed = self.params.get("random_seed", 1906)
 
         if self.stratify:
-            self.skf = StratifiedKFold(
-                n_splits=self.k_folds,
-                shuffle=self.shuffle,
-                random_state=self.random_seed,
-            )
+            if self.shuffle:
+                self.skf = StratifiedKFold(
+                    n_splits=self.k_folds,
+                    shuffle=self.shuffle,
+                    random_state=self.random_seed,
+                )
+            else:
+                self.skf = StratifiedKFold(
+                    n_splits=self.k_folds,
+                    shuffle=self.shuffle)
         else:
             self.skf = KFold(
                 n_splits=self.k_folds,

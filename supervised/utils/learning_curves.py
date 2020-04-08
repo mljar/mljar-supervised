@@ -20,6 +20,11 @@ class LearningCurves:
 
     @staticmethod
     def plot(validation_splits, metric_name, model_path):
+        colors = MY_COLORS 
+        if validation_splits > len(colors):
+            repeat_colors = int(np.ceil(validation_splits / len(colors)))
+            colors = colors * repeat_colors
+
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(
@@ -30,10 +35,10 @@ class LearningCurves:
                 df.iteration,
                 df.train,
                 "--",
-                color=MY_COLORS[l],
-                label=f"Fold {l}, train",
+                color=colors[l],
+                label=f"Fold {l+1}, train",
             )
-            plt.plot(df.iteration, df.test, color=MY_COLORS[l], label=f"Fold {l}, test")
+            plt.plot(df.iteration, df.test, color=colors[l], label=f"Fold {l+1}, test")
         plt.xlabel("#Iteration")
         plt.ylabel(metric_name)
         plt.legend(loc="best")
