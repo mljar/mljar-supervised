@@ -24,6 +24,7 @@ logger.setLevel(LOG_LEVEL)
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
+from supervised.utils.learning_curves import LearningCurves
 
 class Ensemble:
 
@@ -286,7 +287,7 @@ class Ensemble:
     def save(self, model_path):
         logger.info(f"Save the ensemble to {model_path}")
 
-        select_models_desc = None
+        
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
             for selected in self.selected_models:
@@ -298,7 +299,7 @@ class Ensemble:
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
             }
-            select_models_desc = ms
+            
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
@@ -308,73 +309,25 @@ class Ensemble:
             os.path.join(model_path, f"predictions_ensemble.csv"), index=False
         )
 
+        LearningCurves.plot_for_ensemble(self._scores, self.metric.name, model_path)
+
         self._additional_metrics = self.get_additional_metrics()
 
-        with open(os.path.join(model_path, "ensemble_metrics.txt"), "w") as fout:
-            if self._ml_task == BINARY_CLASSIFICATION:
-                max_metrics = self._additional_metrics["max_metrics"]
-                confusion_matrix = self._additional_metrics["confusion_matrix"]
-                threshold = self._additional_metrics["threshold"]
-
-                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
-                fout.write(
-                    "Confusion matrix (at threshold={}):\n{}".format(
-                        np.round(threshold, 6), confusion_matrix
-                    )
-                )
-            elif self._ml_task == MULTICLASS_CLASSIFICATION:
-                max_metrics = self._additional_metrics["max_metrics"]
-                confusion_matrix = self._additional_metrics["confusion_matrix"]
-
-                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
-                fout.write("Confusion matrix:\n{}".format(confusion_matrix))
-
-        with open(os.path.join(model_path, "README.md"), "w") as fout:
-
-            fout.write(f"# Summary of {self.get_name()}\n\n")
-
-            fout.write("## Ensemble structure\n")
-            selected = pd.DataFrame(select_models_desc)
-            fout.write(tabulate(selected.values, ["Model", "Weight"], tablefmt="pipe"))
-
-            fout.write("\n")
-
-            if self._ml_task == BINARY_CLASSIFICATION:
-                max_metrics = self._additional_metrics["max_metrics"]
-                confusion_matrix = self._additional_metrics["confusion_matrix"]
-                threshold = self._additional_metrics["threshold"]
-
-                mm = max_metrics.transpose()
-                fout.write("\n## Metric details\n{}\n\n".format(mm.to_markdown()))
-                fout.write(
-                    "\n## Confusion matrix (at threshold={})\n{}".format(
-                        np.round(threshold, 6), confusion_matrix.to_markdown()
-                    )
-                )
-            elif self._ml_task == MULTICLASS_CLASSIFICATION:
-                max_metrics = self._additional_metrics["max_metrics"]
-                confusion_matrix = self._additional_metrics["confusion_matrix"]
-
-                mm = max_metrics.transpose()
-                fout.write("\n### Metric details\n{}\n\n".format(mm.to_markdown()))
-                fout.write(
-                    "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
-                )
-
-            plt.figure(figsize=(10, 7))
-            plt.plot(range(1, len(self._scores) + 1), self._scores, label=f"Ensemble")
-
-            plt.xlabel("#Iteration")
-            plt.ylabel(self.metric.name)
-            plt.legend(loc="best")
-            plot_path = os.path.join(model_path, "learning_curves.png")
-            plt.savefig(plot_path)
-
-            fout.write("\n\n## Learning curves\n")
-            fout.write(f"![Learning curves](learning_curves.png)")
+        AdditionalMetrics.save(self._additional_metrics, self._ml_task, self.model_markdown(), model_path)
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")
+
+    def model_markdown(self):
+        select_models_desc = []
+        for selected in self.selected_models:
+            select_models_desc += [{"model": selected["model"]._name, "repeat": selected["repeat"]}]
+        desc = f"# Summary of {self.get_name()}\n"
+        desc += "\n## Ensemble structure\n"
+        selected = pd.DataFrame(select_models_desc)
+        desc += tabulate(selected.values, ["Model", "Weight"], tablefmt="pipe")
+        desc += "\n"
+        return desc
 
     @staticmethod
     def load(model_path, models_map):

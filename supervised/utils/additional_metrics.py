@@ -1,3 +1,4 @@
+import os
 import logging
 import copy
 import numpy as np
@@ -29,7 +30,8 @@ logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
-
+from supervised.utils.learning_curves import LearningCurves
+from tabulate import tabulate
 
 class AdditionalMetrics:
     @staticmethod
@@ -170,3 +172,64 @@ class AdditionalMetrics:
             return AdditionalMetrics.multiclass_classification(target, predictions)
         elif ml_task == REGRESSION:
             return AdditionalMetrics.regression(target, predictions)
+
+    @staticmethod
+    def save(additional_metrics, ml_task, model_desc, model_path):
+        if ml_task == BINARY_CLASSIFICATION:
+            AdditionalMetrics.save_binary_classification(
+                additional_metrics, model_desc, model_path
+            )
+        elif ml_task == MULTICLASS_CLASSIFICATION:
+            AdditionalMetrics.save_multiclass_classification(
+                additional_metrics, model_desc, model_path
+            )
+        elif ml_task == REGRESSION:
+            AdditionalMetrics.save_regression(
+                additional_metrics, model_desc, model_path
+            )
+
+    @staticmethod
+    def add_learning_curves(fout):
+        fout.write("\n\n## Learning curves\n")
+        fout.write(f"![Learning curves]({LearningCurves.output_file_name})")
+
+    @staticmethod
+    def save_binary_classification(additional_metrics, model_desc, model_path):
+        max_metrics = additional_metrics["max_metrics"].transpose()
+        confusion_matrix = additional_metrics["confusion_matrix"]
+        threshold = additional_metrics["threshold"]
+
+        with open(os.path.join(model_path, "README.md"), "w") as fout:
+            fout.write(model_desc)
+            fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
+            fout.write(
+                "\n## Confusion matrix (at threshold={})\n{}".format(
+                    np.round(threshold, 6), confusion_matrix.to_markdown()
+                )
+            )
+            AdditionalMetrics.add_learning_curves(fout)
+
+    @staticmethod
+    def save_multiclass_classification(additional_metrics, model_desc, model_path):
+        max_metrics = additional_metrics["max_metrics"].transpose()
+        confusion_matrix = additional_metrics["confusion_matrix"]
+
+        with open(os.path.join(model_path, "README.md"), "w") as fout:
+            fout.write(model_desc)
+            fout.write("\n### Metric details\n{}\n\n".format(max_metrics))
+            fout.write(
+                "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
+            )
+            AdditionalMetrics.add_learning_curves(fout)
+
+    @staticmethod
+    def save_regression(additional_metrics, model_desc, model_path):
+        max_metrics = additional_metrics["max_metrics"]
+        with open(os.path.join(model_path, "README.md"), "w") as fout:
+            fout.write(model_desc)
+            fout.write(
+                "\n### Metric details:\n{}\n\n".format(
+                    tabulate(max_metrics.values, max_metrics.columns, tablefmt="pipe")
+                )
+            )
+            AdditionalMetrics.add_learning_curves(fout)
