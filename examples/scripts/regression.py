@@ -7,9 +7,7 @@ x_cols = [c for c in df.columns if c != "MEDV"]
 X = df[x_cols]
 y = df["MEDV"]
 
-automl = AutoML(
-    total_time_limit=100,
-)
+automl = AutoML(total_time_limit=100)
 automl.fit(X, y)
 
 

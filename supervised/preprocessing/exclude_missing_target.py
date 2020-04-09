@@ -1,5 +1,6 @@
 import os
 import json
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -8,6 +9,7 @@ from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
+
 
 
 class ExcludeRowsMissingTarget(object):
@@ -30,13 +32,15 @@ class ExcludeRowsMissingTarget(object):
         return data
 
     @staticmethod
-    def transform(X=None, y=None):
+    def transform(X=None, y=None, warn = False):
         if y is None:
             return X, y
         y_missing = pd.isnull(y)
         if np.sum(np.array(y_missing)) == 0:
             return X, y
         logger.debug("Exclude rows with missing target values")
+        if warn:
+            warnings.warn("There are samples with missing target values in the data which will be excluded for further analysis")
         y = y.drop(y.index[y_missing])
         y.reset_index(drop=True, inplace=True)
         # y.index = range(y.shape[0])

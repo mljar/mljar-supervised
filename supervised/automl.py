@@ -23,6 +23,7 @@ from supervised.ensemble import Ensemble
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -490,19 +491,16 @@ class AutoML:
 
         X_train.reset_index(drop=True, inplace=True)
 
-        if not isinstance(y_train, pd.DataFrame):
-            y_train = pd.DataFrame({"target": np.array(y_train)})
-        else:
-            if "target" not in y_train.columns:
-                raise AutoMLException("There should be target column in y_train")
-        y_train.reset_index(drop=True, inplace=True)
+        y_train = pd.Series(np.array(y_train), name="target")
+        
+        X_train, y_train = ExcludeRowsMissingTarget.transform(X_train, y_train, warn=True)
 
-        return X_train, y_train["target"], X_validation, y_validation
+        return X_train, y_train, X_validation, y_validation
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
 
-        self._X_train_path = os.path.join(self._results_path, "X_train.csv")
-        self._y_train_path = os.path.join(self._results_path, "y_train.csv")
+        self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
+        self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
 
         X_train.to_parquet(self._X_train_path, index=False)
 
@@ -535,88 +533,91 @@ class AutoML:
         os.remove(self._y_train_path)
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
+        try:
+            if self._best_model is not None:
+                print("Best model is already set, no need to run fit. Skipping ...")
+                return
 
-        if self._best_model is not None:
-            print("Best model is already set, no need to run fit. Skipping ...")
-            return
+            start_time = time.time()
+            if not isinstance(X_train, pd.DataFrame):
+                raise AutoMLException(
+                    "AutoML needs X_train matrix to be a Pandas DataFrame"
+                )
 
-        start_time = time.time()
-        if not isinstance(X_train, pd.DataFrame):
-            raise AutoMLException(
-                "AutoML needs X_train matrix to be a Pandas DataFrame"
+            if X_train is not None:
+                X_train = X_train.copy(deep=False)
+
+            X_train, y_train, X_validation, y_validation = self._initial_prep(
+                X_train, y_train, X_validation, y_validation
+            )
+            self._save_data(X_train, y_train, X_validation, y_validation)
+
+            self._set_ml_task(y_train)
+            self._set_algorithms()
+            self._set_metric()
+            self._estimate_training_times()
+
+            if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+                self._check_imbalanced(y_train)
+
+            tuner = MljarTuner(
+                self._tuner_params,
+                self._algorithms,
+                self._ml_task,
+                self._validation,
+                self._seed,
             )
 
-        if X_train is not None:
-            X_train = X_train.copy(deep=False)
+            # not so random step
+            generated_params = tuner.get_not_so_random_params(X_train, y_train)
+            self._del_data_variables(X_train, y_train)
 
-        X_train, y_train, X_validation, y_validation = self._initial_prep(
-            X_train, y_train, X_validation, y_validation
-        )
-        self._save_data(X_train, y_train, X_validation, y_validation)
+            for params in generated_params:
+                self.train_model(params)
+            # hill climbing
+            for params in tuner.get_hill_climbing_params(self._models):
+                self.train_model(params)
 
-        self._set_ml_task(y_train)
-        self._set_algorithms()
-        self._set_metric()
-        self._estimate_training_times()
+            self.ensemble_step()
 
-        if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
-            self._check_imbalanced(y_train)
+            max_loss = 10e12
+            for i, m in enumerate(self._models):
+                if m.get_final_loss() < max_loss:
+                    self._best_model = m
+                    max_loss = m.get_final_loss()
 
-        tuner = MljarTuner(
-            self._tuner_params,
-            self._algorithms,
-            self._ml_task,
-            self._validation,
-            self._seed,
-        )
+            self.get_additional_metrics()
+            self._fit_time = time.time() - start_time
+            # self._progress_bar.close()
 
-        # not so random step
-        generated_params = tuner.get_not_so_random_params(X_train, y_train)
-        self._del_data_variables(X_train, y_train)
+            with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
+                fout.write(f"{self._best_model.get_name()}")
 
-        for params in generated_params:
-            self.train_model(params)
-        # hill climbing
-        for params in tuner.get_hill_climbing_params(self._models):
-            self.train_model(params)
+            with open(os.path.join(self._results_path, "params.json"), "w") as fout:
+                params = {
+                    "ml_task": self._ml_task,
+                    "optimize_metric": self._optimize_metric,
+                    "saved": self._model_paths,
+                }
+                fout.write(json.dumps(params, indent=4))
 
-        self.ensemble_step()
+            ldb = self.get_leaderboard()
+            ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
-        max_loss = 10e12
-        for i, m in enumerate(self._models):
-            if m.get_final_loss() < max_loss:
-                self._best_model = m
-                max_loss = m.get_final_loss()
-
-        self.get_additional_metrics()
-        self._fit_time = time.time() - start_time
-        # self._progress_bar.close()
-
-        with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
-            fout.write(f"{self._best_model.get_name()}")
-
-        with open(os.path.join(self._results_path, "params.json"), "w") as fout:
-            params = {
-                "ml_task": self._ml_task,
-                "optimize_metric": self._optimize_metric,
-                "saved": self._model_paths,
-            }
-            fout.write(json.dumps(params, indent=4))
-
-        ldb = self.get_leaderboard()
-        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
-
-        # save report
-        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
-        ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[
-            ldb.name == self._best_model.get_name(), "Best model"
-        ] = "*** the best ***"
-        with open(os.path.join(self._results_path, "README.md"), "w") as fout:
-            fout.write(f"# AutoML Leaderboard\n\n")
-            fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-
-        self._load_data_variables(X_train)
+            # save report
+            ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+            ldb.insert(loc=0, column="Best model", value="")
+            ldb.loc[
+                ldb.name == self._best_model.get_name(), "Best model"
+            ] = "*** the best ***"
+            with open(os.path.join(self._results_path, "README.md"), "w") as fout:
+                fout.write(f"# AutoML Leaderboard\n\n")
+                fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+        except Exception as e:
+            raise e
+        finally:
+            if self._X_train_path is not None:
+                self._load_data_variables(X_train)
 
     def predict(self, X):
         if self._best_model is None:
