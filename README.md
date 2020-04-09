@@ -32,6 +32,8 @@ automl.fit(X, y)
 predictions = automl.predict(X)
 ```
 
+For details please check [AutoML API Docs](docs/api.md).
+
 ## Installation
 
 From source code:
