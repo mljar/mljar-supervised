@@ -39,6 +39,7 @@ from supervised.utils.config import mem
 from tabulate import tabulate
 
 
+
 class AutoML:
     def __init__(
         self,
@@ -121,8 +122,8 @@ class AutoML:
             self._hill_climbing_steps = 1
             self._top_models_to_improve = 2
 
-    def set_advanced(self, start_random_models=10, 
-                        hill_climbing_steps=2, top_models_to_improve=3):
+    def set_advanced(self, start_random_models=1, 
+                        hill_climbing_steps=0, top_models_to_improve=0):
         self._start_random_models = start_random_models
         self._hill_climbing_steps = hill_climbing_steps
         self._top_models_to_improve = top_models_to_improve
@@ -514,6 +515,7 @@ class AutoML:
             "columns": X_train.columns.tolist(),
             "rows": X_train.shape[0],
             "cols": X_train.shape[1],
+            "target_is_numeric": pd.api.types.is_numeric_dtype(y_train)
         }
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
@@ -642,8 +644,13 @@ class AutoML:
                 predictions.columns[0][11:],
                 predictions.columns[1][11:],
             )
+
             if neg_label == "0" and pos_label == "1":
                 neg_label, pos_label = 0, 1
+            target_is_numeric = self._data_info.get("target_is_numeric", False)
+            if target_is_numeric:
+                neg_label = int(neg_label)
+                pos_label = int(pos_label)
             # assume that it is binary classification
             predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
             predictions["label"] = predictions["label"].map(
@@ -651,7 +658,9 @@ class AutoML:
             )
             return predictions
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
-
+            target_is_numeric = self._data_info.get("target_is_numeric", False)
+            if target_is_numeric:
+                predictions["label"] = predictions["label"].astype(int)
             return predictions
         else:
             return predictions
