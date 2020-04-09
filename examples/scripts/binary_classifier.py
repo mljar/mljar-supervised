@@ -23,7 +23,7 @@ print(X)
 print(y)
 
 automl.fit(X, y)
-
+automl.fit(s,)
 print(X)
 print(y)
 

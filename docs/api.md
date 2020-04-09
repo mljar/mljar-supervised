@@ -1,20 +1,87 @@
-# API
+<a name=".supervised.automl"></a>
+## supervised.automl
+
+<a name=".supervised.automl.AutoML"></a>
+### AutoML
 
 ```python
-automl = AutoML()
-automl.fit(X, y)
-predictions = automl.predict(X)
+class AutoML()
 ```
 
+Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression)
 
-The parameters that you can use to control the training process are:
+<a name=".supervised.automl.AutoML.__init__"></a>
+#### \_\_init\_\_
 
-- **total_time_limit** - it is a total time limit that AutoML can spend for searching to the best ML model. It is in seconds. _Default is set to 3600 seconds._
-- **learner_time_limit** - the time limit for training single model, in case of `k`-fold cross validation, the time spend on training is `k*learner_time_limit`. This parameter is only considered when `total_time_limit` is set to None. _Default is set to 120 seconds_.
-- **algorithms** - the list of algorithms that will be checked. _Default is set to ["CatBoost", "Xgboost", "RF", "LightGBM", "NN"]_.
-- **start_random_models** - the number of models to check with _not so random_ algorithm. _Default is set to 10_.
-- **hill_climbing_steps** - number of hill climbing steps used in models tuning. _Default is set to 3_.
-- **top_models_to_improve** - number of models considered for improvement in each hill climbing step. _Default is set to 5_.
-- **train_ensemble** - decides if ensemble model is trained at the end of AutoML fit procedure. _Default is set to True_.
-- **verbose** - controls printouts, _Default is set to True_.
+```python
+ | __init__(results_path=None, total_time_limit=60 * 60, model_time_limit=None, algorithms=["Random Forest", "Xgboost"], tuning_mode="Sport", train_ensemble=True, optimize_metric=None, validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True}, verbose=True, ml_task=None, seed=1)
+```
+
+Create the AutoML object. Initialize directory for results.
+
+**Arguments**:
+
+- `results_path`: The path where all results will be saved.
+If left `None` then the name of directory will be generated, with schema: AutoML_{number},
+where number can be from 1 to 100 - depends which direcory name will be available.
+
+- `total_time_limit`: The time limit in seconds for AutoML training. It is not used when `model_time_limit` is not `None`.
+
+- `model_time_limit`: The time limit in seconds for training single model.
+If `model_time_limit` is set, the `total_time_limit` is not respected.
+Single model can contain several learners, for example in the case of 10-fold cross-validation, one model will have 10 learners.
+Based on `model_time_limit` the time limit for single learner is computed.
+
+- `algorithms`: The list of algorithms that will be used in the training.
+
+- `tuning_mode`: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
+
+Each mode describe how many models will be checked:
+
+- `Normal` - about 5-10 models of each algorithm will be trained,
+- `Sport` - about 10-15 models of each algorithm will be trained,
+- `Insane` - about 15-20 models of each algorithm will be trained,
+- `Perfect` - about 25-35 models of each algorithm will be trained.
+
+You can also set how many models will be trained with `set_advanced` method.
+
+- `train_ensemble`: If true then at the end of models training the ensemble will be created.
+
+- `optimize_metric`: The metric to be optimized. (not implemented yet, please left `None`)
+
+- `validation`: The JSON with validation type. Right now only Cross-Validation is supported.
+The example JSON parameters for validation:
+```
+{"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
+```
+- `verbose`: Not implemented yet.
+- `ml_task`: The machine learning task that will be solved. Can be: `"binary_classification", "multiclass_classification", "regression"`.
+If left `None` AutoML will try to guess the task based on target values.
+If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
+If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
+In all other casses, the task is set to `"regression"`.
+
+- `seed`: The seed for random generator.
+
+<a name=".supervised.automl.AutoML.fit"></a>
+#### fit
+
+```python
+ | fit(X_train, y_train, X_validation=None, y_validation=None)
+```
+
+Fit AutoML
+
+<a name=".supervised.automl.AutoML.predict"></a>
+#### predict
+
+```python
+ | predict(X)
+```
+
+Computes predictions from AutoML best model.
+
+**Arguments**:
+
+- `X`: The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
 

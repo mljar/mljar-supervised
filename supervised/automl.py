@@ -41,6 +41,9 @@ from tabulate import tabulate
 
 
 class AutoML:
+    '''
+    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression)
+    '''
     def __init__(
         self,
         results_path=None,
@@ -55,6 +58,52 @@ class AutoML:
         ml_task=None,
         seed=1,
     ):
+        '''
+        Create the AutoML object. Initialize directory for results.
+
+        :param results_path: The path where all results will be saved. 
+        If left `None` then the name of directory will be generated, with schema: AutoML_{number},
+        where number can be from 1 to 100 - depends which direcory name will be available.
+        
+        :param total_time_limit: The time limit in seconds for AutoML training. It is not used when `model_time_limit` is not `None`.
+        
+        :param model_time_limit: The time limit in seconds for training single model. 
+        If `model_time_limit` is set, the `total_time_limit` is not respected. 
+        Single model can contain several learners, for example in the case of 10-fold cross-validation, one model will have 10 learners.
+        Based on `model_time_limit` the time limit for single learner is computed.
+        
+        :param algorithms: The list of algorithms that will be used in the training.
+        
+        :param tuning_mode: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
+        
+        Each mode describe how many models will be checked:
+        
+        - `Normal` - about 5-10 models of each algorithm will be trained,
+        - `Sport` - about 10-15 models of each algorithm will be trained,
+        - `Insane` - about 15-20 models of each algorithm will be trained,
+        - `Perfect` - about 25-35 models of each algorithm will be trained.
+        
+        You can also set how many models will be trained with `set_advanced` method.
+        
+        :param train_ensemble: If true then at the end of models training the ensemble will be created.
+        
+        :param optimize_metric: The metric to be optimized. (not implemented yet, please left `None`)
+        
+        :param validation: The JSON with validation type. Right now only Cross-Validation is supported. 
+        The example JSON parameters for validation:
+        ```
+        {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
+        ```
+        :param verbose: Not implemented yet.
+        :param ml_task: The machine learning task that will be solved. Can be: `"binary_classification", "multiclass_classification", "regression"`.
+        If left `None` AutoML will try to guess the task based on target values. 
+        If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
+        If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
+        In all other casses, the task is set to `"regression"`.
+        
+        :param seed: The seed for random generator.
+        
+        '''
         logger.debug("AutoML.__init__")
 
         # total_time_limit is the time for computing for all models
@@ -232,12 +281,8 @@ class AutoML:
         return pd.DataFrame(ldb)
 
     def get_additional_metrics(self):
-        # 'target' - the target after processing used for model training
-        # 'prediction' - out of folds predictions of the model
-        # oof_predictions = self._best_model.get_out_of_folds()
-        # prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
-        # target_cols = [c for c in oof_predictions.columns if "target" in c]
-
+        
+        
         additional_metrics = self._best_model.get_additional_metrics()
         # AdditionalMetrics.compute(
         #    oof_predictions[target_cols],
@@ -535,6 +580,7 @@ class AutoML:
         os.remove(self._y_train_path)
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
+        """Fit AutoML"""
         try:
             if self._best_model is not None:
                 print("Best model is already set, no need to run fit. Skipping ...")
@@ -622,6 +668,11 @@ class AutoML:
                 self._load_data_variables(X_train)
 
     def predict(self, X):
+        """
+        Computes predictions from AutoML best model.
+
+        :param X: The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
+        """
         if self._best_model is None:
             return None
 
@@ -676,7 +727,7 @@ class AutoML:
         }
 
     def from_json(self, json_data):
-        # pretty sure that this can be easily refactored
+        
         if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
