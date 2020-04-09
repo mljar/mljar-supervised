@@ -1,5 +1,5 @@
 <a name=".supervised.automl"></a>
-## supervised.automl
+## AutoML API Docs
 
 <a name=".supervised.automl.AutoML"></a>
 ### AutoML
@@ -8,13 +8,23 @@
 class AutoML()
 ```
 
-Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression)
+Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
 
 <a name=".supervised.automl.AutoML.__init__"></a>
 #### \_\_init\_\_
 
 ```python
- | __init__(results_path=None, total_time_limit=60 * 60, model_time_limit=None, algorithms=["Random Forest", "Xgboost"], tuning_mode="Sport", train_ensemble=True, optimize_metric=None, validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True}, verbose=True, ml_task=None, seed=1)
+ | __init__(results_path=None, 
+            total_time_limit=60 * 60, 
+            model_time_limit=None, 
+            algorithms=["Random Forest", "Xgboost"], 
+            tuning_mode="Sport", 
+            train_ensemble=True, 
+            optimize_metric=None, 
+            validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True}, 
+            verbose=True, 
+            ml_task=None, 
+            seed=1)
 ```
 
 Create the AutoML object. Initialize directory for results.
@@ -24,6 +34,8 @@ Create the AutoML object. Initialize directory for results.
 - `results_path`: The path where all results will be saved.
 If left `None` then the name of directory will be generated, with schema: AutoML_{number},
 where number can be from 1 to 100 - depends which direcory name will be available.
+
+If the `results_path` will point to directory with AutoML results, then all models will be loaded.
 
 - `total_time_limit`: The time limit in seconds for AutoML training. It is not used when `model_time_limit` is not `None`.
 
@@ -36,12 +48,12 @@ Based on `model_time_limit` the time limit for single learner is computed.
 
 - `tuning_mode`: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
 
-Each mode describe how many models will be checked:
+    Each mode describe how many models will be checked:
 
-- `Normal` - about 5-10 models of each algorithm will be trained,
-- `Sport` - about 10-15 models of each algorithm will be trained,
-- `Insane` - about 15-20 models of each algorithm will be trained,
-- `Perfect` - about 25-35 models of each algorithm will be trained.
+    - `Normal` - about 5-10 models of each algorithm will be trained,
+    - `Sport` - about 10-15 models of each algorithm will be trained,
+    - `Insane` - about 15-20 models of each algorithm will be trained,
+    - `Perfect` - about 25-35 models of each algorithm will be trained.
 
 You can also set how many models will be trained with `set_advanced` method.
 
@@ -63,6 +75,21 @@ In all other casses, the task is set to `"regression"`.
 
 - `seed`: The seed for random generator.
 
+<a name=".supervised.automl.AutoML.set_advanced"></a>
+#### set\_advanced
+
+```python
+ | set_advanced(start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0)
+```
+
+Advanced set of tuning parameters.
+
+**Arguments**:
+
+- `start_random_models`: Number of not-so-random models to check for each algorithm.
+- `hill_climbing_steps`: Number of hill climbing steps during tuning.
+- `top_models_to_improve`: Number of top models (of each algorithm) which will be considered for improving in hill climbing steps.
+
 <a name=".supervised.automl.AutoML.fit"></a>
 #### fit
 
@@ -71,6 +98,14 @@ In all other casses, the task is set to `"regression"`.
 ```
 
 Fit AutoML
+
+**Arguments**:
+
+- `X_train`: Pandas DataFrame with training data.
+- `y_train`: Numpy Array with target training data.
+
+- `X_validation`: Pandas DataFrame with validation data. (Not implemented yet)
+- `y_validation`: Numpy Array with target of validation data. (Not implemented yet)
 
 <a name=".supervised.automl.AutoML.predict"></a>
 #### predict

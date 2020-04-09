@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-
 class ExcludeRowsMissingTarget(object):
     @staticmethod
     def remove_rows_without_target(data):
@@ -32,7 +31,7 @@ class ExcludeRowsMissingTarget(object):
         return data
 
     @staticmethod
-    def transform(X=None, y=None, warn = False):
+    def transform(X=None, y=None, warn=False):
         if y is None:
             return X, y
         y_missing = pd.isnull(y)
@@ -40,7 +39,9 @@ class ExcludeRowsMissingTarget(object):
             return X, y
         logger.debug("Exclude rows with missing target values")
         if warn:
-            warnings.warn("There are samples with missing target values in the data which will be excluded for further analysis")
+            warnings.warn(
+                "There are samples with missing target values in the data which will be excluded for further analysis"
+            )
         y = y.drop(y.index[y_missing])
         y.reset_index(drop=True, inplace=True)
         # y.index = range(y.shape[0])

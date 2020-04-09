@@ -96,7 +96,7 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
-    def train(self):  
+    def train(self):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()

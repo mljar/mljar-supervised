@@ -39,17 +39,17 @@ from supervised.utils.config import mem
 from tabulate import tabulate
 
 
-
 class AutoML:
-    '''
-    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression)
-    '''
+    """
+    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
+    """
+
     def __init__(
         self,
         results_path=None,
         total_time_limit=60 * 60,
         model_time_limit=None,
-        algorithms=["Random Forest", "Xgboost"],  # , "Random Forest"],
+        algorithms=["Random Forest", "Xgboost"],
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
@@ -58,12 +58,14 @@ class AutoML:
         ml_task=None,
         seed=1,
     ):
-        '''
+        """
         Create the AutoML object. Initialize directory for results.
 
         :param results_path: The path where all results will be saved. 
         If left `None` then the name of directory will be generated, with schema: AutoML_{number},
         where number can be from 1 to 100 - depends which direcory name will be available.
+
+        If the `results_path` will point to directory with AutoML results, then all models will be loaded.
         
         :param total_time_limit: The time limit in seconds for AutoML training. It is not used when `model_time_limit` is not `None`.
         
@@ -103,7 +105,7 @@ class AutoML:
         
         :param seed: The seed for random generator.
         
-        '''
+        """
         logger.debug("AutoML.__init__")
 
         # total_time_limit is the time for computing for all models
@@ -171,12 +173,19 @@ class AutoML:
             self._hill_climbing_steps = 1
             self._top_models_to_improve = 2
 
-    def set_advanced(self, start_random_models=1, 
-                        hill_climbing_steps=0, top_models_to_improve=0):
+    def set_advanced(
+        self, start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0
+    ):
+        """
+        Advanced set of tuning parameters. 
+
+        :param start_random_models: Number of not-so-random models to check for each algorithm.
+        :param hill_climbing_steps: Number of hill climbing steps during tuning.
+        :param top_models_to_improve: Number of top models (of each algorithm) which will be considered for improving in hill climbing steps.
+        """
         self._start_random_models = start_random_models
         self._hill_climbing_steps = hill_climbing_steps
         self._top_models_to_improve = top_models_to_improve
-
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -281,8 +290,7 @@ class AutoML:
         return pd.DataFrame(ldb)
 
     def get_additional_metrics(self):
-        
-        
+
         additional_metrics = self._best_model.get_additional_metrics()
         # AdditionalMetrics.compute(
         #    oof_predictions[target_cols],
@@ -340,7 +348,7 @@ class AutoML:
         self.log_train_time(model.get_type(), model.get_train_time())
 
     def train_model(self, params):
-        
+
         model_path = os.path.join(self._results_path, params["name"])
 
         early_stop = EarlyStopping(
@@ -351,7 +359,9 @@ class AutoML:
 
         if self._enough_time_to_train(mf.get_type()):
 
-            logger.info(f"Train model #{len(self._models)+1} / Model name: {params['name']}")
+            logger.info(
+                f"Train model #{len(self._models)+1} / Model name: {params['name']}"
+            )
 
             try:
                 os.mkdir(model_path)
@@ -538,8 +548,10 @@ class AutoML:
         X_train.reset_index(drop=True, inplace=True)
 
         y_train = pd.Series(np.array(y_train), name="target")
-        
-        X_train, y_train = ExcludeRowsMissingTarget.transform(X_train, y_train, warn=True)
+
+        X_train, y_train = ExcludeRowsMissingTarget.transform(
+            X_train, y_train, warn=True
+        )
 
         return X_train, y_train, X_validation, y_validation
 
@@ -560,7 +572,7 @@ class AutoML:
             "columns": X_train.columns.tolist(),
             "rows": X_train.shape[0],
             "cols": X_train.shape[1],
-            "target_is_numeric": pd.api.types.is_numeric_dtype(y_train)
+            "target_is_numeric": pd.api.types.is_numeric_dtype(y_train),
         }
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
@@ -580,7 +592,16 @@ class AutoML:
         os.remove(self._y_train_path)
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
-        """Fit AutoML"""
+        """
+        Fit AutoML
+        
+        :param X_train: Pandas DataFrame with training data.
+        :param y_train: Numpy Array with target training data.
+        
+        :param X_validation: Pandas DataFrame with validation data. (Not implemented yet)
+        :param y_validation: Numpy Array with target of validation data. (Not implemented yet)
+        
+        """
         try:
             if self._best_model is not None:
                 print("Best model is already set, no need to run fit. Skipping ...")
@@ -727,7 +748,7 @@ class AutoML:
         }
 
     def from_json(self, json_data):
-        
+
         if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
