@@ -123,16 +123,6 @@ class Ensemble:
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
-            print(oof_predictions)
-            print(prediction_cols)
-            print(target_cols)
-
-            # need to prepare label for multiclass
-            # print("ensemble")
-            # print(oof_predictions[prediction_cols])
-            # oof_preds = self.preprocessings[0].prepare_target_labels(
-            #    oof_predictions[prediction_cols].values
-            # )
             oof_preds = oof_predictions[prediction_cols]
             if self._ml_task == MULTICLASS_CLASSIFICATION:
                 cols = oof_preds.columns.tolist()
@@ -151,8 +141,7 @@ class Ensemble:
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
-                print(self._additional_metrics["max_metrics"])
-                print(self._threshold)
+                
         return self._additional_metrics
 
     def fit(self, oofs, y):
@@ -176,7 +165,7 @@ class Ensemble:
 
             # there is improvement, save it
             self._scores += [min_score]
-            print(j, self.best_loss, min_score)
+            
             if self.metric.improvement(previous=self.best_loss, current=min_score):
                 self.best_loss = min_score
                 selected_algs_cnt = j
