@@ -552,6 +552,11 @@ class AutoML:
 
         X_train.reset_index(drop=True, inplace=True)
 
+        if isinstance(y_train, pd.DataFrame):
+            if "target" not in y_train.columns:
+                raise AutoMLException("y_train should be Numpy array, Pandas Series or DataFrame with column 'target' ")
+            else:
+                y_train = y_train["target"]
         y_train = pd.Series(np.array(y_train), name="target")
 
         X_train, y_train = ExcludeRowsMissingTarget.transform(
