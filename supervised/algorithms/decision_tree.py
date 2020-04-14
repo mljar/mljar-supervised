@@ -67,7 +67,7 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         self.library_version = sklearn.__version__
         self.max_iters = additional.get("max_steps", 1)
         self.model = DecisionTreeRegressor(
-            criterion=params.get("criterion", "gini"),
+            criterion=params.get("criterion", "mse"),
             max_depth=params.get("max_depth", 3),
             random_state=params.get("seed", 1),
         )
