@@ -11,9 +11,9 @@ X = df[df.columns[:-1]]
 y = df["income"]
 
 
-automl = AutoML()
+automl = AutoML(total_time_limit=25)
 # results_path = "AutoML_8",
-# total_time_limit=5,
+# ,
 # start_random_models=1,
 # hill_climbing_steps=0,
 # top_models_to_improve=3,

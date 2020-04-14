@@ -209,6 +209,7 @@ class AdditionalMetrics:
                 )
             )
             AdditionalMetrics.add_learning_curves(fout)
+            AdditionalMetrics.add_tree_viz(fout, model_path)
 
     @staticmethod
     def save_multiclass_classification(additional_metrics, model_desc, model_path):
@@ -222,6 +223,7 @@ class AdditionalMetrics:
                 "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
             )
             AdditionalMetrics.add_learning_curves(fout)
+            AdditionalMetrics.add_tree_viz(fout, model_path)
 
     @staticmethod
     def save_regression(additional_metrics, model_desc, model_path):

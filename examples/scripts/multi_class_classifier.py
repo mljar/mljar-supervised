@@ -9,7 +9,7 @@ y = df["class"]
 
 automl = AutoML(
     # results_path="AutoML_37",
-    total_time_limit=10,
+    total_time_limit=30,
     tuning_mode="Normal",
     train_ensemble=True,
 )

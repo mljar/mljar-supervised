@@ -249,6 +249,40 @@ class Preprocessing(object):
             y = y.astype(str)
         return y
 
+    def get_target_class_names(self):
+        pos_label, neg_label = "1", "0"
+        if self._categorical_y is not None:
+            if self._params["ml_task"] == BINARY_CLASSIFICATION:
+                # binary classification
+                for label, value in self._categorical_y.to_json().items():
+                    if value == 1:
+                        pos_label = label
+                    else:
+                        neg_label = label
+                return [neg_label, pos_label]
+            else:
+                # multiclass classification
+                # logger.debug(self._categorical_y.to_json())
+                if "unique_values" not in self._categorical_y.to_json():
+                    labels = dict(
+                        (v, k) for k, v in self._categorical_y.to_json().items()
+                    )
+                else:
+                    labels = {
+                        i: v
+                        for i, v in enumerate(
+                            self._categorical_y.to_json()["unique_values"]
+                        )
+                    }
+
+                return labels
+                
+        else:  # self._categorical_y is None
+            if "ml_task" in self._params:
+                if self._params["ml_task"] == BINARY_CLASSIFICATION:
+                    return ["0", "1"]
+        return []
+
     def prepare_target_labels(self, y):
         pos_label, neg_label = "1", "0"
         if self._categorical_y is not None:
