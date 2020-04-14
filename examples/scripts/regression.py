@@ -8,6 +8,7 @@ X = df[x_cols]
 y = df["MEDV"]
 
 automl = AutoML(total_time_limit=100)
+automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 

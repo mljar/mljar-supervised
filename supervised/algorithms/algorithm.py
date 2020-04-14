@@ -35,5 +35,8 @@ class BaseAlgorithm:
     def load(self, model_file_path):
         pass
 
+    def interpret(self, X, y, model_file_path, target_name, class_names):
+        pass
+
     # def importance(self, column_names, normalize = True):
     #    pass

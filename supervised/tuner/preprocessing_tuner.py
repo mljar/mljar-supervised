@@ -84,7 +84,10 @@ class PreprocessingTuner:
         elif "target_as_one_hot" in required_preprocessing:
             target_preprocessing += [PreprocessingCategorical.CONVERT_ONE_HOT]
 
-        if machinelearning_task == REGRESSION:
+        if (
+            machinelearning_task == REGRESSION
+            and "target_scale" in required_preprocessing
+        ):
             if PreprocessingUtils.is_log_scale_needed(y):
                 target_preprocessing += [Scale.SCALE_LOG_AND_NORMAL]
             elif PreprocessingUtils.is_scale_needed(y):

@@ -38,7 +38,7 @@ class MljarTuner:
         for model_type in self._algorithms:
             for i in range(self._start_random_models):
                 logger.info("Generate parameters for model #{0}".format(models_cnt + 1))
-                params = self._get_model_params(model_type, X, y, models_cnt + 1)
+                params = self._get_model_params(model_type, X, y, i + 1)
                 if params is None:
                     continue
                 params["name"] = f"model_{models_cnt + 1}"
@@ -82,11 +82,9 @@ class MljarTuner:
                             self._unique_params_keys += [unique_params_key]
                             yield all_params
 
-    def _get_model_params(self, model_type, X, y, models_cnt):
+    def _get_model_params(self, model_type, X, y, seed):
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
-        model_params = RandomParameters.get(
-            model_info["params"], models_cnt + self._seed
-        )
+        model_params = RandomParameters.get(model_info["params"], seed + self._seed)
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
         preprocessing_params = PreprocessingTuner.get(
@@ -118,8 +116,10 @@ class MljarTuner:
     @staticmethod
     def get_params_key(params):
         key = "key_"
-        for main_key in ["additional", "preprocessing", "validation", "learner"]:
+        for main_key in ["preprocessing", "learner"]:
             key += main_key
             for k, v in params[main_key].items():
+                if k == "seed":
+                    continue
                 key += "_{}_{}".format(k, v)
         return key

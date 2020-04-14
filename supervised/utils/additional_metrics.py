@@ -234,3 +234,17 @@ class AdditionalMetrics:
                 )
             )
             AdditionalMetrics.add_learning_curves(fout)
+
+            AdditionalMetrics.add_tree_viz(fout, model_path)
+
+
+    @staticmethod
+    def add_tree_viz(fout, model_path):
+        
+        tree_viz = [f for f in os.listdir(model_path) if "_tree.svg" in f]
+        if len(tree_viz):
+            fout.write("\n\n## Tree visualizations\n")
+            for l in range(len(tree_viz)):
+                fout.write(f"\n### Tree #{l+1}\n")
+                f_path = f"learner_{l+1}_tree.svg"
+                fout.write(f"![Tree {l+1}]({f_path})")

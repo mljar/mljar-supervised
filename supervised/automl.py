@@ -49,7 +49,7 @@ class AutoML:
         results_path=None,
         total_time_limit=60 * 60,
         model_time_limit=None,
-        algorithms=["Random Forest", "Xgboost"],
+        algorithms=["Decision Tree"],  # ["Random Forest", "Xgboost"],
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
@@ -186,6 +186,11 @@ class AutoML:
         self._start_random_models = start_random_models
         self._hill_climbing_steps = hill_climbing_steps
         self._top_models_to_improve = top_models_to_improve
+        self._tuner_params = {
+            "start_random_models": self._start_random_models,
+            "hill_climbing_steps": self._hill_climbing_steps,
+            "top_models_to_improve": self._top_models_to_improve,
+        }
 
     def _set_results_dir(self):
         if self._results_path is None:
@@ -368,7 +373,7 @@ class AutoML:
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {model_path}")
 
-            mf.train()  # {"train": {"X": X, "y": y}})
+            mf.train(model_path)
 
             mf.save(model_path)
             self._model_paths += [model_path]
@@ -603,6 +608,7 @@ class AutoML:
         
         """
         try:
+
             if self._best_model is not None:
                 print("Best model is already set, no need to run fit. Skipping ...")
                 return

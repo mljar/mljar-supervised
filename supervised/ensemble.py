@@ -140,7 +140,7 @@ class Ensemble:
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
-                
+
         return self._additional_metrics
 
     def fit(self, oofs, y):
@@ -164,7 +164,7 @@ class Ensemble:
 
             # there is improvement, save it
             self._scores += [min_score]
-            
+
             if self.metric.improvement(previous=self.best_loss, current=min_score):
                 self.best_loss = min_score
                 selected_algs_cnt = j

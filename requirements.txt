@@ -14,3 +14,4 @@ fastparquet==0.3.3
 pyarrow==0.16.0
 tabulate==0.8.7
 matplotlib==3.2.1
+dtreeviz==0.8.2

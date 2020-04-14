@@ -55,7 +55,8 @@ class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
     def fit(self, X, y):
         # logger.debug("SklearnTreesClassifierAlgorithm.fit")
         self.model.fit(X, np.ravel(y))
-        self.model.n_estimators += self.trees_in_step
+        if hasattr(self.model, "n_estimators"):
+            self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):
         # logger.debug("SklearnTreesClassifierAlgorithm.predict")
@@ -71,7 +72,8 @@ class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
     def fit(self, X, y):
         # logger.debug("SklearnTreesRegressorAlgorithm.fit")
         self.model.fit(X, np.ravel(y))
-        self.model.n_estimators += self.trees_in_step
+        if hasattr(self.model, "n_estimators"):
+            self.model.n_estimators += self.trees_in_step
 
     def predict(self, X):
         # logger.debug("SklearnTreesRegressorAlgorithm.predict")

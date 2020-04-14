@@ -96,7 +96,7 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
-    def train(self):
+    def train(self, model_path):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
@@ -151,6 +151,12 @@ class ModelFramework:
                 learner.update({"step": i})
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
+            learner.interpret(
+                X_train,
+                y_train,
+                model_file_path=model_path,
+                learner_name=f"learner_{k_fold+1}",
+            )
 
         # end of validation loop
         self.callbacks.on_framework_train_end()

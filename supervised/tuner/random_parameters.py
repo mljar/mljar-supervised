@@ -18,7 +18,5 @@ class RandomParameters:
         np.random.seed(seed)
         generated_params = {"seed": seed}
         for k in params:
-            # we need to convert numpy types to native python types
-            # it is needed in JSON serialization
             generated_params[k] = np.random.permutation(params[k])[0].item()
         return generated_params
