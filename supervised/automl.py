@@ -49,7 +49,7 @@ class AutoML:
         results_path=None,
         total_time_limit=60 * 60,
         model_time_limit=None,
-        algorithms=["Decision Tree"],  # ["Random Forest", "Xgboost"],
+        algorithms=["Decision Tree", "Random Forest", "Xgboost"],
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
