@@ -156,7 +156,7 @@ class ModelFramework:
                 y_train,
                 model_file_path=model_path,
                 learner_name=f"learner_{k_fold+1}",
-                class_names=self.preprocessings[-1].get_target_class_names()
+                class_names=self.preprocessings[-1].get_target_class_names(),
             )
 
         # end of validation loop

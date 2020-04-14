@@ -49,8 +49,17 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
             if len(class_names) > 10:
                 # dtreeviz does not support more than 10 classes
                 return
-            viz = dtreeviz(self.model, X, y, target_name="target", feature_names=X.columns, class_names=class_names)
-            self._tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+            viz = dtreeviz(
+                self.model,
+                X,
+                y,
+                target_name="target",
+                feature_names=X.columns,
+                class_names=class_names,
+            )
+            self._tree_file_plot = os.path.join(
+                model_file_path, learner_name + "_tree.svg"
+            )
             viz.save(self._tree_file_plot)
         except Exception as e:
             self._tree_file_plot = None
@@ -80,13 +89,17 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         self, X, y, model_file_path, learner_name, target_name=None, class_names=None
     ):
         try:
-            viz = dtreeviz(self.model, X, y, target_name="target", feature_names=X.columns)
-            self._tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+            viz = dtreeviz(
+                self.model, X, y, target_name="target", feature_names=X.columns
+            )
+            self._tree_file_plot = os.path.join(
+                model_file_path, learner_name + "_tree.svg"
+            )
             viz.save(self._tree_file_plot)
         except Exception as e:
             self._tree_file_plot = None
 
- 
+
 dt_params = {"criterion": ["gini", "entropy"], "max_depth": [1, 2, 3, 4]}
 
 additional = {

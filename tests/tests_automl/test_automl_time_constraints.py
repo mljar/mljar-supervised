@@ -47,9 +47,10 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
     def test_set_model_time_limit_omit_total_time(self):
         model_type = "Xgboost"
         automl = AutoML(
-            results_path=self.automl_dir, model_time_limit=10, 
-            total_time_limit=10, # this parameter setting should be omitted
-            algorithms=[model_type]
+            results_path=self.automl_dir,
+            model_time_limit=10,
+            total_time_limit=10,  # this parameter setting should be omitted
+            algorithms=[model_type],
         )
         automl._estimate_training_times()
         print(automl._time_limit)
@@ -57,4 +58,3 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
             automl.log_train_time(model_type, 10)
             # should be always true
             self.assertTrue(automl._enough_time_to_train(model_type))
-    

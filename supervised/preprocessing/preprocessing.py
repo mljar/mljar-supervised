@@ -276,7 +276,7 @@ class Preprocessing(object):
                     }
 
                 return labels
-                
+
         else:  # self._categorical_y is None
             if "ml_task" in self._params:
                 if self._params["ml_task"] == BINARY_CLASSIFICATION:

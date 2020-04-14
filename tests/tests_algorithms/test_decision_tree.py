@@ -7,7 +7,10 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.decision_tree import (DecisionTreeAlgorithm, DecisionTreeRegressorAlgorithm)
+from supervised.algorithms.decision_tree import (
+    DecisionTreeAlgorithm,
+    DecisionTreeRegressorAlgorithm,
+)
 from supervised.utils.metric import Metric
 
 import tempfile
@@ -27,7 +30,7 @@ class DecisionTreeTest(unittest.TestCase):
 
     def test_reproduce_fit_regression(self):
         metric = Metric({"name": "rmse"})
-        params = {"max_depth": 1,  "seed": 1}
+        params = {"max_depth": 1, "seed": 1}
         prev_loss = None
         for _ in range(3):
             model = DecisionTreeRegressorAlgorithm(params)

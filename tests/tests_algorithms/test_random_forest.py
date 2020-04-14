@@ -80,4 +80,3 @@ class RandomForestAlgorithmTest(unittest.TestCase):
             y_predicted = rf2.predict(self.X)
             loss2 = metric(self.y, y_predicted)
             assert_almost_equal(loss, loss2)
-
