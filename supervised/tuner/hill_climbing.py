@@ -27,6 +27,8 @@ class HillClimbing:
         keys.remove("ml_task")
 
         model_type = params["model_type"]
+        if model_type == "Baseline":
+            return [None, None]
         model_info = AlgorithmsRegistry.registry[ml_task][model_type]
         model_params = model_info["params"]
 

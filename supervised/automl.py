@@ -49,7 +49,7 @@ class AutoML:
         results_path=None,
         total_time_limit=60 * 60,
         model_time_limit=None,
-        algorithms=["Decision Tree", "Random Forest", "Xgboost"],
+        algorithms=["Baseline", "Decision Tree", "Random Forest", "Xgboost"],
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
@@ -258,11 +258,19 @@ class AutoML:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
     def _estimate_training_times(self):
-        # single models including models in the folds
-        self._estimated_models_to_check = (
-            len(self._algorithms) * self._start_random_models
-            + self._top_models_to_improve * self._hill_climbing_steps * 2
-        )
+
+        algo_cnt = len(self._algorithms)
+        if "Baseline" in self._algorithms:
+            algo_cnt -= 1
+        self._estimated_models_to_check = algo_cnt * self._start_random_models
+        if self._estimated_models_to_check > self._top_models_to_improve:
+            self._estimated_models_to_check += (
+                self._top_models_to_improve * self._hill_climbing_steps * 2
+            )
+
+        if "Baseline" in self._algorithms:
+            self._estimated_models_to_check += 1
+
         if self._model_time_limit is not None:
             k = self._validation.get("k_folds", 1.0)
             self._time_limit = self._model_time_limit / k
@@ -275,7 +283,7 @@ class AutoML:
                 self._total_time_limit * 0.85 / self._estimated_models_to_check / k
             )
         print(
-            f"AutoML will try to check about {int(self._estimated_models_to_check)} models"
+            f"AutoML will try to check about {int(self._estimated_models_to_check)} model{'s' if int(self._estimated_models_to_check)>1 else ''}"
         )
 
     def get_leaderboard(self):
@@ -554,7 +562,9 @@ class AutoML:
 
         if isinstance(y_train, pd.DataFrame):
             if "target" not in y_train.columns:
-                raise AutoMLException("y_train should be Numpy array, Pandas Series or DataFrame with column 'target' ")
+                raise AutoMLException(
+                    "y_train should be Numpy array, Pandas Series or DataFrame with column 'target' "
+                )
             else:
                 y_train = y_train["target"]
         y_train = pd.Series(np.array(y_train), name="target")
