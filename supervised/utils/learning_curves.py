@@ -19,12 +19,53 @@ class LearningCurves:
     output_file_name = "learning_curves.png"
 
     @staticmethod
+    def single_iteration(validation_splits, model_path):
+        for l in range(validation_splits):
+            df = pd.read_csv(
+                os.path.join(model_path, f"./learner_{l+1}_training.log"),
+                names=["iteration", "train", "test", "no_improvement"],
+            )
+            if df.shape[0] > 1:
+                return False
+        return True
+
+    @staticmethod
     def plot(validation_splits, metric_name, model_path):
         colors = MY_COLORS
         if validation_splits > len(colors):
             repeat_colors = int(np.ceil(validation_splits / len(colors)))
             colors = colors * repeat_colors
 
+        if LearningCurves.single_iteration(validation_splits, model_path):
+            LearningCurves.plot_single_iter(validation_splits, metric_name, model_path, colors)
+        else:
+            LearningCurves.plot_iterations(validation_splits, metric_name, model_path, colors)
+
+    @staticmethod
+    def plot_single_iter(validation_splits, metric_name, model_path, colors):
+        plt.figure(figsize=(10, 7))
+        for l in range(validation_splits):
+            df = pd.read_csv(
+                os.path.join(model_path, f"./learner_{l+1}_training.log"),
+                names=["iteration", "train", "test", "no_improvement"],
+            )
+            plt.bar(
+                f"Fold {l+1}, train",
+                df.train[0],
+                color="white",
+                edgecolor=colors[l]
+            )
+            plt.bar(f"Fold {l+1}, test", df.test[0], color=colors[l])
+            
+        plt.xticks(rotation=90)
+        plt.tight_layout(pad=2.0)
+        plt.ylabel(metric_name)
+        plot_path = os.path.join(model_path, LearningCurves.output_file_name)
+        plt.savefig(plot_path)
+        plt.close("all")
+
+    @staticmethod
+    def plot_iterations(validation_splits, metric_name, model_path, colors):
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(
@@ -42,6 +83,7 @@ class LearningCurves:
         plt.xlabel("#Iteration")
         plt.ylabel(metric_name)
         plt.legend(loc="best")
+        plt.tight_layout(pad=2.0)
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
         plt.close("all")
