@@ -124,7 +124,7 @@ class AutoML:
         # it is instance of model framework or ensemble
         self._best_model = None
         self._validation = validation
-        self.set_tuning_mode("Sport")
+        self.set_tuning_mode(tuning_mode)
 
         self._algorithms = algorithms
         self._verbose = verbose
