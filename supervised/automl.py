@@ -140,11 +140,7 @@ class AutoML:
         self._seed = seed
         self._user_set_optimize_metric = optimize_metric
         self._ml_task = ml_task
-        self._tuner_params = {
-            "start_random_models": self._start_random_models,
-            "hill_climbing_steps": self._hill_climbing_steps,
-            "top_models_to_improve": self._top_models_to_improve,
-        }
+        
 
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
@@ -160,11 +156,11 @@ class AutoML:
             self._start_random_models = 10
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 3
-        if mode == "Insane":
+        elif mode == "Insane":
             self._start_random_models = 15
             self._hill_climbing_steps = 3
             self._top_models_to_improve = 4
-        if mode == "Perfect":
+        elif mode == "Perfect":
             self._start_random_models = 25
             self._hill_climbing_steps = 5
             self._top_models_to_improve = 5
@@ -172,6 +168,11 @@ class AutoML:
             self._start_random_models = 5
             self._hill_climbing_steps = 1
             self._top_models_to_improve = 2
+        self._tuner_params = {
+            "start_random_models": self._start_random_models,
+            "hill_climbing_steps": self._hill_climbing_steps,
+            "top_models_to_improve": self._top_models_to_improve,
+        }
 
     def set_advanced(
         self, start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0
