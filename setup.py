@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='mljar-supervised',
-    version='0.2.0',
+    version='0.2.1',
     description='Automated Machine Learning for Supervised tasks',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,6 +20,7 @@ setup(
     license='MIT',
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=open('requirements.txt').readlines(),
+    include_package_data=True,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6'
