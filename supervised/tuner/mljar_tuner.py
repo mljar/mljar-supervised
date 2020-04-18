@@ -56,31 +56,41 @@ class MljarTuner:
         for _ in range(self._hill_climbing_steps):
             # get models orderer by loss
             # TODO: refactor this callbacks.callbacks[0]
-            models = sorted(
-                [(m.callbacks.callbacks[0].final_loss, m) for m in current_models],
-                key=lambda x: x[0],
-            )
-            for i in range(min(self._top_models_to_improve, len(models))):
-                m = models[i][1]
-                for p in HillClimbing.get(
-                    m.params.get("learner"),
-                    self._ml_task,
-                    len(current_models) + self._seed,
-                ):
-                    logger.info(
-                        "Hill climbing step, for model #{0}".format(
-                            len(current_models) + 1
-                        )
-                    )
-                    if p is not None:
-                        all_params = copy.deepcopy(m.params)
-                        all_params["learner"] = p
-                        all_params["name"] = f"model_{len(current_models) + 1}"
+            scores = [m.callbacks.callbacks[0].final_loss for m in current_models]
+            model_types = [m.get_type() for m in current_models]
+            df_models = pd.DataFrame({"model": current_models, "score": scores, "model_type": model_types})
+            # do group by for debug reason
+            df_models = df_models.groupby("model_type").apply(lambda x: x.sort_values("score"))
+            unique_model_types= np.unique(df_models.model_type)
 
-                        unique_params_key = MljarTuner.get_params_key(all_params)
-                        if unique_params_key not in self._unique_params_keys:
-                            self._unique_params_keys += [unique_params_key]
-                            yield all_params
+            for m_type in unique_model_types:
+                if m_type in ["Baseline", "Decision Tree"]:
+                    continue
+                models = df_models[df_models.model_type == m_type]["model"]
+
+                for i in range(min(self._top_models_to_improve, len(models))):
+                    m = models[i]
+                            
+                    for p in HillClimbing.get(
+                        m.params.get("learner"),
+                        self._ml_task,
+                        len(current_models) + self._seed,
+                    ):
+                        logger.info(
+                            "Hill climbing step, for model #{0}".format(
+                                len(current_models) + 1
+                            )
+                        )
+                        if p is not None:
+                            all_params = copy.deepcopy(m.params)
+                            all_params["learner"] = p
+                            all_params["name"] = f"model_{len(current_models) + 1}"
+
+                            unique_params_key = MljarTuner.get_params_key(all_params)
+            
+                            if unique_params_key not in self._unique_params_keys:
+                                self._unique_params_keys += [unique_params_key]
+                                yield all_params
 
     def _get_model_params(self, model_type, X, y, seed):
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
