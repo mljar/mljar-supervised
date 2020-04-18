@@ -1,9 +1,10 @@
 import unittest
 import tempfile
 import json
+import copy
+
 import numpy as np
 import pandas as pd
-import copy
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -95,16 +96,16 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        json_desc = lgb.save()
-        lgb2 = LightgbmAlgorithm({})
-        self.assertTrue(lgb.uid != lgb2.uid)
-        self.assertTrue(lgb2.model is None)
-        lgb2.load(json_desc)
-        self.assertTrue(lgb.uid == lgb2.uid)
+        with tempfile.NamedTemporaryFile() as tmp:
+            lgb.save(tmp.name)
+            lgb2 = LightgbmAlgorithm({})
+            self.assertTrue(lgb.uid != lgb2.uid)
+            self.assertTrue(lgb2.model is None)
+            lgb2.load(tmp.name)
 
-        y_predicted = lgb2.predict(self.X)
-        loss2 = metric(self.y, y_predicted)
-        assert_almost_equal(loss, loss2)
+            y_predicted = lgb2.predict(self.X)
+            loss2 = metric(self.y, y_predicted)
+            assert_almost_equal(loss, loss2)
 
 
 if __name__ == "__main__":

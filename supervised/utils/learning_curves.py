@@ -37,9 +37,13 @@ class LearningCurves:
             colors = colors * repeat_colors
 
         if LearningCurves.single_iteration(validation_splits, model_path):
-            LearningCurves.plot_single_iter(validation_splits, metric_name, model_path, colors)
+            LearningCurves.plot_single_iter(
+                validation_splits, metric_name, model_path, colors
+            )
         else:
-            LearningCurves.plot_iterations(validation_splits, metric_name, model_path, colors)
+            LearningCurves.plot_iterations(
+                validation_splits, metric_name, model_path, colors
+            )
 
     @staticmethod
     def plot_single_iter(validation_splits, metric_name, model_path, colors):
@@ -50,13 +54,10 @@ class LearningCurves:
                 names=["iteration", "train", "test", "no_improvement"],
             )
             plt.bar(
-                f"Fold {l+1}, train",
-                df.train[0],
-                color="white",
-                edgecolor=colors[l]
+                f"Fold {l+1}, train", df.train[0], color="white", edgecolor=colors[l]
             )
             plt.bar(f"Fold {l+1}, test", df.test[0], color=colors[l])
-            
+
         plt.xticks(rotation=90)
         plt.tight_layout(pad=2.0)
         plt.ylabel(metric_name)

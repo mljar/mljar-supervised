@@ -43,7 +43,7 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
         all_metrics = list(info["max_metrics"]["Metric"].values)
         for m in ["MAE", "MSE", "RMSE", "R2"]:
             self.assertTrue(m in all_metrics)
-    
+
     def test_compute_constant_preds(self):
         target = np.array([0, 0, 1, 1, 0, 0, 0, 0])
         pred = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
@@ -53,4 +53,3 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
         conf = info["confusion_matrix"]
         self.assertTrue(max_metrics["f1"]["score"] < 1)
         self.assertTrue(max_metrics["mcc"]["score"] < 1)
-        

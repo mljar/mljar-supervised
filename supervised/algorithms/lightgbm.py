@@ -3,13 +3,17 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import contextlib
 import multiprocessing
 import lightgbm as lgb
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.config import storage_path
 from supervised.utils.config import LOG_LEVEL
 
@@ -48,6 +52,9 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
         logger.debug("LightgbmLearner __init__")
 
+    def file_extenstion(self):
+        return "lightgbm"
+
     def update(self, update_params):
         pass
 
@@ -64,41 +71,38 @@ class LightgbmAlgorithm(BaseAlgorithm):
         return self.model.predict(X)
 
     def copy(self):
-        return copy.deepcopy(self)
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            return copy.deepcopy(self)
 
-    def save(self):
-        self.model.save_model(self.model_file_path)
+    def save(self, model_file_path):
+        self.model.save_model(model_file_path)
+        logger.debug("LightgbmAlgorithm save model to %s" % model_file_path)
 
+    def load(self, model_file_path):
+        logger.debug("LightgbmAlgorithm load model from %s" % model_file_path)
+        self.model = lgb.Booster(model_file=model_file_path)
+
+    def importance(self, column_names, normalize=True):
+        return None
+
+    def get_params(self):
         json_desc = {
             "library_version": self.library_version,
             "algorithm_name": self.algorithm_name,
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
-            "model_file": self.model_file,
-            "model_file_path": self.model_file_path,
             "params": self.params,
         }
-
-        logger.debug("LightgbmAlgorithm save model to %s" % self.model_file_path)
         return json_desc
 
-    def load(self, json_desc):
-
+    def set_params(self, json_desc):
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
         self.algorithm_short_name = json_desc.get(
             "algorithm_short_name", self.algorithm_short_name
         )
         self.uid = json_desc.get("uid", self.uid)
-        self.model_file = json_desc.get("model_file", self.model_file)
-        self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
         self.params = json_desc.get("params", self.params)
-
-        logger.debug("LightgbmLearner load model from %s" % self.model_file_path)
-        self.model = lgb.Booster(model_file=self.model_file_path)
-
-    def importance(self, column_names, normalize=True):
-        return None
 
 
 lgbm_bin_params = {
@@ -126,23 +130,30 @@ lgbm_bin_params = {
 
 
 additional = {
-    "one_step": 10,
+    "one_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
+
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
-    "target_preprocessing",
+    "target_as_integer",
+    "target_scale",
 ]
+
 
 lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
 lgbm_multi_params["objective"] = ["multiclass"]
 lgbm_multi_params["metric"] = ["multi_logloss", "multi_error"]
 
-"""
+
+lgbr_params = copy.deepcopy(lgbm_bin_params)
+lgbr_params["objective"] = ["regression"]
+lgbr_params["metric"] = ["l1", "l2"]
+
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
     LightgbmAlgorithm,
@@ -158,4 +169,7 @@ AlgorithmsRegistry.add(
     required_preprocessing,
     additional,
 )
-"""
+
+AlgorithmsRegistry.add(
+    REGRESSION, LightgbmAlgorithm, lgbr_params, required_preprocessing, additional
+)

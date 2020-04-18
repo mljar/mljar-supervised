@@ -49,7 +49,13 @@ class AutoML:
         results_path=None,
         total_time_limit=60 * 60,
         model_time_limit=None,
-        algorithms=["Baseline", "Decision Tree", "Random Forest", "Xgboost"],
+        algorithms=[
+            "Baseline",
+            "Decision Tree",
+            "Random Forest",
+            "LightGBM",
+            "Xgboost",
+        ],
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
@@ -140,7 +146,6 @@ class AutoML:
         self._seed = seed
         self._user_set_optimize_metric = optimize_metric
         self._ml_task = ml_task
-        
 
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
@@ -196,7 +201,7 @@ class AutoML:
     def _set_results_dir(self):
         if self._results_path is None:
             found = False
-            for i in range(1, 101):
+            for i in range(1, 10001):
                 self._results_path = f"AutoML_{i}"
                 if not os.path.exists(self._results_path):
                     found = True

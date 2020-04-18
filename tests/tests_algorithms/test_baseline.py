@@ -40,7 +40,6 @@ class BaselineTest(unittest.TestCase):
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
 
-
     def test_reproduce_fit_bin_class(self):
         X, y = datasets.make_classification(
             n_samples=100,

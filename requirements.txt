@@ -3,7 +3,7 @@ pandas==1.0.3
 scipy==1.1.0
 scikit-learn==0.22.2
 xgboost==1.0.2
-lightgbm==2.2.3
+lightgbm==2.3.1
 catboost==0.15.1
 h5py==2.9.0
 #tensorflow==1.15.2

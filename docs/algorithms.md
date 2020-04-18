@@ -6,6 +6,7 @@
 - Decision Tree
 - Xgboost
 - Random Forest
+- LightGBM
 
 
 ## Multi-class Classification
@@ -14,7 +15,7 @@
 - Decision Tree
 - Xgboost
 - Random Forest
-
+- LightGBM
 
 ## Regression
 
@@ -22,3 +23,4 @@
 - Decision Tree
 - Xgboost
 - Random Forest
+- LightGBM

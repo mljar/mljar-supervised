@@ -50,16 +50,18 @@ class AdditionalMetrics:
             "mcc": [],
         }
         samples_per_step = max(1, np.floor(predictions.shape[0] / STEPS))
-        
+
         for i in range(STEPS):
             idx = int(i * samples_per_step)
             if idx + 1 >= predictions.shape[0]:
                 break
             if i == 0:
-                th = 0.9*np.min(sorted_predictions)
+                th = 0.9 * np.min(sorted_predictions)
             else:
-                th = float(0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1]))
-            
+                th = float(
+                    0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1])
+                )
+
             if np.sum(predictions > th) < 1:
                 break
             response = (predictions > th).astype(int)
