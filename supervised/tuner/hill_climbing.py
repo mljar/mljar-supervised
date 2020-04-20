@@ -20,11 +20,9 @@ class HillClimbing:
     def get(params, ml_task, seed=1):
         np.random.seed(seed)
         keys = list(params.keys())
-        if "num_class" in keys:
-            keys.remove("num_class")
-        keys.remove("model_type")
-        keys.remove("seed")
-        keys.remove("ml_task")
+        for k in ["num_class", "model_type", "seed", "ml_task"]:
+            if k in keys:
+                keys.remove(k)
 
         model_type = params["model_type"]
         if model_type == "Baseline":
