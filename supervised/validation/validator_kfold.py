@@ -57,6 +57,10 @@ class KFoldValidator(BaseValidator):
             X = pd.read_parquet(self._X_train_path)
             y = pd.read_parquet(self._y_train_path)
             y = y["target"]
+            
+            if isinstance(y[0], bytes):
+                # see https://github.com/scikit-learn/scikit-learn/issues/16980
+                y = y.astype(str)
 
             for fold_cnt, (train_index, validation_index) in enumerate(
                 self.skf.split(X, y)

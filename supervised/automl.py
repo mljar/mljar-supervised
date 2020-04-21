@@ -59,7 +59,7 @@ class AutoML:
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
-        validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True},
+        validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True},
         verbose=True,
         ml_task=None,
         seed=1,
