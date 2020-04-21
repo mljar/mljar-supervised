@@ -65,4 +65,3 @@ class TunerHillClimbingTest(unittest.TestCase):
                 score *= 0.1
                 self.assertTrue(int(p["name"].split("_")[1]) > ind)
                 ind += 1
-                

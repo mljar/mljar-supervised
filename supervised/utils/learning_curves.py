@@ -30,7 +30,7 @@ class LearningCurves:
         return True
 
     @staticmethod
-    def plot(validation_splits, metric_name, model_path, trees_in_iteration = None):
+    def plot(validation_splits, metric_name, model_path, trees_in_iteration=None):
         colors = MY_COLORS
         if validation_splits > len(colors):
             repeat_colors = int(np.ceil(validation_splits / len(colors)))
@@ -66,7 +66,9 @@ class LearningCurves:
         plt.close("all")
 
     @staticmethod
-    def plot_iterations(validation_splits, metric_name, model_path, colors, trees_in_iteration = None):
+    def plot_iterations(
+        validation_splits, metric_name, model_path, colors, trees_in_iteration=None
+    ):
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(

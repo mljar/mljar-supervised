@@ -38,7 +38,7 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
             results_path=self.automl_dir, model_time_limit=10, algorithms=[model_type]
         )
         automl._estimate_training_times()
-        print(automl._time_limit)
+
         for _ in range(12):
             automl.log_train_time(model_type, 10)
             # should be always true
@@ -53,8 +53,24 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
             algorithms=[model_type],
         )
         automl._estimate_training_times()
-        print(automl._time_limit)
+
         for _ in range(12):
             automl.log_train_time(model_type, 10)
             # should be always true
             self.assertTrue(automl._enough_time_to_train(model_type))
+
+    def test_enough_time_to_train(self):
+        model_type = "Xgboost"
+        model_type_2 = "LightGBM"
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=10,  # this parameter setting should be omitted
+            algorithms=[model_type, model_type_2],
+        )
+        automl._estimate_training_times()
+
+        for i in range(5):
+            # should be always true
+            self.assertTrue(automl._enough_time_to_train(model_type))
+            automl.log_train_time(model_type, 1)

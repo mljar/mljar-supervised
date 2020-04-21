@@ -41,7 +41,7 @@ class MljarTuner:
                     break
                 if i > 4 and model_type == "Decision Tree":
                     break
-                
+
                 logger.info("Generate parameters for model #{0}".format(models_cnt + 1))
                 params = self._get_model_params(model_type, X, y, i + 1)
                 if params is None:
@@ -71,7 +71,7 @@ class MljarTuner:
                 lambda x: x.sort_values("score")
             )
             unique_model_types = np.unique(df_models.model_type)
-            
+
             for m_type in unique_model_types:
                 if m_type in ["Baseline", "Decision Tree"]:
                     # dont tune Baseline and Decision Tree
@@ -86,12 +86,12 @@ class MljarTuner:
                         self._ml_task,
                         len(current_models) + self._seed,
                     ):
-                        
+
                         model_indices = [
                             int(m.get_name().split("_")[1]) for m in current_models
                         ]
                         model_max_index = np.max(model_indices)
-                        
+
                         logger.info(
                             "Hill climbing step, for model #{0}".format(
                                 model_max_index + 1

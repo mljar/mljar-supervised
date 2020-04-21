@@ -59,7 +59,12 @@ class AutoML:
         tuning_mode="Sport",
         train_ensemble=True,
         optimize_metric=None,
-        validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True},
+        validation={
+            "validation_type": "kfold",
+            "k_folds": 5,
+            "shuffle": True,
+            "stratify": True,
+        },
         verbose=True,
         ml_task=None,
         seed=1,
@@ -376,22 +381,43 @@ class AutoML:
         if self._total_time_limit is None:
             return True
 
-        total_time_already_spend = (
+        total_time_spend = 0.0
+        for k, v in self._models_train_time.items():
+            total_time_spend += np.sum(v)
+
+        time_left = self._total_time_limit - total_time_spend 
+        if time_left < 0:
+            return False
+
+        # there is still time and model_type was not tested yet
+        # we should try it
+        if (
+            model_type not in self._models_train_time
+            and total_time_spend < self._total_time_limit
+        ):
+            return True
+
+        model_total_time_spend = (
             0
             if model_type not in self._models_train_time
             else np.sum(self._models_train_time[model_type])
         )
-        mean_time_already_spend = (
+        model_mean_time_spend = (
             0
             if model_type not in self._models_train_time
             else np.mean(self._models_train_time[model_type])
         )
 
-        if (
-            total_time_already_spend + mean_time_already_spend
-            < 0.85 * self._total_time_limit / float(len(self._algorithms))
-        ):
+        algo_cnt = float(len(self._algorithms))
+        for a in ["Baseline", "Decision Tree"]:
+            if a in self._algorithms:
+                algo_cnt -= 1.0
+
+        
+        model_time_left = time_left / algo_cnt
+        if model_mean_time_spend <= model_time_left:
             return True
+
         return False
 
     def ensemble_step(self):

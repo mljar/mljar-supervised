@@ -39,9 +39,7 @@ class XgbAlgorithm(BaseAlgorithm):
         super(XgbAlgorithm, self).__init__(params)
         self.library_version = xgb.__version__
 
-        self.boosting_rounds = additional.get(
-            "trees_in_step", 50
-        )
+        self.boosting_rounds = additional.get("trees_in_step", 50)
         self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {
             "tree_method": "hist",
