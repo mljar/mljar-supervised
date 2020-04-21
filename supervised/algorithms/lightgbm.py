@@ -32,8 +32,8 @@ class LightgbmAlgorithm(BaseAlgorithm):
         self.model_file = self.uid + ".lgbm.model"
         self.model_file_path = os.path.join(storage_path, self.model_file)
 
-        self.rounds = additional.get("one_step", 50)
-        self.max_iters = additional.get("max_steps", 3)
+        self.rounds = additional.get("trees_in_step", 50)
+        self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {
             "boosting_type": "gbdt",
             "objective": self.params.get("objective", "binary"),
@@ -124,7 +124,7 @@ lgbm_bin_params = {
 
 
 additional = {
-    "one_step": 50,
+    "trees_in_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
     "max_rows_limit": None,

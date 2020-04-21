@@ -279,7 +279,7 @@ class ModelFramework:
         )
 
         LearningCurves.plot(
-            self.validation.get_n_splits(), self.get_metric_name(), model_path
+            self.validation.get_n_splits(), self.get_metric_name(), model_path, trees_in_iteration = self.additional_params.get("trees_in_step")
         )
 
         self._additional_metrics = self.get_additional_metrics()

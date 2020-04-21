@@ -30,7 +30,7 @@ class LearningCurves:
         return True
 
     @staticmethod
-    def plot(validation_splits, metric_name, model_path):
+    def plot(validation_splits, metric_name, model_path, trees_in_iteration = None):
         colors = MY_COLORS
         if validation_splits > len(colors):
             repeat_colors = int(np.ceil(validation_splits / len(colors)))
@@ -42,7 +42,7 @@ class LearningCurves:
             )
         else:
             LearningCurves.plot_iterations(
-                validation_splits, metric_name, model_path, colors
+                validation_splits, metric_name, model_path, colors, trees_in_iteration
             )
 
     @staticmethod
@@ -66,13 +66,15 @@ class LearningCurves:
         plt.close("all")
 
     @staticmethod
-    def plot_iterations(validation_splits, metric_name, model_path, colors):
+    def plot_iterations(validation_splits, metric_name, model_path, colors, trees_in_iteration = None):
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(
                 os.path.join(model_path, f"./learner_{l+1}_training.log"),
                 names=["iteration", "train", "test", "no_improvement"],
             )
+            if trees_in_iteration is not None:
+                df.iteration = df.iteration * trees_in_iteration
             plt.plot(
                 df.iteration,
                 df.train,
@@ -81,7 +83,10 @@ class LearningCurves:
                 label=f"Fold {l+1}, train",
             )
             plt.plot(df.iteration, df.test, color=colors[l], label=f"Fold {l+1}, test")
-        plt.xlabel("#Iteration")
+        if trees_in_iteration is not None:
+            plt.xlabel("#Trees")
+        else:
+            plt.xlabel("#Iteration")
         plt.ylabel(metric_name)
         plt.legend(loc="best")
         plt.tight_layout(pad=2.0)

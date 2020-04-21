@@ -30,8 +30,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
         self.snapshot_file_path = os.path.join(
             storage_path, "training_snapshot_" + self.model_file
         )
-        self.rounds = additional.get("one_step", 50)
-        self.max_iters = additional.get("max_steps", 10)
+        self.rounds = additional.get("trees_in_step", 50)
+        self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {
             "learning_rate": self.params.get("learning_rate", 0.025),
             "depth": self.params.get("depth", 6),
@@ -135,7 +135,7 @@ bin_class_params = {
 
 
 additional = {
-    "one_step": 50,
+    "trees_in_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
     "max_rows_limit": None,

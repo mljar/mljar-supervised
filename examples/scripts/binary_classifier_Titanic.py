@@ -11,7 +11,7 @@ y = df["Survived"]
 
 automl = AutoML(
     #results_path="examples/AutoML_Titanic",
-    total_time_limit=1, #60 * 60,
+    total_time_limit=1,
     train_ensemble=True,
 )
 

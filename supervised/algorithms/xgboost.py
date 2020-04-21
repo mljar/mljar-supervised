@@ -40,9 +40,9 @@ class XgbAlgorithm(BaseAlgorithm):
         self.library_version = xgb.__version__
 
         self.boosting_rounds = additional.get(
-            "one_step", 50
-        )  # params.get("boosting_rounds", 50)
-        self.max_iters = additional.get("max_steps", 3)
+            "trees_in_step", 50
+        )
+        self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {
             "tree_method": "hist",
             "booster": self.params.get("booster", "gbtree"),
@@ -151,7 +151,7 @@ xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 
 
 additional = {
-    "one_step": 50,
+    "trees_in_step": 50,
     "train_cant_improve_limit": 5,
     "max_steps": 500,
     "max_rows_limit": None,
