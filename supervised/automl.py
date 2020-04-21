@@ -432,6 +432,9 @@ class AutoML:
                     self._ml_task, AlgorithmsRegistry.get_supported_ml_tasks()
                 )
             )
+        if self._ml_task == REGRESSION:
+            if "stratify" in self._validation:
+                del self._validation["stratify"]
         logger.info("AutoML task to be solved: {}".format(self._ml_task))
         print(f"AutoML task to be solved: { self._ml_task}")
 
