@@ -308,50 +308,6 @@ class AutoML:
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
         return pd.DataFrame(ldb)
 
-    def get_additional_metrics(self):
-
-        additional_metrics = self._best_model.get_additional_metrics()
-        # AdditionalMetrics.compute(
-        #    oof_predictions[target_cols],
-        #    oof_predictions[prediction_cols],
-        #    self._ml_task,
-        # )
-        if self._ml_task == BINARY_CLASSIFICATION:
-
-            self._metrics_details = additional_metrics["metric_details"]
-            self._max_metrics = additional_metrics["max_metrics"]
-            self._confusion_matrix = additional_metrics["confusion_matrix"]
-            self._threshold = additional_metrics["threshold"]
-            logger.info(
-                "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
-                    self._max_metrics.transpose(), self._confusion_matrix
-                )
-            )
-            with open(
-                os.path.join(self._results_path, "best_model_metrics.txt"), "w"
-            ) as fout:
-                fout.write(
-                    "Metric details:\n{}\n\nConfusion matrix:\n{}".format(
-                        self._max_metrics.transpose(), self._confusion_matrix
-                    )
-                )
-
-        elif self._ml_task == MULTICLASS_CLASSIFICATION:
-
-            max_metrics = additional_metrics["max_metrics"]
-            confusion_matrix = additional_metrics["confusion_matrix"]
-
-            logger.info(
-                "Metric details:\n{}\nConfusion matrix:\n{}".format(
-                    max_metrics, confusion_matrix
-                )
-            )
-            with open(
-                os.path.join(self._results_path, "best_model_metrics.txt"), "w"
-            ) as fout:
-                fout.write("Metric details:\n{}\n\n".format(max_metrics.transpose()))
-                fout.write("Confusion matrix:\n{}".format(confusion_matrix))
-
     def keep_model(self, model):
         if model is None:
             return
@@ -682,7 +638,6 @@ class AutoML:
                     self._best_model = m
                     max_loss = m.get_final_loss()
 
-            self.get_additional_metrics()
             self._fit_time = time.time() - start_time
             # self._progress_bar.close()
 

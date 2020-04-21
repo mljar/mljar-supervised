@@ -10,8 +10,8 @@ X = df[df.columns[2:]]
 y = df["Survived"]
 
 automl = AutoML(
-    results_path="examples/AutoML_Titanic",
-    total_time_limit=60 * 60,
+    #results_path="examples/AutoML_Titanic",
+    total_time_limit=1, #60 * 60,
     train_ensemble=True,
 )
 
