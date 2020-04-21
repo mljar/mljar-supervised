@@ -385,6 +385,7 @@ class AutoML:
         for k, v in self._models_train_time.items():
             total_time_spend += np.sum(v)
 
+        # no time left, do not train more models, sorry ...
         time_left = self._total_time_limit - total_time_spend 
         if time_left < 0:
             return False
@@ -392,8 +393,8 @@ class AutoML:
         # there is still time and model_type was not tested yet
         # we should try it
         if (
-            model_type not in self._models_train_time
-            and total_time_spend < self._total_time_limit
+            time_left > 0
+            and model_type not in self._models_train_time
         ):
             return True
 
@@ -413,7 +414,6 @@ class AutoML:
             if a in self._algorithms:
                 algo_cnt -= 1.0
 
-        
         model_time_left = time_left / algo_cnt
         if model_mean_time_spend <= model_time_left:
             return True
