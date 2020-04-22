@@ -129,7 +129,7 @@ xgb_bin_class_params = {
     "booster": ["gbtree", "gblinear"],
     "objective": ["binary:logistic"],
     "eval_metric": ["auc", "logloss"],
-    "eta": [0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1],
+    "eta": [0.01, 0.025, 0.05, 0.075, 0.1, 0.15],
     "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "subsample": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
@@ -149,8 +149,9 @@ xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 
 
 additional = {
-    "trees_in_step": 50,
+    "trees_in_step": 10,
     "train_cant_improve_limit": 5,
+    "min_steps": 5,
     "max_steps": 500,
     "max_rows_limit": None,
     "max_cols_limit": None,

@@ -334,7 +334,10 @@ class AutoML:
         early_stop = EarlyStopping(
             {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
         )
-        time_constraint = TimeConstraint({"train_seconds_time_limit": self._time_limit})
+        min_steps = params["additional"].get("min_steps")
+        time_constraint = TimeConstraint(
+            {"train_seconds_time_limit": self._time_limit, "min_steps": min_steps}
+        )
         mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
 
         if self._enough_time_to_train(mf.get_type()):
@@ -386,16 +389,13 @@ class AutoML:
             total_time_spend += np.sum(v)
 
         # no time left, do not train more models, sorry ...
-        time_left = self._total_time_limit - total_time_spend 
+        time_left = self._total_time_limit - total_time_spend
         if time_left < 0:
             return False
 
         # there is still time and model_type was not tested yet
         # we should try it
-        if (
-            time_left > 0
-            and model_type not in self._models_train_time
-        ):
+        if time_left > 0 and model_type not in self._models_train_time:
             return True
 
         model_total_time_spend = (

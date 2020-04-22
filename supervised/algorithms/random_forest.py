@@ -83,6 +83,7 @@ rf_params = {
 additional = {
     "trees_in_step": 10,
     "train_cant_improve_limit": 5,
+    "min_steps": 5,
     "max_steps": 500,
     "max_rows_limit": None,
     "max_cols_limit": None,
