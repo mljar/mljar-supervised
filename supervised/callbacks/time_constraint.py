@@ -2,8 +2,10 @@ import time
 import logging
 from supervised.callbacks.callback import Callback
 
-log = logging.getLogger(__name__)
+from supervised.utils.config import LOG_LEVEL
 
+log = logging.getLogger(__name__)
+log.setLevel(LOG_LEVEL)
 
 class TimeConstraint(Callback):
     def __init__(self, params={}):
