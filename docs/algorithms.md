@@ -6,6 +6,7 @@
 - Decision Tree
 - Xgboost
 - Random Forest
+- Extra Trees
 - LightGBM
 
 
@@ -15,6 +16,7 @@
 - Decision Tree
 - Xgboost
 - Random Forest
+- Extra Trees
 - LightGBM
 
 ## Regression
@@ -23,4 +25,5 @@
 - Decision Tree
 - Xgboost
 - Random Forest
+- Extra Trees
 - LightGBM
