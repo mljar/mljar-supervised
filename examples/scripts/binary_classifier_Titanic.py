@@ -11,12 +11,14 @@ y = df["Survived"]
 
 automl = AutoML(
     #results_path="examples/AutoML_Titanic",
+    algorithms=["Xgboost"],
     total_time_limit=1,
     train_ensemble=True,
 )
-
+automl.set_advanced(start_random_models = 1)
 automl.fit(X, y)
 
+'''
 pred = automl.predict(X)
 
 print("Train accuracy", accuracy_score(y, pred["label"]))
@@ -36,3 +38,4 @@ test_cols = [
 ]
 pred = automl.predict(test[test_cols])
 print("Test accuracy", accuracy_score(test["Survived"], pred["label"]))
+'''

@@ -154,9 +154,13 @@ class ModelFramework:
             learner.interpret(
                 X_train,
                 y_train,
+                X_validation,
+                y_validation,
                 model_file_path=model_path,
                 learner_name=f"learner_{k_fold+1}",
                 class_names=self.preprocessings[-1].get_target_class_names(),
+                metric_name=self.get_metric_name(),
+                ml_task=self._ml_task,
             )
 
         # end of validation loop

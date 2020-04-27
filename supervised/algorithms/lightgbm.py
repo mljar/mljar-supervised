@@ -70,6 +70,13 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def predict(self, X):
         return self.model.predict(X)
 
+    # needed for feature importance
+    def predict_proba(self, X):
+        y = self.predict(X)
+        if "num_class" in self.params:
+            return y
+        return np.column_stack((1 - y, y))
+
     def copy(self):
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
             return copy.deepcopy(self)
@@ -81,9 +88,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def load(self, model_file_path):
         logger.debug("LightgbmAlgorithm load model from %s" % model_file_path)
         self.model = lgb.Booster(model_file=model_file_path)
-
-    def importance(self, column_names, normalize=True):
-        return None
 
     def get_params(self):
         json_desc = {

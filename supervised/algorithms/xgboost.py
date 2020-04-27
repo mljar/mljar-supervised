@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import xgboost as xgb
 
+
 from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -86,6 +87,13 @@ class XgbAlgorithm(BaseAlgorithm):
         a = self.model.predict(dtrain)
         return a
 
+    # needed for feature importance
+    def predict_proba(self, X):
+        y = self.predict(X)
+        if "num_class" in self.params:
+            return y
+        return np.column_stack((1 - y, y))
+
     def copy(self):
         return copy.deepcopy(self)
 
@@ -119,9 +127,6 @@ class XgbAlgorithm(BaseAlgorithm):
 
     def file_extenstion(self):
         return "xgboost"
-
-    def importance(self, column_names, normalize=True):
-        return None
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.

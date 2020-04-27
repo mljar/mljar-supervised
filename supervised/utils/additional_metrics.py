@@ -219,6 +219,7 @@ class AdditionalMetrics:
             )
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_importance(fout, model_path)
 
     @staticmethod
     def save_multiclass_classification(additional_metrics, model_desc, model_path):
@@ -233,6 +234,7 @@ class AdditionalMetrics:
             )
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_importance(fout, model_path)
 
     @staticmethod
     def save_regression(additional_metrics, model_desc, model_path):
@@ -247,6 +249,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_learning_curves(fout)
 
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_importance(fout, model_path)
 
     @staticmethod
     def add_tree_viz(fout, model_path):
@@ -258,3 +261,16 @@ class AdditionalMetrics:
                 fout.write(f"\n### Tree #{l+1}\n")
                 f_path = f"learner_{l+1}_tree.svg"
                 fout.write(f"![Tree {l+1}]({f_path})")
+
+    @staticmethod
+    def add_importance(fout, model_path):
+
+        imp_plots = [f for f in os.listdir(model_path) if "_importance.png" in f]
+        if not len(imp_plots):
+            return
+
+        fout.write("\n\n## Features importance\n")
+        for l in range(len(imp_plots)):
+            fout.write(f"\n### Features importance (Fold #{l+1})\n")
+            f_path = f"learner_{l+1}_importance.png"
+            fout.write(f"![Imprtance from fold {l+1}]({f_path})")

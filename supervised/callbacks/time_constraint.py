@@ -7,6 +7,7 @@ from supervised.utils.config import LOG_LEVEL
 log = logging.getLogger(__name__)
 log.setLevel(LOG_LEVEL)
 
+
 class TimeConstraint(Callback):
     def __init__(self, params={}):
         super(TimeConstraint, self).__init__(params)
@@ -28,10 +29,11 @@ class TimeConstraint(Callback):
         log.debug(
             "Iteration {0} took {1} seconds, total training time {1} seconds".format(
                 self.iterations_count,
-                time.time() - self.iter_start_time, time.time() - self.train_start_time
+                time.time() - self.iter_start_time,
+                time.time() - self.train_start_time,
             )
         )
-        
+
         if time.time() - self.train_start_time > self.train_time_limit:
             self.learner.stop_training = True
             log.info("Terminating learning, time limit reached")

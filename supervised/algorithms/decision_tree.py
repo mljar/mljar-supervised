@@ -43,27 +43,49 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
         return "decision_tree"
 
     def interpret(
-        self, X, y, model_file_path, learner_name, target_name=None, class_names=None
+        self,
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        model_file_path,
+        learner_name,
+        target_name=None,
+        class_names=None,
+        metric_name=None,
+        ml_task=None,
     ):
+        super(DecisionTreeAlgorithm, self).interpret(
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            target_name,
+            class_names,
+            metric_name,
+            ml_task,
+        )
         try:
             if len(class_names) > 10:
                 # dtreeviz does not support more than 10 classes
                 return
             viz = dtreeviz(
                 self.model,
-                X,
-                y,
+                X_train,
+                y_train,
                 target_name="target",
-                feature_names=X.columns,
+                feature_names=X_train.columns,
                 class_names=class_names,
             )
-            self._tree_file_plot = os.path.join(
+            tree_file_plot = os.path.join(
                 model_file_path, learner_name + "_tree.svg"
             )
-            viz.save(self._tree_file_plot)
+            viz.save(tree_file_plot)
         except Exception as e:
-            self._tree_file_plot = None
-
+            logger.info(f"Problem when visuzalizin decision tree. {str(e)}")
+            
 
 class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 
@@ -80,24 +102,50 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             max_depth=params.get("max_depth", 3),
             random_state=params.get("seed", 1),
         )
-        self._tree_file_plot = None
+        
 
     def file_extenstion(self):
         return "decision_tree"
 
     def interpret(
-        self, X, y, model_file_path, learner_name, target_name=None, class_names=None
+        self,
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        model_file_path,
+        learner_name,
+        target_name=None,
+        class_names=None,
+        metric_name=None,
+        ml_task=None,
     ):
+        super(DecisionTreeRegressorAlgorithm, self).interpret(
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            target_name,
+            class_names,
+            metric_name,
+            ml_task,
+        )
         try:
             viz = dtreeviz(
-                self.model, X, y, target_name="target", feature_names=X.columns
+                self.model,
+                X_train,
+                y_train,
+                target_name="target",
+                feature_names=X_train.columns,
             )
-            self._tree_file_plot = os.path.join(
+            tree_file_plot = os.path.join(
                 model_file_path, learner_name + "_tree.svg"
             )
-            viz.save(self._tree_file_plot)
+            viz.save(tree_file_plot)
         except Exception as e:
-            self._tree_file_plot = None
+            logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")
 
 
 dt_params = {"criterion": ["gini", "entropy"], "max_depth": [1, 2, 3, 4]}

@@ -64,6 +64,13 @@ class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
             return self.model.predict_proba(X)
         return self.model.predict_proba(X)[:, 1]
 
+    # needed for feature importance
+    def predict_proba(self, X):
+        y = self.predict(X)
+        if "num_class" in self.params:
+            return y
+        return np.column_stack((1 - y, y))
+
 
 class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
     def __init__(self, params):

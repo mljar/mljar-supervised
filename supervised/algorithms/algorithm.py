@@ -1,5 +1,5 @@
 import uuid
-
+from supervised.utils.importance import PermutationImportance
 
 class BaseAlgorithm:
     """
@@ -36,9 +36,27 @@ class BaseAlgorithm:
         pass
 
     def interpret(
-        self, X, y, model_file_path, learner_name, target_name=None, class_names=None
+        self,
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        model_file_path,
+        learner_name,
+        target_name=None,
+        class_names=None,
+        metric_name=None,
+        ml_task=None,
     ):
-        pass
-
-    # def importance(self, column_names, normalize = True):
-    #    pass
+        # do not produce feature importance for Baseline 
+        if self.algorithm_short_name == "Baseline":
+            return
+        PermutationImportance.compute_and_plot(
+            self,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            metric_name,
+            ml_task,
+        )
