@@ -7,13 +7,13 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.random_forest import (RandomForestAlgorithm, RandomForestRegressorAlgorithm)
+from supervised.algorithms.extra_trees import (ExtraTreesAlgorithm, ExtraTreesRegressorAlgorithm)
 from supervised.utils.metric import Metric
 
 import tempfile
 
 
-class RandomForestRegressorAlgorithmTest(unittest.TestCase):
+class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
@@ -29,7 +29,7 @@ class RandomForestRegressorAlgorithmTest(unittest.TestCase):
         params = {"trees_in_step": 1, "seed": 1}
         prev_loss = None
         for _ in range(3):
-            model = RandomForestRegressorAlgorithm(params)
+            model = ExtraTreesRegressorAlgorithm(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -37,7 +37,7 @@ class RandomForestRegressorAlgorithmTest(unittest.TestCase):
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
 
-class RandomForestAlgorithmTest(unittest.TestCase):
+class ExtraTreesAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -57,7 +57,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         params = {"trees_in_step": 1, "seed": 1}
         prev_loss = None
         for _ in range(3):
-            model = RandomForestAlgorithm(params)
+            model = ExtraTreesAlgorithm(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -68,7 +68,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
         params = {"trees_in_step": 50}
-        rf = RandomForestAlgorithm(params)
+        rf = ExtraTreesAlgorithm(params)
 
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
@@ -76,12 +76,12 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
-        rf = RandomForestAlgorithm({})
+        rf = ExtraTreesAlgorithm({})
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        rf2 = RandomForestAlgorithm({})
+        rf2 = ExtraTreesAlgorithm({})
         rf2 = rf.copy()
         self.assertEqual(type(rf), type(rf2))
         y_predicted = rf2.predict(self.X)
@@ -90,7 +90,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        rf = RandomForestAlgorithm({})
+        rf = ExtraTreesAlgorithm({})
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
@@ -98,7 +98,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as tmp:
 
             rf.save(tmp.name)
-            rf2 = RandomForestAlgorithm({})
+            rf2 = ExtraTreesAlgorithm({})
             rf2.load(tmp.name)
 
             y_predicted = rf2.predict(self.X)

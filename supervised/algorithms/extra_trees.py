@@ -1,35 +1,32 @@
 import logging
 import os
 import sklearn
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import (ExtraTreesClassifier, ExtraTreesRegressor)
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION)
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
+class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
 
-    algorithm_name = "Random Forest"
-    algorithm_short_name = "Random Forest"
+    algorithm_name = "Extra Trees Classifier"
+    algorithm_short_name = "Extra Trees"
 
     def __init__(self, params):
-        super(RandomForestAlgorithm, self).__init__(params)
-        logger.debug("RandomForestAlgorithm.__init__")
+        super(ExtraTreesAlgorithm, self).__init__(params)
+        logger.debug("ExtraTreesAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
         self.trees_in_step = additional.get("trees_in_step", 5)
         self.max_iters = additional.get("max_steps", 3)
-        self.model = RandomForestClassifier(
+        self.model = ExtraTreesClassifier(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "gini"),
             max_features=params.get("max_features", 0.8),
@@ -41,22 +38,22 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
         )
 
     def file_extenstion(self):
-        return "random_forest"
+        return "extra_trees"
 
 
-class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
+class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 
-    algorithm_name = "Random Forest"
-    algorithm_short_name = "Random Forest"
+    algorithm_name = "Extra Trees Regressor"
+    algorithm_short_name = "Extra Trees"
 
     def __init__(self, params):
-        super(RandomForestRegressorAlgorithm, self).__init__(params)
-        logger.debug("RandomForestRegressorAlgorithm.__init__")
+        super(ExtraTreesRegressorAlgorithm, self).__init__(params)
+        logger.debug("ExtraTreesRegressorAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
         self.trees_in_step = additional.get("trees_in_step", 5)
         self.max_iters = additional.get("max_steps", 3)
-        self.model = RandomForestRegressor(
+        self.model = ExtraTreesRegressor(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "mse"),
             max_features=params.get("max_features", 0.8),
@@ -68,11 +65,11 @@ class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         )
 
     def file_extenstion(self):
-        return "random_forest"
+        return "extra_trees"
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
-rf_params = {
+et_params = {
     "criterion": ["gini", "entropy"],
     "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
     "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
@@ -96,16 +93,16 @@ required_preprocessing = [
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
-    RandomForestAlgorithm,
-    rf_params,
+    ExtraTreesAlgorithm,
+    et_params,
     required_preprocessing,
     additional,
 )
 
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    RandomForestAlgorithm,
-    rf_params,
+    ExtraTreesAlgorithm,
+    et_params,
     required_preprocessing,
     additional,
 )
@@ -115,7 +112,7 @@ AlgorithmsRegistry.add(
 # REGRESSION
 #
 
-regression_rf_params = {
+regression_et_params = {
     "criterion": ["mse", "mae"],
     "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
     "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
@@ -137,8 +134,8 @@ regression_required_preprocessing = [
 
 AlgorithmsRegistry.add(
     REGRESSION,
-    RandomForestRegressorAlgorithm,
-    regression_rf_params,
+    ExtraTreesRegressorAlgorithm,
+    regression_et_params,
     regression_required_preprocessing,
     regression_additional,
 )

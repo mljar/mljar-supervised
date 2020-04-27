@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import os
 
-from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -25,11 +24,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(CatBoostAlgorithm, self).__init__(params)
         self.library_version = catboost.__version__
-        self.model_file = self.uid + ".cat.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
-        self.snapshot_file_path = os.path.join(
-            storage_path, "training_snapshot_" + self.model_file
-        )
+        self.snapshot_file_path = "training_snapshot"
+        
         self.rounds = additional.get("trees_in_step", 50)
         self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {

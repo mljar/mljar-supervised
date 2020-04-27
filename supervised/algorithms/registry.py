@@ -39,3 +39,4 @@ import supervised.algorithms.xgboost
 import supervised.algorithms.decision_tree
 import supervised.algorithms.baseline
 import supervised.algorithms.lightgbm
+import supervised.algorithms.extra_trees

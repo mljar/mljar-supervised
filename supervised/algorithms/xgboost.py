@@ -5,8 +5,6 @@ import pandas as pd
 import os
 import xgboost as xgb
 
-
-from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (

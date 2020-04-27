@@ -10,8 +10,7 @@ from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
-from supervised.utils.config import storage_path
+from supervised.algorithms.registry import REGRESSION 
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)

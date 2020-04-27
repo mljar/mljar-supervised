@@ -8,7 +8,6 @@ import uuid
 import json
 import operator
 
-from supervised.utils.config import storage_path
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -34,8 +33,7 @@ class Ensemble:
     def __init__(self, optimize_metric="logloss", ml_task=BINARY_CLASSIFICATION):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
-        self.model_file = self.uid + ".ensemble.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
+
         self.metric = Metric({"name": optimize_metric})
         self.best_loss = self.metric.get_maximum()  # the best loss obtained by ensemble
         self.models_map = None

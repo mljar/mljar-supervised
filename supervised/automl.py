@@ -53,6 +53,7 @@ class AutoML:
             "Baseline",
             "Decision Tree",
             "Random Forest",
+            "Extra Trees",
             "LightGBM",
             "Xgboost",
         ],

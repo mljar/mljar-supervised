@@ -42,7 +42,7 @@ from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.utils.config import storage_path
+
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -58,8 +58,6 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         super(NeuralNetworkAlgorithm, self).__init__(params)
 
         self.library_version = keras.__version__
-        self.model_file = self.uid + ".nn.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
 
         self.rounds = additional.get("one_step", 10)
         self.max_iters = additional.get("max_steps", 1)

@@ -14,7 +14,6 @@ from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 
 from supervised.exceptions import AutoMLException
-from supervised.utils.config import storage_path
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.additional_metrics import AdditionalMetrics
 

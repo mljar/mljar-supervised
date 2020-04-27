@@ -11,11 +11,11 @@ y = df["Survived"]
 
 automl = AutoML(
     #results_path="examples/AutoML_Titanic",
-    algorithms=["Xgboost"],
-    total_time_limit=1,
+    #algorithms=["Extra Trees"],
+    model_time_limit=1,
     train_ensemble=True,
 )
-automl.set_advanced(start_random_models = 1)
+automl.set_advanced(start_random_models = 5)
 automl.fit(X, y)
 
 '''

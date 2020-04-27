@@ -14,7 +14,6 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-from supervised.utils.config import storage_path
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -28,9 +27,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def __init__(self, params):
         super(LightgbmAlgorithm, self).__init__(params)
-        self.library_version = lgb.__version__
-        self.model_file = self.uid + ".lgbm.model"
-        self.model_file_path = os.path.join(storage_path, self.model_file)
+        self.library_version = lgb.__version__ 
 
         self.rounds = additional.get("trees_in_step", 50)
         self.max_iters = additional.get("max_steps", 500)
