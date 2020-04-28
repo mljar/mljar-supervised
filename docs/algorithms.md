@@ -8,6 +8,7 @@
 - Random Forest
 - Extra Trees
 - LightGBM
+- CatBoost
 
 
 ## Multi-class Classification
@@ -18,6 +19,7 @@
 - Random Forest
 - Extra Trees
 - LightGBM
+- CatBoost
 
 ## Regression
 
@@ -27,3 +29,4 @@
 - Random Forest
 - Extra Trees
 - LightGBM
+- CatBoost
