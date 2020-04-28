@@ -56,6 +56,7 @@ class AutoML:
             "Extra Trees",
             "LightGBM",
             "Xgboost",
+            "CatBoost"
         ],
         tuning_mode="Sport",
         train_ensemble=True,
