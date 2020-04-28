@@ -37,9 +37,9 @@ class MljarTuner:
         generated_params = []
         for model_type in self._algorithms:
             for i in range(self._start_random_models):
-                if i > 0 and model_type == "Baseline":
+                if i > 0 and model_type in ["Baseline", "Linear"]:
                     break
-                if i > 4 and model_type == "Decision Tree":
+                if i > 2 and model_type == "Decision Tree":
                     break
 
                 logger.info("Generate parameters for model #{0}".format(models_cnt + 1))
@@ -73,7 +73,7 @@ class MljarTuner:
             unique_model_types = np.unique(df_models.model_type)
 
             for m_type in unique_model_types:
-                if m_type in ["Baseline", "Decision Tree"]:
+                if m_type in ["Baseline", "Decision Tree", "Linear"]:
                     # dont tune Baseline and Decision Tree
                     continue
                 models = df_models[df_models.model_type == m_type]["model"]

@@ -32,6 +32,12 @@ class AlgorithmsRegistry:
     def get_algorithm_class(ml_task, algorithm_name):
         return AlgorithmsRegistry.registry[ml_task][algorithm_name]["class"]
 
+    @staticmethod
+    def get_long_name(ml_task, algorithm_name):
+        return AlgorithmsRegistry.registry[ml_task][algorithm_name][
+            "class"
+        ].algorithm_name
+
 
 # Import algorithm to be registered
 import supervised.algorithms.random_forest
@@ -41,3 +47,4 @@ import supervised.algorithms.baseline
 import supervised.algorithms.lightgbm
 import supervised.algorithms.extra_trees
 import supervised.algorithms.catboost
+import supervised.algorithms.linear

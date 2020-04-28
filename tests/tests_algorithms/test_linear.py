@@ -7,13 +7,13 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.extra_trees import (ExtraTreesAlgorithm, ExtraTreesRegressorAlgorithm)
+from supervised.algorithms.linear import (LinearAlgorithm, LinearRegressorAlgorithm)
 from supervised.utils.metric import Metric
 
 import tempfile
 
 
-class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
+class LinearRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
@@ -26,10 +26,10 @@ class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "mse"})
-        params = {"trees_in_step": 1, "seed": 1, "ml_task": "regression"}
+        params = {"seed": 1, "ml_task": "regression"}
         prev_loss = None
         for _ in range(3):
-            model = ExtraTreesRegressorAlgorithm(params)
+            model = LinearRegressorAlgorithm(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -37,7 +37,7 @@ class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
 
-class ExtraTreesAlgorithmTest(unittest.TestCase):
+class LinearAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -54,10 +54,10 @@ class ExtraTreesAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 1, "seed": 1, "ml_task": "binary_classification"}
+        params = {"seed": 1, "ml_task": "binary_classification"}
         prev_loss = None
         for _ in range(3):
-            model = ExtraTreesAlgorithm(params)
+            model = LinearAlgorithm(params)
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -67,40 +67,40 @@ class ExtraTreesAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 50, "ml_task": "binary_classification"}
-        rf = ExtraTreesAlgorithm(params)
+        params = {"ml_task": "binary_classification"}
+        la = LinearAlgorithm(params)
 
-        rf.fit(self.X, self.y)
-        y_predicted = rf.predict(self.X)
+        la.fit(self.X, self.y)
+        y_predicted = la.predict(self.X)
         self.assertTrue(metric(self.y, y_predicted) < 0.6)
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
-        rf = ExtraTreesAlgorithm({"ml_task": "binary_classification"})
-        rf.fit(self.X, self.y)
-        y_predicted = rf.predict(self.X)
+        model = LinearAlgorithm({"ml_task": "binary_classification"})
+        model.fit(self.X, self.y)
+        y_predicted = model.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        rf2 = ExtraTreesAlgorithm({"ml_task": "binary_classification"})
-        rf2 = rf.copy()
-        self.assertEqual(type(rf), type(rf2))
-        y_predicted = rf2.predict(self.X)
+        model2 = LinearAlgorithm({})
+        model2 = model.copy()
+        self.assertEqual(type(model), type(model2))
+        y_predicted = model2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        rf = ExtraTreesAlgorithm({"ml_task": "binary_classification"})
-        rf.fit(self.X, self.y)
-        y_predicted = rf.predict(self.X)
+        model = LinearAlgorithm({"ml_task": "binary_classification"})
+        model.fit(self.X, self.y)
+        y_predicted = model.predict(self.X)
         loss = metric(self.y, y_predicted)
 
         with tempfile.NamedTemporaryFile() as tmp:
 
-            rf.save(tmp.name)
-            rf2 = ExtraTreesAlgorithm({"ml_task": "binary_classification"})
-            rf2.load(tmp.name)
+            model.save(tmp.name)
+            model2 = LinearAlgorithm({"ml_task": "binary_classification"})
+            model2.load(tmp.name)
 
-            y_predicted = rf2.predict(self.X)
+            y_predicted = model2.predict(self.X)
             loss2 = metric(self.y, y_predicted)
             assert_almost_equal(loss, loss2)

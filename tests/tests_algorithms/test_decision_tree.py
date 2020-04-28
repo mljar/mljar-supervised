@@ -30,7 +30,7 @@ class DecisionTreeTest(unittest.TestCase):
 
     def test_reproduce_fit_regression(self):
         metric = Metric({"name": "rmse"})
-        params = {"max_depth": 1, "seed": 1}
+        params = {"max_depth": 1, "seed": 1, "ml_task": "regression"}
         prev_loss = None
         for _ in range(3):
             model = DecisionTreeRegressorAlgorithm(params)
@@ -43,7 +43,7 @@ class DecisionTreeTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "rmse"})
-        dt = DecisionTreeRegressorAlgorithm({})
+        dt = DecisionTreeRegressorAlgorithm({"ml_task": "regression"})
         dt.fit(self.X, self.y)
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
@@ -51,7 +51,7 @@ class DecisionTreeTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as tmp:
 
             dt.save(tmp.name)
-            dt2 = DecisionTreeRegressorAlgorithm({})
+            dt2 = DecisionTreeRegressorAlgorithm({"ml_task": "regression"})
             dt2.load(tmp.name)
 
             y_predicted = dt2.predict(self.X)

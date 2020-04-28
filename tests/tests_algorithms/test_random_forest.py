@@ -26,7 +26,7 @@ class RandomForestRegressorAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "mse"})
-        params = {"trees_in_step": 1, "seed": 1}
+        params = {"trees_in_step": 1, "seed": 1, "ml_task": "regression"}
         prev_loss = None
         for _ in range(3):
             model = RandomForestRegressorAlgorithm(params)
@@ -54,7 +54,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 1, "seed": 1}
+        params = {"trees_in_step": 1, "seed": 1, "ml_task": "binary_classification"}
         prev_loss = None
         for _ in range(3):
             model = RandomForestAlgorithm(params)
@@ -67,7 +67,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 50}
+        params = {"trees_in_step": 50, "ml_task": "binary_classification"}
         rf = RandomForestAlgorithm(params)
 
         rf.fit(self.X, self.y)
@@ -76,12 +76,12 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
-        rf = RandomForestAlgorithm({})
+        rf = RandomForestAlgorithm({"ml_task": "binary_classification"})
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        rf2 = RandomForestAlgorithm({})
+        rf2 = RandomForestAlgorithm({"ml_task": "binary_classification"})
         rf2 = rf.copy()
         self.assertEqual(type(rf), type(rf2))
         y_predicted = rf2.predict(self.X)
@@ -90,7 +90,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        rf = RandomForestAlgorithm({})
+        rf = RandomForestAlgorithm({"ml_task": "binary_classification"})
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
@@ -98,7 +98,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as tmp:
 
             rf.save(tmp.name)
-            rf2 = RandomForestAlgorithm({})
+            rf2 = RandomForestAlgorithm({"ml_task": "binary_classification"})
             rf2.load(tmp.name)
 
             y_predicted = rf2.predict(self.X)

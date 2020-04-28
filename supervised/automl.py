@@ -51,12 +51,13 @@ class AutoML:
         model_time_limit=None,
         algorithms=[
             "Baseline",
+            "Linear",
             "Decision Tree",
             "Random Forest",
             "Extra Trees",
             "LightGBM",
             "Xgboost",
-            "CatBoost"
+            "CatBoost",
         ],
         tuning_mode="Sport",
         train_ensemble=True,
@@ -275,6 +276,9 @@ class AutoML:
         algo_cnt = len(self._algorithms)
         if "Baseline" in self._algorithms:
             algo_cnt -= 1
+        if "Linear" in self._algorithms:
+            algo_cnt -= 1
+            
         self._estimated_models_to_check = algo_cnt * self._start_random_models
         if self._estimated_models_to_check > self._top_models_to_improve:
             self._estimated_models_to_check += (
@@ -282,6 +286,8 @@ class AutoML:
             )
 
         if "Baseline" in self._algorithms:
+            self._estimated_models_to_check += 1
+        if "Linear" in self._algorithms:
             self._estimated_models_to_check += 1
 
         if self._model_time_limit is not None:

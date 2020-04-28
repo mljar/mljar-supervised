@@ -32,7 +32,7 @@ class BaselineTest(unittest.TestCase):
         metric = Metric({"name": "rmse"})
         prev_loss = None
         for _ in range(3):
-            model = BaselineRegressorAlgorithm({})
+            model = BaselineRegressorAlgorithm({"ml_task": "regression"})
             model.fit(self.X, self.y)
             y_predicted = model.predict(self.X)
             loss = metric(self.y, y_predicted)
@@ -55,7 +55,7 @@ class BaselineTest(unittest.TestCase):
         metric = Metric({"name": "logloss"})
         prev_loss = None
         for _ in range(3):
-            model = BaselineClassifierAlgorithm({})
+            model = BaselineClassifierAlgorithm({"ml_task": "binary_classification"})
             model.fit(X, y)
             y_predicted = model.predict(X)
             loss = metric(y, y_predicted)
@@ -65,7 +65,7 @@ class BaselineTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "rmse"})
-        dt = BaselineRegressorAlgorithm({})
+        dt = BaselineRegressorAlgorithm({"ml_task": "regression"})
         dt.fit(self.X, self.y)
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
@@ -73,7 +73,7 @@ class BaselineTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as tmp:
 
             dt.save(tmp.name)
-            dt2 = BaselineRegressorAlgorithm({})
+            dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
             dt2.load(tmp.name)
 
             y_predicted = dt2.predict(self.X)

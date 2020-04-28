@@ -123,7 +123,6 @@ required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
     "target_as_integer",
-    "target_scale",
 ]
 
 
@@ -152,6 +151,17 @@ AlgorithmsRegistry.add(
     additional,
 )
 
+regression_required_preprocessing = [
+    "missing_values_inputation",
+    "convert_categorical",
+    "target_scale",
+]
+
+
 AlgorithmsRegistry.add(
-    REGRESSION, LightgbmAlgorithm, lgbr_params, required_preprocessing, additional
+    REGRESSION,
+    LightgbmAlgorithm,
+    lgbr_params,
+    regression_required_preprocessing,
+    additional,
 )

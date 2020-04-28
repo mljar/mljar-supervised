@@ -12,7 +12,7 @@ from supervised.validation.validation_step import ValidationStep
 from supervised.algorithms.factory import AlgorithmFactory
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
-
+from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.exceptions import AutoMLException
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.additional_metrics import AdditionalMetrics
@@ -298,8 +298,15 @@ class ModelFramework:
             fout.write("ALL OK!")
 
     def model_markdown(self):
+        long_name = AlgorithmsRegistry.get_long_name(
+            self._ml_task, self.learner_params["model_type"]
+        )
+        short_name = self.learner_params["model_type"]
         desc = f"# Summary of {self.get_name()}\n"
-        desc += f"\n ## {self.learner_params['model_type']}\n"
+        if long_name == short_name:
+            desc += f"\n## {short_name}\n"
+        else:
+            desc += f"\n## {long_name} ({short_name})\n"
         for k, v in self.learner_params.items():
             if k in ["model_type", "ml_task", "seed"]:
                 continue

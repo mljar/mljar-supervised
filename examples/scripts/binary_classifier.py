@@ -11,7 +11,7 @@ X = df[df.columns[:-1]]
 y = df["income"]
 
 
-automl = AutoML()
+automl = AutoML(algorithms=["Linear"])
 # results_path = "AutoML_8",
 # ,
 # start_random_models=1,

@@ -151,7 +151,6 @@ required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
     "target_as_integer",
-    "target_scale",
 ]
 
 AlgorithmsRegistry.add(
@@ -170,6 +169,17 @@ AlgorithmsRegistry.add(
     additional,
 )
 
+regression_required_preprocessing = [
+    "missing_values_inputation",
+    "convert_categorical",
+    "target_scale",
+]
+
+
 AlgorithmsRegistry.add(
-    REGRESSION, XgbAlgorithm, xgb_regression_params, required_preprocessing, additional
+    REGRESSION,
+    XgbAlgorithm,
+    xgb_regression_params,
+    regression_required_preprocessing,
+    additional,
 )

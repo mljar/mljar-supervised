@@ -219,6 +219,7 @@ class AdditionalMetrics:
             )
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
 
     @staticmethod
@@ -234,6 +235,7 @@ class AdditionalMetrics:
             )
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
 
     @staticmethod
@@ -247,9 +249,20 @@ class AdditionalMetrics:
                 )
             )
             AdditionalMetrics.add_learning_curves(fout)
-
             AdditionalMetrics.add_tree_viz(fout, model_path)
+            AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
+
+    @staticmethod
+    def add_linear_coefs(fout, model_path):
+        coef_files = [f for f in os.listdir(model_path) if "_coefs.csv" in f]
+        if len(coef_files):
+            fout.write("\n\n## Coefficients\n")
+            for l in range(len(coef_files)):
+                fout.write(f"\n### Coefficients learner #{l+1}\n")
+                df = pd.read_csv(os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0)
+                fout.write(df.to_markdown() + "\n")
+
 
     @staticmethod
     def add_tree_viz(fout, model_path):

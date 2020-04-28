@@ -91,7 +91,6 @@ required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
     "target_as_integer",
-    "target_scale",
 ]
 
 AlgorithmsRegistry.add(

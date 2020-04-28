@@ -6,7 +6,11 @@ import os
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.utils.config import LOG_LEVEL
 
@@ -15,6 +19,7 @@ logger.setLevel(LOG_LEVEL)
 
 from catboost import CatBoostClassifier, CatBoostRegressor
 import catboost
+
 
 class CatBoostAlgorithm(BaseAlgorithm):
 
@@ -36,14 +41,14 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif self.params["ml_task"] == REGRESSION:
             loss_function = self.params.get("loss_function", "RMSE")
             Algo = CatBoostRegressor
-        
+
         self.learner_params = {
             "learning_rate": self.params.get("learning_rate", 0.1),
             "depth": self.params.get("depth", 6),
             "rsm": self.params.get("rsm", 1),
             "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
             "random_seed": self.params.get("seed", 1),
-            "loss_function": loss_function
+            "loss_function": loss_function,
         }
 
         self.model = Algo(
@@ -54,7 +59,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             l2_leaf_reg=self.learner_params["l2_leaf_reg"],
             loss_function=self.learner_params["loss_function"],
             verbose=False,
-            allow_writing_files=False
+            allow_writing_files=False,
         )
         self.cat_features = None
 
@@ -152,10 +157,13 @@ AlgorithmsRegistry.add(
 regression_params = copy.deepcopy(classification_params)
 regression_params["loss_function"] = ["MAE", "RMSE"]
 
+regression_required_preprocessing = ["missing_values_inputation", "target_scale"]
+
+
 AlgorithmsRegistry.add(
     REGRESSION,
     CatBoostAlgorithm,
     regression_params,
-    required_preprocessing,
+    regression_required_preprocessing,
     additional,
 )
