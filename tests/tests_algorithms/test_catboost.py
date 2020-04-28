@@ -10,6 +10,41 @@ from sklearn import datasets
 
 from supervised.algorithms.catboost import CatBoostAlgorithm
 from supervised.utils.metric import Metric
+import tempfile
+
+
+
+class CatBoostRegressorAlgorithmTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.X, cls.y = datasets.make_regression(
+            n_samples=100,
+            n_features=5,
+            n_informative=4,
+            shuffle=False,
+            random_state=0,
+        )
+        cls.X = pd.DataFrame(cls.X, columns = [f"f_{i}" for i in range(cls.X.shape[1])])
+        cls.params = {
+            "learning_rate": 0.1,
+            "depth": 4,
+            "rsm": 0.5,
+            "l2_leaf_reg": 1,
+            "seed": 1,
+            "ml_task": "regression"
+        }
+
+    def test_reproduce_fit(self):
+        metric = Metric({"name": "mse"})
+        prev_loss = None
+        for _ in range(3):
+            model = CatBoostAlgorithm(self.params)
+            model.fit(self.X, self.y)
+            y_predicted = model.predict(self.X)
+            loss = metric(self.y, y_predicted)
+            if prev_loss is not None:
+                assert_almost_equal(prev_loss, loss)
+            prev_loss = loss
 
 
 class CatBoostAlgorithmTest(unittest.TestCase):
@@ -26,14 +61,14 @@ class CatBoostAlgorithmTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
+        cls.X = pd.DataFrame(cls.X, columns = [f"f_{i}" for i in range(cls.X.shape[1])])
         cls.params = {
             "learning_rate": 0.1,
-            "depth": 2,
+            "depth": 4,
             "rsm": 0.5,
-            "random_strength": 1,
-            "bagging_temperature": 0.7,
             "l2_leaf_reg": 1,
             "seed": 1,
+            "ml_task": "binary_classification"
         }
 
     def test_reproduce_fit(self):
@@ -94,17 +129,14 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        json_desc = cat.save()
-        cat2 = CatBoostAlgorithm({})
-        self.assertTrue(cat.uid != cat2.uid)
-        self.assertTrue(cat2.model is not None)
-        cat2.load(json_desc)
-        self.assertTrue(cat.uid == cat2.uid)
+        with tempfile.NamedTemporaryFile() as tmp:
+            cat.save(tmp.name)
+            cat2 = CatBoostAlgorithm(self.params)
+            self.assertTrue(cat.uid != cat2.uid)
+            self.assertTrue(cat2.model is not None)
+            cat2.load(tmp.name)
 
-        y_predicted = cat2.predict(self.X)
-        loss2 = metric(self.y, y_predicted)
-        assert_almost_equal(loss, loss2)
+            y_predicted = cat2.predict(self.X)
+            loss2 = metric(self.y, y_predicted)
+            assert_almost_equal(loss, loss2)
 
-
-if __name__ == "__main__":
-    unittest.main()

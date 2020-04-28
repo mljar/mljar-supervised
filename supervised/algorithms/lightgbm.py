@@ -27,7 +27,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def __init__(self, params):
         super(LightgbmAlgorithm, self).__init__(params)
-        self.library_version = lgb.__version__ 
+        self.library_version = lgb.__version__
 
         self.rounds = additional.get("trees_in_step", 50)
         self.max_iters = additional.get("max_steps", 500)
@@ -49,7 +49,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
         logger.debug("LightgbmLearner __init__")
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "lightgbm"
 
     def update(self, update_params):
@@ -66,13 +66,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def predict(self, X):
         return self.model.predict(X)
-
-    # needed for feature importance
-    def predict_proba(self, X):
-        y = self.predict(X)
-        if "num_class" in self.params:
-            return y
-        return np.column_stack((1 - y, y))
 
     def copy(self):
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):

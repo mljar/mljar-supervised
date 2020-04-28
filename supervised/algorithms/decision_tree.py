@@ -39,7 +39,7 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
             random_state=params.get("seed", 1),
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "decision_tree"
 
     def interpret(
@@ -79,13 +79,11 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
                 feature_names=X_train.columns,
                 class_names=class_names,
             )
-            tree_file_plot = os.path.join(
-                model_file_path, learner_name + "_tree.svg"
-            )
+            tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
             viz.save(tree_file_plot)
         except Exception as e:
             logger.info(f"Problem when visuzalizin decision tree. {str(e)}")
-            
+
 
 class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 
@@ -102,9 +100,8 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             max_depth=params.get("max_depth", 3),
             random_state=params.get("seed", 1),
         )
-        
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "decision_tree"
 
     def interpret(
@@ -140,9 +137,7 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
                 target_name="target",
                 feature_names=X_train.columns,
             )
-            tree_file_plot = os.path.join(
-                model_file_path, learner_name + "_tree.svg"
-            )
+            tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
             viz.save(tree_file_plot)
         except Exception as e:
             logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")

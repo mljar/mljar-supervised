@@ -10,7 +10,7 @@ from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION 
+from supervised.algorithms.registry import REGRESSION
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class BaselineClassifierAlgorithm(SklearnTreesClassifierAlgorithm):
             strategy="prior", random_state=params.get("seed", 1)
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "baseline"
 
 
@@ -49,7 +49,7 @@ class BaselineRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         self.max_iters = additional.get("max_steps", 1)
         self.model = DummyRegressor(strategy="mean")
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "baseline"
 
 

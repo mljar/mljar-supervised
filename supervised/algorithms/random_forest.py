@@ -40,7 +40,7 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
             random_state=params.get("seed", 1),
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "random_forest"
 
 
@@ -67,7 +67,7 @@ class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             random_state=params.get("seed", 1),
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "random_forest"
 
 

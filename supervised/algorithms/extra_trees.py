@@ -1,13 +1,17 @@
 import logging
 import os
 import sklearn
-from sklearn.ensemble import (ExtraTreesClassifier, ExtraTreesRegressor)
+from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
 from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION, REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -37,7 +41,7 @@ class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
             random_state=params.get("seed", 1),
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "extra_trees"
 
 
@@ -64,7 +68,7 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             random_state=params.get("seed", 1),
         )
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "extra_trees"
 
 

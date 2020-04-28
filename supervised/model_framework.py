@@ -253,7 +253,7 @@ class ModelFramework:
 
         saved = []
         for i, l in enumerate(self.learners):
-            p = os.path.join(model_path, f"learner_{i+1}.{l.file_extenstion()}")
+            p = os.path.join(model_path, f"learner_{i+1}.{l.file_extension()}")
             l.save(p)
             saved += [p]
 

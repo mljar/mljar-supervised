@@ -1,5 +1,7 @@
 import uuid
+import numpy as np
 from supervised.utils.importance import PermutationImportance
+
 
 class BaseAlgorithm:
     """
@@ -22,6 +24,13 @@ class BaseAlgorithm:
 
     def predict(self, X):
         pass
+
+    # needed for feature importance
+    def predict_proba(self, X):
+        y = self.predict(X)
+        if "num_class" in self.params:
+            return y
+        return np.column_stack((1 - y, y))
 
     def update(self, update_params):
         pass
@@ -48,7 +57,7 @@ class BaseAlgorithm:
         metric_name=None,
         ml_task=None,
     ):
-        # do not produce feature importance for Baseline 
+        # do not produce feature importance for Baseline
         if self.algorithm_short_name == "Baseline":
             return
         PermutationImportance.compute_and_plot(

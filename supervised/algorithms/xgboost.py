@@ -59,10 +59,6 @@ class XgbAlgorithm(BaseAlgorithm):
 
         logger.debug("XgbLearner __init__")
 
-    def update(self, update_params):
-        # Dont need to update boosting rounds, it is adding rounds incrementally
-        pass
-
     def fit(self, X, y):
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
         self.model = xgb.train(
@@ -85,13 +81,6 @@ class XgbAlgorithm(BaseAlgorithm):
         a = self.model.predict(dtrain)
         return a
 
-    # needed for feature importance
-    def predict_proba(self, X):
-        y = self.predict(X)
-        if "num_class" in self.params:
-            return y
-        return np.column_stack((1 - y, y))
-
     def copy(self):
         return copy.deepcopy(self)
 
@@ -105,14 +94,13 @@ class XgbAlgorithm(BaseAlgorithm):
         self.model.load_model(model_file_path)
 
     def get_params(self):
-        json_desc = {
+        return {
             "library_version": self.library_version,
             "algorithm_name": self.algorithm_name,
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
             "params": self.params,
         }
-        return json_desc
 
     def set_params(self, json_desc):
         self.library_version = json_desc.get("library_version", self.library_version)
@@ -123,7 +111,7 @@ class XgbAlgorithm(BaseAlgorithm):
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
 
-    def file_extenstion(self):
+    def file_extension(self):
         return "xgboost"
 
 
