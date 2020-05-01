@@ -221,6 +221,9 @@ class AdditionalMetrics:
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_shap_importance(fout, model_path)
+            AdditionalMetrics.add_shap_binary(fout, model_path)
+            
 
     @staticmethod
     def save_multiclass_classification(additional_metrics, model_desc, model_path):
@@ -237,6 +240,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_shap_importance(fout, model_path)
 
     @staticmethod
     def save_regression(additional_metrics, model_desc, model_path):
@@ -252,6 +256,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_shap_importance(fout, model_path)
 
     @staticmethod
     def add_linear_coefs(fout, model_path):
@@ -288,3 +293,57 @@ class AdditionalMetrics:
             fout.write(f"\n### Features importance (Fold #{l+1})\n")
             f_path = f"learner_{l+1}_importance.png"
             fout.write(f"![Imprtance from fold {l+1}]({f_path})")
+
+
+
+    @staticmethod
+    def add_shap_importance(fout, model_path):
+
+        # SHAP Importance
+        imp_data = [f for f in os.listdir(model_path) if "_shap_importance.csv" in f]
+        if not len(imp_data):
+            return
+        df_all = []
+        for l in range(len(imp_data)):
+            f_path = os.path.join(model_path, f"learner_{l+1}_shap_importance.csv")
+            df = pd.read_csv(f_path, index_col=0)
+            df.columns = [f"Learner {l+1}"]
+            df_all += [df]
+        
+        df = pd.concat(df_all, axis=1)
+        ax = df.plot.barh(figsize=(10,7))
+        ax.set_xlabel("mean(|SHAP value|) average impact on model output magnitude")
+        fig = ax.get_figure()
+        fig.tight_layout(pad=2.0)
+        fig.savefig(os.path.join(model_path, "shap_importance.png"))
+        fout.write("\n\n## SHAP Importance\n")
+        fout.write(f"![SHAP Importance](shap_importance.png)")
+
+
+    @staticmethod
+    def add_shap_binary(fout, model_path):
+
+        # Dependence SHAP
+        dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence.png" in f]
+        if not len(dep_plots):
+            return
+
+        fout.write("\n\n## SHAP Dependence plots\n")
+        for l in range(len(dep_plots)):
+            fout.write(f"\n### Dependence (Fold #{l+1})\n")
+            f_path = f"learner_{l+1}_shap_dependence.png"
+            fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+
+
+        # SHAP Decisions
+        dec_plots = [f for f in os.listdir(model_path) if "_shap_class" in f and "decisions.png" in f]
+        if not len(dec_plots):
+            return
+
+        fout.write("\n\n## SHAP Decision plots\n")
+        for target in [0, 1]:
+            for decision_type in ["worst", "best"]:
+                for l in range(len(dep_plots)):
+                    fout.write(f"\n### {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n")
+                    f_path = f"learner_{l+1}_shap_class_{target}_{decision_type}_decisions.png"
+                    fout.write(f"![SHAP {decision_type} decisions class {target} from fold {l+1}]({f_path})")
