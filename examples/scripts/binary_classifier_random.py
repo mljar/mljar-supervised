@@ -14,7 +14,7 @@ automl = AutoML(model_time_limit=1)
 automl.fit(X, y)
 print("Train accuracy", accuracy_score(y, automl.predict(X)["label"]))
 
-X = np.random.rand(1000,10)
+X = np.random.rand(1000, 10)
 X = pd.DataFrame(X, columns=[f"f{i}" for i in range(10)])
 y = np.random.randint(0, 2, 1000)
 print("Test accuracy", accuracy_score(y, automl.predict(X)["label"]))

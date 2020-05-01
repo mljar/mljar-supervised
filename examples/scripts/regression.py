@@ -7,7 +7,15 @@ x_cols = [c for c in df.columns if c != "MEDV"]
 X = df[x_cols]
 y = df["MEDV"]
 
-automl = AutoML(total_time_limit=10, algorithms=["Linear"])
+automl = AutoML(
+    model_time_limit=1,
+    algorithms=[
+        "Linear"  # "Xgboost", "Decision Tree",
+        # "Random Forest",
+        # "CatBoost",
+        # "LightGBM", "Extra Trees"
+    ],
+)
 automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 

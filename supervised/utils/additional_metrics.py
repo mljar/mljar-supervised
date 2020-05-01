@@ -260,9 +260,10 @@ class AdditionalMetrics:
             fout.write("\n\n## Coefficients\n")
             for l in range(len(coef_files)):
                 fout.write(f"\n### Coefficients learner #{l+1}\n")
-                df = pd.read_csv(os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0)
+                df = pd.read_csv(
+                    os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0
+                )
                 fout.write(df.to_markdown() + "\n")
-
 
     @staticmethod
     def add_tree_viz(fout, model_path):

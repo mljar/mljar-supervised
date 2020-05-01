@@ -10,21 +10,10 @@ df = pd.read_csv(
 X = df[df.columns[:-1]]
 y = df["income"]
 
-
-automl = AutoML(algorithms=["Linear"])
-# results_path = "AutoML_8",
-# ,
-# start_random_models=1,
-# hill_climbing_steps=0,
-# top_models_to_improve=3,
-# train_ensemble=True)
-
-print(X)
-print(y)
+automl = AutoML(algorithms=["Linear", "Xgboost", "LightGBM", "Extra Trees"], model_time_limit=1)
+automl.set_advanced(start_random_models=1)
 
 automl.fit(X, y)
-print(X)
-print(y)
-
 predictions = automl.predict(X)
+
 print(predictions.head())

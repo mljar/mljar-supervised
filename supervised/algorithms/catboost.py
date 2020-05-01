@@ -95,7 +95,15 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
     def load(self, model_file_path):
         logger.debug("CatBoostLearner load model from %s" % model_file_path)
-        self.model = CatBoostClassifier()
+        Algo = CatBoostClassifier
+        loss_function = "Logloss"
+        if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
+            loss_function = "MultiClass"
+        elif self.params["ml_task"] == REGRESSION:
+            loss_function = self.params.get("loss_function", "RMSE")
+            Algo = CatBoostRegressor
+
+        self.model = Algo()
         self.model.load_model(model_file_path)
 
     def get_params(self):

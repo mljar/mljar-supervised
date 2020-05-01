@@ -275,7 +275,7 @@ class Preprocessing(object):
                         )
                     }
 
-                return labels
+                return list(labels.values())
 
         else:  # self._categorical_y is None
             if "ml_task" in self._params:

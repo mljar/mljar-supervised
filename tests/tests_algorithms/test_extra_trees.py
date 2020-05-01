@@ -7,7 +7,10 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.extra_trees import (ExtraTreesAlgorithm, ExtraTreesRegressorAlgorithm)
+from supervised.algorithms.extra_trees import (
+    ExtraTreesAlgorithm,
+    ExtraTreesRegressorAlgorithm,
+)
 from supervised.utils.metric import Metric
 
 import tempfile
@@ -17,11 +20,7 @@ class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=4,
-            shuffle=False,
-            random_state=0,
+            n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
         )
 
     def test_reproduce_fit(self):
@@ -36,6 +35,7 @@ class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
             if prev_loss is not None:
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
+
 
 class ExtraTreesAlgorithmTest(unittest.TestCase):
     @classmethod

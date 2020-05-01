@@ -32,7 +32,7 @@ class AutoMLIntegrationTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        X = pd.DataFrame(X, columns = [f"f_{i}" for i in range(X.shape[1])])
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
 
         a.fit(X, y)
         p = a.predict(X)

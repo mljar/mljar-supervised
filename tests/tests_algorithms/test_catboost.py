@@ -13,25 +13,20 @@ from supervised.utils.metric import Metric
 import tempfile
 
 
-
 class CatBoostRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=4,
-            shuffle=False,
-            random_state=0,
+            n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
         )
-        cls.X = pd.DataFrame(cls.X, columns = [f"f_{i}" for i in range(cls.X.shape[1])])
+        cls.X = pd.DataFrame(cls.X, columns=[f"f_{i}" for i in range(cls.X.shape[1])])
         cls.params = {
             "learning_rate": 0.1,
             "depth": 4,
             "rsm": 0.5,
             "l2_leaf_reg": 1,
             "seed": 1,
-            "ml_task": "regression"
+            "ml_task": "regression",
         }
 
     def test_reproduce_fit(self):
@@ -61,14 +56,14 @@ class CatBoostAlgorithmTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        cls.X = pd.DataFrame(cls.X, columns = [f"f_{i}" for i in range(cls.X.shape[1])])
+        cls.X = pd.DataFrame(cls.X, columns=[f"f_{i}" for i in range(cls.X.shape[1])])
         cls.params = {
             "learning_rate": 0.1,
             "depth": 4,
             "rsm": 0.5,
             "l2_leaf_reg": 1,
             "seed": 1,
-            "ml_task": "binary_classification"
+            "ml_task": "binary_classification",
         }
 
     def test_reproduce_fit(self):
@@ -139,4 +134,3 @@ class CatBoostAlgorithmTest(unittest.TestCase):
             y_predicted = cat2.predict(self.X)
             loss2 = metric(self.y, y_predicted)
             assert_almost_equal(loss, loss2)
-

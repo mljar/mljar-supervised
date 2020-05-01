@@ -278,7 +278,7 @@ class AutoML:
             algo_cnt -= 1
         if "Linear" in self._algorithms:
             algo_cnt -= 1
-            
+
         self._estimated_models_to_check = algo_cnt * self._start_random_models
         if self._estimated_models_to_check > self._top_models_to_improve:
             self._estimated_models_to_check += (

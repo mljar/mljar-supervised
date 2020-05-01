@@ -1,6 +1,7 @@
 import uuid
 import numpy as np
 from supervised.utils.importance import PermutationImportance
+from supervised.utils.shap import PlotSHAP
 
 
 class BaseAlgorithm:
@@ -67,5 +68,17 @@ class BaseAlgorithm:
             model_file_path,
             learner_name,
             metric_name,
+            ml_task,
+        )
+
+        PlotSHAP.compute(
+            self,
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            class_names,
             ml_task,
         )

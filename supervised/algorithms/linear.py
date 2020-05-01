@@ -1,7 +1,7 @@
 import logging
 import os
 import sklearn
-import pandas as pd 
+import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
@@ -31,7 +31,7 @@ class LinearAlgorithm(SklearnAlgorithm):
 
     def file_extension(self):
         return "linear"
-    
+
     def interpret(
         self,
         X_train,
@@ -66,7 +66,7 @@ class LinearAlgorithm(SklearnAlgorithm):
             df = pd.DataFrame(
                 {
                     "feature": ["intercept"] + X_train.columns.tolist(),
-                    "weight": [intercept[0]] + list(coefs[0,:]),
+                    "weight": [intercept[0]] + list(coefs[0, :]),
                 }
             )
             df.to_csv(
@@ -82,7 +82,7 @@ class LinearAlgorithm(SklearnAlgorithm):
             df = pd.DataFrame(
                 np.transpose(np.column_stack((intercept, coefs))),
                 index=["intercept"] + X_train.columns.tolist(),
-                columns=classes
+                columns=classes,
             )
             df.to_csv(
                 os.path.join(model_file_path, f"{learner_name}_coefs.csv"), index=True
@@ -168,5 +168,9 @@ regression_required_preprocessing = [
 ]
 
 AlgorithmsRegistry.add(
-    REGRESSION, LinearRegressorAlgorithm, {}, regression_required_preprocessing, additional
+    REGRESSION,
+    LinearRegressorAlgorithm,
+    {},
+    regression_required_preprocessing,
+    additional,
 )

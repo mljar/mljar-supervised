@@ -42,7 +42,7 @@ class XgbAlgorithm(BaseAlgorithm):
         self.max_iters = additional.get("max_steps", 500)
         self.learner_params = {
             "tree_method": "hist",
-            "booster": self.params.get("booster", "gbtree"),
+            "booster": "gbtree",
             "objective": self.params.get("objective"),
             "eval_metric": self.params.get("eval_metric"),
             "eta": self.params.get("eta", 0.01),
@@ -117,7 +117,6 @@ class XgbAlgorithm(BaseAlgorithm):
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {
-    "booster": ["gbtree", "gblinear"],
     "objective": ["binary:logistic"],
     "eval_metric": ["auc", "logloss"],
     "eta": [0.01, 0.025, 0.05, 0.075, 0.1, 0.15],
@@ -128,7 +127,6 @@ xgb_bin_class_params = {
 }
 
 xgb_regression_params = dict(xgb_bin_class_params)
-xgb_regression_params["booster"] = ["gbtree"]
 xgb_regression_params["objective"] = ["reg:squarederror"]
 xgb_regression_params["eval_metric"] = ["rmse", "rmsle", "mae"]
 xgb_regression_params["max_depth"] = [1, 2, 3, 4]
