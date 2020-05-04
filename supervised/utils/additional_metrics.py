@@ -241,6 +241,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
             AdditionalMetrics.add_shap_importance(fout, model_path)
+            AdditionalMetrics.add_shap_multiclass(fout, model_path)
 
     @staticmethod
     def save_regression(additional_metrics, model_desc, model_path):
@@ -257,6 +258,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_linear_coefs(fout, model_path)
             AdditionalMetrics.add_importance(fout, model_path)
             AdditionalMetrics.add_shap_importance(fout, model_path)
+            AdditionalMetrics.add_shap_regression(fout, model_path)
 
     @staticmethod
     def add_linear_coefs(fout, model_path):
@@ -343,7 +345,79 @@ class AdditionalMetrics:
         fout.write("\n\n## SHAP Decision plots\n")
         for target in [0, 1]:
             for decision_type in ["worst", "best"]:
-                for l in range(len(dep_plots)):
+                for l in range(len(dec_plots)):
                     fout.write(f"\n### {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n")
                     f_path = f"learner_{l+1}_shap_class_{target}_{decision_type}_decisions.png"
                     fout.write(f"![SHAP {decision_type} decisions class {target} from fold {l+1}]({f_path})")
+
+
+    @staticmethod
+    def add_shap_regression(fout, model_path):
+
+        # Dependence SHAP
+        dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence.png" in f]
+        if not len(dep_plots):
+            return
+
+        fout.write("\n\n## SHAP Dependence plots\n")
+        for l in range(len(dep_plots)):
+            fout.write(f"\n### Dependence (Fold #{l+1})\n")
+            f_path = f"learner_{l+1}_shap_dependence.png"
+            fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+
+
+        # SHAP Decisions
+        dec_plots = [f for f in os.listdir(model_path) if "decisions.png" in f]
+        if not len(dec_plots):
+            return
+
+        fout.write("\n\n## SHAP Decision plots\n")
+        for decision_type in ["worst", "best"]:
+            for l in range(len(dec_plots)):
+                fout.write(f"\n### {decision_type.capitalize()} decisions (Fold #{l+1})\n")
+                f_path = f"learner_{l+1}_shap_{decision_type}_decisions.png"
+                fout.write(f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})")
+
+
+    @staticmethod
+    def add_shap_multiclass(fout, model_path):
+        # Dependence SHAP
+        dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence" in f]
+        if not len(dep_plots):
+            return
+
+        # get number of learners
+        learners_cnt = []
+        for l in dep_plots:
+            a = l.split("_")
+            learners_cnt += [int(a[1])]
+        learners_cnt = np.unique(learners_cnt)
+        # get number of classes
+        classes = []
+        for l in dep_plots:
+            a = l.split("_")
+            classes += ["".join(a[5:])[:-4]]
+        classes = np.unique(classes)
+
+        fout.write("\n\n## SHAP Dependence plots\n")
+        for l in range(len(learners_cnt)):
+            for t in classes:
+                fout.write(f"\n### Dependence {t} (Fold #{l+1})\n")
+                f_path = f"learner_{l+1}_shap_dependence_class_{t}.png"
+                fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+
+
+        # SHAP Decisions
+        dec_plots = [f for f in os.listdir(model_path) if "_sample_" in f and "decisions.png" in f]
+        if not len(dec_plots):
+            return
+
+        fout.write("\n\n## SHAP Decision plots\n")
+        for decision_type in ["worst", "best"]:
+            for sample in [0, 1, 2, 3]:
+                for l in range(len(dec_plots)):
+                    fout.write(f"\n### {decision_type.capitalize()} decisions for selected sample #{sample+1} (Fold #{l+1})\n")
+                    f_path = f"learner_{l+1}_sample_{sample}_{decision_type}_decisions.png"
+                    fout.write(f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})")
+
+        
