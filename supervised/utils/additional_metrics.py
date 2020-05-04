@@ -262,8 +262,20 @@ class AdditionalMetrics:
 
     @staticmethod
     def add_linear_coefs(fout, model_path):
+
         coef_files = [f for f in os.listdir(model_path) if "_coefs.csv" in f]
-        if len(coef_files):
+        if not len(coef_files):
+            return
+
+        # check if multiclass
+        df = pd.read_csv(
+                os.path.join(model_path, coef_files[0]), index_col=0
+            )
+        if df.shape[0] > 100:
+            return
+        multiclass = (df.shape[1] > 1)
+
+        if multiclass:
             fout.write("\n\n## Coefficients\n")
             for l in range(len(coef_files)):
                 fout.write(f"\n### Coefficients learner #{l+1}\n")
@@ -271,6 +283,27 @@ class AdditionalMetrics:
                     os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0
                 )
                 fout.write(df.to_markdown() + "\n")
+        
+        else:
+            df_all = []
+            for l in range(len(coef_files)):
+                df = pd.read_csv(
+                    os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0
+                )
+                df.columns = [f"Learner_{l+1}"]
+                df_all += [df]
+                
+            df = pd.concat(df_all, axis=1)
+            df["m"] = df.mean(axis=1)
+            
+            df = df.sort_values("m", axis=0, ascending=False)
+            df = df.drop("m", axis=1)
+            print(df)
+            fout.write("\n\n## Coefficients\n")
+            fout.write(df.to_markdown() + "\n")
+
+        
+
 
     @staticmethod
     def add_tree_viz(fout, model_path):
@@ -379,7 +412,7 @@ class AdditionalMetrics:
         for target in [0, 1]:
             for decision_type in ["worst", "best"]:
                 for l in range(learners_cnt):
-                    fout.write(f"\n### {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n")
+                    fout.write(f"\n### Top-10 {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n")
                     f_path = f"learner_{l+1}_shap_class_{target}_{decision_type}_decisions.png"
                     fout.write(f"![SHAP {decision_type} decisions class {target} from fold {l+1}]({f_path})")
 
@@ -408,7 +441,7 @@ class AdditionalMetrics:
         fout.write("\n\n## SHAP Decision plots\n")
         for decision_type in ["worst", "best"]:
             for l in range(learners_cnt):
-                fout.write(f"\n### {decision_type.capitalize()} decisions (Fold #{l+1})\n")
+                fout.write(f"\n### Top-10 {decision_type.capitalize()} decisions (Fold #{l+1})\n")
                 f_path = f"learner_{l+1}_shap_{decision_type}_decisions.png"
                 fout.write(f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})")
 

@@ -31,6 +31,3 @@ class PermutationImportanceTest(unittest.TestCase):
             self.assertTrue(
                 os.path.exists(os.path.join(tmpdir, "learner_test_importance.csv"))
             )
-            self.assertTrue(
-                os.path.exists(os.path.join(tmpdir, "learner_test_importance.png"))
-            )
