@@ -220,7 +220,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_permutation_importance(fout, model_path)
             AdditionalMetrics.add_shap_importance(fout, model_path)
             AdditionalMetrics.add_shap_binary(fout, model_path)
             
@@ -239,7 +239,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_permutation_importance(fout, model_path)
             AdditionalMetrics.add_shap_importance(fout, model_path)
             AdditionalMetrics.add_shap_multiclass(fout, model_path)
 
@@ -256,7 +256,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path)
             AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_importance(fout, model_path)
+            AdditionalMetrics.add_permutation_importance(fout, model_path)
             AdditionalMetrics.add_shap_importance(fout, model_path)
             AdditionalMetrics.add_shap_regression(fout, model_path)
 
@@ -284,18 +284,39 @@ class AdditionalMetrics:
                 fout.write(f"![Tree {l+1}]({f_path})")
 
     @staticmethod
-    def add_importance(fout, model_path):
-
-        imp_plots = [f for f in os.listdir(model_path) if "_importance.png" in f]
-        if not len(imp_plots):
+    def add_permutation_importance(fout, model_path):
+        # permutation importance
+        imp_data = [f for f in os.listdir(model_path) if "_importance.csv" in f and "shap" not in f]
+        if not len(imp_data):
             return
 
-        fout.write("\n\n## Features importance\n")
-        for l in range(len(imp_plots)):
-            fout.write(f"\n### Features importance (Fold #{l+1})\n")
-            f_path = f"learner_{l+1}_importance.png"
-            fout.write(f"![Imprtance from fold {l+1}]({f_path})")
+        df_all = []
+        for l in range(len(imp_data)):
+            f_path = os.path.join(model_path, f"learner_{l+1}_importance.csv")
+            df = pd.read_csv(f_path, index_col=0)
+            df.columns = [f"Learner {l+1}"]
+            df_all += [df]
+        
+        df = pd.concat(df_all, axis=1)
+        
+        df["m"] = df.mean(axis=1)
+        df = df.sort_values(by="m", ascending=False)
+        df = df.drop("m", axis=1)
+        
+        # limit to max 25 features in the plot
+        ax = df.head(25).plot.barh(figsize=(10,7))  
+        ax.invert_yaxis()  
+        ax.set_xlabel("Mean of feature importance")
+        fig = ax.get_figure()
+        fig.tight_layout(pad=2.0)
+        if df.shape[0] > 25:
+            ax.set_title("Top-25 important features")    
+        else:
+            ax.set_title("Feature importance")
 
+        fig.savefig(os.path.join(model_path, "permutation_importance.png"))
+        fout.write("\n\n## Permutation-based Importance\n")
+        fout.write(f"![Permutation-based Importance](permutation_importance.png)")
 
 
     @staticmethod
@@ -313,10 +334,21 @@ class AdditionalMetrics:
             df_all += [df]
         
         df = pd.concat(df_all, axis=1)
-        ax = df.plot.barh(figsize=(10,7))
+
+        df["m"] = df.mean(axis=1)
+        df = df.sort_values(by="m", ascending=False)
+        df = df.drop("m", axis=1)
+        
+        # limit to max 25 features in the plot
+        ax = df.head(25).plot.barh(figsize=(10,7))  
+        ax.invert_yaxis()        
         ax.set_xlabel("mean(|SHAP value|) average impact on model output magnitude")
         fig = ax.get_figure()
         fig.tight_layout(pad=2.0)
+        if df.shape[0] > 25:
+            ax.set_title("SHAP Top-25 important features")    
+        else:
+            ax.set_title("SHAP feature importance")
         fig.savefig(os.path.join(model_path, "shap_importance.png"))
         fout.write("\n\n## SHAP Importance\n")
         fout.write(f"![SHAP Importance](shap_importance.png)")
@@ -330,8 +362,9 @@ class AdditionalMetrics:
         if not len(dep_plots):
             return
 
+        learners_cnt = len(dep_plots)
         fout.write("\n\n## SHAP Dependence plots\n")
-        for l in range(len(dep_plots)):
+        for l in range(learners_cnt):
             fout.write(f"\n### Dependence (Fold #{l+1})\n")
             f_path = f"learner_{l+1}_shap_dependence.png"
             fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
@@ -345,7 +378,7 @@ class AdditionalMetrics:
         fout.write("\n\n## SHAP Decision plots\n")
         for target in [0, 1]:
             for decision_type in ["worst", "best"]:
-                for l in range(len(dec_plots)):
+                for l in range(learners_cnt):
                     fout.write(f"\n### {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n")
                     f_path = f"learner_{l+1}_shap_class_{target}_{decision_type}_decisions.png"
                     fout.write(f"![SHAP {decision_type} decisions class {target} from fold {l+1}]({f_path})")
@@ -359,8 +392,9 @@ class AdditionalMetrics:
         if not len(dep_plots):
             return
 
+        learners_cnt = len(dep_plots)
         fout.write("\n\n## SHAP Dependence plots\n")
-        for l in range(len(dep_plots)):
+        for l in range(learners_cnt):
             fout.write(f"\n### Dependence (Fold #{l+1})\n")
             f_path = f"learner_{l+1}_shap_dependence.png"
             fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
@@ -373,7 +407,7 @@ class AdditionalMetrics:
 
         fout.write("\n\n## SHAP Decision plots\n")
         for decision_type in ["worst", "best"]:
-            for l in range(len(dec_plots)):
+            for l in range(learners_cnt):
                 fout.write(f"\n### {decision_type.capitalize()} decisions (Fold #{l+1})\n")
                 f_path = f"learner_{l+1}_shap_{decision_type}_decisions.png"
                 fout.write(f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})")
@@ -391,7 +425,7 @@ class AdditionalMetrics:
         for l in dep_plots:
             a = l.split("_")
             learners_cnt += [int(a[1])]
-        learners_cnt = np.unique(learners_cnt)
+        learners_cnt = len(np.unique(learners_cnt))
         # get number of classes
         classes = []
         for l in dep_plots:
@@ -400,7 +434,7 @@ class AdditionalMetrics:
         classes = np.unique(classes)
 
         fout.write("\n\n## SHAP Dependence plots\n")
-        for l in range(len(learners_cnt)):
+        for l in range(learners_cnt):
             for t in classes:
                 fout.write(f"\n### Dependence {t} (Fold #{l+1})\n")
                 f_path = f"learner_{l+1}_shap_dependence_class_{t}.png"
@@ -415,7 +449,7 @@ class AdditionalMetrics:
         fout.write("\n\n## SHAP Decision plots\n")
         for decision_type in ["worst", "best"]:
             for sample in [0, 1, 2, 3]:
-                for l in range(len(dec_plots)):
+                for l in range(learners_cnt):
                     fout.write(f"\n### {decision_type.capitalize()} decisions for selected sample #{sample+1} (Fold #{l+1})\n")
                     f_path = f"learner_{l+1}_sample_{sample}_{decision_type}_decisions.png"
                     fout.write(f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})")
