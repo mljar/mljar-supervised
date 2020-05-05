@@ -372,6 +372,8 @@ class AutoML:
 
             self.keep_model(mf)
 
+            # save the best one in the case the training will be interrupted
+            self.select_and_save_best()
         else:
             logger.info(
                 f"Cannot check more models of {mf.get_type()} because of time constraint"
@@ -435,7 +437,7 @@ class AutoML:
         return False
 
     def ensemble_step(self):
-        if self._train_ensemble:
+        if self._train_ensemble and len(self._models) > 1:
             self.ensemble = Ensemble(self._optimize_metric, self._ml_task)
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
@@ -448,6 +450,8 @@ class AutoML:
                 raise AutoMLException(f"Cannot create directory {ensemble_path}")
             self.ensemble.save(ensemble_path)
             self._model_paths += [ensemble_path]
+            # save the best one in the case the training will be interrupted
+            self.select_and_save_best()
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -689,45 +693,47 @@ class AutoML:
 
             self.ensemble_step()
 
-            max_loss = 10e12
-            for i, m in enumerate(self._models):
-                if m.get_final_loss() < max_loss:
-                    self._best_model = m
-                    max_loss = m.get_final_loss()
-
             self._fit_time = time.time() - start_time
-            # self._progress_bar.close()
-
-            with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
-                fout.write(f"{self._best_model.get_name()}")
-
-            with open(os.path.join(self._results_path, "params.json"), "w") as fout:
-                params = {
-                    "ml_task": self._ml_task,
-                    "optimize_metric": self._optimize_metric,
-                    "saved": self._model_paths,
-                }
-                fout.write(json.dumps(params, indent=4))
-
-            ldb = self.get_leaderboard()
-            ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
             
-            # save report
-            ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
-            ldb.insert(loc=0, column="Best model", value="")
-            ldb.loc[
-                ldb.name == self._best_model.get_name(), "Best model"
-            ] = "*** the best ***"
-            with open(os.path.join(self._results_path, "README.md"), "w") as fout:
-                fout.write(f"# AutoML Leaderboard\n\n")
-                fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(ldb, self._results_path, fout)
-
         except Exception as e:
             raise e
         finally:
             if self._X_train_path is not None:
                 self._load_data_variables(X_train)
+
+    def select_and_save_best(self):
+        max_loss = 10e14
+        for i, m in enumerate(self._models):
+            if m.get_final_loss() < max_loss:
+                self._best_model = m
+                max_loss = m.get_final_loss()
+
+        with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
+            fout.write(f"{self._best_model.get_name()}")
+
+        with open(os.path.join(self._results_path, "params.json"), "w") as fout:
+            params = {
+                "ml_task": self._ml_task,
+                "optimize_metric": self._optimize_metric,
+                "saved": self._model_paths,
+            }
+            fout.write(json.dumps(params, indent=4))
+
+        ldb = self.get_leaderboard()
+        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+        
+        # save report
+        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+        ldb.insert(loc=0, column="Best model", value="")
+        ldb.loc[
+            ldb.name == self._best_model.get_name(), "Best model"
+        ] = "*** the best ***"
+        with open(os.path.join(self._results_path, "README.md"), "w") as fout:
+            fout.write(f"# AutoML Leaderboard\n\n")
+            fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+            LeaderboardPlots.compute(ldb, self._results_path, fout)
+
+
 
     def predict(self, X):
         """

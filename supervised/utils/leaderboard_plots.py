@@ -18,6 +18,8 @@ class LeaderboardPlots:
 
     @staticmethod
     def compute(ldb, model_path, fout):
+        if ldb.shape[0] < 2:
+            return
         # Scatter plot
         plt.figure(figsize=(10, 7))
         plt.plot(ldb.metric_value, '*')

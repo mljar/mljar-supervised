@@ -10,7 +10,7 @@ X = df[df.columns[2:]]
 y = df["Survived"]
 
 automl = AutoML(
-    # results_path="AutoML_101",
+    # results_path="AutoML_11",
     # algorithms=["Linear"],
     model_time_limit=200,
     train_ensemble=True,
