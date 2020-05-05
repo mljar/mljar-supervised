@@ -51,6 +51,7 @@ class ModelFramework:
         self.learner_params = params.get("learner")
 
         self._ml_task = params.get("ml_task")
+        self._explain_level = params.get("explain_level")
 
         self.validation = None
         self.preprocessings = []
@@ -160,6 +161,7 @@ class ModelFramework:
                 class_names=self.preprocessings[-1].get_target_class_names(),
                 metric_name=self.get_metric_name(),
                 ml_task=self._ml_task,
+                explain_level=self._explain_level,
             )
 
         # end of validation loop

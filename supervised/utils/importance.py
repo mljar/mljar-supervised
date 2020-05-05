@@ -58,7 +58,7 @@ class PermutationImportance:
             os.path.join(model_file_path, f"{learner_name}_importance.csv"), index=False
         )
 
-        '''
+        """
         # Do not plot. We will plot aggregate of all importances.
         # limit number of column in the plot
         if len(sorted_idx) > 50:
@@ -72,4 +72,4 @@ class PermutationImportance:
         plot_path = os.path.join(model_file_path, f"{learner_name}_importance.png")
         plt.savefig(plot_path)
         plt.close("all")
-        '''
+        """

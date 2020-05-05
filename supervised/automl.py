@@ -70,6 +70,7 @@ class AutoML:
         },
         verbose=True,
         ml_task=None,
+        explain_level=2,
         seed=1,
     ):
         """
@@ -117,6 +118,10 @@ class AutoML:
         If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
         In all other casses, the task is set to `"regression"`.
         
+        :param explain_level: The level of explanations included to each model.
+        `explain_level = 0` means no explanations
+        `explain_level = 1` means produce importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients
+        `explain_level = 2` the same as for `1` plus SHAP explanations
         :param seed: The seed for random generator.
         
         """
@@ -163,6 +168,7 @@ class AutoML:
 
         self._results_path = results_path
         self._set_results_dir()
+        self._explain_level = explain_level
 
     def set_tuning_mode(self, mode="Normal"):
         if mode == "Sport":
@@ -654,6 +660,7 @@ class AutoML:
                 self._algorithms,
                 self._ml_task,
                 self._validation,
+                self._explain_level,
                 self._seed,
             )
 

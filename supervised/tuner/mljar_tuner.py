@@ -20,7 +20,9 @@ logger.setLevel(LOG_LEVEL)
 
 
 class MljarTuner:
-    def __init__(self, tuner_params, algorithms, ml_task, validation, seed):
+    def __init__(
+        self, tuner_params, algorithms, ml_task, validation, explain_level, seed
+    ):
         logger.debug("MljarTuner.__init__")
         self._start_random_models = tuner_params.get("start_random_models", 5)
         self._hill_climbing_steps = tuner_params.get("hill_climbing_steps", 3)
@@ -28,6 +30,7 @@ class MljarTuner:
         self._algorithms = algorithms
         self._ml_task = ml_task
         self._validation = validation
+        self._explain_level = explain_level
         self._seed = seed
 
         self._unique_params_keys = []
@@ -135,6 +138,7 @@ class MljarTuner:
             model_params["learner"]["num_class"] = num_class
 
         model_params["ml_task"] = self._ml_task
+        model_params["explain_level"] = self._explain_level
 
         return model_params
 

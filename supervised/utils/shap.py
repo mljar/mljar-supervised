@@ -109,7 +109,7 @@ class PlotSHAP:
         classes = None
         if class_names is not None and len(class_names):
             classes = class_names
-        
+
         shap.summary_plot(
             shap_values, X_vald, plot_type="bar", show=False, class_names=classes
         )
@@ -153,9 +153,9 @@ class PlotSHAP:
                 X_vald,
                 show=False,
                 title=f"Importance #{i+1}",
-                ax=ax
+                ax=ax,
             )
-        
+
         fig.tight_layout(pad=2.0)
         fig.savefig(
             os.path.join(
@@ -204,7 +204,7 @@ class PlotSHAP:
                         X_vald,
                         model_file_path,
                         learner_name,
-                        f"_class_{class_names[t]}"
+                        f"_class_{class_names[t]}",
                     )
             else:
                 PlotSHAP.dependence(shap_values, X_vald, model_file_path, learner_name)
@@ -244,7 +244,9 @@ class PlotSHAP:
                     class_names,
                 )
         except Exception as e:
-            logger.info(f"Exception while producing SHAP explanations. {str(e)}\nContinuing ...")
+            logger.info(
+                f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+            )
 
     @staticmethod
     def decisions_regression(
@@ -340,20 +342,21 @@ class PlotSHAP:
         for decision_type in ["worst", "best"]:
             m = 1 if decision_type == "worst" else -1
             for i in range(4):
-                
+
                 fig = plt.gcf()
                 shap.multioutput_decision_plot(
                     list(expected_value),
                     shap_values,
-                    row_index=df_preds.lp.iloc[m*i],
+                    row_index=df_preds.lp.iloc[m * i],
                     show=False,
                     legend_labels=class_names,
-                    title=f"It should be {class_names[df_preds.target.iloc[m*i]]}"
+                    title=f"It should be {class_names[df_preds.target.iloc[m*i]]}",
                 )
                 fig.tight_layout(pad=2.0)
                 fig.savefig(
                     os.path.join(
-                        model_file_path, f"{learner_name}_sample_{i}_{decision_type}_decisions.png"
+                        model_file_path,
+                        f"{learner_name}_sample_{i}_{decision_type}_decisions.png",
                     )
                 )
                 plt.close("all")

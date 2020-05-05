@@ -24,6 +24,7 @@ Automated Machine Learning for supervised tasks (binary classification, multicla
             validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True}, 
             verbose=True, 
             ml_task=None, 
+            explain_level=2,
             seed=1)
 ```
 
@@ -72,6 +73,11 @@ If left `None` AutoML will try to guess the task based on target values.
 If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
 If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
 In all other casses, the task is set to `"regression"`.
+- `explain_level`: The level of explanations included to each model.
+
+    - `explain_level = 0` means no explanations,
+    - `explain_level = 1` means produce importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients
+    - `explain_level = 2` the same as for `1` plus SHAP explanations
 
 - `seed`: The seed for random generator.
 

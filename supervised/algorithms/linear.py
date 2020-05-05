@@ -44,6 +44,7 @@ class LinearAlgorithm(SklearnAlgorithm):
         class_names=None,
         metric_name=None,
         ml_task=None,
+        explain_level=2,
     ):
         super(LinearAlgorithm, self).interpret(
             X_train,
@@ -56,7 +57,10 @@ class LinearAlgorithm(SklearnAlgorithm):
             class_names,
             metric_name,
             ml_task,
+            explain_level,
         )
+        if explain_level == 0:
+            return
         if X_train.shape[1] > 100:
             # if too many columns, skip this step
             return
@@ -116,6 +120,7 @@ class LinearRegressorAlgorithm(SklearnAlgorithm):
         class_names=None,
         metric_name=None,
         ml_task=None,
+        explain_level=2,
     ):
         super(LinearRegressorAlgorithm, self).interpret(
             X_train,
@@ -128,7 +133,10 @@ class LinearRegressorAlgorithm(SklearnAlgorithm):
             class_names,
             metric_name,
             ml_task,
+            explain_level,
         )
+        if explain_level == 0:
+            return
         if X_train.shape[1] > 100:
             # if too many columns, skip this step
             return

@@ -95,8 +95,15 @@ class Preprocessing(object):
                 y_train = y_train["target"]
 
             if Scale.SCALE_NORMAL in target_preprocessing:
-                logger.error("not implemented SCALE_NORMAL")
-                raise Exception("not implemented SCALE_NORMAL")
+                logger.debug("Scale normal")
+
+                self._scale_y = Scale(
+                    ["target"], scale_method=Scale.SCALE_NORMAL
+                )
+                y_train = pd.DataFrame({"target": y_train})
+                self._scale_y.fit(y_train)
+                y_train = self._scale_y.transform(y_train)
+                y_train = y_train["target"]
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
@@ -195,8 +202,11 @@ class Preprocessing(object):
                     y_validation = y_validation["target"]
 
             if Scale.SCALE_NORMAL in target_preprocessing:
-                logger.error("not implemented SCALE_NORMAL")
-                raise Exception("not implemented SCALE_NORMAL")
+                if self._scale_y is not None and y_validation is not None:
+                    logger.debug("Transform normalize")
+                    y_validation = pd.DataFrame({"target": y_validation})
+                    y_validation = self._scale_y.transform(y_validation)
+                    y_validation = y_validation["target"]
 
         # columns preprocessing
         if len(self._remove_columns) and X_validation is not None:

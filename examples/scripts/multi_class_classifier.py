@@ -9,9 +9,10 @@ y = df["class"]
 
 automl = AutoML(
     # results_path="AutoML_100",
-    algorithms=["Linear", 
-    #"Xgboost", 
-    #"Random Forest"
+    algorithms=[
+        "Linear",
+        # "Xgboost",
+        # "Random Forest"
     ],
     model_time_limit=1,
     tuning_mode="Normal",

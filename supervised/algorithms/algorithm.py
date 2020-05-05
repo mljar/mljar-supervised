@@ -57,28 +57,30 @@ class BaseAlgorithm:
         class_names=None,
         metric_name=None,
         ml_task=None,
+        explain_level=2,
     ):
         # do not produce feature importance for Baseline
         if self.algorithm_short_name == "Baseline":
             return
-        PermutationImportance.compute_and_plot(
-            self,
-            X_validation,
-            y_validation,
-            model_file_path,
-            learner_name,
-            metric_name,
-            ml_task,
-        )
-
-        PlotSHAP.compute(
-            self,
-            X_train,
-            y_train,
-            X_validation,
-            y_validation,
-            model_file_path,
-            learner_name,
-            class_names,
-            ml_task,
-        )
+        if explain_level > 0:
+            PermutationImportance.compute_and_plot(
+                self,
+                X_validation,
+                y_validation,
+                model_file_path,
+                learner_name,
+                metric_name,
+                ml_task,
+            )
+        if explain_level > 1:
+            PlotSHAP.compute(
+                self,
+                X_train,
+                y_train,
+                X_validation,
+                y_validation,
+                model_file_path,
+                learner_name,
+                class_names,
+                ml_task,
+            )

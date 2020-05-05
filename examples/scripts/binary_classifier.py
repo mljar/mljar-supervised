@@ -10,7 +10,9 @@ df = pd.read_csv(
 X = df[df.columns[:-1]]
 y = df["income"]
 
-automl = AutoML(algorithms=["Linear", "Xgboost", "LightGBM", "Extra Trees"], model_time_limit=1)
+automl = AutoML(
+    algorithms=["Linear", "Xgboost", "LightGBM", "Extra Trees"], model_time_limit=1
+)
 automl.set_advanced(start_random_models=1)
 
 automl.fit(X, y)

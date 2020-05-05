@@ -54,6 +54,7 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
         class_names=None,
         metric_name=None,
         ml_task=None,
+        explain_level=2,
     ):
         super(DecisionTreeAlgorithm, self).interpret(
             X_train,
@@ -66,7 +67,10 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
             class_names,
             metric_name,
             ml_task,
+            explain_level,
         )
+        if explain_level == 0:
+            return
         try:
             if len(class_names) > 10:
                 # dtreeviz does not support more than 10 classes
@@ -82,7 +86,7 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
             tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
             viz.save(tree_file_plot)
         except Exception as e:
-            logger.info(f"Problem when visuzalizin decision tree. {str(e)}")
+            logger.info(f"Problem when visualizing decision tree. {str(e)}")
 
 
 class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
@@ -116,6 +120,7 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         class_names=None,
         metric_name=None,
         ml_task=None,
+        explain_level=2,
     ):
         super(DecisionTreeRegressorAlgorithm, self).interpret(
             X_train,
@@ -128,8 +133,12 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             class_names,
             metric_name,
             ml_task,
+            explain_level,
         )
+        if explain_level == 0:
+            return
         try:
+
             viz = dtreeviz(
                 self.model,
                 X_train,

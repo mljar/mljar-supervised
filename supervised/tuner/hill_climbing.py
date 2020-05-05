@@ -20,7 +20,7 @@ class HillClimbing:
     def get(params, ml_task, seed=1):
         np.random.seed(seed)
         keys = list(params.keys())
-        for k in ["num_class", "model_type", "seed", "ml_task"]:
+        for k in ["num_class", "model_type", "seed", "ml_task", "explain_level"]:
             if k in keys:
                 keys.remove(k)
 

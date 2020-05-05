@@ -11,8 +11,8 @@ automl = AutoML(
     model_time_limit=1,
     algorithms=[
         "Linear",
-        #"Xgboost", "Decision Tree",
-        #"Random Forest",
+        # "Xgboost", "Decision Tree",
+        # "Random Forest",
         # "CatBoost",
         # "LightGBM", "Extra Trees"
     ],
