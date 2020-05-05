@@ -58,7 +58,7 @@ class LearningCurves:
             )
             plt.bar(f"Fold {l+1}, test", df.test[0], color=colors[l])
 
-        plt.xticks(rotation=90)
+        
         plt.tight_layout(pad=2.0)
         plt.ylabel(metric_name)
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)

@@ -22,7 +22,7 @@ from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.ensemble import Ensemble
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
-
+from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 
 logging.basicConfig(
@@ -698,7 +698,7 @@ class AutoML:
 
             ldb = self.get_leaderboard()
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
-
+            
             # save report
             ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
             ldb.insert(loc=0, column="Best model", value="")
@@ -708,6 +708,8 @@ class AutoML:
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+                LeaderboardPlots.compute(ldb, self._results_path, fout)
+
         except Exception as e:
             raise e
         finally:
