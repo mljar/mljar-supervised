@@ -668,6 +668,19 @@ class AutoML:
             generated_params = tuner.get_not_so_random_params(X_train, y_train)
             self._del_data_variables(X_train, y_train)
 
+            # Shuffle generated params
+            # do not shuffle Baseline, Linear and Decision Trees
+            dont_shuffle = []
+            to_shuffle = []
+            for p in generated_params:
+                if p["learner"]["model_type"] in ["Baseline", "Linear", "Decision Tree"]:
+                    dont_shuffle += [p]
+                else:
+                    to_shuffle += [p]
+            
+            np.random.shuffle(to_shuffle)
+            generated_params = dont_shuffle + to_shuffle
+            
             for params in generated_params:
                 self.train_model(params)
             # hill climbing

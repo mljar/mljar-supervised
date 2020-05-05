@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='mljar-supervised',
-    version='0.2.8',
+    version='0.3.0',
     description='Automated Machine Learning for Supervised tasks',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,5 +25,5 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.6'
     ],
-    keywords=['automl', 'machine learning', "random forest", 'keras', 'xgboost'],
+    keywords=["automl", "machine learning", "random forest", 'keras', 'xgboost', "lightgbm", "catboost"],
 )
