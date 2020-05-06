@@ -54,6 +54,9 @@ class XgbAlgorithm(BaseAlgorithm):
             "seed": self.params.get("seed", 1),
         }
 
+        # check https://github.com/dmlc/xgboost/issues/5637
+        if self.learner_params["seed"] > 1000:
+            self.learner_params["seed"] = self.learner_params["seed"] % 1000
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
@@ -61,9 +64,6 @@ class XgbAlgorithm(BaseAlgorithm):
 
     def fit(self, X, y):
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
-        print(self.learner_params)
-        print(self.learner_params["seed"])
-        print(type(self.learner_params["seed"]))
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
         )
