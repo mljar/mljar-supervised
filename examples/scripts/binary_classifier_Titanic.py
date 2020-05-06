@@ -12,7 +12,7 @@ y = df["Survived"]
 automl = AutoML(
     # results_path="AutoML_11",
     # algorithms=["Linear"],
-    model_time_limit=200,
+    model_time_limit=20,
     train_ensemble=True,
 )
 automl.set_advanced(start_random_models=3)

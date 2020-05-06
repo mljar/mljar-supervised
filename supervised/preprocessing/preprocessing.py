@@ -97,9 +97,7 @@ class Preprocessing(object):
             if Scale.SCALE_NORMAL in target_preprocessing:
                 logger.debug("Scale normal")
 
-                self._scale_y = Scale(
-                    ["target"], scale_method=Scale.SCALE_NORMAL
-                )
+                self._scale_y = Scale(["target"], scale_method=Scale.SCALE_NORMAL)
                 y_train = pd.DataFrame({"target": y_train})
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)

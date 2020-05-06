@@ -55,8 +55,8 @@ class XgbAlgorithm(BaseAlgorithm):
         }
 
         # check https://github.com/dmlc/xgboost/issues/5637
-        if self.learner_params["seed"] > 1000:
-            self.learner_params["seed"] = self.learner_params["seed"] % 1000
+        if self.learner_params["seed"] > 2147483647:
+            self.learner_params["seed"] = self.learner_params["seed"] % 2147483647
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 

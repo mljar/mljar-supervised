@@ -1,4 +1,3 @@
-
 import os
 import logging
 import numpy as np
@@ -11,8 +10,9 @@ logger.setLevel(LOG_LEVEL)
 
 import matplotlib.pyplot as plt
 
+
 class LeaderboardPlots:
-    
+
     performance_fname = "ldb_performance.png"
     performance_boxplot_fname = "ldb_performance_boxplot.png"
 
@@ -22,7 +22,7 @@ class LeaderboardPlots:
             return
         # Scatter plot
         plt.figure(figsize=(10, 7))
-        plt.plot(ldb.metric_value, '*')
+        plt.plot(ldb.metric_value, "*")
         plt.xlabel("#Iteration")
         plt.ylabel(ldb.metric_type.iloc[0])
         plt.title("AutoML Performance")
@@ -36,13 +36,12 @@ class LeaderboardPlots:
 
         # Boxplot
         by = "model_type"
-        column="metric_value"
-        df2 = pd.DataFrame({col:vals[column] for col, vals in ldb.groupby(by)})
+        column = "metric_value"
+        df2 = pd.DataFrame({col: vals[column] for col, vals in ldb.groupby(by)})
         mins = df2.min().sort_values(ascending=False)
 
-
         plt.figure(figsize=(10, 7))
-        #plt.title("")
+        # plt.title("")
         plt.ylabel(ldb.metric_type.iloc[0])
         df2[mins.index].boxplot(rot=90, fontsize=12)
 
@@ -50,6 +49,8 @@ class LeaderboardPlots:
         plot_path = os.path.join(model_path, LeaderboardPlots.performance_boxplot_fname)
         plt.savefig(plot_path)
         plt.close("all")
-        
+
         fout.write("\n\n### AutoML Performance Boxplot\n")
-        fout.write(f"![AutoML Performance Boxplot]({LeaderboardPlots.performance_boxplot_fname})")
+        fout.write(
+            f"![AutoML Performance Boxplot]({LeaderboardPlots.performance_boxplot_fname})"
+        )

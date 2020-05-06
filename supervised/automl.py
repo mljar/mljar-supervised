@@ -349,8 +349,14 @@ class AutoML:
             {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
         )
         min_steps = params["additional"].get("min_steps")
+        
         time_constraint = TimeConstraint(
-            {"train_seconds_time_limit": self._time_limit, "min_steps": min_steps}
+            {
+                "train_seconds_time_limit": self._time_limit,
+                "min_steps": min_steps,
+                "total_time_limit": self._total_time_limit if self._model_time_limit is None else None,
+                "total_time_start": self._start_time
+            }
         )
         mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
 
@@ -637,7 +643,7 @@ class AutoML:
                 print("Best model is already set, no need to run fit. Skipping ...")
                 return
 
-            start_time = time.time()
+            self._start_time = time.time()
             if not isinstance(X_train, pd.DataFrame):
                 raise AutoMLException(
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
@@ -677,14 +683,18 @@ class AutoML:
             dont_shuffle = []
             to_shuffle = []
             for p in generated_params:
-                if p["learner"]["model_type"] in ["Baseline", "Linear", "Decision Tree"]:
+                if p["learner"]["model_type"] in [
+                    "Baseline",
+                    "Linear",
+                    "Decision Tree",
+                ]:
                     dont_shuffle += [p]
                 else:
                     to_shuffle += [p]
-            
+
             np.random.shuffle(to_shuffle)
             generated_params = dont_shuffle + to_shuffle
-            
+
             for params in generated_params:
                 self.train_model(params)
             # hill climbing
@@ -693,8 +703,8 @@ class AutoML:
 
             self.ensemble_step()
 
-            self._fit_time = time.time() - start_time
-            
+            self._fit_time = time.time() - self._start_time
+
         except Exception as e:
             raise e
         finally:
@@ -721,7 +731,7 @@ class AutoML:
 
         ldb = self.get_leaderboard()
         ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
-        
+
         # save report
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
@@ -732,8 +742,6 @@ class AutoML:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
             LeaderboardPlots.compute(ldb, self._results_path, fout)
-
-
 
     def predict(self, X):
         """

@@ -358,7 +358,9 @@ class AdditionalMetrics:
     def add_shap_importance(fout, model_path):
         try:
             # SHAP Importance
-            imp_data = [f for f in os.listdir(model_path) if "_shap_importance.csv" in f]
+            imp_data = [
+                f for f in os.listdir(model_path) if "_shap_importance.csv" in f
+            ]
             if not len(imp_data):
                 return
             df_all = []
@@ -396,7 +398,9 @@ class AdditionalMetrics:
     def add_shap_binary(fout, model_path):
         try:
             # Dependence SHAP
-            dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence.png" in f]
+            dep_plots = [
+                f for f in os.listdir(model_path) if "_shap_dependence.png" in f
+            ]
             if not len(dep_plots):
                 return
 
@@ -436,7 +440,9 @@ class AdditionalMetrics:
     def add_shap_regression(fout, model_path):
         try:
             # Dependence SHAP
-            dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence.png" in f]
+            dep_plots = [
+                f for f in os.listdir(model_path) if "_shap_dependence.png" in f
+            ]
             if not len(dep_plots):
                 return
 
@@ -511,9 +517,7 @@ class AdditionalMetrics:
                         fout.write(
                             f"\n### {decision_type.capitalize()} decisions for selected sample #{sample+1} (Fold #{l+1})\n"
                         )
-                        f_path = (
-                            f"learner_{l+1}_sample_{sample}_{decision_type}_decisions.png"
-                        )
+                        f_path = f"learner_{l+1}_sample_{sample}_{decision_type}_decisions.png"
                         fout.write(
                             f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})"
                         )
