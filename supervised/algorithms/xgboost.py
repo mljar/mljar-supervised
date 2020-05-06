@@ -61,6 +61,9 @@ class XgbAlgorithm(BaseAlgorithm):
 
     def fit(self, X, y):
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
+        print(self.learner_params)
+        print(self.learner_params["seed"])
+        print(type(self.learner_params["seed"]))
         self.model = xgb.train(
             self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
         )
