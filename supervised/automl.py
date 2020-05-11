@@ -737,7 +737,7 @@ class AutoML:
         ldb.insert(loc=0, column="Best model", value="")
         ldb.loc[
             ldb.name == self._best_model.get_name(), "Best model"
-        ] = "*** the best ***"
+        ] = "**the best**"
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))

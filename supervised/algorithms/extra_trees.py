@@ -116,7 +116,7 @@ AlgorithmsRegistry.add(
 #
 
 regression_et_params = {
-    "criterion": ["mse", "mae"],
+    "criterion": ["mse"], # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
     "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
     "min_samples_leaf": range(1, 21),
