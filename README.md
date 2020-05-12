@@ -4,7 +4,6 @@
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-
 ## Automated Machine Learning 
 
 `mljar-supervised` is Automated Machine Learning package. It can train ML models for:
@@ -12,6 +11,27 @@
 - binary classification,
 - multi-class classification,
 - regression.
+
+## What's good in it?
+
+- `mljar-supervised` creates markdown reports from AutoML training. The report showing AutoML leaderboard:
+
+![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
+
+The report showing example for `Decision Tree` summary:
+![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
+
+The report showing example for `LightGBM` summary:
+![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
+
+- This package is computing `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comaring to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
+- This package is training simple `Decision Trees` with `max_depth <= 5` so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz), so you can better understand your data.
+- The `mljar-supervised` is using simple linear regression and include its coefficients in summary report, so you can check which features are used the most in linear model.
+- It is using a vast set of algorithms: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`. (`Neural Networks` will be added soon)
+- It can do features preprocessing, like missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing (You won't belive how often it is needed!).
+- It can tune hyper-parameters with not-so-random-search algorithm (over defined set of values) and hill climbing to fine-tune final models.
+- It can compute Ensemble based on [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf)
+- It cares about explainability of models: for every algorithm the permutation based feature importance is computed. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be swiched off with `explain_level` parameter).
 
 ## Quick example
 
