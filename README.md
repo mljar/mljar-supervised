@@ -84,3 +84,8 @@ source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
 ```
+
+## MLJAR
+<img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
+
+`mljar-supervised` is an open-source project created by [MLJAR](https://mljar.com). We care about ease of use in Machine Learning. The [mljar.com](https://mljar.com) provides beautiful and simple user interface for building machine learning models. It is available in the web browser (in the cloud).
