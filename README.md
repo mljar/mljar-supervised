@@ -24,7 +24,7 @@ The example for `Decision Tree` summary:
 The example for `LightGBM` summary:
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
-- This package is computing `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comaring to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
+- This package is computing `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
 - This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
 - The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It is using a vast set of algorithms: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost` (`Neural Networks` will be added soon).
