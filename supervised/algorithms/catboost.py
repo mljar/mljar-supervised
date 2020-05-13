@@ -17,7 +17,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from catboost import CatBoostClassifier, CatBoostRegressor
+from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost
 import catboost
 
 
@@ -95,6 +95,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
     def load(self, model_file_path):
         logger.debug("CatBoostLearner load model from %s" % model_file_path)
+        '''
+        waiting for fix https://github.com/catboost/catboost/issues/696
         Algo = CatBoostClassifier
         loss_function = "Logloss"
         if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
@@ -102,9 +104,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif self.params["ml_task"] == REGRESSION:
             loss_function = self.params.get("loss_function", "RMSE")
             Algo = CatBoostRegressor
-
-        self.model = Algo()
-        self.model.load_model(model_file_path)
+        '''
+        self.model = CatBoost().load_model(model_file_path)
 
     def get_params(self):
         return {
