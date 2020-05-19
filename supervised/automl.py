@@ -10,7 +10,9 @@ import logging
 from supervised.model_framework import ModelFramework
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
-from supervised.callbacks.time_constraint import TimeConstraint
+from supervised.callbacks.learner_time_constraint import LearnerTimeConstraint
+from supervised.callbacks.total_time_constraint import TotalTimeConstraint
+
 from supervised.utils.metric import Metric
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
@@ -32,7 +34,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 from supervised.exceptions import AutoMLException
-
+from supervised.tuner.data_info import DataInfo
 import gc
 from supervised.utils.config import mem
 
@@ -61,6 +63,7 @@ class AutoML:
         ],
         tuning_mode="Sport",
         train_ensemble=True,
+        stack=True,
         optimize_metric=None,
         validation={
             "validation_type": "kfold",
@@ -102,7 +105,9 @@ class AutoML:
         
         You can also set how many models will be trained with `set_advanced` method.
         
-        :param train_ensemble: If true then at the end of models training the ensemble will be created.
+        :param train_ensemble: If true then at the end of models training the ensemble will be created. (Default is `True`)
+
+        :param stack: If true then stacked models will be created. Stack level is 1. (Default is `True`)
         
         :param optimize_metric: The metric to be optimized. (not implemented yet, please left `None`)
         
@@ -138,6 +143,7 @@ class AutoML:
         self._time_limit = 1
 
         self._train_ensemble = train_ensemble
+        self._stack = stack
         self._models = []  # instances of iterative learner framework or ensemble
 
         # it is instance of model framework or ensemble
@@ -165,10 +171,15 @@ class AutoML:
 
         self._data_info = None
         self._model_paths = []
-
-        self._results_path = results_path
-        self._set_results_dir()
+        self._stacked_models = None
         self._explain_level = explain_level
+        self._results_path = results_path
+        self._fit_level = None
+        self._time_spend = {}
+
+        # this should be last in the constrcutor
+        # in case there is a dir, it might load models
+        self._set_results_dir()
 
     def set_tuning_mode(self, mode="Normal"):
         if mode == "Sport":
@@ -255,16 +266,25 @@ class AutoML:
             self._model_paths = params["saved"]
             self._ml_task = params["ml_task"]
             self._optimize_metric = params["optimize_metric"]
+            stacked_models = params.get("stacked")
 
             models_map = {}
             for model_path in self._model_paths:
                 if model_path.endswith("ensemble"):
                     ens = Ensemble.load(model_path, models_map)
+                    self._models += [ens]
                     models_map[ens.get_name()] = ens
                 else:
                     m = ModelFramework.load(model_path)
                     self._models += [m]
                     models_map[m.get_name()] = m
+
+            if stacked_models is not None:
+                self._stacked_models = []
+                for stacked_model_name in stacked_models:
+                    print("stacked model", stacked_model_name)
+                    self._stacked_models += [models_map[stacked_model_name]]
+            print("LOAD", self._stacked_models)
 
             best_model_name = None
             with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
@@ -277,6 +297,7 @@ class AutoML:
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
+    '''
     def _estimate_training_times(self):
 
         algo_cnt = len(self._algorithms)
@@ -310,6 +331,7 @@ class AutoML:
         print(
             f"AutoML will try to check about {int(self._estimated_models_to_check)} model{'s' if int(self._estimated_models_to_check)>1 else ''}"
         )
+    '''
 
     def get_leaderboard(self):
         ldb = {
@@ -341,24 +363,96 @@ class AutoML:
         )
         self.log_train_time(model.get_type(), model.get_train_time())
 
+    def _get_learner_time_limit(self, model_type):
+
+        print("FIT LEVEL", self._fit_level)
+        print("MODEL TYPE", model_type)
+        print("TIME SPEND", json.dumps(self._time_spend, indent=4))
+
+        if self._model_time_limit is not None:
+            k = self._validation.get("k_folds", 1.0)
+            return self._model_time_limit / k
+
+        if self._fit_level == "simple_algorithms":
+            return None
+        if self._fit_level == "default_algorithms":
+            return None
+
+        tune_algorithms = [
+            a
+            for a in self._algorithms
+            if a not in ["Baseline", "Linear", "Decision Tree"]
+        ]
+        tune_algs_cnt = len(tune_algorithms)
+        time_elapsed = time.time() - self._start_time
+        time_left = self._total_time_limit - time_elapsed
+
+        k_folds = self._validation.get("k_folds", 1.0)
+
+        if self._fit_level == "not_so_random":
+            tt = (
+                self._total_time_limit
+                - self._time_spend["simple_algorithms"]
+                - self._time_spend["default_algorithms"]
+            )
+            if self._stack:
+                tt *= 0.6  # leave some time for stacking (approx. 40% for stacking of time left)
+            tt /= 2.0  # leave some time for hill-climbing
+            tt /= tune_algs_cnt  # give time equally for each algorithm
+            tt /= k_folds  # time is per learner (per fold)
+            print("not_so_random, learner time limit", tt)
+            return tt
+
+        if self._fit_level == "hill_climbing":
+            tt = (
+                self._total_time_limit
+                - self._time_spend["simple_algorithms"]
+                - self._time_spend["default_algorithms"]
+                - self._time_spend["not_so_random"]
+            )
+            if self._stack:
+                tt *= 0.4  # leave some time for stacking (approx. 60% for stacking of time left)
+            tt /= tune_algs_cnt  # give time equally for each algorithm
+            tt /= k_folds  # time is per learner (per fold)
+            print("hill_climbing, learner time limit", tt)
+            return tt
+
+        if self._stack and self._fit_level == "stack":
+            tt = time_left
+            tt /= tune_algs_cnt  # give time equally for each algorithm
+            tt /= k_folds  # time is per learner (per fold)
+            print("stack, learner time limit", tt)
+            return tt
+
     def train_model(self, params):
 
         model_path = os.path.join(self._results_path, params["name"])
-
         early_stop = EarlyStopping(
             {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
         )
-        min_steps = params["additional"].get("min_steps")
-        
-        time_constraint = TimeConstraint(
+
+        learner_time_constraint = LearnerTimeConstraint(
             {
-                "train_seconds_time_limit": self._time_limit,
-                "min_steps": min_steps,
-                "total_time_limit": self._total_time_limit if self._model_time_limit is None else None,
-                "total_time_start": self._start_time
+                "learner_time_limit": self._get_learner_time_limit(
+                    params["learner"]["model_type"]
+                ),  # self._time_limit,
+                "min_steps": params["additional"].get("min_steps"),
             }
         )
-        mf = ModelFramework(params, callbacks=[early_stop, time_constraint])
+
+        total_time_constraint = TotalTimeConstraint(
+            {
+                "total_time_limit": self._total_time_limit
+                if self._model_time_limit is None
+                else None,
+                "total_time_start": self._start_time,
+            }
+        )
+
+        mf = ModelFramework(
+            params,
+            callbacks=[early_stop, learner_time_constraint, total_time_constraint],
+        )
 
         if self._enough_time_to_train(mf.get_type()):
 
@@ -381,9 +475,7 @@ class AutoML:
             # save the best one in the case the training will be interrupted
             self.select_and_save_best()
         else:
-            logger.info(
-                f"Cannot check more models of {mf.get_type()} because of time constraint"
-            )
+            logger.info(f"Cannot train {mf.get_type()} because of time constraint")
         # self._progress_bar.update(1)
 
     def verbose_print(self, msg):
@@ -406,10 +498,7 @@ class AutoML:
         if self._total_time_limit is None:
             return True
 
-        total_time_spend = 0.0
-        for k, v in self._models_train_time.items():
-            total_time_spend += np.sum(v)
-
+        total_time_spend = time.time() - self._start_time
         # no time left, do not train more models, sorry ...
         time_left = self._total_time_limit - total_time_spend
         if time_left < 0:
@@ -419,6 +508,29 @@ class AutoML:
         # we should try it
         if time_left > 0 and model_type not in self._models_train_time:
             return True
+
+        # check the fit level type
+        # we dont want to spend too much time on one level
+        print(self._fit_level)
+
+        if self._fit_level == "not_so_random":
+
+            time_should_use = self._total_time_limit - self._time_spend["simple_algorithms"] - self._time_spend["default_algorithms"]
+            if self._stack:
+                time_should_use *= 0.6 # leave time for stacking
+            if self._hill_climbing_steps > 0:
+                time_should_use /= 2.0 # leave time for hill-climbing
+            print("not-so-random STEP time should use", time_should_use)
+
+            print(self._time_spend)
+            print("total time spend", total_time_spend)
+
+            if total_time_spend > time_should_use + self._time_spend["simple_algorithms"] + self._time_spend["default_algorithms"]:
+                return False
+
+        ##################
+        # hill climbing check
+
 
         model_total_time_spend = (
             0
@@ -432,7 +544,7 @@ class AutoML:
         )
 
         algo_cnt = float(len(self._algorithms))
-        for a in ["Baseline", "Decision Tree"]:
+        for a in ["Baseline", "Decision Tree", "Linear"]:
             if a in self._algorithms:
                 algo_cnt -= 1.0
 
@@ -442,14 +554,18 @@ class AutoML:
 
         return False
 
-    def ensemble_step(self):
+    def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
-            self.ensemble = Ensemble(self._optimize_metric, self._ml_task)
+            self.ensemble = Ensemble(
+                self._optimize_metric, self._ml_task, is_stacked=is_stacked
+            )
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
             self.keep_model(self.ensemble)
 
-            ensemble_path = os.path.join(self._results_path, "ensemble")
+            ensemble_path = os.path.join(
+                self._results_path, "stacked_ensemble" if is_stacked else "ensemble"
+            )
             try:
                 os.mkdir(ensemble_path)
             except Exception as e:
@@ -458,6 +574,91 @@ class AutoML:
             self._model_paths += [ensemble_path]
             # save the best one in the case the training will be interrupted
             self.select_and_save_best()
+
+    def can_we_stack_them(self, y):
+        # if multiclass and too many classes then No
+        return True
+
+    def get_stacked_data(self, X, mode="training"):
+        # mode can be `training` or `predict`
+        if self._stacked_models is None:
+            return X
+        all_oofs = []
+        for m in self._stacked_models:
+            print(m.get_type(), m.get_name(), m.get_final_loss())
+
+            oof = m.get_out_of_folds() if mode == "training" else m.predict(X)
+            cols = [f for f in oof.columns if "prediction" in f]
+            oof = oof[cols]
+            oof.columns = [f"{m.get_name()}_{c}" for c in cols]
+            all_oofs += [oof]
+
+        X_stacked = pd.concat(all_oofs + [X], axis=1)
+        return X_stacked
+
+    def stack_models(self):
+        print("STACK MODELS", self._stacked_models)
+        if self._stacked_models is not None:
+            for m in self._stacked_models:
+                print("----->", m.get_name(), m.get_final_loss())
+            return
+
+        ldb = self.get_leaderboard()
+        ldb = ldb.sort_values(by="metric_value", ascending=True)
+        print(ldb)
+
+        models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
+        self._stacked_models = []
+        models_limit = 3
+        for model_type in np.unique(ldb.model_type):
+            ds = ldb[ldb.model_type == model_type]
+            ds.sort_values(by="metric_value", inplace=True)
+            for n in list(ds.name.iloc[:models_limit].values):
+                self._stacked_models += [models_map[n]]
+
+        scores = [m.get_final_loss() for m in self._stacked_models]
+        print(scores)
+        self._stacked_models = [
+            self._stacked_models[i] for i in np.argsort(scores).tolist()
+        ]
+
+        for m in self._stacked_models:
+            print("stacked", m.get_name(), m.get_type(), m.get_final_loss())
+
+    def stacked_ensemble_step(self):
+        # read X directly from parquet
+        X = pd.read_parquet(self._X_train_path)
+
+        for m in self._models:
+            print(m.get_name(), m.get_type(), m.get_final_loss())
+
+        self.stack_models()
+
+        X_stacked = self.get_stacked_data(X)
+        print(X.shape, X_stacked.shape)
+        print(X_stacked.columns.tolist())
+
+        # save stacked data
+        X_train_stacked_path = os.path.join(
+            self._results_path, "X_train_stacked.parquet"
+        )
+        X_stacked.to_parquet(X_train_stacked_path, index=False)
+
+        # set validation !
+        # self._start_time = time.time()
+        for m in self._stacked_models:
+            if m.get_type() in ["Ensemble", "Baseline"]:
+                continue
+
+            params = copy.deepcopy(m.params)
+            params["validation"]["X_train_path"] = X_train_stacked_path
+            params["name"] = "stacked_" + params["name"]
+            params["is_stacked"] = True
+
+            print(params)
+            print(params["validation"])
+
+            self.train_model(params)
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -603,25 +804,33 @@ class AutoML:
         self._validation["y_train_path"] = self._y_train_path
         self._validation["results_path"] = self._results_path
 
+        columns_and_target_info = DataInfo.compute(X_train, y_train, self._ml_task)
+
         self._data_info = {
             "columns": X_train.columns.tolist(),
             "rows": X_train.shape[0],
             "cols": X_train.shape[1],
             "target_is_numeric": pd.api.types.is_numeric_dtype(y_train),
+            "columns_info": columns_and_target_info["columns_info"],
+            "target_info": columns_and_target_info["target_info"],
         }
+        if columns_and_target_info.get("num_class") is not None:
+            self._data_info["num_class"] = columns_and_target_info["num_class"]
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4))
 
-    def _del_data_variables(self, X_train, y_train):
+        self._drop_data_variables(X_train)
+
+    def _drop_data_variables(self, X_train):
 
         X_train.drop(X_train.columns, axis=1, inplace=True)
 
     def _load_data_variables(self, X_train):
-        X = pd.read_parquet(self._X_train_path)
-
-        for c in X.columns:
-            X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
+        if X_train.shape[1] == 0:
+            X = pd.read_parquet(self._X_train_path)
+            for c in X.columns:
+                X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
 
         os.remove(self._X_train_path)
         os.remove(self._y_train_path)
@@ -649,6 +858,8 @@ class AutoML:
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
                 )
 
+            self._set_ml_task(y_train)
+
             if X_train is not None:
                 X_train = X_train.copy(deep=False)
 
@@ -657,10 +868,10 @@ class AutoML:
             )
             self._save_data(X_train, y_train, X_validation, y_validation)
 
-            self._set_ml_task(y_train)
+            
             self._set_algorithms()
             self._set_metric()
-            self._estimate_training_times()
+            # self._estimate_training_times()
 
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
                 self._check_imbalanced(y_train)
@@ -671,37 +882,70 @@ class AutoML:
                 self._ml_task,
                 self._validation,
                 self._explain_level,
+                self._data_info,
                 self._seed,
             )
 
-            # not so random step
-            generated_params = tuner.get_not_so_random_params(X_train, y_train)
-            self._del_data_variables(X_train, y_train)
+            self._time_spend = {}
+            self._time_start = {}
+            # 1. Check simple algorithms
+            self._fit_level = "simple_algorithms"
+            start = time.time()
+            self._time_start[self._fit_level] = start
+            for params in tuner.simple_algorithms_params():
+                self.train_model(params)
+            self._time_spend["simple_algorithms"] = np.round(time.time() - start, 2)
 
-            # Shuffle generated params
-            # do not shuffle Baseline, Linear and Decision Trees
-            dont_shuffle = []
-            to_shuffle = []
-            for p in generated_params:
-                if p["learner"]["model_type"] in [
-                    "Baseline",
-                    "Linear",
-                    "Decision Tree",
-                ]:
-                    dont_shuffle += [p]
-                else:
-                    to_shuffle += [p]
+            # 2. Default parameters
+            self._fit_level = "default_algorithms"
+            start = time.time()
+            self._time_start[self._fit_level] = start
+            for params in tuner.default_params(len(self._models)):
+                self.train_model(params)
+            self._time_spend["default_algorithms"] = np.round(time.time() - start, 2)
 
-            np.random.shuffle(to_shuffle)
-            generated_params = dont_shuffle + to_shuffle
-
+            # 3. The not-so-random step
+            self._fit_level = "not_so_random"
+            start = time.time()
+            self._time_start[self._fit_level] = start
+            generated_params = tuner.get_not_so_random_params(len(self._models))
             for params in generated_params:
                 self.train_model(params)
-            # hill climbing
+            self._time_spend["not_so_random"] = np.round(time.time() - start, 2)
+
+            # 4. The hill-climbing step
+            self._fit_level = "hill_climbing"
+            start = time.time()
+            self._time_start[self._fit_level] = start
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)
+            self._time_spend["hill_climbing"] = np.round(time.time() - start, 2)
 
+            # 5. Ensemble unstacked models
+            self._fit_level = "ensemble_unstacked"
+            start = time.time()
+            self._time_start[self._fit_level] = start
             self.ensemble_step()
+            self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
+
+            # 6. Stack best models
+            self._fit_level = "stack"
+            start = time.time()
+            self._time_start[self._fit_level] = start
+            self.stacked_ensemble_step()
+            self._time_spend["stack"] = np.round(time.time() - start, 2)
+
+            # 7. Ensemble all models (original and stacked)
+            any_stacked = False 
+            for m in self._models:
+                if m._is_stacked:
+                    any_stacked = True
+                    break 
+            if any_stacked:
+                self._fit_level = "ensemble_all"
+                start = time.time()
+                self.ensemble_step(is_stacked=True)
+                self._time_spend["ensemble_all"] = np.round(time.time() - start, 2)
 
             self._fit_time = time.time() - self._start_time
 
@@ -727,6 +971,8 @@ class AutoML:
                 "optimize_metric": self._optimize_metric,
                 "saved": self._model_paths,
             }
+            if self._stacked_models is not None:
+                params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4))
 
         ldb = self.get_leaderboard()
@@ -735,9 +981,9 @@ class AutoML:
         # save report
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[
-            ldb.name == self._best_model.get_name(), "Best model"
-        ] = "**the best**"
+        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
+        print("save best")
+        print(ldb)
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
@@ -763,7 +1009,21 @@ class AutoML:
                 )
         X = X[self._data_info["columns"]]
 
-        predictions = self._best_model.predict(X)
+        # is stacked model
+        print("STACKED", self._best_model._is_stacked)
+        if self._best_model._is_stacked:
+            self.stack_models()
+            X_stacked = self.get_stacked_data(X, mode="predict")
+            print(X_stacked.shape, X.shape)
+            print(X_stacked.columns.tolist())
+            print(X_stacked.head())
+            if self._best_model.get_type() == "Ensemble":
+                # Ensemble is using both original and stacked data
+                predictions = self._best_model.predict(X, X_stacked)
+            else:
+                predictions = self._best_model.predict(X_stacked)
+        else:
+            predictions = self._best_model.predict(X)
 
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold

@@ -39,6 +39,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             "num_leaves": self.params.get("num_leaves", 16),
             "learning_rate": self.params.get("learning_rate", 0.01),
             "feature_fraction": self.params.get("feature_fraction", 0.7),
+            # "min_data_in_leaf": self.params.get("min_data_in_leaf", 20),
             "bagging_fraction": self.params.get("bagging_fraction", 0.7),
             "bagging_freq": self.params.get("bagging_freq", 1),
             "verbose": -1,
@@ -47,6 +48,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
+        # print(self.learner_params)
         logger.debug("LightgbmLearner __init__")
 
     def file_extension(self):
@@ -109,6 +111,16 @@ lgbm_bin_params = {
     "bagging_freq": [0, 1, 2, 3, 4, 5],
 }
 
+classification_bin_default_params = {
+    "objective": "binary",
+    "metric": "binary_logloss",
+    "num_leaves": 128,
+    "learning_rate": 0.1,
+    "feature_fraction": 1.0,
+    "bagging_fraction": 1.0,
+    "bagging_freq": 1,
+}
+
 
 additional = {
     "trees_in_step": 10,
@@ -125,11 +137,31 @@ required_preprocessing = [
     "target_as_integer",
 ]
 
+lgbm_test_params = {
+    "objective": ["multiclass"],
+    "metric": ["multi_error,multi_logloss"],
+    "num_leaves": [128],  # [31, 128],
+    "learning_rate": [0.03],  # [0.1, 0.03],
+    "feature_fraction": [0.9],  # [1.0, 0.9],
+    "min_data_in_leaf": [3]  # [20, 3]
+    # "bagging_fraction": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    # "bagging_freq": [0, 1, 2, 3, 4, 5],
+}
 
 lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
 lgbm_multi_params["objective"] = ["multiclass"]
 lgbm_multi_params["metric"] = ["multi_logloss", "multi_error"]
 
+
+classification_multi_default_params = {
+    "objective": "multiclass",
+    "metric": "multi_logloss",
+    "num_leaves": 128,
+    "learning_rate": 0.1,
+    "feature_fraction": 1.0,
+    "bagging_fraction": 1.0,
+    "bagging_freq": 1,
+}
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
@@ -141,6 +173,7 @@ AlgorithmsRegistry.add(
     lgbm_bin_params,
     required_preprocessing,
     additional,
+    classification_bin_default_params,
 )
 
 AlgorithmsRegistry.add(
@@ -149,6 +182,7 @@ AlgorithmsRegistry.add(
     lgbm_multi_params,
     required_preprocessing,
     additional,
+    classification_multi_default_params,
 )
 
 regression_required_preprocessing = [
@@ -158,10 +192,21 @@ regression_required_preprocessing = [
 ]
 
 
+regression_default_params = {
+    "objective": "regression",
+    "metric": "l2",
+    "num_leaves": 128,
+    "learning_rate": 0.1,
+    "feature_fraction": 1.0,
+    "bagging_fraction": 1.0,
+    "bagging_freq": 1,
+}
+
 AlgorithmsRegistry.add(
     REGRESSION,
     LightgbmAlgorithm,
     lgbr_params,
     regression_required_preprocessing,
     additional,
+    regression_default_params,
 )

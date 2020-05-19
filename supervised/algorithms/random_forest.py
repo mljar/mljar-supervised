@@ -79,6 +79,14 @@ rf_params = {
     "min_samples_leaf": range(1, 21),
 }
 
+classification_default_params = {
+    "criterion": "gini",
+    "max_features": 1.0,
+    "min_samples_split": 2,
+    "min_samples_leaf": 2,
+}
+
+
 additional = {
     "trees_in_step": 10,
     "train_cant_improve_limit": 5,
@@ -99,6 +107,7 @@ AlgorithmsRegistry.add(
     rf_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 AlgorithmsRegistry.add(
@@ -107,6 +116,7 @@ AlgorithmsRegistry.add(
     rf_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 
@@ -115,10 +125,19 @@ AlgorithmsRegistry.add(
 #
 
 regression_rf_params = {
-    "criterion": ["mse"], # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
+    "criterion": [
+        "mse"
+    ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
     "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
     "min_samples_leaf": range(1, 21),
+}
+
+regression_default_params = {
+    "criterion": "mse",
+    "max_features": 1.0,
+    "min_samples_split": 2,
+    "min_samples_leaf": 2,
 }
 
 regression_additional = {
@@ -140,4 +159,5 @@ AlgorithmsRegistry.add(
     regression_rf_params,
     regression_required_preprocessing,
     regression_additional,
+    regression_default_params,
 )

@@ -62,6 +62,7 @@ AlgorithmsRegistry.add(
     {},
     required_preprocessing,
     additional,
+    {},
 )
 
 AlgorithmsRegistry.add(
@@ -70,7 +71,8 @@ AlgorithmsRegistry.add(
     {},
     required_preprocessing,
     additional,
+    {},
 )
 
 
-AlgorithmsRegistry.add(REGRESSION, BaselineRegressorAlgorithm, {}, {}, additional)
+AlgorithmsRegistry.add(REGRESSION, BaselineRegressorAlgorithm, {}, {}, additional, {})

@@ -13,12 +13,20 @@ class AlgorithmsRegistry:
     }
 
     @staticmethod
-    def add(task_name, model_class, model_params, required_preprocessing, additional):
+    def add(
+        task_name,
+        model_class,
+        model_params,
+        required_preprocessing,
+        additional,
+        default_params,
+    ):
         model_information = {
             "class": model_class,
             "params": model_params,
             "required_preprocessing": required_preprocessing,
             "additional": additional,
+            "default_params": default_params,
         }
         AlgorithmsRegistry.registry[task_name][
             model_class.algorithm_short_name

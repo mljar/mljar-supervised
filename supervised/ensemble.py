@@ -30,7 +30,9 @@ class Ensemble:
     algorithm_name = "Greedy Ensemble"
     algorithm_short_name = "Ensemble"
 
-    def __init__(self, optimize_metric="logloss", ml_task=BINARY_CLASSIFICATION):
+    def __init__(
+        self, optimize_metric="logloss", ml_task=BINARY_CLASSIFICATION, is_stacked=False
+    ):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
 
@@ -44,11 +46,13 @@ class Ensemble:
         self.target_columns = None
         self._ml_task = ml_task
         self._optimize_metric = optimize_metric
+        self._is_stacked = is_stacked
 
         self._additional_metrics = None
         self._threshold = None
-        self._name = "ensemble"
+        self._name = "stacked_ensemble" if is_stacked else "ensemble"
         self._scores = []
+        self.oof_predictions = None
 
     def get_train_time(self):
         return self.train_time
@@ -62,14 +66,14 @@ class Ensemble:
     def get_name(self):
         return self._name
 
+    def get_metric_name(self):
+        return self.metric.name
+
     def get_out_of_folds(self):
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
         # single prediction (in case of binary classification and regression)
-        logger.debug(self.total_best_sum.shape)
-        logger.debug(self.total_best_sum.head())
-
-        logger.debug(self.target.shape)
-        logger.debug(self.target.head())
+        if self.oof_predictions is not None:
+            return self.oof_predictions
 
         if self.total_best_sum.shape[1] == 1:
             tmp_df = pd.DataFrame({"prediction": self.total_best_sum["prediction"]})
@@ -84,6 +88,7 @@ class Ensemble:
             # ]
         )
         ensemble_oof["target"] = self.target
+        self.oof_predictions = ensemble_oof
         return ensemble_oof
 
     def _get_mean(self, oof_selected, best_sum, best_count):
@@ -94,11 +99,14 @@ class Ensemble:
         return resp
 
     def get_oof_matrix(self, models):
-        # remeber models, will be needed in predictions
+        # remember models, will be needed in predictions
         self.models_map = {m.get_name(): m for m in models}
 
         oofs = {}
         for m in models:
+            # ensemble only the same level of stack
+            # if m._is_stacked != self._is_stacked:
+            #    continue
             oof = m.get_out_of_folds()
             prediction_cols = [c for c in oof.columns if "prediction" in c]
             oofs[m.get_name()] = oof[prediction_cols]  # oof["prediction"]
@@ -193,7 +201,7 @@ class Ensemble:
         self.get_additional_metrics()
         self.train_time = time.time() - start_time
 
-    def predict(self, X):
+    def predict(self, X, X_stacked=None):
         logger.debug(
             "Ensemble.predict with {} models".format(len(self.selected_models))
         )
@@ -205,7 +213,14 @@ class Ensemble:
             repeat = selected["repeat"]
             total_repeat += repeat
 
-            y_predicted_from_model = model.predict(X)
+            print("ensemble is_stacked", model._is_stacked)
+            if model._is_stacked:
+                y_predicted_from_model = model.predict(X_stacked)
+            else:
+                y_predicted_from_model = model.predict(X)
+
+            print("from model")
+            print(y_predicted_from_model.head())
 
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
@@ -274,6 +289,10 @@ class Ensemble:
     def save(self, model_path):
         logger.info(f"Save the ensemble to {model_path}")
 
+        predictions = self.get_out_of_folds()
+        predictions_fname = os.path.join(model_path, f"predictions_ensemble.csv")
+        predictions.to_csv(predictions_fname, index=False)
+
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
             for selected in self.selected_models:
@@ -284,16 +303,16 @@ class Ensemble:
                 "ml_task": self._ml_task,
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
+                "predictions_fname": predictions_fname,
+                "metric_name": self.get_metric_name(),
+                "final_loss": self.get_final_loss(),
+                "train_time": self.get_train_time(),
+                "is_stacked": self._is_stacked,
             }
 
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
-
-        predictions = self.get_out_of_folds()
-        predictions.to_csv(
-            os.path.join(model_path, f"predictions_ensemble.csv"), index=False
-        )
 
         LearningCurves.plot_for_ensemble(self._scores, self.metric.name, model_path)
 
@@ -333,4 +352,10 @@ class Ensemble:
                 {"model": models_map[m["model"]], "repeat": m["repeat"]}
             ]
 
+        ensemble.best_loss = json_desc.get("final_loss", ensemble.best_loss)
+        ensemble.train_time = json_desc.get("train_time", ensemble.train_time)
+        ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
+        predictions_fname = json_desc.get("predictions_fname")
+        if predictions_fname is not None:
+            ensemble.oof_predictions = pd.read_csv(predictions_fname)
         return ensemble

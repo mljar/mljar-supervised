@@ -52,12 +52,16 @@ class ModelFramework:
 
         self._ml_task = params.get("ml_task")
         self._explain_level = params.get("explain_level")
+        self._is_stacked = params.get("is_stacked", False)
 
         self.validation = None
         self.preprocessings = []
         self.learners = []
 
         self.train_time = None
+        self.final_loss = None
+        self.metric_name = None
+        self.oof_predictions = None
         self._additional_metrics = None
         self._threshold = None  # used only for binary classifiers
 
@@ -171,28 +175,39 @@ class ModelFramework:
         logger.debug("ModelFramework end of training")
 
     def get_metric_name(self):
+        if self.metric_name is not None:
+            return self.metric_name
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
             return None
+        self.metric_name = early_stopping.metric.name
         return early_stopping.metric.name
 
     def get_out_of_folds(self):
+        if self.oof_predictions is not None:
+            return self.oof_predictions
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
             return None
+        self.oof_predictions = early_stopping.best_y_oof
         return early_stopping.best_y_oof
 
     def get_final_loss(self):
+        if self.final_loss is not None:
+            return self.final_loss
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
             return None
+        self.final_loss = early_stopping.final_loss
         return early_stopping.final_loss
 
+    """
     def get_metric_logs(self):
         metric_logger = self.callbacks.get("metric_logger")
         if metric_logger is None:
             return None
         return metric_logger.loss_values
+    """
 
     def get_type(self):
         return self.learner_params.get("model_type")
@@ -253,6 +268,15 @@ class ModelFramework:
     def save(self, model_path):
         logger.info(f"Save the model {model_path}")
 
+        type_of_predictions = (
+            "validation" if "k_folds" not in self.validation_params else "out_of_folds"
+        )
+        predictions_fname = os.path.join(
+            model_path, f"predictions_{type_of_predictions}.csv"
+        )
+        predictions = self.get_out_of_folds()
+        predictions.to_csv(predictions_fname, index=False)
+
         saved = []
         for i, l in enumerate(self.learners):
             p = os.path.join(model_path, f"learner_{i+1}.{l.file_extension()}")
@@ -269,19 +293,15 @@ class ModelFramework:
                 "learners": learners_params,
                 "params": self.params,
                 "saved": saved,
+                "predictions_fname": predictions_fname,
+                "metric_name": self.get_metric_name(),
+                "final_loss": self.get_final_loss(),
+                "train_time": self.get_train_time(),
+                "is_stacked": self._is_stacked,
             }
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
-
-        type_of_predictions = (
-            "validation" if "k_folds" not in self.validation_params else "out_of_folds"
-        )
-        predictions = self.get_out_of_folds()
-        predictions.to_csv(
-            os.path.join(model_path, f"predictions_{type_of_predictions}.csv"),
-            index=False,
-        )
 
         LearningCurves.plot(
             self.validation.get_n_splits(),
@@ -332,6 +352,14 @@ class ModelFramework:
         mf.uid = json_desc.get("uid", mf.uid)
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
+        mf.train_time = json_desc.get("train_time", mf.train_time)
+        mf.final_loss = json_desc.get("final_loss", mf.final_loss)
+        mf.metric_name = json_desc.get("metric_name", mf.metric_name)
+        mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
+        predictions_fname = json_desc.get("predictions_fname")
+        if predictions_fname is not None:
+            mf.oof_predictions = pd.read_csv(predictions_fname)
+
         mf.learners = []
         for learner_desc, learner_path in zip(
             json_desc.get("learners"), json_desc.get("saved")

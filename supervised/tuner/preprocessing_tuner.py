@@ -19,19 +19,24 @@ class PreprocessingTuner:
     """
 
     @staticmethod
-    def get(required_preprocessing, data, machinelearning_task):
-
-        X = data["train"]["X"]
-        y = data["train"]["y"]
+    def get(required_preprocessing, data_info, machinelearning_task):
 
         columns_preprocessing = {}
-        for col in X.columns:
+        columns_info = data_info["columns_info"]
+
+        for col, preprocessing_needed in columns_info.items():
             preprocessing_to_apply = []
 
+            print("required_preprocessing")
+            print(required_preprocessing)
+            print("preprocessing_needed")
+            print(preprocessing_needed)
+
             # remove empty columns and columns with only one variable
-            empty_column = np.sum(pd.isnull(X[col]) == True) == X.shape[0]
-            constant_column = len(np.unique(X.loc[~pd.isnull(X[col]), col])) == 1
-            if empty_column or constant_column:
+            if (
+                "empty_column" in preprocessing_needed
+                or "constant_column" in preprocessing_needed
+            ):
                 preprocessing_to_apply += ["remove_column"]
                 columns_preprocessing[col] = preprocessing_to_apply
                 continue
@@ -39,14 +44,14 @@ class PreprocessingTuner:
             # always check for missing values
             if (
                 "missing_values_inputation" in required_preprocessing
-                and PreprocessingUtils.is_na(X[col])
+                and "missing_values" in preprocessing_needed
             ):
                 preprocessing_to_apply += [PreprocessingMissingValues.FILL_NA_MEDIAN]
             # convert to categorical only for categorical types
             convert_to_integer_will_be_applied = False
             if (
                 "convert_categorical" in required_preprocessing
-                and PreprocessingUtils.is_categorical(X[col])
+                and "categorical" in preprocessing_needed
             ):
                 preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
                 convert_to_integer_will_be_applied = True
@@ -56,13 +61,16 @@ class PreprocessingTuner:
                     preprocessing_to_apply += [Scale.SCALE_NORMAL]
                 # elif PreprocessingUtils.is_log_scale_needed(X[col]):
                 #    preprocessing_to_apply += [Scale.SCALE_LOG_AND_NORMAL]
-                elif PreprocessingUtils.is_scale_needed(X[col]):
+                elif "scale" in preprocessing_needed:
                     preprocessing_to_apply += [Scale.SCALE_NORMAL]
 
             # remeber which preprocessing we need to apply
             if preprocessing_to_apply:
                 columns_preprocessing[col] = preprocessing_to_apply
 
+        target_info = data_info["target_info"]
+        print("#"*50)
+        print(target_info)
         target_preprocessing = []
         # always remove missing values from target,
         # target with missing values might be in the train and in the validation datasets
@@ -70,7 +78,7 @@ class PreprocessingTuner:
 
         if "target_as_integer" in required_preprocessing:
             if machinelearning_task == BINARY_CLASSIFICATION:
-                if not PreprocessingUtils.is_0_1(y):
+                if "convert_0_1" in target_info:
                     target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
 
             if machinelearning_task == MULTICLASS_CLASSIFICATION:
@@ -88,21 +96,14 @@ class PreprocessingTuner:
             machinelearning_task == REGRESSION
             and "target_scale" in required_preprocessing
         ):
-            if PreprocessingUtils.is_log_scale_needed(y):
+            if "log_scale" in target_info:
                 target_preprocessing += [Scale.SCALE_LOG_AND_NORMAL]
-            elif PreprocessingUtils.is_scale_needed(y):
+            elif "scale" in target_info:
                 target_preprocessing += [Scale.SCALE_NORMAL]
 
-        """    
-        if machinelearning_task == BINARY_CLASSIFICATION:
-            if not PreprocessingUtils.is_0_1(y):
-                target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
+        print("target_preprocessing")
+        print(target_preprocessing)
 
-        if machinelearning_task == MULTICLASS_CLASSIFICATION:
-            if PreprocessingUtils.is_categorical(y):
-                target_preprocessing += [PreprocessingCategorical.CONVERT_INTEGER]
-
-        """
         return {
             "columns_preprocessing": columns_preprocessing,
             "target_preprocessing": target_preprocessing,

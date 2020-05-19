@@ -95,17 +95,13 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
     def load(self, model_file_path):
         logger.debug("CatBoostLearner load model from %s" % model_file_path)
-        '''
-        waiting for fix https://github.com/catboost/catboost/issues/696
+
+        # waiting for fix https://github.com/catboost/catboost/issues/696
         Algo = CatBoostClassifier
-        loss_function = "Logloss"
-        if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
-            loss_function = "MultiClass"
-        elif self.params["ml_task"] == REGRESSION:
-            loss_function = self.params.get("loss_function", "RMSE")
+        if self.params["ml_task"] == REGRESSION:
             Algo = CatBoostRegressor
-        '''
-        self.model = CatBoost().load_model(model_file_path)
+
+        self.model = Algo().load_model(model_file_path)
 
     def get_params(self):
         return {
@@ -136,6 +132,13 @@ classification_params = {
     "l2_leaf_reg": [1, 3, 5, 7, 10],
 }
 
+classification_default_params = {
+    "learning_rate": 0.1,
+    "depth": 6,
+    "rsm": 1.0,
+    "l2_leaf_reg": 1,
+}
+
 additional = {
     "trees_in_step": 10,
     "train_cant_improve_limit": 5,
@@ -153,6 +156,7 @@ AlgorithmsRegistry.add(
     classification_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 AlgorithmsRegistry.add(
@@ -161,6 +165,7 @@ AlgorithmsRegistry.add(
     classification_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 regression_params = copy.deepcopy(classification_params)
@@ -169,10 +174,19 @@ regression_params["loss_function"] = ["MAE", "RMSE"]
 regression_required_preprocessing = ["missing_values_inputation", "target_scale"]
 
 
+regression_default_params = {
+    "learning_rate": 0.1,
+    "depth": 6,
+    "rsm": 1.0,
+    "l2_leaf_reg": 1,
+    "loss_function": "RMSE",
+}
+
 AlgorithmsRegistry.add(
     REGRESSION,
     CatBoostAlgorithm,
     regression_params,
     regression_required_preprocessing,
     additional,
+    regression_default_params,
 )

@@ -42,6 +42,12 @@ class PreprocessingUtils(object):
         return 0 in u and 1 in u
 
     @staticmethod
+    def num_class(x_org):
+        x = x_org[~pd.isnull(x_org)]
+        u = np.unique(x)
+        return len(u)
+
+    @staticmethod
     def is_scale_needed(x_org):
         x = x_org[~pd.isnull(x_org)]
         abs_avg = np.abs(np.mean(x))

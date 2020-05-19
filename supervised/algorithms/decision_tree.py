@@ -154,6 +154,8 @@ class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 
 dt_params = {"criterion": ["gini", "entropy"], "max_depth": [1, 2, 3, 4]}
 
+classification_default_params = {"criterion": "gini", "max_depth": 3}
+
 additional = {
     "trees_in_step": 1,
     "train_cant_improve_limit": 0,
@@ -173,6 +175,7 @@ AlgorithmsRegistry.add(
     dt_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 AlgorithmsRegistry.add(
@@ -181,13 +184,19 @@ AlgorithmsRegistry.add(
     dt_params,
     required_preprocessing,
     additional,
+    classification_default_params,
 )
 
 dt_regression_params = {
-    "criterion": ["mse", "friedman_mse"], # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
+    "criterion": [
+        "mse",
+        "friedman_mse",
+    ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_depth": [1, 2, 3, 4],
 }
 regression_required_preprocessing = ["missing_values_inputation", "convert_categorical"]
+
+regression_default_params = {"criterion": "mse", "max_depth": 3}
 
 AlgorithmsRegistry.add(
     REGRESSION,
@@ -195,4 +204,5 @@ AlgorithmsRegistry.add(
     dt_regression_params,
     regression_required_preprocessing,
     additional,
+    regression_default_params,
 )

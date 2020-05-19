@@ -29,7 +29,7 @@ class BaseAlgorithm:
     # needed for feature importance
     def predict_proba(self, X):
         y = self.predict(X)
-        if "num_class" in self.params:
+        if "num_class" in self.params and self.params["num_class"] > 2:
             return y
         return np.column_stack((1 - y, y))
 

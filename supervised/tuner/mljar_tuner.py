@@ -21,7 +21,14 @@ logger.setLevel(LOG_LEVEL)
 
 class MljarTuner:
     def __init__(
-        self, tuner_params, algorithms, ml_task, validation, explain_level, seed
+        self,
+        tuner_params,
+        algorithms,
+        ml_task,
+        validation,
+        explain_level,
+        data_info,
+        seed,
     ):
         logger.debug("MljarTuner.__init__")
         self._start_random_models = tuner_params.get("start_random_models", 5)
@@ -31,22 +38,23 @@ class MljarTuner:
         self._ml_task = ml_task
         self._validation = validation
         self._explain_level = explain_level
+        self._data_info = data_info
         self._seed = seed
 
         self._unique_params_keys = []
 
-    def get_not_so_random_params(self, X, y):
+    def simple_algorithms_params(self):
         models_cnt = 0
         generated_params = []
-        for model_type in self._algorithms:
-            for i in range(self._start_random_models):
-                if i > 0 and model_type in ["Baseline", "Linear"]:
-                    break
-                if i > 2 and model_type == "Decision Tree":
-                    break
-
-                logger.info("Generate parameters for model #{0}".format(models_cnt + 1))
-                params = self._get_model_params(model_type, X, y, i + 1)
+        for model_type in ["Baseline", "Decision Tree", "Linear"]:
+            print(model_type, self._algorithms)
+            if model_type not in self._algorithms:
+                continue
+            models_to_check = 3 if model_type == "Decision Tree" else 1
+            print(model_type, models_to_check)
+            for i in range(models_to_check):
+                logger.info(f"Generate parameters for {model_type} (#{models_cnt + 1})")
+                params = self._get_model_params(model_type, seed=i + 1)
                 if params is None:
                     continue
                 params["name"] = f"model_{models_cnt + 1}"
@@ -56,6 +64,67 @@ class MljarTuner:
                     generated_params += [params]
                     self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
+        return generated_params
+
+    def default_params(self, models_cnt):
+
+        generated_params = []
+        for model_type in [
+            "Random Forest",
+            "Extra Trees",
+            "Xgboost",
+            "LightGBM",
+            "CatBoost",
+        ]:
+            if model_type not in self._algorithms:
+                continue
+            logger.info(f"Get default parameters for {model_type} (#{models_cnt + 1})")
+            params = self._get_model_params(
+                model_type, seed=models_cnt + 1, params_type="default"
+            )
+            if params is None:
+                continue
+            params["name"] = f"model_{models_cnt + 1}"
+
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key not in self._unique_params_keys:
+                generated_params += [params]
+                self._unique_params_keys += [unique_params_key]
+                models_cnt += 1
+        return generated_params
+
+    def get_not_so_random_params(self, models_cnt):
+
+        generated_params = []
+
+        for model_type in [
+            "Random Forest",
+            "Extra Trees",
+            "Xgboost",
+            "LightGBM",
+            "CatBoost",
+        ]:
+            if model_type not in self._algorithms:
+                continue
+            # minus 1 because already have 1 default
+            for i in range(self._start_random_models - 1):
+
+                logger.info(
+                    f"Generate not-so-random parameters for {model_type} (#{models_cnt+1})"
+                )
+                params = self._get_model_params(model_type, seed=i + 1)
+                if params is None:
+                    continue
+                params["name"] = f"model_{models_cnt + 1}"
+
+                unique_params_key = MljarTuner.get_params_key(params)
+                if unique_params_key not in self._unique_params_keys:
+                    generated_params += [params]
+                    self._unique_params_keys += [unique_params_key]
+                    models_cnt += 1
+
+        # shuffle params
+        np.random.shuffle(generated_params)
         return generated_params
 
     def get_hill_climbing_params(self, current_models):
@@ -110,14 +179,28 @@ class MljarTuner:
                                 self._unique_params_keys += [unique_params_key]
                                 yield all_params
 
-    def _get_model_params(self, model_type, X, y, seed):
+    def _get_model_params(self, model_type, seed, params_type="random"):
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
-        model_params = RandomParameters.get(model_info["params"], seed + self._seed)
+
+        model_params = None
+        if params_type == "default":
+
+            model_params = model_info["default_params"]
+            model_params["seed"] = seed
+
+        else:
+            model_params = RandomParameters.get(model_info["params"], seed + self._seed)
+        if model_params is None:
+            return None
+
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
+        print("---------------------->TUNER")
         preprocessing_params = PreprocessingTuner.get(
-            required_preprocessing, {"train": {"X": X, "y": y}}, self._ml_task
+            required_preprocessing, self._data_info, self._ml_task
         )
+        print("preprocessing params")
+        print(preprocessing_params)
 
         model_params = {
             "additional": model_additional,
@@ -129,13 +212,9 @@ class MljarTuner:
                 **model_params,
             },
         }
-        num_class = (
-            len(np.unique(y[~pd.isnull(y)]))
-            if self._ml_task == MULTICLASS_CLASSIFICATION
-            else None
-        )
-        if num_class is not None:
-            model_params["learner"]["num_class"] = num_class
+
+        if self._data_info.get("num_class") is not None:
+            model_params["learner"]["num_class"] = self._data_info.get("num_class")
 
         model_params["ml_task"] = self._ml_task
         model_params["explain_level"] = self._explain_level

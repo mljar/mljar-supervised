@@ -162,10 +162,15 @@ required_preprocessing = [
 ]
 
 AlgorithmsRegistry.add(
-    BINARY_CLASSIFICATION, LinearAlgorithm, {}, required_preprocessing, additional
+    BINARY_CLASSIFICATION, LinearAlgorithm, {}, required_preprocessing, additional, {}
 )
 AlgorithmsRegistry.add(
-    MULTICLASS_CLASSIFICATION, LinearAlgorithm, {}, required_preprocessing, additional
+    MULTICLASS_CLASSIFICATION,
+    LinearAlgorithm,
+    {},
+    required_preprocessing,
+    additional,
+    {},
 )
 
 regression_required_preprocessing = [
@@ -181,4 +186,5 @@ AlgorithmsRegistry.add(
     {},
     regression_required_preprocessing,
     additional,
+    {},
 )

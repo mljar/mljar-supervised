@@ -129,6 +129,16 @@ xgb_bin_class_params = {
     "colsample_bytree": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 }
 
+classification_bin_default_params = {
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "eta": 0.1,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "subsample": 1.0,
+    "colsample_bytree": 1.0,
+}
+
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["objective"] = ["reg:squarederror"]
 xgb_regression_params["eval_metric"] = ["rmse", "rmsle", "mae"]
@@ -139,6 +149,26 @@ xgb_multi_class_params = dict(xgb_bin_class_params)
 xgb_multi_class_params["objective"] = ["multi:softprob"]
 xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 
+classification_multi_default_params = {
+    "objective": "multi:softprob",
+    "eval_metric": "mlogloss",
+    "eta": 0.1,
+    "max_depth": 6,
+    "min_child_weight": 1,
+    "subsample": 1.0,
+    "colsample_bytree": 1.0,
+}
+
+
+regression_default_params = {
+    "objective": "reg:squarederror",
+    "eval_metric": "rmse",
+    "eta": 0.1,
+    "max_depth": 4,
+    "min_child_weight": 1,
+    "subsample": 1.0,
+    "colsample_bytree": 1.0,
+}
 
 additional = {
     "trees_in_step": 10,
@@ -160,6 +190,7 @@ AlgorithmsRegistry.add(
     xgb_bin_class_params,
     required_preprocessing,
     additional,
+    classification_bin_default_params,
 )
 
 AlgorithmsRegistry.add(
@@ -168,6 +199,7 @@ AlgorithmsRegistry.add(
     xgb_multi_class_params,
     required_preprocessing,
     additional,
+    classification_multi_default_params,
 )
 
 regression_required_preprocessing = [
@@ -183,4 +215,5 @@ AlgorithmsRegistry.add(
     xgb_regression_params,
     regression_required_preprocessing,
     additional,
+    regression_default_params,
 )

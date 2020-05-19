@@ -11,9 +11,11 @@ X = df[df.columns[:-1]]
 y = df["income"]
 
 automl = AutoML(
-    algorithms=["Linear", "Xgboost", "LightGBM", "Extra Trees"], model_time_limit=1
+    algorithms=["Xgboost"], # ["Linear", "Xgboost", "LightGBM", "Extra Trees"], 
+    total_time_limit=600,
+    explain_level=0
 )
-automl.set_advanced(start_random_models=1)
+#automl.set_advanced(start_random_models=3)
 
 automl.fit(X, y)
 predictions = automl.predict(X)

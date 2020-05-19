@@ -48,13 +48,13 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         a.fit(X, y)
 
         result_files = os.listdir(os.path.join(self.automl_dir, "model_1"))
-        
+
         # There should be files with:
         # - permutation importance
         # - shap importance
         # - shap dependence
         # - shap decisions
-        
+
         # Check permutation importance
         produced = False
         for f in result_files:
@@ -84,8 +84,6 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 break
         self.assertTrue(produced)
 
-        
-
     def test_no_explain_linear(self):
         a = AutoML(
             results_path=self.automl_dir,
@@ -98,7 +96,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "shuffle": True,
                 "stratify": True,
             },
-            explain_level = 0
+            explain_level=0,
         )
         a.set_advanced(start_random_models=1)
 
@@ -110,13 +108,13 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         a.fit(X, y)
 
         result_files = os.listdir(os.path.join(self.automl_dir, "model_1"))
-        
+
         # There should be no files with:
         # - permutation importance
         # - shap importance
         # - shap dependence
         # - shap decisions
-        
+
         # Check permutation importance
         produced = False
         for f in result_files:
@@ -153,7 +151,6 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 break
         self.assertFalse(produced)
 
-    
     def test_explain_just_permutation_importance(self):
         a = AutoML(
             results_path=self.automl_dir,
@@ -166,7 +163,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "shuffle": True,
                 "stratify": True,
             },
-            explain_level = 1
+            explain_level=1,
         )
         a.set_advanced(start_random_models=1)
 
@@ -178,13 +175,13 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         a.fit(X, y)
 
         result_files = os.listdir(os.path.join(self.automl_dir, "model_1"))
-        
+
         # There should be no files with:
         # - permutation importance
         # - shap importance
         # - shap dependence
         # - shap decisions
-        
+
         # Check permutation importance
         produced = False
         for f in result_files:
