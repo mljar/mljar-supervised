@@ -213,14 +213,10 @@ class Ensemble:
             repeat = selected["repeat"]
             total_repeat += repeat
 
-            print("ensemble is_stacked", model._is_stacked)
             if model._is_stacked:
                 y_predicted_from_model = model.predict(X_stacked)
             else:
                 y_predicted_from_model = model.predict(X)
-
-            print("from model")
-            print(y_predicted_from_model.head())
 
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:

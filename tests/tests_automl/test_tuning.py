@@ -19,7 +19,7 @@ class AutoMLTuningTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.automl_dir)
 
-    def test_bin_class_01(self):
+    def test_tune_only_default(self):
         X = np.random.rand(self.rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
         y = np.random.randint(0, 2, self.rows)
@@ -30,5 +30,6 @@ class AutoMLTuningTest(unittest.TestCase):
             tuning_mode="Insane",
             algorithms=["Xgboost"],
         )
-        automl._estimate_training_times()
-        self.assertEqual(automl._start_random_models, 15)
+
+        automl.fit(X, y)
+        self.assertEqual(len(automl._models), 1)

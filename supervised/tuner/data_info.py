@@ -41,8 +41,6 @@ class DataInfo:
                     columns_info[col] += ["scale"]
 
         target_info = []
-        print("machinelearning_task")
-        print(machinelearning_task)
         if machinelearning_task == BINARY_CLASSIFICATION:
             if not PreprocessingUtils.is_0_1(y):
                 target_info += ["convert_0_1"]
@@ -56,9 +54,6 @@ class DataInfo:
         num_class = None
         if machinelearning_task == MULTICLASS_CLASSIFICATION:
             num_class = PreprocessingUtils.num_class(y)
-
-        print("target_info")
-        print(target_info)
 
         return {
             "columns_info": columns_info,

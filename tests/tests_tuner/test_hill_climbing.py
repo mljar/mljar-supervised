@@ -56,6 +56,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             ml_task="binary_classification",
             validation={},
             explain_level=2,
+            data_info={"columns_info": [], "target_info": []},
             seed=12,
         )
         ind = 121

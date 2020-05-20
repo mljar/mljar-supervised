@@ -47,11 +47,9 @@ class MljarTuner:
         models_cnt = 0
         generated_params = []
         for model_type in ["Baseline", "Decision Tree", "Linear"]:
-            print(model_type, self._algorithms)
             if model_type not in self._algorithms:
                 continue
             models_to_check = 3 if model_type == "Decision Tree" else 1
-            print(model_type, models_to_check)
             for i in range(models_to_check):
                 logger.info(f"Generate parameters for {model_type} (#{models_cnt + 1})")
                 params = self._get_model_params(model_type, seed=i + 1)
@@ -195,13 +193,10 @@ class MljarTuner:
 
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
-        print("---------------------->TUNER")
         preprocessing_params = PreprocessingTuner.get(
             required_preprocessing, self._data_info, self._ml_task
         )
-        print("preprocessing params")
-        print(preprocessing_params)
-
+        
         model_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,

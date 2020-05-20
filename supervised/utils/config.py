@@ -1,6 +1,6 @@
 import logging
 
-LOG_LEVEL = logging.DEBUG  # ERROR
+LOG_LEVEL = logging.ERROR
 
 import numpy as np
 

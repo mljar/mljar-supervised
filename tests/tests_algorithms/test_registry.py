@@ -18,6 +18,7 @@ class AlgorithmsRegistryTest(unittest.TestCase):
             "model_params": {},
             "required_preprocessing": {},
             "additional": {},
+            "default_params": {}
         }
         AlgorithmsRegistry.add(**model1)
 

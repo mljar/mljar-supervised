@@ -27,11 +27,6 @@ class PreprocessingTuner:
         for col, preprocessing_needed in columns_info.items():
             preprocessing_to_apply = []
 
-            print("required_preprocessing")
-            print(required_preprocessing)
-            print("preprocessing_needed")
-            print(preprocessing_needed)
-
             # remove empty columns and columns with only one variable
             if (
                 "empty_column" in preprocessing_needed
@@ -69,8 +64,6 @@ class PreprocessingTuner:
                 columns_preprocessing[col] = preprocessing_to_apply
 
         target_info = data_info["target_info"]
-        print("#"*50)
-        print(target_info)
         target_preprocessing = []
         # always remove missing values from target,
         # target with missing values might be in the train and in the validation datasets
@@ -100,9 +93,6 @@ class PreprocessingTuner:
                 target_preprocessing += [Scale.SCALE_LOG_AND_NORMAL]
             elif "scale" in target_info:
                 target_preprocessing += [Scale.SCALE_NORMAL]
-
-        print("target_preprocessing")
-        print(target_preprocessing)
 
         return {
             "columns_preprocessing": columns_preprocessing,
