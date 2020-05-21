@@ -118,6 +118,7 @@ class ModelFramework:
                     validation_data["y"].shape,
                 )
             )
+            
             # the proprocessing is done at every validation step
             self.preprocessings += [Preprocessing(self.preprocessing_params)]
 
@@ -210,7 +211,8 @@ class ModelFramework:
     """
 
     def get_type(self):
-        return self.learner_params.get("model_type")
+        prefix = "" #"Stacked" if self._is_stacked else ""
+        return prefix + self.learner_params.get("model_type")
 
     def get_name(self):
         return self._name

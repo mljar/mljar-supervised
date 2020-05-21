@@ -35,7 +35,6 @@ class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
             criterion=params.get("criterion", "gini"),
             max_features=params.get("max_features", 0.8),
             min_samples_split=params.get("min_samples_split", 4),
-            min_samples_leaf=params.get("min_samples_leaf", 4),
             warm_start=True,
             n_jobs=-1,
             random_state=params.get("seed", 1),
@@ -62,7 +61,6 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
             criterion=params.get("criterion", "mse"),
             max_features=params.get("max_features", 0.8),
             min_samples_split=params.get("min_samples_split", 4),
-            min_samples_leaf=params.get("min_samples_leaf", 4),
             warm_start=True,
             n_jobs=-1,
             random_state=params.get("seed", 1),
@@ -75,16 +73,14 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 et_params = {
     "criterion": ["gini", "entropy"],
-    "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
-    "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
-    "min_samples_leaf": range(1, 21),
+    "max_features": [ 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "min_samples_split": [2, 6, 10, 20, 30, 40, 50],
 }
 
 classification_default_params = {
     "criterion": "gini",
-    "max_features": 1.0,
+    "max_features": "auto",
     "min_samples_split": 2,
-    "min_samples_leaf": 3,
 }
 
 additional = {
@@ -128,16 +124,14 @@ regression_et_params = {
     "criterion": [
         "mse"
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
-    "max_features": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
-    "min_samples_split": [2, 4, 6, 8, 10, 15, 20, 30, 40, 50],
-    "min_samples_leaf": range(1, 21),
+    "max_features": [ 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "min_samples_split": [2, 6, 10, 20, 30, 40, 50]
 }
 
 regression_default_params = {
     "criterion": "mse",
-    "max_features": 1.0,
+    "max_features": "auto",
     "min_samples_split": 2,
-    "min_samples_leaf": 3,
 }
 
 regression_additional = {

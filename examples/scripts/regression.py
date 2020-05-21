@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from supervised.automl import AutoML
 
@@ -8,18 +9,19 @@ X = df[x_cols]
 y = df["MEDV"]
 
 automl = AutoML(
-    model_time_limit=1,
-    algorithms=[
-        "Xgboost",
+    results_path="AutoML_14",
+    total_time_limit=600,
+    #algorithms=["Baseline"],
+    #    "Xgboost",
         # "Xgboost", "Decision Tree",
         # "Random Forest",
         # "CatBoost",
         # "LightGBM", "Extra Trees"
-    ],
+    #],
+    explain_level=0
 )
 automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
-
 
 df["predictions"] = automl.predict(X)
 print("Predictions")

@@ -578,13 +578,23 @@ class AutoML:
             return X
         all_oofs = []
         for m in self._stacked_models:
-            oof = m.get_out_of_folds() if mode == "training" else m.predict(X)
+            oof = None 
+            if mode == "training":
+                oof = m.get_out_of_folds()
+            else:
+                oof = m.predict(X)
+                if self._ml_task == BINARY_CLASSIFICATION:
+                    cols = [f for f in oof.columns if "prediction" in f]
+                    if len(cols) == 2:
+                        oof = pd.DataFrame({"prediction":oof[cols[1]]})
+            
             cols = [f for f in oof.columns if "prediction" in f]
             oof = oof[cols]
             oof.columns = [f"{m.get_name()}_{c}" for c in cols]
             all_oofs += [oof]
 
         X_stacked = pd.concat(all_oofs + [X], axis=1)
+        
         return X_stacked
 
     def stack_models(self):
@@ -598,6 +608,7 @@ class AutoML:
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 3
+
         for model_type in np.unique(ldb.model_type):
             ds = ldb[ldb.model_type == model_type]
             ds.sort_values(by="metric_value", inplace=True)
@@ -611,6 +622,16 @@ class AutoML:
 
         
     def stacked_ensemble_step(self):
+        # do we have enough models?
+        if len(self._models) < 5:
+            return
+        # do we have time
+        if self._total_time_limit is not None:
+            time_left = self._total_time_limit - (time.time() - self._start_time)
+            # we need at least 60 seconds to do anything
+            if time_left < 60:
+                return
+
         # read X directly from parquet
         X = pd.read_parquet(self._X_train_path)
 
@@ -903,24 +924,26 @@ class AutoML:
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
 
-            # 6. Stack best models
-            self._fit_level = "stack"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            self.stacked_ensemble_step()
-            self._time_spend["stack"] = np.round(time.time() - start, 2)
-
-            # 7. Ensemble all models (original and stacked)
-            any_stacked = False
-            for m in self._models:
-                if m._is_stacked:
-                    any_stacked = True
-                    break
-            if any_stacked:
-                self._fit_level = "ensemble_all"
+            
+            if self._stack:
+                # 6. Stack best models
+                self._fit_level = "stack"
                 start = time.time()
-                self.ensemble_step(is_stacked=True)
-                self._time_spend["ensemble_all"] = np.round(time.time() - start, 2)
+                self._time_start[self._fit_level] = start
+                self.stacked_ensemble_step()
+                self._time_spend["stack"] = np.round(time.time() - start, 2)
+
+                # 7. Ensemble all models (original and stacked)
+                any_stacked = False
+                for m in self._models:
+                    if m._is_stacked:
+                        any_stacked = True
+                        break
+                if any_stacked:
+                    self._fit_level = "ensemble_all"
+                    start = time.time()
+                    self.ensemble_step(is_stacked=True)
+                    self._time_spend["ensemble_all"] = np.round(time.time() - start, 2)
 
             self._fit_time = time.time() - self._start_time
 

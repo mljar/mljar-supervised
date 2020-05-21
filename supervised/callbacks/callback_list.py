@@ -28,7 +28,6 @@ class CallbackList(object):
 
     def get(self, callback_name):
         for cb in self.callbacks:
-            print(cb.name, callback_name, (cb.name == callback_name))
             if cb.name == callback_name:
                 return cb
         return None

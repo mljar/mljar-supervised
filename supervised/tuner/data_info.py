@@ -40,6 +40,7 @@ class DataInfo:
                 if PreprocessingUtils.is_scale_needed(X[col]):
                     columns_info[col] += ["scale"]
 
+
         target_info = []
         if machinelearning_task == BINARY_CLASSIFICATION:
             if not PreprocessingUtils.is_0_1(y):
