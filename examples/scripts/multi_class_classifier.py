@@ -14,13 +14,15 @@ X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
 y = df["class"]
 
 automl = AutoML(
-    # results_path="AutoML_100",
-    #algorithms=[
+    #results_path="AutoML_22",
+    algorithms=["Neural Network"],
+    #algorithms=["Random Forest"],
+    
     #    "Linear",
     #    "Xgboost",
     #    "Random Forest"
     #],
-    total_time_limit=100,
+    model_time_limit=10,
     tuning_mode="Normal",
     explain_level=0
 )

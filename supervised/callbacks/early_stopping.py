@@ -103,7 +103,7 @@ class EarlyStopping(Callback):
                 self.multiple_target = False
                 self.target_columns = "target"
             else:
-                # in case of Neural Networks and multi-class classification
+                # in case of Neural Networks and multi-class classification with one-hot encoding
                 self.best_y_predicted[self.learner.uid] = pd.DataFrame(
                     y_validation_true, index=predictions.get("validation_index")
                 )

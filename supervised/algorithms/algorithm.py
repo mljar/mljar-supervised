@@ -19,6 +19,7 @@ class BaseAlgorithm:
         self.library_version = None
         self.model = None
         self.uid = params.get("uid", str(uuid.uuid4()))
+        self.ml_task = params.get("ml_task")
 
     def fit(self, X, y):
         pass

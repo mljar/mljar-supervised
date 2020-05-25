@@ -73,7 +73,7 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 et_params = {
     "criterion": ["gini", "entropy"],
-    "max_features": [ 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     "min_samples_split": [2, 6, 10, 20, 30, 40, 50],
 }
 
@@ -124,8 +124,8 @@ regression_et_params = {
     "criterion": [
         "mse"
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
-    "max_features": [ 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "min_samples_split": [2, 6, 10, 20, 30, 40, 50]
+    "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "min_samples_split": [2, 6, 10, 20, 30, 40, 50],
 }
 
 regression_default_params = {

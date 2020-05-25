@@ -61,7 +61,7 @@ class Ensemble:
         return self.best_loss
 
     def get_type(self):
-        prefix = "" # "Stacked" if self._is_stacked else ""
+        prefix = ""  # "Stacked" if self._is_stacked else ""
         return prefix + self.algorithm_short_name
 
     def get_name(self):

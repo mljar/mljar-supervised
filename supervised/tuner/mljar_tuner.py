@@ -73,6 +73,7 @@ class MljarTuner:
             "Xgboost",
             "LightGBM",
             "CatBoost",
+            "Neural Network",
         ]:
             if model_type not in self._algorithms:
                 continue
@@ -101,6 +102,7 @@ class MljarTuner:
             "Xgboost",
             "LightGBM",
             "CatBoost",
+            "Neural Network",
         ]:
             if model_type not in self._algorithms:
                 continue
@@ -196,7 +198,7 @@ class MljarTuner:
         preprocessing_params = PreprocessingTuner.get(
             required_preprocessing, self._data_info, self._ml_task
         )
-        
+
         model_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,

@@ -71,7 +71,6 @@ class ModelFramework:
     def predictions(
         self, learner, preproces, X_train, y_train, X_validation, y_validation
     ):
-
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
@@ -118,7 +117,7 @@ class ModelFramework:
                     validation_data["y"].shape,
                 )
             )
-            
+
             # the proprocessing is done at every validation step
             self.preprocessings += [Preprocessing(self.preprocessing_params)]
 
@@ -191,6 +190,21 @@ class ModelFramework:
         if early_stopping is None:
             return None
         self.oof_predictions = early_stopping.best_y_oof
+
+        ###############################################################
+        # in case of Neural Network and one-hot coded multiclass target
+        target_cols = [
+            c for c in self.oof_predictions.columns.tolist() if "target" in c
+        ]
+        if len(target_cols) > 1:
+            target = self.oof_predictions[target_cols[0]]
+            target.name = "target"
+            for i, t in enumerate(target_cols):
+                target[self.oof_predictions[t] == 1] = i
+            self.oof_predictions.drop(target_cols, axis=1, inplace=True)
+
+            self.oof_predictions.insert(0, "target", np.array(target))
+
         return early_stopping.best_y_oof
 
     def get_final_loss(self):
@@ -211,7 +225,7 @@ class ModelFramework:
     """
 
     def get_type(self):
-        prefix = "" #"Stacked" if self._is_stacked else ""
+        prefix = ""  # "Stacked" if self._is_stacked else ""
         return prefix + self.learner_params.get("model_type")
 
     def get_name(self):

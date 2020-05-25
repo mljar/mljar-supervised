@@ -146,7 +146,7 @@ class Preprocessing(object):
             self._categorical += [convert]
 
         # SCALE
-        for scale_method in [Scale.SCALE_NORMAL]:
+        for scale_method in [Scale.SCALE_NORMAL, Scale.SCALE_LOG_AND_NORMAL]:
             cols_to_process = list(
                 filter(
                     lambda k: scale_method in columns_preprocessing[k],
@@ -310,7 +310,7 @@ class Preprocessing(object):
                 )
             else:
                 # multiclass classification
-                # logger.debug(self._categorical_y.to_json())
+
                 if "unique_values" not in self._categorical_y.to_json():
                     labels = dict(
                         (v, k) for k, v in self._categorical_y.to_json().items()
@@ -378,6 +378,7 @@ class Preprocessing(object):
         return preprocessing_params
 
     def from_json(self, data_json):
+
         if "remove_columns" in data_json:
             self._remove_columns = data_json.get("remove_columns", [])
         if "missing_values" in data_json:
@@ -399,7 +400,11 @@ class Preprocessing(object):
                 sc.from_json(scale_data)
                 self._scale += [sc]
         if "categorical_y" in data_json:
-            self._categorical_y = LabelEncoder()
+            if "new_columns" in data_json["categorical_y"]:
+                self._categorical_y = LabelBinarizer()
+            else:
+                self._categorical_y = LabelEncoder()
+
             self._categorical_y.from_json(data_json["categorical_y"])
         if "scale_y" in data_json:
             self._scale_y = Scale()

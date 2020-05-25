@@ -60,8 +60,9 @@ class AutoML:
             "LightGBM",
             "Xgboost",
             "CatBoost",
+            "Neural Network"
         ],
-        tuning_mode="Sport",
+        tuning_mode="Normal",
         train_ensemble=True,
         stack=True,
         optimize_metric=None,
@@ -176,7 +177,7 @@ class AutoML:
         self._results_path = results_path
         self._fit_level = None
         self._time_spend = {}
-        self._start_time = time.time() # it will be updated in `fit` method
+        self._start_time = time.time()  # it will be updated in `fit` method
 
         # this should be last in the constrcutor
         # in case there is a dir, it might load models
@@ -284,7 +285,7 @@ class AutoML:
                 self._stacked_models = []
                 for stacked_model_name in stacked_models:
                     self._stacked_models += [models_map[stacked_model_name]]
-            
+
             best_model_name = None
             with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
@@ -328,9 +329,10 @@ class AutoML:
 
     def _get_learner_time_limit(self, model_type):
 
-        logger.debug(f"Fit level: {self._fit_level}, model type: {model_type}. " +\
-                        f"Time spend: {json.dumps(self._time_spend, indent=4)}")
-        
+        logger.debug(
+            f"Fit level: {self._fit_level}, model type: {model_type}. "
+            + f"Time spend: {json.dumps(self._time_spend, indent=4)}"
+        )
 
         if self._model_time_limit is not None:
             k = self._validation.get("k_folds", 1.0)
@@ -478,7 +480,6 @@ class AutoML:
 
         # check the fit level type
         # we dont want to spend too much time on one level
-        
 
         if self._fit_level == "not_so_random":
 
@@ -491,7 +492,7 @@ class AutoML:
                 time_should_use *= 0.6  # leave time for stacking
             if self._hill_climbing_steps > 0:
                 time_should_use /= 2.0  # leave time for hill-climbing
-        
+
             if (
                 total_time_spend
                 > time_should_use
@@ -578,7 +579,7 @@ class AutoML:
             return X
         all_oofs = []
         for m in self._stacked_models:
-            oof = None 
+            oof = None
             if mode == "training":
                 oof = m.get_out_of_folds()
             else:
@@ -586,25 +587,25 @@ class AutoML:
                 if self._ml_task == BINARY_CLASSIFICATION:
                     cols = [f for f in oof.columns if "prediction" in f]
                     if len(cols) == 2:
-                        oof = pd.DataFrame({"prediction":oof[cols[1]]})
-            
+                        oof = pd.DataFrame({"prediction": oof[cols[1]]})
+
             cols = [f for f in oof.columns if "prediction" in f]
             oof = oof[cols]
             oof.columns = [f"{m.get_name()}_{c}" for c in cols]
             all_oofs += [oof]
 
         X_stacked = pd.concat(all_oofs + [X], axis=1)
-        
+
         return X_stacked
 
     def stack_models(self):
-        
+
         if self._stacked_models is not None:
             return
 
         ldb = self.get_leaderboard()
         ldb = ldb.sort_values(by="metric_value", ascending=True)
-        
+
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 3
@@ -620,7 +621,6 @@ class AutoML:
             self._stacked_models[i] for i in np.argsort(scores).tolist()
         ]
 
-        
     def stacked_ensemble_step(self):
         # do we have enough models?
         if len(self._models) < 5:
@@ -637,7 +637,10 @@ class AutoML:
 
         self.stack_models()
 
+        org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
+        new_columns = X_stacked.columns.tolist()
+        added_columns = [c for c in new_columns if c not in org_columns]
 
         # save stacked data
         X_train_stacked_path = os.path.join(
@@ -645,7 +648,6 @@ class AutoML:
         )
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
-        
         for m in self._stacked_models:
             if m.get_type() in ["Ensemble", "Baseline"]:
                 continue
@@ -654,6 +656,22 @@ class AutoML:
             params["validation"]["X_train_path"] = X_train_stacked_path
             params["name"] = "stacked_" + params["name"]
             params["is_stacked"] = True
+
+            if "model_architecture_json" in params["learner"]:
+                # the new model will be created with wider input size
+                del params["learner"]["model_architecture_json"]
+
+            if self._ml_task == REGRESSION:
+                # scale added predictions in regression if the target was scaled (in the case of NN)
+                target_preprocessing = params["preprocessing"]["target_preprocessing"]
+                scale = None
+                if "scale_log_and_normal" in target_preprocessing:
+                    scale = "scale_log_and_normal"
+                elif "scale_normal" in target_preprocessing:
+                    scale = "scale_normal"
+                if scale is not None:
+                    for col in added_columns:
+                        params["preprocessing"]["columns_preprocessing"][col] = [scale]
 
             self.train_model(params)
 
@@ -846,10 +864,11 @@ class AutoML:
         try:
 
             if self._best_model is not None:
-                print("Best model is already set, no need to run fit. Skipping ...")
-                return
+               print("Best model is already set, no need to run fit. Skipping ...")
+               return
 
             self._start_time = time.time()
+
             if not isinstance(X_train, pd.DataFrame):
                 raise AutoMLException(
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
@@ -923,7 +942,6 @@ class AutoML:
             self._time_start[self._fit_level] = start
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
-
             
             if self._stack:
                 # 6. Stack best models
@@ -982,7 +1000,7 @@ class AutoML:
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
         ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
-        
+
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))

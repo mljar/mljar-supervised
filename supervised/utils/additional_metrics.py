@@ -126,15 +126,27 @@ class AdditionalMetrics:
 
     @staticmethod
     def multiclass_classification(target, predictions):
-
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
         ll = logloss(target, predictions[predictions.columns[:-1]])
 
-        labels = {i: l for i, l in enumerate(all_labels)}
-        predictions = predictions["label"]
-        target = target["target"].map(labels)
+        if "target" in target.columns.tolist():
+            # multiclass coding with integer
+            labels = {i: l for i, l in enumerate(all_labels)}
+            target = target["target"].map(labels)
+        else:
+            # multiclass coding with one-hot encoding
+            old_columns = target.columns
+            print(old_columns)
+            t = target[old_columns[0]]
+            for l in all_labels:
+                t[target[f"target_{l}"] == 1] = l
+                print(l, t)
+
+            target = pd.DataFrame({"target": t})
+
         # Print the confusion matrix
+        predictions = predictions["label"]
         conf_matrix = confusion_matrix(target, predictions, labels=all_labels)
 
         rows = [f"Predicted as {a}" for a in all_labels]

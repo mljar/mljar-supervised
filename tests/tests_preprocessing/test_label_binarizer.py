@@ -169,6 +169,28 @@ class LabelBinarizerTest(unittest.TestCase):
         # do not touch continuous attribute
         self.assertTrue("col3" in df_test.columns)
 
+    def test_inverse_transform(self):
+        d = {"col1": ["a", "a", "c"], "col2": ["w", "e", "d"]}
+        df = pd.DataFrame(data=d)
+        lb = LabelBinarizer()
+        # check first column
+        lb.fit(df, "col1")
+        bb = lb.transform(df, "col1")
+        self.assertTrue("col1_c" in bb.columns)
+        self.assertTrue(np.sum(bb["col1_c"]) == 1)
+        bb = lb.inverse_transform(bb)
+        self.assertTrue("col1_c" not in bb.columns)
+        # check second column
+        lb = LabelBinarizer()
+        lb.fit(df, "col2")
+        bb = lb.transform(df, "col2")
+        self.assertTrue("col2_w" in bb.columns)
+        self.assertTrue("col2_e" in bb.columns)
+        self.assertTrue("col2_d" in bb.columns)
+        self.assertTrue(np.sum(bb["col2_w"]) == 1)
+        bb = lb.inverse_transform(bb)
+        self.assertTrue("col2_w" not in bb.columns)
+        
 
 if __name__ == "__main__":
     unittest.main()

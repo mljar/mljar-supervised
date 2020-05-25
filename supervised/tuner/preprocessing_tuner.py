@@ -89,7 +89,7 @@ class PreprocessingTuner:
             machinelearning_task == REGRESSION
             and "target_scale" in required_preprocessing
         ):
-            if "log_scale" in target_info:
+            if "scale_log" in target_info:
                 target_preprocessing += [Scale.SCALE_LOG_AND_NORMAL]
             elif "scale" in target_info:
                 target_preprocessing += [Scale.SCALE_NORMAL]
