@@ -214,10 +214,6 @@ class Ensemble:
             repeat = selected["repeat"]
             total_repeat += repeat
 
-            print(f"ensemble stacked {self._is_stacked} {X.shape}")
-            if X_stacked is not None:
-                print(f"{X_stacked.shape}")
-            print(f"{model.get_name()} {model._is_stacked}")
             if model._is_stacked:
                 y_predicted_from_model = model.predict(X_stacked)
             else:
