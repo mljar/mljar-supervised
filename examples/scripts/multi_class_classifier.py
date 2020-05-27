@@ -15,7 +15,7 @@ y = df["class"]
 
 automl = AutoML(
     #results_path="AutoML_22",
-    algorithms=["Neural Network"],
+    algorithms=["Nearest Neighbors"],
     #algorithms=["Random Forest"],
     
     #    "Linear",

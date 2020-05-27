@@ -60,7 +60,8 @@ class AutoML:
             "LightGBM",
             "Xgboost",
             "CatBoost",
-            "Neural Network"
+            "Neural Network",
+            "Nearest Neighbors",
         ],
         tuning_mode="Normal",
         train_ensemble=True,
@@ -68,7 +69,7 @@ class AutoML:
         optimize_metric=None,
         validation={
             "validation_type": "kfold",
-            "k_folds": 5,
+            "k_folds": 10,
             "shuffle": True,
             "stratify": True,
         },
@@ -346,7 +347,7 @@ class AutoML:
         tune_algorithms = [
             a
             for a in self._algorithms
-            if a not in ["Baseline", "Linear", "Decision Tree"]
+            if a not in ["Baseline", "Linear", "Decision Tree", "Nearest Neighbors"]
         ]
         tune_algs_cnt = len(tune_algorithms)
         if tune_algs_cnt == 0:
@@ -536,7 +537,7 @@ class AutoML:
         )
 
         algo_cnt = float(len(self._algorithms))
-        for a in ["Baseline", "Decision Tree", "Linear"]:
+        for a in ["Baseline", "Decision Tree", "Linear", "Nearest Neighbors"]:
             if a in self._algorithms:
                 algo_cnt -= 1.0
         if algo_cnt < 1.0:
@@ -649,7 +650,12 @@ class AutoML:
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
         for m in self._stacked_models:
-            if m.get_type() in ["Ensemble", "Baseline"]:
+            if m.get_type() in [
+                "Ensemble",
+                "Baseline",
+                "Decision Tree",
+                "Nearest Neighbors",
+            ]:
                 continue
 
             params = copy.deepcopy(m.params)
@@ -864,8 +870,8 @@ class AutoML:
         try:
 
             if self._best_model is not None:
-               print("Best model is already set, no need to run fit. Skipping ...")
-               return
+                print("Best model is already set, no need to run fit. Skipping ...")
+                return
 
             self._start_time = time.time()
 
@@ -903,6 +909,7 @@ class AutoML:
 
             self._time_spend = {}
             self._time_start = {}
+            
             # 1. Check simple algorithms
             self._fit_level = "simple_algorithms"
             start = time.time()

@@ -74,6 +74,7 @@ class MljarTuner:
             "LightGBM",
             "CatBoost",
             "Neural Network",
+            "Nearest Neighbors",
         ]:
             if model_type not in self._algorithms:
                 continue
@@ -97,12 +98,13 @@ class MljarTuner:
         generated_params = []
 
         for model_type in [
-            "Random Forest",
-            "Extra Trees",
             "Xgboost",
             "LightGBM",
             "CatBoost",
+            "Random Forest",
+            "Extra Trees",
             "Neural Network",
+            "Nearest Neighbor"
         ]:
             if model_type not in self._algorithms:
                 continue
@@ -123,8 +125,8 @@ class MljarTuner:
                     self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
 
-        # shuffle params
-        np.random.shuffle(generated_params)
+        # shuffle params - switch off
+        #np.random.shuffle(generated_params)
         return generated_params
 
     def get_hill_climbing_params(self, current_models):
@@ -145,7 +147,12 @@ class MljarTuner:
             unique_model_types = np.unique(df_models.model_type)
 
             for m_type in unique_model_types:
-                if m_type in ["Baseline", "Decision Tree", "Linear"]:
+                if m_type in [
+                    "Baseline",
+                    "Decision Tree",
+                    "Linear",
+                    "Nearest Neighbors",
+                ]:
                     # dont tune Baseline and Decision Tree
                     continue
                 models = df_models[df_models.model_type == m_type]["model"]

@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import time
 import uuid
+import warnings
 
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -187,13 +188,14 @@ class AdditionalMetrics:
 
     @staticmethod
     def compute(target, predictions, ml_task):
-
-        if ml_task == BINARY_CLASSIFICATION:
-            return AdditionalMetrics.binary_classification(target, predictions)
-        elif ml_task == MULTICLASS_CLASSIFICATION:
-            return AdditionalMetrics.multiclass_classification(target, predictions)
-        elif ml_task == REGRESSION:
-            return AdditionalMetrics.regression(target, predictions)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if ml_task == BINARY_CLASSIFICATION:
+                return AdditionalMetrics.binary_classification(target, predictions)
+            elif ml_task == MULTICLASS_CLASSIFICATION:
+                return AdditionalMetrics.multiclass_classification(target, predictions)
+            elif ml_task == REGRESSION:
+                return AdditionalMetrics.regression(target, predictions)
 
     @staticmethod
     def save(additional_metrics, ml_task, model_desc, model_path):

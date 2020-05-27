@@ -1,8 +1,11 @@
 import copy
 import logging
 import numpy as np
-
+import warnings
 import joblib
+
+from sklearn.utils._testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
@@ -20,8 +23,11 @@ class SklearnAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(SklearnAlgorithm, self).__init__(params)
 
+    @ignore_warnings(category=ConvergenceWarning)
     def fit(self, X, y):
-        self.model.fit(X, y)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.model.fit(X, y)
 
     def copy(self):
         return copy.deepcopy(self)
