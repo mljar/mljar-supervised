@@ -50,7 +50,7 @@ class Ensemble:
 
         self._additional_metrics = None
         self._threshold = None
-        self._name = "stacked_ensemble" if is_stacked else "ensemble"
+        self._name = "Ensemble_Stacked" if is_stacked else "Ensemble"
         self._scores = []
         self.oof_predictions = None
 

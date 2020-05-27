@@ -660,7 +660,8 @@ class AutoML:
 
             params = copy.deepcopy(m.params)
             params["validation"]["X_train_path"] = X_train_stacked_path
-            params["name"] = "Stacked" + params["name"]
+            
+            params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
 
             if "model_architecture_json" in params["learner"]:

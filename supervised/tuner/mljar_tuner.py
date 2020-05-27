@@ -44,7 +44,7 @@ class MljarTuner:
         self._unique_params_keys = []
 
     def get_model_name(self, model_type, models_cnt, special = ""):
-        return special + model_type.replace(" ", "")+ f"_{models_cnt}"
+        return f"{models_cnt}_" + special + model_type.replace(" ", "")
 
     def simple_algorithms_params(self):
         models_cnt = 0
