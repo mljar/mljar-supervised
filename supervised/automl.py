@@ -426,6 +426,7 @@ class AutoML:
 
         if self._enough_time_to_train(mf.get_type()):
 
+            self.verbose_print(f"{params["name"]} training start ...")
             logger.info(
                 f"Train model #{len(self._models)+1} / Model name: {params['name']}"
             )

@@ -127,7 +127,7 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
-            "Nearest Neighbor"
+            "Nearest Neighbors"
         ]:
             if model_type not in self._algorithms:
                 continue
