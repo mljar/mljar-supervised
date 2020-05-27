@@ -43,6 +43,9 @@ class MljarTuner:
 
         self._unique_params_keys = []
 
+    def get_model_name(self, model_type, models_cnt, special = ""):
+        return special + model_type.replace(" ", "")+ f"_{models_cnt}"
+
     def simple_algorithms_params(self):
         models_cnt = 0
         generated_params = []
@@ -55,7 +58,8 @@ class MljarTuner:
                 params = self._get_model_params(model_type, seed=i + 1)
                 if params is None:
                     continue
-                params["name"] = f"model_{models_cnt + 1}"
+
+                params["name"] = self.get_model_name(model_type, models_cnt+1)
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -102,8 +106,8 @@ class MljarTuner:
                 model_type, seed=models_cnt + 1, params_type="default"
             )
             if params is None:
-                continue
-            params["name"] = f"model_{models_cnt + 1}"
+                continue 
+            params["name"] = self.get_model_name(model_type, models_cnt+1, special="Default")
 
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
@@ -139,7 +143,8 @@ class MljarTuner:
                 params = self._get_model_params(model_type, seed=i + 1)
                 if params is None:
                     continue
-                params["name"] = f"model_{models_cnt + 1}"
+                
+                params["name"] = self.get_model_name(model_type, models_cnt+1)
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -201,7 +206,8 @@ class MljarTuner:
                         if p is not None:
                             all_params = copy.deepcopy(m.params)
                             all_params["learner"] = p
-                            all_params["name"] = f"model_{model_max_index + 1}"
+                            
+                            all_params["name"] = self.get_model_name(all_params["learner"]["model_type"], model_max_index+1)
 
                             unique_params_key = MljarTuner.get_params_key(all_params)
                             if unique_params_key not in self._unique_params_keys:
