@@ -194,7 +194,7 @@ class MljarTuner:
                     ):
 
                         model_indices = [
-                            int(m.get_name().split("_")[1]) for m in current_models
+                            int(m.get_name().split("_")[0]) for m in current_models
                         ]
                         model_max_index = np.max(model_indices)
 
