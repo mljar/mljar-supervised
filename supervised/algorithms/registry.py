@@ -45,7 +45,21 @@ class AlgorithmsRegistry:
         return AlgorithmsRegistry.registry[ml_task][algorithm_name][
             "class"
         ].algorithm_name
+        
+    @staticmethod
+    def get_max_rows_limit(ml_task, algorithm_name):
+        return AlgorithmsRegistry.registry[ml_task][algorithm_name][
+            "additional"
+        ]["max_rows_limit"]
 
+    @staticmethod
+    def get_max_cols_limit(ml_task, algorithm_name):
+        return AlgorithmsRegistry.registry[ml_task][algorithm_name][
+            "additional"
+        ]["max_cols_limit"]
+
+
+        
 
 # Import algorithm to be registered
 import supervised.algorithms.random_forest

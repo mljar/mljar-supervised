@@ -64,6 +64,21 @@ class MljarTuner:
                     models_cnt += 1
         return generated_params
 
+    def skip_if_rows_cols_limit(self, model_type):
+        
+        max_rows_limit = AlgorithmsRegistry.get_max_rows_limit(self._ml_task, model_type)
+        max_cols_limit = AlgorithmsRegistry.get_max_cols_limit(self._ml_task, model_type)
+        
+        if max_rows_limit is not None:
+            if self._data_info["rows"] > max_rows_limit:
+                return True
+        if max_cols_limit is not None:
+            if self._data_info["cols"] > max_cols_limit:
+                return True
+        
+        return False
+
+
     def default_params(self, models_cnt):
 
         generated_params = []
@@ -78,6 +93,10 @@ class MljarTuner:
         ]:
             if model_type not in self._algorithms:
                 continue
+
+            if self.skip_if_rows_cols_limit(model_type):
+                continue
+                
             logger.info(f"Get default parameters for {model_type} (#{models_cnt + 1})")
             params = self._get_model_params(
                 model_type, seed=models_cnt + 1, params_type="default"
@@ -107,6 +126,9 @@ class MljarTuner:
             "Nearest Neighbor"
         ]:
             if model_type not in self._algorithms:
+                continue
+
+            if self.skip_if_rows_cols_limit(model_type):
                 continue
             # minus 1 because already have 1 default
             for i in range(self._start_random_models - 1):
