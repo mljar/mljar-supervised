@@ -127,7 +127,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_validation = None, y_validation = None):
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
         self.model.fit(X, y, batch_size=512, epochs=self.rounds, verbose=False)

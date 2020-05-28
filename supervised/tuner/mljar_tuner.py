@@ -111,7 +111,7 @@ class MljarTuner:
             if params is None:
                 continue
             params["name"] = self.get_model_name(
-                model_type, models_cnt + 1, special="Default"
+                model_type, models_cnt + 1, special="Default_"
             )
 
             unique_params_key = MljarTuner.get_params_key(params)

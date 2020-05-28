@@ -29,8 +29,18 @@ class LightgbmAlgorithm(BaseAlgorithm):
         super(LightgbmAlgorithm, self).__init__(params)
         self.library_version = lgb.__version__
 
-        self.rounds = additional.get("trees_in_step", 50)
-        self.max_iters = additional.get("max_steps", 500)
+        explain_level = params.get("explain_level", 0)
+        self.early_stopping_rounds = 0
+
+        if explain_level == 0:
+            self.rounds = additional.get("trees_in_step", 10) * additional.get("max_steps", 1000)
+            self.max_iters = 1
+            self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
+        else:
+            self.rounds = additional.get("trees_in_step", 10)
+            self.max_iters = additional.get("max_steps", 1000)
+
+
         self.learner_params = {
             "boosting_type": "gbdt",
             "objective": self.params.get("objective", "binary"),
@@ -57,14 +67,27 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_validation = None, y_validation = None):
+        
         lgb_train = lgb.Dataset(X, y)
-        self.model = lgb.train(
-            self.learner_params,
-            lgb_train,
-            num_boost_round=self.rounds,
-            init_model=self.model,
-        )
+        if self.early_stopping_rounds == 0:
+            self.model = lgb.train(
+                self.learner_params,
+                lgb_train,
+                num_boost_round=self.rounds,
+                init_model=self.model,
+            )
+        else:
+            self.model = lgb.train(
+                self.learner_params,
+                lgb_train,
+                num_boost_round=self.rounds,
+                init_model=self.model,
+                valid_sets=[lgb.Dataset(X_validation, y_validation)], 
+                valid_names=["validation"],
+                early_stopping_rounds=self.early_stopping_rounds, 
+                verbose_eval=False
+            )
 
     def predict(self, X):
         return self.model.predict(X)
@@ -127,6 +150,7 @@ additional = {
     "train_cant_improve_limit": 5,
     "min_steps": 5,
     "max_steps": 500,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
@@ -139,7 +163,7 @@ required_preprocessing = [
 
 lgbm_test_params = {
     "objective": ["multiclass"],
-    "metric": ["multi_error,multi_logloss"],
+    "metric": ["multi_logloss"],
     "num_leaves": [128],  # [31, 128],
     "learning_rate": [0.03],  # [0.1, 0.03],
     "feature_fraction": [0.9],  # [1.0, 0.9],
@@ -165,7 +189,7 @@ classification_multi_default_params = {
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
-lgbr_params["metric"] = ["l1", "l2"]
+lgbr_params["metric"] = ["l2"]
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,

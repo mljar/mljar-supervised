@@ -38,8 +38,17 @@ class XgbAlgorithm(BaseAlgorithm):
         super(XgbAlgorithm, self).__init__(params)
         self.library_version = xgb.__version__
 
-        self.boosting_rounds = additional.get("trees_in_step", 50)
-        self.max_iters = additional.get("max_steps", 500)
+        explain_level = params.get("explain_level", 0)
+        self.early_stopping_rounds = 0
+
+        if explain_level == 0:
+            self.boosting_rounds = additional.get("trees_in_step", 10) * additional.get("max_steps", 1000)
+            self.max_iters = 1
+            self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
+        else:
+            self.boosting_rounds = additional.get("trees_in_step", 10)
+            self.max_iters = additional.get("max_steps", 1000)
+            
         self.learner_params = {
             "tree_method": "hist",
             "booster": "gbtree",
@@ -60,14 +69,28 @@ class XgbAlgorithm(BaseAlgorithm):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
+        self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
 
-    def fit(self, X, y):
-        dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
-        self.model = xgb.train(
-            self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
-        )
+    def fit(self, X, y, X_validation = None, y_validation = None):
 
+        dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
+        
+        if self.early_stopping_rounds == 0:
+            self.model = xgb.train(
+                self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
+            )
+        else:
+            dvalidation = xgb.DMatrix(X_validation, label=y_validation, missing=np.NaN)
+            self.model = xgb.train(
+                self.learner_params, dtrain, self.boosting_rounds, evals=[(dvalidation, "validation")],
+                early_stopping_rounds=self.early_stopping_rounds,
+                verbose_eval=False
+            )
+
+        # save best_ntree_limit because of:
+        # https://github.com/dmlc/xgboost/issues/805
+        self.best_ntree_limit = self.model.best_ntree_limit
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
@@ -80,8 +103,9 @@ class XgbAlgorithm(BaseAlgorithm):
     def predict(self, X):
         if self.model is None:
             raise XgbAlgorithmException("Xgboost model is None")
+
         dtrain = xgb.DMatrix(X, missing=np.NaN)
-        a = self.model.predict(dtrain)
+        a = self.model.predict(dtrain, ntree_limit=self.best_ntree_limit)
         return a
 
     def copy(self):
@@ -103,6 +127,7 @@ class XgbAlgorithm(BaseAlgorithm):
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
             "params": self.params,
+            "best_ntree_limit": self.best_ntree_limit
         }
 
     def set_params(self, json_desc):
@@ -113,6 +138,7 @@ class XgbAlgorithm(BaseAlgorithm):
         )
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
+        self.best_ntree_limit = json_desc.get("best_ntree_limit", self.best_ntree_limit)
 
     def file_extension(self):
         return "xgboost"
@@ -121,7 +147,7 @@ class XgbAlgorithm(BaseAlgorithm):
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {
     "objective": ["binary:logistic"],
-    "eval_metric": ["auc", "logloss"],
+    "eval_metric": ["logloss"],
     "eta": [0.01, 0.025, 0.05, 0.075, 0.1, 0.15],
     "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -141,7 +167,7 @@ classification_bin_default_params = {
 
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["objective"] = ["reg:squarederror"]
-xgb_regression_params["eval_metric"] = ["rmse", "rmsle", "mae"]
+xgb_regression_params["eval_metric"] = ["rmse"]
 xgb_regression_params["max_depth"] = [1, 2, 3, 4]
 
 
@@ -174,7 +200,8 @@ additional = {
     "trees_in_step": 10,
     "train_cant_improve_limit": 5,
     "min_steps": 5,
-    "max_steps": 500,
+    "max_steps": 1000,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

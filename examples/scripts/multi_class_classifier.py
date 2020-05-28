@@ -14,19 +14,18 @@ X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
 y = df["class"]
 
 automl = AutoML(
-    #results_path="AutoML_22",
-    #algorithms=["Nearest Neighbors"],
+    results_path="AutoML_41",
+    algorithms=["LightGBM"],
     #algorithms=["Random Forest"],
-    
     #    "Linear",
     #    "Xgboost",
     #    "Random Forest"
     #],
-    model_time_limit=10,
+    model_time_limit=10111,
     tuning_mode="Normal",
     explain_level=0
 )
-#automl.set_advanced(start_random_models=2)
+automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 predictions = automl.predict(X)

@@ -24,7 +24,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         super(SklearnAlgorithm, self).__init__(params)
 
     @ignore_warnings(category=ConvergenceWarning)
-    def fit(self, X, y):
+    def fit(self, X, y, X_validation = None, y_validation = None):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model.fit(X, y)
@@ -59,6 +59,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         self.params = json_desc.get("params", self.params)
 
     def predict(self, X):
+        print("sklearn predict", X.shape)
         if self.params["ml_task"] == BINARY_CLASSIFICATION:
             return self.model.predict_proba(X)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
@@ -70,7 +71,7 @@ class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
         super(SklearnTreesClassifierAlgorithm, self).__init__(params)
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_validation = None, y_validation = None):
         self.model.fit(X, np.ravel(y))
         if hasattr(self.model, "n_estimators"):
             self.model.n_estimators += self.trees_in_step
@@ -81,7 +82,7 @@ class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
         super(SklearnTreesRegressorAlgorithm, self).__init__(params)
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_validation = None, y_validation = None):
         self.model.fit(X, np.ravel(y))
         if hasattr(self.model, "n_estimators"):
             self.model.n_estimators += self.trees_in_step

@@ -13,20 +13,18 @@ print("y", y[:10])
 print(X.shape)
 
 automl = AutoML(
-    #results_path="AutoML_56",
+    #results_path="AutoML_43",
     model_time_limit=600,
-    algorithms=["Neural Network"],
-    #    "Xgboost",
-        # "Xgboost", "Decision Tree",
+    algorithms=["LightGBM", "Xgboost", "CatBoost"],
+        # "Decision Tree",
         # "Random Forest",
-        # "CatBoost",
-        # "LightGBM", "Extra Trees"
+        # "Extra Trees"
     #],
     explain_level=0,
     tuning_mode="Normal"
 
 )
-#automl.set_advanced(start_random_models=3)
+automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 df["predictions"] = automl.predict(X)

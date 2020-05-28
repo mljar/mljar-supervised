@@ -128,6 +128,7 @@ class ModelFramework:
                 validation_data["X"], validation_data["y"]
             )
 
+            self.learner_params["explain_level"] = self._explain_level
             self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
             learner = self.learners[-1]
 
@@ -137,7 +138,7 @@ class ModelFramework:
             for i in range(learner.max_iters):
                 self.callbacks.on_iteration_start()
 
-                learner.fit(X_train, y_train)
+                learner.fit(X_train, y_train, X_validation, y_validation)
 
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
@@ -155,6 +156,7 @@ class ModelFramework:
                 learner.update({"step": i})
             # end of learner iters loop
             self.callbacks.on_learner_train_end()
+            
             learner.interpret(
                 X_train,
                 y_train,
