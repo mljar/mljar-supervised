@@ -320,7 +320,7 @@ class AutoML:
         self._models += [model]
         self.verbose_print(
             "{} final {} {} time {} seconds".format(
-                model.get_type(),
+                model.get_name(),
                 self._optimize_metric,
                 model.get_final_loss(),
                 np.round(model.get_train_time(), 2),
@@ -661,7 +661,7 @@ class AutoML:
 
             params = copy.deepcopy(m.params)
             params["validation"]["X_train_path"] = X_train_stacked_path
-            
+
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
 
@@ -911,7 +911,7 @@ class AutoML:
 
             self._time_spend = {}
             self._time_start = {}
-            
+
             # 1. Check simple algorithms
             self._fit_level = "simple_algorithms"
             start = time.time()
@@ -951,7 +951,7 @@ class AutoML:
             self._time_start[self._fit_level] = start
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
-            
+
             if self._stack:
                 # 6. Stack best models
                 self._fit_level = "stack"

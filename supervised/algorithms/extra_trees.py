@@ -33,8 +33,8 @@ class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
         self.model = ExtraTreesClassifier(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "gini"),
-            max_features=params.get("max_features", 0.8),
-            min_samples_split=params.get("min_samples_split", 4),
+            max_features=params.get("max_features", 0.6),
+            min_samples_split=params.get("min_samples_split", 30),
             warm_start=True,
             n_jobs=-1,
             random_state=params.get("seed", 1),
@@ -74,13 +74,13 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
 et_params = {
     "criterion": ["gini", "entropy"],
     "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "min_samples_split": [2, 6, 10, 20, 30, 40, 50],
+    "min_samples_split": [10, 20, 30, 40, 50],
 }
 
 classification_default_params = {
     "criterion": "gini",
-    "max_features": "auto",
-    "min_samples_split": 2,
+    "max_features": 0.6,
+    "min_samples_split": 30,
 }
 
 additional = {
@@ -125,13 +125,13 @@ regression_et_params = {
         "mse"
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "min_samples_split": [2, 6, 10, 20, 30, 40, 50],
+    "min_samples_split": [10, 20, 30, 40, 50],
 }
 
 regression_default_params = {
     "criterion": "mse",
-    "max_features": "auto",
-    "min_samples_split": 2,
+    "max_features": 0.6,
+    "min_samples_split": 30,
 }
 
 regression_additional = {

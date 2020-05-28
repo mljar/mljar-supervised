@@ -35,7 +35,8 @@ class KNeighborsAlgorithm(SklearnAlgorithm):
         self.model = KNeighborsClassifier(
             n_neighbors=params.get("n_neighbors", 3),
             weights=params.get("weights", "uniform"),
-            algorithm="ball_tree",
+            algorithm="kd_tree",
+            # leaf_size=300,
             n_jobs=-1,
         )
 
@@ -64,8 +65,7 @@ class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
         return "k_neighbors"
 
 
-
-knn_params = {"n_neighbors": [3,5,7], "weights": ["uniform", "distance"]}
+knn_params = {"n_neighbors": [3, 5, 7], "weights": ["uniform", "distance"]}
 
 default_params = {"n_neighbors": 5, "weights": "uniform"}
 
