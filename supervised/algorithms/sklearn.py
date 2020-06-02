@@ -2,11 +2,7 @@ import copy
 import logging
 import numpy as np
 import pandas as pd
-import warnings
 import joblib
-
-from sklearn.utils._testing import ignore_warnings
-from sklearn.exceptions import ConvergenceWarning
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
@@ -19,16 +15,13 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-
 class SklearnAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(SklearnAlgorithm, self).__init__(params)
 
-    @ignore_warnings(category=ConvergenceWarning)
+    
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.model.fit(X, y)
+        self.model.fit(X, y)
 
     def copy(self):
         return copy.deepcopy(self)

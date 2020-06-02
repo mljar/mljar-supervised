@@ -3,6 +3,9 @@ import os
 import sklearn
 import pandas as pd
 import numpy as np
+import warnings
+
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
 from supervised.algorithms.algorithm import BaseAlgorithm
@@ -16,7 +19,6 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-
 class LinearAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Logistic Regression"
@@ -27,7 +29,7 @@ class LinearAlgorithm(SklearnAlgorithm):
         logger.debug("LinearAlgorithm.__init__")
         self.max_iters = 1
         self.library_version = sklearn.__version__
-        self.model = LogisticRegression(n_jobs=-1)
+        self.model = LogisticRegression(max_iter=1000, n_jobs=-1)
 
     def file_extension(self):
         return "linear"
