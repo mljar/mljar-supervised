@@ -63,7 +63,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
 
         self.library_version = keras.__version__
 
-        self.rounds = additional.get("one_step", 10)
+        self.rounds = additional.get("one_step", 1)
         self.max_iters = additional.get("max_steps", 1)
         self.learner_params = {
             "dense_layers": params.get("dense_layers"),
@@ -127,7 +127,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
-    def fit(self, X, y, X_validation = None, y_validation = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
         self.model.fit(X, y, batch_size=512, epochs=self.rounds, verbose=False)

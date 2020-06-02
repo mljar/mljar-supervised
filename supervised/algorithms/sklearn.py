@@ -1,6 +1,7 @@
 import copy
 import logging
 import numpy as np
+import pandas as pd
 import warnings
 import joblib
 
@@ -24,7 +25,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         super(SklearnAlgorithm, self).__init__(params)
 
     @ignore_warnings(category=ConvergenceWarning)
-    def fit(self, X, y, X_validation = None, y_validation = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.model.fit(X, y)
@@ -59,7 +60,6 @@ class SklearnAlgorithm(BaseAlgorithm):
         self.params = json_desc.get("params", self.params)
 
     def predict(self, X):
-        print("sklearn predict", X.shape)
         if self.params["ml_task"] == BINARY_CLASSIFICATION:
             return self.model.predict_proba(X)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
@@ -67,22 +67,82 @@ class SklearnAlgorithm(BaseAlgorithm):
         return self.model.predict(X)
 
 
-class SklearnTreesClassifierAlgorithm(SklearnAlgorithm):
+
+from supervised.utils.metric import Metric
+
+
+def predict_proba_function(estimator, X):
+    return estimator.predict_proba(X)
+
+class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
-        super(SklearnTreesClassifierAlgorithm, self).__init__(params)
+        super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
+        self.log_metric = Metric({"name": "logloss"})
+        self.max_iters = 1 # max iters is used by model_framework, max_steps is used internally
+        self.predict_function = predict_proba_function
 
-    def fit(self, X, y, X_validation = None, y_validation = None):
-        self.model.fit(X, np.ravel(y))
-        if hasattr(self.model, "n_estimators"):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+
+        max_steps = self.max_steps
+        n_estimators = 0
+
+        min_val = 10e12
+        min_e = 0
+
+        p_tr, p_vd = None, None
+        result = {"iteration": [], "train": [], "validation": []}
+
+        for i in range(max_steps):
+            
+            self.model.fit(X, np.ravel(y))
             self.model.n_estimators += self.trees_in_step
+            
+            if X_validation is None or y_validation is None:
+                continue
+            estimators = self.model.estimators_
+            
+            stop = False
+            for e in range(n_estimators, len(estimators)):
+                p = self.predict_function(estimators[e], X)
+                if p_tr is None:
+                    p_tr = p
+                else:
+                    p_tr += p
 
+                p = self.predict_function(estimators[e], X_validation)
+                if p_vd is None:
+                    p_vd = p
+                else:
+                    p_vd += p
 
-# TODO refactor
-class SklearnTreesRegressorAlgorithm(SklearnAlgorithm):
+                tr = self.log_metric(y, p_tr / float(e + 1))
+                vd = self.log_metric(y_validation, p_vd / float(e + 1))
+
+                result["iteration"] += [e]
+                result["train"] += [tr]
+                result["validation"] += [vd]
+
+                if vd < min_val: # optimize direction
+                    min_val = vd
+                    min_e = e
+                
+                if e - min_e >= self.early_stopping_rounds:
+                    stop = True
+                    break
+
+            if stop:
+                self.model.estimators_ = estimators[: (min_e + 1)]
+                break
+            n_estimators = len(estimators)
+        
+        if log_to_file is not None:
+            pd.DataFrame(result).to_csv(log_to_file, index=False, header=False)
+
+def predict_function(estimator, X):
+    return estimator.predict(X)
+
+class SklearnTreesEnsembleRegressorAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def __init__(self, params):
-        super(SklearnTreesRegressorAlgorithm, self).__init__(params)
-
-    def fit(self, X, y, X_validation = None, y_validation = None):
-        self.model.fit(X, np.ravel(y))
-        if hasattr(self.model, "n_estimators"):
-            self.model.n_estimators += self.trees_in_step
+        super(SklearnTreesEnsembleRegressorAlgorithm, self).__init__(params)
+        self.log_metric = Metric({"name": "rmse"})
+        self.predict_function = predict_function

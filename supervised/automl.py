@@ -560,7 +560,7 @@ class AutoML:
             self.keep_model(self.ensemble)
 
             ensemble_path = os.path.join(
-                self._results_path, "stacked_ensemble" if is_stacked else "ensemble"
+                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
             )
             try:
                 os.mkdir(ensemble_path)
@@ -613,6 +613,8 @@ class AutoML:
         models_limit = 3
 
         for model_type in np.unique(ldb.model_type):
+            if model_type in ["Baseline", "Decision Tree"]:
+                continue
             ds = ldb[ldb.model_type == model_type]
             ds.sort_values(by="metric_value", inplace=True)
             for n in list(ds.name.iloc[:models_limit].values):
@@ -759,8 +761,8 @@ class AutoML:
                 self._optimize_metric = self._user_set_optimize_metric
         elif self._ml_task == REGRESSION:
             if self._user_set_optimize_metric is None:
-                self._optimize_metric = "mse"
-            elif self._user_set_optimize_metric not in ["mse"]:
+                self._optimize_metric = "rmse"
+            elif self._user_set_optimize_metric not in ["rmse"]:
                 raise AutoMLException(
                     "Metric {} is not allowed in ML task: {}".format(
                         self._user_set_optimize_metric, self._ml_task

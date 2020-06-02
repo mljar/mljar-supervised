@@ -21,7 +21,7 @@ class BaseAlgorithm:
         self.uid = params.get("uid", str(uuid.uuid4()))
         self.ml_task = params.get("ml_task")
 
-    def fit(self, X, y, X_validation = None, y_validation = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         pass
 
     def predict(self, X):

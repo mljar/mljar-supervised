@@ -6,8 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
+from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -23,7 +22,7 @@ logger.setLevel(LOG_LEVEL)
 from dtreeviz.trees import dtreeviz
 
 
-class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
+class DecisionTreeAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
@@ -89,7 +88,7 @@ class DecisionTreeAlgorithm(SklearnTreesClassifierAlgorithm):
             logger.info(f"Problem when visualizing decision tree. {str(e)}")
 
 
-class DecisionTreeRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
+class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"

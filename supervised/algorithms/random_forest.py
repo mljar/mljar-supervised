@@ -1,12 +1,16 @@
 import logging
 import os
 import sklearn
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
+from supervised.algorithms.sklearn import (
+    SklearnTreesEnsembleClassifierAlgorithm,
+    SklearnTreesEnsembleRegressorAlgorithm
+)
+
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -17,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
+class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
 
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"
@@ -28,7 +32,8 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
 
         self.library_version = sklearn.__version__
         self.trees_in_step = additional.get("trees_in_step", 5)
-        self.max_iters = additional.get("max_steps", 3)
+        self.max_steps = additional.get("max_steps", 3)
+        self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
         self.model = RandomForestClassifier(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "gini"),
@@ -43,7 +48,7 @@ class RandomForestAlgorithm(SklearnTreesClassifierAlgorithm):
         return "random_forest"
 
 
-class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
+class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"
@@ -53,8 +58,9 @@ class RandomForestRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         logger.debug("RandomForestRegressorAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-        self.trees_in_step = additional.get("trees_in_step", 5)
-        self.max_iters = additional.get("max_steps", 3)
+        self.trees_in_step = regression_additional.get("trees_in_step", 5)
+        self.max_steps = regression_additional.get("max_steps", 3)
+        self.early_stopping_rounds = regression_additional.get("early_stopping_rounds", 50)
         self.model = RandomForestRegressor(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "mse"),
@@ -84,10 +90,11 @@ classification_default_params = {
 
 
 additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "min_steps": 5,
-    "max_steps": 500,
+    "trees_in_step": 100,
+    "train_cant_improve_limit": 1,
+    "min_steps": 1,
+    "max_steps": 50,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
@@ -135,9 +142,11 @@ regression_default_params = {
 }
 
 regression_additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "max_steps": 500,
+    "trees_in_step": 100,
+    "train_cant_improve_limit": 1,
+    "min_steps": 1,
+    "max_steps": 50,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

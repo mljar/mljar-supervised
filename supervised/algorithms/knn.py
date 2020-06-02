@@ -4,6 +4,7 @@ import sklearn
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.model_selection import train_test_split
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnAlgorithm
@@ -36,12 +37,20 @@ class KNeighborsAlgorithm(SklearnAlgorithm):
             n_neighbors=params.get("n_neighbors", 3),
             weights=params.get("weights", "uniform"),
             algorithm="kd_tree",
-            # leaf_size=300,
             n_jobs=-1,
         )
 
     def file_extension(self):
         return "k_neighbors"
+
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file = None):
+        if X.shape[0] > 1000:
+            X1, _, y1, _ = train_test_split(
+                X, y, train_size=1000, stratify=y, random_state=1234
+            )
+            self.model.fit(X1, y1)
+        else:
+            self.model.fit(X, y)
 
 
 class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
@@ -63,6 +72,13 @@ class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
 
     def file_extension(self):
         return "k_neighbors"
+
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file = None):
+        if X.shape[0] > 1000:
+            X1, _, y1, _ = train_test_split(X, y, train_size=1000, random_state=1234)
+            self.model.fit(X1, y1)
+        else:
+            self.model.fit(X, y)
 
 
 knn_params = {"n_neighbors": [3, 5, 7], "weights": ["uniform", "distance"]}

@@ -22,8 +22,8 @@ class LearningCurves:
     def single_iteration(validation_splits, model_path):
         for l in range(validation_splits):
             df = pd.read_csv(
-                os.path.join(model_path, f"./learner_{l+1}_training.log"),
-                names=["iteration", "train", "test", "no_improvement"],
+                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                names=["iteration", "train", "test"],
             )
             if df.shape[0] > 1:
                 return False
@@ -50,8 +50,8 @@ class LearningCurves:
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(
-                os.path.join(model_path, f"./learner_{l+1}_training.log"),
-                names=["iteration", "train", "test", "no_improvement"],
+                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                names=["iteration", "train", "test"],
             )
             plt.bar(
                 f"Fold {l+1}, train", df.train[0], color="white", edgecolor=colors[l]
@@ -72,11 +72,11 @@ class LearningCurves:
         plt.figure(figsize=(10, 7))
         for l in range(validation_splits):
             df = pd.read_csv(
-                os.path.join(model_path, f"./learner_{l+1}_training.log"),
-                names=["iteration", "train", "test", "no_improvement"],
+                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                names=["iteration", "train", "test"],
             )
-            if trees_in_iteration is not None:
-                df.iteration = df.iteration * trees_in_iteration
+            # if trees_in_iteration is not None:
+            #    df.iteration = df.iteration * trees_in_iteration
             plt.plot(
                 df.iteration,
                 df.train,

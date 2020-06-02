@@ -26,6 +26,10 @@ class XgbAlgorithmException(Exception):
         logger.error(message)
 
 
+def time_constraint(env):
+    #print("time constraint")
+    pass
+
 class XgbAlgorithm(BaseAlgorithm):
     """
     This is a wrapper over xgboost algorithm.
@@ -38,17 +42,11 @@ class XgbAlgorithm(BaseAlgorithm):
         super(XgbAlgorithm, self).__init__(params)
         self.library_version = xgb.__version__
 
-        explain_level = params.get("explain_level", 0)
-        self.early_stopping_rounds = 0
+        self.explain_level = params.get("explain_level", 0)
+        self.boosting_rounds = additional.get("max_rounds", 10000) 
+        self.max_iters = 1
+        self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
 
-        if explain_level == 0:
-            self.boosting_rounds = additional.get("trees_in_step", 10) * additional.get("max_steps", 1000)
-            self.max_iters = 1
-            self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
-        else:
-            self.boosting_rounds = additional.get("trees_in_step", 10)
-            self.max_iters = additional.get("max_steps", 1000)
-            
         self.learner_params = {
             "tree_method": "hist",
             "booster": "gbtree",
@@ -72,21 +70,37 @@ class XgbAlgorithm(BaseAlgorithm):
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
 
-    def fit(self, X, y, X_validation = None, y_validation = None):
-
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
-        
-        if self.early_stopping_rounds == 0:
-            self.model = xgb.train(
-                self.learner_params, dtrain, self.boosting_rounds, xgb_model=self.model
+        dvalidation = xgb.DMatrix(X_validation, label=y_validation, missing=np.NaN)
+        evals_result = {}
+
+        evals = [] 
+        esr = None
+        if X_validation is not None and y_validation is not None:
+            evals = [(dtrain, "train"), (dvalidation, "validation")]
+            esr = self.early_stopping_rounds
+        self.model = xgb.train(
+            self.learner_params,
+            dtrain,
+            self.boosting_rounds,
+            evals=evals,
+            early_stopping_rounds=esr,
+            evals_result=evals_result,
+            verbose_eval=False,
+            #callbacks=[time_constraint] # callback slows down by factor ~8
+        )
+
+        if log_to_file is not None:
+            metric_name = list(evals_result["train"].keys())[0]
+            result = pd.DataFrame(
+                {
+                    "iteration": range(len(evals_result["train"][metric_name])),
+                    "train": evals_result["train"][metric_name],
+                    "validation": evals_result["validation"][metric_name],
+                }
             )
-        else:
-            dvalidation = xgb.DMatrix(X_validation, label=y_validation, missing=np.NaN)
-            self.model = xgb.train(
-                self.learner_params, dtrain, self.boosting_rounds, evals=[(dvalidation, "validation")],
-                early_stopping_rounds=self.early_stopping_rounds,
-                verbose_eval=False
-            )
+            result.to_csv(log_to_file, index=False, header=False)
 
         # save best_ntree_limit because of:
         # https://github.com/dmlc/xgboost/issues/805
@@ -127,7 +141,7 @@ class XgbAlgorithm(BaseAlgorithm):
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
             "params": self.params,
-            "best_ntree_limit": self.best_ntree_limit
+            "best_ntree_limit": self.best_ntree_limit,
         }
 
     def set_params(self, json_desc):
@@ -197,10 +211,7 @@ regression_default_params = {
 }
 
 additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "min_steps": 5,
-    "max_steps": 1000,
+    "max_rounds": 10000,
     "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,

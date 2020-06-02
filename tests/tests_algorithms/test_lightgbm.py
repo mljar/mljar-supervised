@@ -8,9 +8,10 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.lightgbm import LightgbmAlgorithm
+from supervised.algorithms.lightgbm import LightgbmAlgorithm, additional
 from supervised.utils.metric import Metric
 
+additional["max_rounds"] = 1
 
 class LightgbmAlgorithmTest(unittest.TestCase):
     @classmethod

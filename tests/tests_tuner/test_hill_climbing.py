@@ -26,7 +26,7 @@ class TunerHillClimbingTest(unittest.TestCase):
         models = []
         models += [
             ModelMock(
-                "model_121",
+                "121_RandomForest",
                 "Random Forest",
                 0.1,
                 {
@@ -37,7 +37,7 @@ class TunerHillClimbingTest(unittest.TestCase):
         ]
         models += [
             ModelMock(
-                "model_1",
+                "1_RandomForest",
                 "Random Forest",
                 0.1,
                 {
@@ -65,5 +65,5 @@ class TunerHillClimbingTest(unittest.TestCase):
             for p in tuner.get_hill_climbing_params(models):
                 models += [ModelMock(p["name"], "Random Forest", score, p)]
                 score *= 0.1
-                self.assertTrue(int(p["name"].split("_")[1]) > ind)
+                self.assertTrue(int(p["name"].split("_")[0]) > ind)
                 ind += 1

@@ -10,11 +10,17 @@ from sklearn import datasets
 from supervised.algorithms.extra_trees import (
     ExtraTreesAlgorithm,
     ExtraTreesRegressorAlgorithm,
+    additional,
+    regression_additional
 )
 from supervised.utils.metric import Metric
 
 import tempfile
 
+additional["trees_in_step"] = 1
+regression_additional["trees_in_step"] = 1
+additional["max_steps"] = 1
+regression_additional["max_steps"] = 1
 
 class ExtraTreesRegressorAlgorithmTest(unittest.TestCase):
     @classmethod

@@ -28,9 +28,12 @@ class MetricLogger(Callback):
     def on_iteration_end(self, logs, predictions):
 
         for metric in self.metrics:
-            train_loss = metric(
-                predictions.get("y_train_true"), predictions.get("y_train_predicted")
-            )
+            train_loss = 0
+            if predictions.get("y_train_predicted") is not None:
+                train_loss = metric(
+                    predictions.get("y_train_true"),
+                    predictions.get("y_train_predicted"),
+                )
             validation_loss = metric(
                 predictions.get("y_validation_true"),
                 predictions.get("y_validation_predicted"),

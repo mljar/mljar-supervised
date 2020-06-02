@@ -4,9 +4,7 @@ import sklearn
 from sklearn.dummy import DummyClassifier
 from sklearn.dummy import DummyRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
+from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class BaselineClassifierAlgorithm(SklearnTreesClassifierAlgorithm):
+class BaselineClassifierAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Baseline Classifier"
     algorithm_short_name = "Baseline"
@@ -36,7 +34,7 @@ class BaselineClassifierAlgorithm(SklearnTreesClassifierAlgorithm):
         return "baseline"
 
 
-class BaselineRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
+class BaselineRegressorAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Baseline Regressor"
     algorithm_short_name = "Baseline"

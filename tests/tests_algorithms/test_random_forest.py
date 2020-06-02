@@ -10,11 +10,17 @@ from sklearn import datasets
 from supervised.algorithms.random_forest import (
     RandomForestAlgorithm,
     RandomForestRegressorAlgorithm,
+    additional, 
+    regression_additional
 )
 from supervised.utils.metric import Metric
 
 import tempfile
 
+additional["trees_in_step"] = 1
+regression_additional["trees_in_step"] = 1
+additional["max_steps"] = 1
+regression_additional["max_steps"] = 1
 
 class RandomForestRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -67,12 +73,12 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 50, "ml_task": "binary_classification"}
+        params = {"ml_task": "binary_classification"}
         rf = RandomForestAlgorithm(params)
 
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
-        self.assertTrue(metric(self.y, y_predicted) < 0.6)
+        self.assertTrue(metric(self.y, y_predicted) < 1.0)
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})

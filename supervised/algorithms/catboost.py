@@ -31,24 +31,17 @@ class CatBoostAlgorithm(BaseAlgorithm):
         self.library_version = catboost.__version__
         self.snapshot_file_path = "training_snapshot"
 
-        explain_level = params.get("explain_level", 0)
-        self.early_stopping_rounds = 0
-
-        if explain_level == 0:
-            self.rounds = additional.get("trees_in_step", 10) * additional.get("max_steps", 1000)
-            self.max_iters = 1
-            self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
-        else:
-            self.rounds = additional.get("trees_in_step", 10)
-            self.max_iters = additional.get("max_steps", 1000)
-
-
+        self.explain_level = params.get("explain_level", 0)
+        self.rounds = additional.get("max_rounds", 10000)
+        self.max_iters = 1
+        self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
+        
         Algo = CatBoostClassifier
         loss_function = "Logloss"
         if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
             loss_function = "MultiClass"
         elif self.params["ml_task"] == REGRESSION:
-            loss_function = "RMSE" # self.params.get("loss_function", "RMSE")
+            loss_function = "RMSE"  # self.params.get("loss_function", "RMSE")
             Algo = CatBoostRegressor
 
         self.learner_params = {
@@ -74,31 +67,37 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def fit(self, X, y, X_validation = None, y_validation = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         if self.cat_features is None:
             self.cat_features = []
             for i in range(X.shape[1]):
                 if PreprocessingUtils.is_categorical(X.iloc[:, i]):
                     self.cat_features += [i]
 
-        if self.early_stopping_rounds == 0:
-            self.model.fit(
-                X,
-                y,
-                cat_features=self.cat_features,
-                init_model=None if self.model.tree_count_ is None else self.model,
-            )
-        else:
-            self.model.fit(
-                X,
-                y,
-                cat_features=self.cat_features,
-                init_model=None if self.model.tree_count_ is None else self.model,
-                eval_set=(X_validation, y_validation),
-                early_stopping_rounds=self.early_stopping_rounds,
-                verbose_eval=False
-            )
+        eval_set = None 
+        if X_validation is not None and y_validation is not None:
+            eval_set = (X_validation, y_validation)
 
+        self.model.fit(
+            X,
+            y,
+            cat_features=self.cat_features,
+            init_model=None if self.model.tree_count_ is None else self.model,
+            eval_set=eval_set,
+            early_stopping_rounds=self.early_stopping_rounds,
+            verbose_eval=False,
+        )
+        if log_to_file is not None:
+            
+            metric_name = list(self.model.evals_result_["learn"].keys())[0]
+            result = pd.DataFrame(
+                {
+                    "iteration": range(len(self.model.evals_result_["learn"][metric_name])),
+                    "train": self.model.evals_result_["learn"][metric_name],
+                    "validation": self.model.evals_result_["validation"][metric_name],
+                }
+            )
+            result.to_csv(log_to_file, index=False, header=False)
 
 
     def predict(self, X):
@@ -162,10 +161,7 @@ classification_default_params = {
 }
 
 additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "min_steps": 5,
-    "max_steps": 1000,
+    "max_rounds": 10000,
     "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
@@ -200,7 +196,7 @@ regression_default_params = {
     "learning_rate": 0.1,
     "depth": 6,
     "rsm": 1.0,
-    "l2_leaf_reg": 1
+    "l2_leaf_reg": 1,
 }
 
 AlgorithmsRegistry.add(

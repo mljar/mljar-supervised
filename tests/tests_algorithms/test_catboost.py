@@ -8,10 +8,11 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.catboost import CatBoostAlgorithm
+from supervised.algorithms.catboost import CatBoostAlgorithm, additional
 from supervised.utils.metric import Metric
 import tempfile
 
+additional["max_rounds"] = 1
 
 class CatBoostRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -80,14 +81,14 @@ class CatBoostAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        cat = CatBoostAlgorithm(self.params)
         loss_prev = None
-        for _ in range(5):
+        for _ in range(2):
+            cat = CatBoostAlgorithm(self.params)
             cat.fit(self.X, self.y)
             y_predicted = cat.predict(self.X)
             loss = metric(self.y, y_predicted)
             if loss_prev is not None:
-                self.assertTrue(loss + 0.001 < loss_prev)
+                assert_almost_equal(loss, loss_prev)
             loss_prev = loss
 
     def test_copy(self):

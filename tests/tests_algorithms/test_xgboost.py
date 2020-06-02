@@ -7,11 +7,12 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
-from supervised.algorithms.xgboost import XgbAlgorithm
+from supervised.algorithms.xgboost import XgbAlgorithm, additional
 from supervised.utils.metric import Metric
 
 import tempfile
 
+additional["max_rounds"] = 1
 
 class XgboostAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -40,20 +41,6 @@ class XgboostAlgorithmTest(unittest.TestCase):
             if prev_loss is not None:
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
-
-    def test_fit_predict(self):
-        metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
-        xgb = XgbAlgorithm(params)
-
-        loss_prev = None
-        for _ in range(5):
-            xgb.fit(self.X, self.y)
-            y_predicted = xgb.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.001 < loss_prev)
-            loss_prev = loss
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})

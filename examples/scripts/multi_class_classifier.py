@@ -14,8 +14,8 @@ X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
 y = df["class"]
 
 automl = AutoML(
-    results_path="AutoML_41",
-    algorithms=["LightGBM"],
+    #results_path="AutoML_41",
+    algorithms=["CatBoost"],
     #algorithms=["Random Forest"],
     #    "Linear",
     #    "Xgboost",

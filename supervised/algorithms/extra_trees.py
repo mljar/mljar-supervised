@@ -4,8 +4,10 @@ import sklearn
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesClassifierAlgorithm
-from supervised.algorithms.sklearn import SklearnTreesRegressorAlgorithm
+from supervised.algorithms.sklearn import (
+    SklearnTreesEnsembleClassifierAlgorithm,
+    SklearnTreesEnsembleRegressorAlgorithm
+)
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
+class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
 
     algorithm_name = "Extra Trees Classifier"
     algorithm_short_name = "Extra Trees"
@@ -28,8 +30,9 @@ class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
         logger.debug("ExtraTreesAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-        self.trees_in_step = additional.get("trees_in_step", 5)
-        self.max_iters = additional.get("max_steps", 3)
+        self.trees_in_step = additional.get("trees_in_step", 100)
+        self.max_steps = additional.get("max_steps", 50)
+        self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
         self.model = ExtraTreesClassifier(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "gini"),
@@ -44,7 +47,7 @@ class ExtraTreesAlgorithm(SklearnTreesClassifierAlgorithm):
         return "extra_trees"
 
 
-class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
+class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
     algorithm_name = "Extra Trees Regressor"
     algorithm_short_name = "Extra Trees"
@@ -54,8 +57,9 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesRegressorAlgorithm):
         logger.debug("ExtraTreesRegressorAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-        self.trees_in_step = additional.get("trees_in_step", 5)
-        self.max_iters = additional.get("max_steps", 3)
+        self.trees_in_step = regression_additional.get("trees_in_step", 100)
+        self.max_steps = regression_additional.get("max_steps", 50)
+        self.early_stopping_rounds = regression_additional.get("early_stopping_rounds", 50)
         self.model = ExtraTreesRegressor(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "mse"),
@@ -84,10 +88,9 @@ classification_default_params = {
 }
 
 additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "min_steps": 5,
-    "max_steps": 500,
+    "trees_in_step": 100,
+    "max_steps": 50,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
@@ -135,9 +138,9 @@ regression_default_params = {
 }
 
 regression_additional = {
-    "trees_in_step": 10,
-    "train_cant_improve_limit": 5,
-    "max_steps": 500,
+    "trees_in_step": 100,
+    "max_steps": 50,
+    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

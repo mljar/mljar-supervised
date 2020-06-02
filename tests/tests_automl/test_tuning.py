@@ -10,6 +10,8 @@ from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.exceptions import AutoMLException
 
+from supervised.algorithms.xgboost import additional
+additional["max_rounds"] = 1
 
 class AutoMLTuningTest(unittest.TestCase):
 

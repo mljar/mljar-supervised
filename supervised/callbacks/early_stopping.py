@@ -69,10 +69,12 @@ class EarlyStopping(Callback):
             )
 
     def on_iteration_end(self, logs, predictions):
+        train_loss = 0
+        if predictions.get("y_train_predicted") is not None:
+            train_loss = self.metric(
+                predictions.get("y_train_true"), predictions.get("y_train_predicted")
+            )
 
-        train_loss = self.metric(
-            predictions.get("y_train_true"), predictions.get("y_train_predicted")
-        )
         validation_loss = self.metric(
             predictions.get("y_validation_true"),
             predictions.get("y_validation_predicted"),
@@ -145,7 +147,11 @@ class EarlyStopping(Callback):
                 len(self.loss_values[self.learner.uid]["iters"]),
             )
         )
-        if self.log_to_dir is not None:
+
+        #print(self.learner.algorithm_short_name)
+        if self.log_to_dir is not None and self.learner.algorithm_short_name not in [
+            "Xgboost", "Random Forest", "Extra Trees", "LightGBM", "CatBoost"
+        ]:
 
             with open(
                 os.path.join(
@@ -154,9 +160,7 @@ class EarlyStopping(Callback):
                 "a",
             ) as fout:
                 iteration = len(self.loss_values[self.learner.uid]["iters"])
-                fout.write(
-                    f"{iteration},{train_loss},{validation_loss},{self.no_improvement_cnt}\n"
-                )
+                fout.write(f"{iteration},{train_loss},{validation_loss}\n")
 
     def get_status(self):
         return "Train loss: {}, Validation loss: {} @ iteration {}".format(

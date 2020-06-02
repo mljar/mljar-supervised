@@ -12,9 +12,11 @@ class TerminateOnNan(Callback):
         self.metric = Metric(params.get("metric_name"))
 
     def on_iteration_end(self, iter_cnt, data):
-        loss_train = self.metric(
-            data.get("y_train_true"), data.get("y_train_predicted")
-        )
+        loss_train = 0
+        if data.get("y_train_predicted") is not None:
+            loss_train = self.metric(
+                data.get("y_train_true"), data.get("y_train_predicted")
+            )
         loss_validation = self.metric(
             data.get("y_validation_true"), data.get("y_validation_predicted")
         )
