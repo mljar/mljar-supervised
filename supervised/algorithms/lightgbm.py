@@ -30,8 +30,8 @@ class LightgbmAlgorithm(BaseAlgorithm):
         self.library_version = lgb.__version__
 
         self.explain_level = params.get("explain_level", 0)
-        self.rounds = additional.get("max_rounds", 10) 
-        self.max_iters = 1
+        self.rounds = additional.get("max_rounds", 10000) 
+        self.max_iters = 1 
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
     
         self.learner_params = {

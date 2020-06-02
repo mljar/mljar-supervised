@@ -12,7 +12,7 @@ y = df["income"]
 
 automl = AutoML(
     #results_path="AutoML_23",
-    algorithms=["CatBoost"], 
+    algorithms=["Baseline"], 
     total_time_limit=30*60,
     explain_level=0
 )
