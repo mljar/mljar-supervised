@@ -180,6 +180,10 @@ class AutoML:
         self._time_spend = {}
         self._start_time = time.time()  # it will be updated in `fit` method
 
+        if self._validation["validation_type"] != "kfold":
+            # stack only available of k-fold validation
+            self._stack = False
+
         # this should be last in the constrcutor
         # in case there is a dir, it might load models
         self._set_results_dir()

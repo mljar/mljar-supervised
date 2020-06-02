@@ -6,11 +6,7 @@ from supervised.validation.validator_kfold import KFoldValidator
 from supervised.validation.validator_split import SplitValidator
 from supervised.validation.validator_with_dataset import WithDatasetValidator
 
-
-class ValidationStepException(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        log.error(message)
+from supervised.exceptions import AutoMLException
 
 
 class ValidationStep:
@@ -21,11 +17,12 @@ class ValidationStep:
 
         if self.validation_type == "kfold":
             self.validator = KFoldValidator(params)
-        else:
-            raise Exception("Other validation types are not implemented yet!")
-        """
         elif self.validation_type == "split":
-            self.validator = SplitValidator(params, data)
+            self.validator = SplitValidator(params)
+        else:
+            raise AutoMLException(f"The validation type ({self.validation_type}) is not implemented.")
+        """
+        
         elif self.validation_type == "with_dataset":
             self.validator = WithDatasetValidator(params, data)
         else:

@@ -15,7 +15,6 @@ from supervised.exceptions import AutoMLException
 from supervised.utils.config import mem
 import time
 
-
 class KFoldValidator(BaseValidator):
     def __init__(self, params):
         BaseValidator.__init__(self, params)
@@ -30,7 +29,7 @@ class KFoldValidator(BaseValidator):
                 self.skf = StratifiedKFold(
                     n_splits=self.k_folds,
                     shuffle=self.shuffle,
-                    random_state=self.random_seed,
+                    random_state=self.random_seed if self.shuffle else None,
                 )
             else:
                 self.skf = StratifiedKFold(n_splits=self.k_folds, shuffle=self.shuffle)
@@ -38,7 +37,7 @@ class KFoldValidator(BaseValidator):
             self.skf = KFold(
                 n_splits=self.k_folds,
                 shuffle=self.shuffle,
-                random_state=self.random_seed,
+                random_state=self.random_seed if self.shuffle else None,
             )
 
         self._results_path = self.params.get("results_path")
