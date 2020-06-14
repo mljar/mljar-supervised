@@ -277,7 +277,7 @@ class AutoML:
 
             models_map = {}
             for model_path in self._model_paths:
-                if model_path.endswith("ensemble"):
+                if model_path.endswith("Ensemble") or model_path.endswith("Ensemble_Stacked"):
                     ens = Ensemble.load(model_path, models_map)
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
@@ -614,13 +614,15 @@ class AutoML:
 
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
-        models_limit = 3
+        models_limit = 10
 
         for model_type in np.unique(ldb.model_type):
-            if model_type in ["Baseline", "Decision Tree"]:
+            print(model_type)
+            if model_type in ["Baseline"]:
                 continue
             ds = ldb[ldb.model_type == model_type]
             ds.sort_values(by="metric_value", inplace=True)
+            print(ds)
             for n in list(ds.name.iloc[:models_limit].values):
                 self._stacked_models += [models_map[n]]
 
@@ -630,6 +632,7 @@ class AutoML:
         ]
 
     def stacked_ensemble_step(self):
+        print("T")
         # do we have enough models?
         if len(self._models) < 5:
             return
@@ -656,16 +659,35 @@ class AutoML:
         )
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
+
+
+
+        generated_params = self.tuner.get_not_so_random_params(len(self._models))
+
+        '''
         for m in self._stacked_models:
             if m.get_type() in [
                 "Ensemble",
                 "Baseline",
                 "Decision Tree",
                 "Nearest Neighbors",
+                "Extra Trees",#############
+                "Random Forest",###########
+                "Neural Network"###########
             ]:
                 continue
-
             params = copy.deepcopy(m.params)
+
+        '''
+        for params in generated_params:
+            
+            if params["learner"]["model_type"] not in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost"
+            ]:
+                continue
+            
             params["validation"]["X_train_path"] = X_train_stacked_path
 
             params["name"] = params["name"] + "_Stacked"
@@ -686,7 +708,7 @@ class AutoML:
                 if scale is not None:
                     for col in added_columns:
                         params["preprocessing"]["columns_preprocessing"][col] = [scale]
-
+            print(params)
             self.train_model(params)
 
     def _set_ml_task(self, y):
@@ -877,9 +899,9 @@ class AutoML:
         """
         try:
 
-            if self._best_model is not None:
-                print("Best model is already set, no need to run fit. Skipping ...")
-                return
+            #if self._best_model is not None:
+            #    print("Best model is already set, no need to run fit. Skipping ...")
+            #    return
 
             self._start_time = time.time()
 
@@ -914,10 +936,11 @@ class AutoML:
                 self._data_info,
                 self._seed,
             )
-
+            self.tuner = tuner
             self._time_spend = {}
             self._time_start = {}
 
+            
             # 1. Check simple algorithms
             self._fit_level = "simple_algorithms"
             start = time.time()
@@ -950,6 +973,7 @@ class AutoML:
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)
             self._time_spend["hill_climbing"] = np.round(time.time() - start, 2)
+            
 
             # 5. Ensemble unstacked models
             self._fit_level = "ensemble_unstacked"
@@ -958,6 +982,7 @@ class AutoML:
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
 
+            
             if self._stack:
                 # 6. Stack best models
                 self._fit_level = "stack"

@@ -39,11 +39,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
             "objective": self.params.get("objective", "binary"),
             "metric": self.params.get("metric", "binary_logloss"),
             "num_threads": multiprocessing.cpu_count(),
-            "num_leaves": self.params.get("num_leaves", 16),
-            "learning_rate": self.params.get("learning_rate", 0.01),
-            "feature_fraction": self.params.get("feature_fraction", 0.7),
-            "bagging_fraction": self.params.get("bagging_fraction", 0.7),
-            "bagging_freq": self.params.get("bagging_freq", 1),
+            "num_leaves": self.params.get("num_leaves", 31),
+            "learning_rate": self.params.get("learning_rate", 0.1),
+            "feature_fraction": self.params.get("feature_fraction", 1.0),
+            "bagging_fraction": self.params.get("bagging_fraction", 1.0),
+            "min_data_in_leaf": self.params.get("min_data_in_leaf", 20),
             "verbose": -1,
             "seed": self.params.get("seed", 1),
         }
@@ -138,22 +138,22 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
 lgbm_bin_params = {
     "objective": ["binary"],
-    "metric": ["binary_logloss", "auc"],
-    "num_leaves": [32, 64, 128, 256, 512],
-    "learning_rate": [0.01, 0.025, 0.05, 0.075, 0.1],
-    "feature_fraction": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "bagging_fraction": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "bagging_freq": [0, 1, 2, 3, 4, 5],
+    "metric": ["binary_logloss"],
+    "num_leaves": [3, 7, 15, 31], #, 63, 127],
+    "learning_rate": [0.05, 0.075, 0.1, 0.15],
+    "feature_fraction": [0.8, 0.9, 1.0],
+    "bagging_fraction": [0.8, 0.9, 1.0],
+    "min_data_in_leaf": [5, 10, 15, 20, 30, 50]
 }
 
 classification_bin_default_params = {
     "objective": "binary",
     "metric": "binary_logloss",
-    "num_leaves": 128,
+    "num_leaves": 31,
     "learning_rate": 0.1,
-    "feature_fraction": 1.0,
-    "bagging_fraction": 1.0,
-    "bagging_freq": 1,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.9,
+    "min_data_in_leaf": 10
 }
 
 
@@ -170,30 +170,18 @@ required_preprocessing = [
     "target_as_integer",
 ]
 
-lgbm_test_params = {
-    "objective": ["multiclass"],
-    "metric": ["multi_logloss"],
-    "num_leaves": [128],  # [31, 128],
-    "learning_rate": [0.03],  # [0.1, 0.03],
-    "feature_fraction": [0.9],  # [1.0, 0.9],
-    "min_data_in_leaf": [3]  # [20, 3]
-    # "bagging_fraction": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    # "bagging_freq": [0, 1, 2, 3, 4, 5],
-}
-
 lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
 lgbm_multi_params["objective"] = ["multiclass"]
-lgbm_multi_params["metric"] = ["multi_logloss", "multi_error"]
-
+lgbm_multi_params["metric"] = ["multi_logloss"]
 
 classification_multi_default_params = {
     "objective": "multiclass",
     "metric": "multi_logloss",
-    "num_leaves": 128,
+    "num_leaves": 31,
     "learning_rate": 0.1,
-    "feature_fraction": 1.0,
-    "bagging_fraction": 1.0,
-    "bagging_freq": 1,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.9,
+    "min_data_in_leaf": 10
 }
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
@@ -228,11 +216,11 @@ regression_required_preprocessing = [
 regression_default_params = {
     "objective": "regression",
     "metric": "l2",
-    "num_leaves": 128,
+    "num_leaves": 15,
     "learning_rate": 0.1,
-    "feature_fraction": 1.0,
-    "bagging_fraction": 1.0,
-    "bagging_freq": 1,
+    "feature_fraction": 0.9,
+    "bagging_fraction": 0.9,
+    "min_data_in_leaf": 10
 }
 
 AlgorithmsRegistry.add(

@@ -46,9 +46,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         self.learner_params = {
             "learning_rate": self.params.get("learning_rate", 0.1),
-            "depth": self.params.get("depth", 6),
-            "rsm": self.params.get("rsm", 1),
-            "l2_leaf_reg": self.params.get("l2_leaf_reg", 3),
+            "depth": self.params.get("depth", 3),
+            "min_data_in_leaf": self.params.get("min_data_in_leaf", 1),
+            "rsm": self.params.get("rsm", 1.0),
+            "subsample": self.params.get("subsample", 1.0),
             "random_seed": self.params.get("seed", 1),
             "loss_function": loss_function,
         }
@@ -58,7 +59,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             learning_rate=self.learner_params["learning_rate"],
             depth=self.learner_params["depth"],
             rsm=self.learner_params["rsm"],
-            l2_leaf_reg=self.learner_params["l2_leaf_reg"],
+            min_data_in_leaf=self.learner_params["min_data_in_leaf"],
             loss_function=self.learner_params["loss_function"],
             verbose=False,
             allow_writing_files=False,
@@ -148,16 +149,18 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
 classification_params = {
     "learning_rate": [0.005, 0.01, 0.05, 0.1, 0.2],
-    "depth": [4, 5, 6, 7, 8],
-    "rsm": [0.5, 0.6, 0.7, 0.8, 0.9, 1],  # random subspace method
-    "l2_leaf_reg": [1, 3, 5, 7, 10],
+    "depth": [2, 3, 4, 5, 6],
+    "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
+    "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
+    "min_data_in_leaf": [1, 5, 10, 15, 20, 30, 50],
 }
 
 classification_default_params = {
     "learning_rate": 0.1,
     "depth": 6,
-    "rsm": 1.0,
-    "l2_leaf_reg": 1,
+    "rsm": 0.9,
+    "subsample": 1.0,
+    "min_data_in_leaf": 15,
 }
 
 additional = {
@@ -195,8 +198,9 @@ regression_required_preprocessing = ["missing_values_inputation", "target_scale"
 regression_default_params = {
     "learning_rate": 0.1,
     "depth": 6,
-    "rsm": 1.0,
-    "l2_leaf_reg": 1,
+    "rsm": 0.9,
+    "subsample": 1.0,
+    "min_data_in_leaf": 15,
 }
 
 AlgorithmsRegistry.add(

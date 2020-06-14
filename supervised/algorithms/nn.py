@@ -161,7 +161,6 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         }
 
     def set_params(self, json_desc):
-
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
         self.algorithm_short_name = json_desc.get(
@@ -170,8 +169,11 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
         model_json = self.params.get("model_architecture_json")
-        if model_json is not None:
-            self.model = model_from_json(model_json)
+        if model_json is not None and self.model is None:
+            self.model = model_from_json(
+                json.loads(model_json)
+            )
+            self.compile_model()
 
     def file_extension(self):
         return "neural_network"
