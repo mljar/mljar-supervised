@@ -15,17 +15,17 @@ y = df["class"]
 
 automl = AutoML(
     #results_path="AutoML_41",
-    algorithms=["CatBoost"],
+    #algorithms=["CatBoost"],
     #algorithms=["Random Forest"],
     #    "Linear",
     #    "Xgboost",
     #    "Random Forest"
     #],
-    model_time_limit=10111,
+    total_time_limit=100,
     tuning_mode="Normal",
     explain_level=0
 )
-automl.set_advanced(start_random_models=1)
+#automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 predictions = automl.predict(X)

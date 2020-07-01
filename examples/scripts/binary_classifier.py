@@ -12,11 +12,11 @@ y = df["income"]
 
 automl = AutoML(
     #results_path="AutoML_23",
-    algorithms=["Baseline"], 
+    #algorithms=["Baseline"], 
     total_time_limit=30*60,
     explain_level=0
 )
-automl.set_advanced(start_random_models=1)
+#automl.set_advanced(start_random_models=1)
 
 automl.fit(X, y)
 predictions = automl.predict(X)

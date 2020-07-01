@@ -632,11 +632,10 @@ class AutoML:
         ]
 
     def stacked_ensemble_step(self):
-        print("T")
         # do we have enough models?
         if len(self._models) < 5:
             return
-        # do we have time
+        # do we have time?
         if self._total_time_limit is not None:
             time_left = self._total_time_limit - (time.time() - self._start_time)
             # we need at least 60 seconds to do anything
@@ -660,11 +659,10 @@ class AutoML:
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
 
-
-
         generated_params = self.tuner.get_not_so_random_params(len(self._models))
 
         '''
+        # resue old params
         for m in self._stacked_models:
             if m.get_type() in [
                 "Ensemble",
@@ -677,10 +675,9 @@ class AutoML:
             ]:
                 continue
             params = copy.deepcopy(m.params)
-
         '''
         for params in generated_params:
-            
+            # use only Xgboost, LightGBM and CatBoost as stacked models 
             if params["learner"]["model_type"] not in [
                 "Xgboost",
                 "LightGBM",

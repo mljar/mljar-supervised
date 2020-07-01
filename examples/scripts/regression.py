@@ -14,8 +14,8 @@ print(X.shape)
 
 automl = AutoML(
     #results_path="AutoML_43",
-    model_time_limit=600,
-    algorithms=["Linear"],
+    #total_time_limit=100,
+    #algorithms=["Linear"],
         # "Decision Tree",
         # ,
         # "Extra Trees"
@@ -24,7 +24,7 @@ automl = AutoML(
     tuning_mode="Normal"
 
 )
-automl.set_advanced(start_random_models=1)
+#automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 df["predictions"] = automl.predict(X)
