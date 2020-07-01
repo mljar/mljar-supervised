@@ -49,17 +49,6 @@ class LightgbmAlgorithmTest(unittest.TestCase):
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
 
-        losses = []
-        for i in range(3):
-            params = copy.deepcopy(self.params)
-            params["seed"] = 1 + i
-            model = LightgbmAlgorithm(params)
-            model.fit(self.X, self.y)
-            y_predicted = model.predict(self.X)
-            losses += [metric(self.y, y_predicted)]
-        for i in range(1, 3):
-            self.assertNotEqual(losses[i - 1], losses[i])
-
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
         lgb = LightgbmAlgorithm(self.params)
