@@ -619,7 +619,7 @@ class AutoML:
         for model_type in np.unique(ldb.model_type):
             if model_type in ["Baseline"]:
                 continue
-            ds = ldb[ldb.model_type == model_type]
+            ds = ldb[ldb.model_type == model_type].copy()
             ds.sort_values(by="metric_value", inplace=True)
             
             for n in list(ds.name.iloc[:models_limit].values):

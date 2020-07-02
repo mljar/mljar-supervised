@@ -4,6 +4,11 @@ from supervised.automl import AutoML
 import supervised 
 
 
+import warnings
+#warnings.filterwarnings('error')
+warnings.filterwarnings("error", category=pd.core.common.SettingWithCopyWarning) # message="*ndarray*")
+
+
 # df = pd.read_csv("tests/data/iris_classes_missing_values_missing_target.csv")
 df = pd.read_csv("tests/data/iris_missing_values_missing_target.csv")
 X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
@@ -17,7 +22,7 @@ automl = AutoML(
     #    "Xgboost",
     #    "Random Forest"
     #],
-    total_time_limit=1000,
+    total_time_limit=100,
     tuning_mode="Normal",
     explain_level=0
 )

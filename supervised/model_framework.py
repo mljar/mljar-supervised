@@ -202,7 +202,7 @@ class ModelFramework:
             c for c in self.oof_predictions.columns.tolist() if "target" in c
         ]
         if len(target_cols) > 1:
-            target = self.oof_predictions[target_cols[0]]
+            target = self.oof_predictions[target_cols[0]].copy()
             target.name = "target"
             for i, t in enumerate(target_cols):
                 target[self.oof_predictions[t] == 1] = i
