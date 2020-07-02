@@ -430,7 +430,7 @@ class AutoML:
 
         if self._enough_time_to_train(mf.get_type()):
 
-            self.verbose_print(params["name"] + " training start ...")
+            #self.verbose_print(params["name"] + " training start ...")
             logger.info(
                 f"Train model #{len(self._models)+1} / Model name: {params['name']}"
             )
@@ -617,12 +617,11 @@ class AutoML:
         models_limit = 10
 
         for model_type in np.unique(ldb.model_type):
-            print(model_type)
             if model_type in ["Baseline"]:
                 continue
             ds = ldb[ldb.model_type == model_type]
             ds.sort_values(by="metric_value", inplace=True)
-            print(ds)
+            
             for n in list(ds.name.iloc[:models_limit].values):
                 self._stacked_models += [models_map[n]]
 
@@ -632,15 +631,16 @@ class AutoML:
         ]
 
     def stacked_ensemble_step(self):
+        #print("Stacked models ....")
         # do we have enough models?
         if len(self._models) < 5:
             return
         # do we have time?
-        if self._total_time_limit is not None:
-            time_left = self._total_time_limit - (time.time() - self._start_time)
-            # we need at least 60 seconds to do anything
-            if time_left < 60:
-                return
+        #if self._total_time_limit is not None:
+        #    time_left = self._total_time_limit - (time.time() - self._start_time)
+        #    # we need at least 60 seconds to do anything
+        #    if time_left < 60:
+        #        return
 
         # read X directly from parquet
         X = pd.read_parquet(self._X_train_path)
@@ -658,37 +658,23 @@ class AutoML:
         )
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
-
-        generated_params = self.tuner.get_not_so_random_params(len(self._models))
-
-        '''
         # resue old params
         for m in self._stacked_models:
-            if m.get_type() in [
-                "Ensemble",
-                "Baseline",
-                "Decision Tree",
-                "Nearest Neighbors",
-                "Extra Trees",#############
-                "Random Forest",###########
-                "Neural Network"###########
-            ]:
-                continue
-            params = copy.deepcopy(m.params)
-        '''
-        for params in generated_params:
+            #print(m.get_type())
             # use only Xgboost, LightGBM and CatBoost as stacked models 
-            if params["learner"]["model_type"] not in [
+            if m.get_type() not in [
                 "Xgboost",
                 "LightGBM",
                 "CatBoost"
             ]:
                 continue
-            
+
+            params = copy.deepcopy(m.params)    
             params["validation"]["X_train_path"] = X_train_stacked_path
 
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
+            #print(params)
 
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
@@ -705,7 +691,7 @@ class AutoML:
                 if scale is not None:
                     for col in added_columns:
                         params["preprocessing"]["columns_preprocessing"][col] = [scale]
-            print(params)
+            
             self.train_model(params)
 
     def _set_ml_task(self, y):

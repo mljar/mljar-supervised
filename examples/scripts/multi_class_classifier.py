@@ -3,10 +3,6 @@ import numpy as np
 from supervised.automl import AutoML
 import supervised 
 
-print(supervised.__version__)
-import sys
-print(sys.path)
-
 
 # df = pd.read_csv("tests/data/iris_classes_missing_values_missing_target.csv")
 df = pd.read_csv("tests/data/iris_missing_values_missing_target.csv")
@@ -21,7 +17,7 @@ automl = AutoML(
     #    "Xgboost",
     #    "Random Forest"
     #],
-    total_time_limit=100,
+    total_time_limit=1000,
     tuning_mode="Normal",
     explain_level=0
 )
