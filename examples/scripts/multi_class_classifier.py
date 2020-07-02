@@ -22,7 +22,7 @@ automl = AutoML(
     #    "Xgboost",
     #    "Random Forest"
     #],
-    total_time_limit=100,
+    total_time_limit=600,
     tuning_mode="Normal",
     explain_level=0
 )
@@ -33,3 +33,6 @@ predictions = automl.predict(X)
 
 print(predictions.head())
 print(predictions.tail())
+
+print(X.shape)
+print(predictions.shape)

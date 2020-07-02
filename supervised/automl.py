@@ -600,8 +600,12 @@ class AutoML:
             oof.columns = [f"{m.get_name()}_{c}" for c in cols]
             all_oofs += [oof]
 
+        org_index = X.index.copy()
+        X.reset_index(drop=True, inplace=True)
         X_stacked = pd.concat(all_oofs + [X], axis=1)
-
+        
+        X_stacked.index = org_index.copy()
+        X.index = org_index.copy()
         return X_stacked
 
     def stack_models(self):
@@ -636,11 +640,11 @@ class AutoML:
         if len(self._models) < 5:
             return
         # do we have time?
-        #if self._total_time_limit is not None:
-        #    time_left = self._total_time_limit - (time.time() - self._start_time)
-        #    # we need at least 60 seconds to do anything
-        #    if time_left < 60:
-        #        return
+        if self._total_time_limit is not None:
+            time_left = self._total_time_limit - (time.time() - self._start_time)
+            # we need at least 60 seconds to do anything
+            if time_left < 60:
+                return
 
         # read X directly from parquet
         X = pd.read_parquet(self._X_train_path)
@@ -882,9 +886,9 @@ class AutoML:
         """
         try:
 
-            #if self._best_model is not None:
-            #    print("Best model is already set, no need to run fit. Skipping ...")
-            #    return
+            if self._best_model is not None:
+                print("Best model is already set, no need to run fit. Skipping ...")
+                return
 
             self._start_time = time.time()
 
@@ -1053,6 +1057,7 @@ class AutoML:
         if self._best_model._is_stacked:
             self.stack_models()
             X_stacked = self.get_stacked_data(X, mode="predict")
+
             if self._best_model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
                 predictions = self._best_model.predict(X, X_stacked)
