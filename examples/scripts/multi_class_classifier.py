@@ -17,12 +17,12 @@ y = df["class"]
 automl = AutoML(
     #results_path="AutoML_41",
     #algorithms=["CatBoost"],
-    #algorithms=["Random Forest"],
+    algorithms=["Neural Network"],
     #    "Linear",
     #    "Xgboost",
     #    "Random Forest"
     #],
-    total_time_limit=600,
+    total_time_limit=100,
     tuning_mode="Normal",
     explain_level=0
 )

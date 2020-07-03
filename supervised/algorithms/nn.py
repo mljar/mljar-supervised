@@ -38,6 +38,9 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.models import model_from_json
 from keras.utils import to_categorical
+from keras.callbacks import ModelCheckpoint
+from keras.models import load_model
+from keras.callbacks import EarlyStopping
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -128,9 +131,37 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         pass
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
-        self.model.fit(X, y, batch_size=512, epochs=self.rounds, verbose=False)
+        
+        batch_size = 1024
+        if X.shape[0] < batch_size * 5:
+            batch_size = 32
+        
+        self.model.fit(X, y, batch_size=batch_size, epochs=self.rounds, verbose=False)
+        
+        """
+        # Experimental ...
+        es = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=50)
+        mc = ModelCheckpoint(
+            "best_model.h5",
+            monitor="val_loss",
+            mode="min",
+            verbose=0,
+            save_best_only=True,
+        )
+        self.model.fit(
+            X,
+            y,
+            validation_data=(X_validation, y_validation),
+            batch_size=4096,
+            epochs=1000,
+            verbose=False,
+            callbacks=[es, mc],
+        )
+        self.model = load_model("best_model.h5")
+        """
 
     def predict(self, X):
         if "num_class" in self.params:
@@ -170,9 +201,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         self.params = json_desc.get("params", self.params)
         model_json = self.params.get("model_architecture_json")
         if model_json is not None and self.model is None:
-            self.model = model_from_json(
-                json.loads(model_json)
-            )
+            self.model = model_from_json(json.loads(model_json))
             self.compile_model()
 
     def file_extension(self):
@@ -207,6 +236,7 @@ additional = {
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
+
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",

@@ -27,8 +27,9 @@ class XgbAlgorithmException(Exception):
 
 
 def time_constraint(env):
-    #print("time constraint")
+    # print("time constraint")
     pass
+
 
 class XgbAlgorithm(BaseAlgorithm):
     """
@@ -43,7 +44,7 @@ class XgbAlgorithm(BaseAlgorithm):
         self.library_version = xgb.__version__
 
         self.explain_level = params.get("explain_level", 0)
-        self.boosting_rounds = additional.get("max_rounds", 10000) 
+        self.boosting_rounds = additional.get("max_rounds", 10000)
         self.max_iters = 1
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
 
@@ -75,7 +76,7 @@ class XgbAlgorithm(BaseAlgorithm):
         dvalidation = xgb.DMatrix(X_validation, label=y_validation, missing=np.NaN)
         evals_result = {}
 
-        evals = [] 
+        evals = []
         esr = None
         if X_validation is not None and y_validation is not None:
             evals = [(dtrain, "train"), (dvalidation, "validation")]
@@ -88,7 +89,7 @@ class XgbAlgorithm(BaseAlgorithm):
             early_stopping_rounds=esr,
             evals_result=evals_result,
             verbose_eval=False,
-            #callbacks=[time_constraint] # callback slows down by factor ~8
+            # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 
         if log_to_file is not None:

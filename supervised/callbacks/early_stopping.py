@@ -148,9 +148,13 @@ class EarlyStopping(Callback):
             )
         )
 
-        #print(self.learner.algorithm_short_name)
+        # print(self.learner.algorithm_short_name)
         if self.log_to_dir is not None and self.learner.algorithm_short_name not in [
-            "Xgboost", "Random Forest", "Extra Trees", "LightGBM", "CatBoost"
+            "Xgboost",
+            "Random Forest",
+            "Extra Trees",
+            "LightGBM",
+            "CatBoost",
         ]:
 
             with open(

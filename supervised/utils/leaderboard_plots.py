@@ -10,8 +10,9 @@ logger.setLevel(LOG_LEVEL)
 
 import matplotlib.pyplot as plt
 import warnings
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
-        
+
+warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+
 
 class LeaderboardPlots:
 

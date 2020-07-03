@@ -15,6 +15,7 @@ from supervised.exceptions import AutoMLException
 from supervised.utils.config import mem
 import time
 
+
 class KFoldValidator(BaseValidator):
     def __init__(self, params):
         BaseValidator.__init__(self, params)

@@ -31,7 +31,6 @@ class SplitValidator(BaseValidator):
         if self._X_train_path is None or self._y_train_path is None:
             raise AutoMLException("No training data path set in SplitValidator params")
 
-
     def get_split(self, k=0):
 
         X = pd.read_parquet(self._X_train_path)
@@ -48,7 +47,7 @@ class SplitValidator(BaseValidator):
             X,
             y,
             train_size=self.train_ratio,
-            test_size=1.0-self.train_ratio,
+            test_size=1.0 - self.train_ratio,
             shuffle=self.shuffle,
             stratify=stratify,
             random_state=self.random_seed,

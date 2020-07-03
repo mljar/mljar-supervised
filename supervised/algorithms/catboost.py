@@ -35,7 +35,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         self.rounds = additional.get("max_rounds", 10000)
         self.max_iters = 1
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
-        
+
         Algo = CatBoostClassifier
         loss_function = "Logloss"
         if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
@@ -75,7 +75,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 if PreprocessingUtils.is_categorical(X.iloc[:, i]):
                     self.cat_features += [i]
 
-        eval_set = None 
+        eval_set = None
         if X_validation is not None and y_validation is not None:
             eval_set = (X_validation, y_validation)
 
@@ -89,17 +89,18 @@ class CatBoostAlgorithm(BaseAlgorithm):
             verbose_eval=False,
         )
         if log_to_file is not None:
-            
+
             metric_name = list(self.model.evals_result_["learn"].keys())[0]
             result = pd.DataFrame(
                 {
-                    "iteration": range(len(self.model.evals_result_["learn"][metric_name])),
+                    "iteration": range(
+                        len(self.model.evals_result_["learn"][metric_name])
+                    ),
                     "train": self.model.evals_result_["learn"][metric_name],
                     "validation": self.model.evals_result_["validation"][metric_name],
                 }
             )
             result.to_csv(log_to_file, index=False, header=False)
-
 
     def predict(self, X):
         if self.params["ml_task"] == BINARY_CLASSIFICATION:

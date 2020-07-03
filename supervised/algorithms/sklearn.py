@@ -15,11 +15,11 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+
 class SklearnAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(SklearnAlgorithm, self).__init__(params)
 
-    
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         self.model.fit(X, y)
 
@@ -60,18 +60,20 @@ class SklearnAlgorithm(BaseAlgorithm):
         return self.model.predict(X)
 
 
-
 from supervised.utils.metric import Metric
 
 
 def predict_proba_function(estimator, X):
     return estimator.predict_proba(X)
 
+
 class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
         super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
         self.log_metric = Metric({"name": "logloss"})
-        self.max_iters = 1 # max iters is used by model_framework, max_steps is used internally
+        self.max_iters = (
+            1
+        )  # max iters is used by model_framework, max_steps is used internally
         self.predict_function = predict_proba_function
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
@@ -86,14 +88,14 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         result = {"iteration": [], "train": [], "validation": []}
 
         for i in range(max_steps):
-            
+
             self.model.fit(X, np.ravel(y))
             self.model.n_estimators += self.trees_in_step
-            
+
             if X_validation is None or y_validation is None:
                 continue
             estimators = self.model.estimators_
-            
+
             stop = False
             for e in range(n_estimators, len(estimators)):
                 p = self.predict_function(estimators[e], X)
@@ -115,10 +117,10 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 result["train"] += [tr]
                 result["validation"] += [vd]
 
-                if vd < min_val: # optimize direction
+                if vd < min_val:  # optimize direction
                     min_val = vd
                     min_e = e
-                
+
                 if e - min_e >= self.early_stopping_rounds:
                     stop = True
                     break
@@ -127,12 +129,14 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 self.model.estimators_ = estimators[: (min_e + 1)]
                 break
             n_estimators = len(estimators)
-        
+
         if log_to_file is not None:
             pd.DataFrame(result).to_csv(log_to_file, index=False, header=False)
 
+
 def predict_function(estimator, X):
     return estimator.predict(X)
+
 
 class SklearnTreesEnsembleRegressorAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def __init__(self, params):

@@ -20,7 +20,9 @@ class ValidationStep:
         elif self.validation_type == "split":
             self.validator = SplitValidator(params)
         else:
-            raise AutoMLException(f"The validation type ({self.validation_type}) is not implemented.")
+            raise AutoMLException(
+                f"The validation type ({self.validation_type}) is not implemented."
+            )
         """
         
         elif self.validation_type == "with_dataset":

@@ -43,7 +43,7 @@ class KNeighborsAlgorithm(SklearnAlgorithm):
     def file_extension(self):
         return "k_neighbors"
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         if X.shape[0] > 1000:
             X1, _, y1, _ = train_test_split(
                 X, y, train_size=1000, stratify=y, random_state=1234
@@ -73,7 +73,7 @@ class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
     def file_extension(self):
         return "k_neighbors"
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file = None):
+    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         if X.shape[0] > 1000:
             X1, _, y1, _ = train_test_split(X, y, train_size=1000, random_state=1234)
             self.model.fit(X1, y1)

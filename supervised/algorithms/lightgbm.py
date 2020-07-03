@@ -30,10 +30,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
         self.library_version = lgb.__version__
 
         self.explain_level = params.get("explain_level", 0)
-        self.rounds = additional.get("max_rounds", 10000) 
-        self.max_iters = 1 
+        self.rounds = additional.get("max_rounds", 10000)
+        self.max_iters = 1
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
-    
+
         self.learner_params = {
             "boosting_type": "gbdt",
             "objective": self.params.get("objective", "binary"),
@@ -69,8 +69,8 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 init_model=self.model,
             )
         else:
-            valid_sets = None 
-            valid_names = None 
+            valid_sets = None
+            valid_names = None
             esr = None
             if X_validation is not None and y_validation is not None:
                 valid_sets = [lgb_train, lgb.Dataset(X_validation, y_validation)]
@@ -99,7 +99,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
                     }
                 )
                 result.to_csv(log_to_file, index=False, header=False)
-            
 
     def predict(self, X):
         return self.model.predict(X)
@@ -139,11 +138,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
 lgbm_bin_params = {
     "objective": ["binary"],
     "metric": ["binary_logloss"],
-    "num_leaves": [3, 7, 15, 31], #, 63, 127],
+    "num_leaves": [3, 7, 15, 31],  # , 63, 127],
     "learning_rate": [0.05, 0.075, 0.1, 0.15],
     "feature_fraction": [0.8, 0.9, 1.0],
     "bagging_fraction": [0.8, 0.9, 1.0],
-    "min_data_in_leaf": [5, 10, 15, 20, 30, 50]
+    "min_data_in_leaf": [5, 10, 15, 20, 30, 50],
 }
 
 classification_bin_default_params = {
@@ -153,7 +152,7 @@ classification_bin_default_params = {
     "learning_rate": 0.1,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
-    "min_data_in_leaf": 10
+    "min_data_in_leaf": 10,
 }
 
 
@@ -181,7 +180,7 @@ classification_multi_default_params = {
     "learning_rate": 0.1,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
-    "min_data_in_leaf": 10
+    "min_data_in_leaf": 10,
 }
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
@@ -220,7 +219,7 @@ regression_default_params = {
     "learning_rate": 0.1,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
-    "min_data_in_leaf": 10
+    "min_data_in_leaf": 10,
 }
 
 AlgorithmsRegistry.add(

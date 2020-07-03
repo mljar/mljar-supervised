@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import (
     SklearnTreesEnsembleClassifierAlgorithm,
-    SklearnTreesEnsembleRegressorAlgorithm
+    SklearnTreesEnsembleRegressorAlgorithm,
 )
 
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -60,7 +60,9 @@ class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
         self.library_version = sklearn.__version__
         self.trees_in_step = regression_additional.get("trees_in_step", 5)
         self.max_steps = regression_additional.get("max_steps", 3)
-        self.early_stopping_rounds = regression_additional.get("early_stopping_rounds", 50)
+        self.early_stopping_rounds = regression_additional.get(
+            "early_stopping_rounds", 50
+        )
         self.model = RandomForestRegressor(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "mse"),

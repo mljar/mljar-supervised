@@ -277,7 +277,9 @@ class AutoML:
 
             models_map = {}
             for model_path in self._model_paths:
-                if model_path.endswith("Ensemble") or model_path.endswith("Ensemble_Stacked"):
+                if model_path.endswith("Ensemble") or model_path.endswith(
+                    "Ensemble_Stacked"
+                ):
                     ens = Ensemble.load(model_path, models_map)
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
@@ -430,7 +432,7 @@ class AutoML:
 
         if self._enough_time_to_train(mf.get_type()):
 
-            #self.verbose_print(params["name"] + " training start ...")
+            # self.verbose_print(params["name"] + " training start ...")
             logger.info(
                 f"Train model #{len(self._models)+1} / Model name: {params['name']}"
             )
@@ -603,7 +605,7 @@ class AutoML:
         org_index = X.index.copy()
         X.reset_index(drop=True, inplace=True)
         X_stacked = pd.concat(all_oofs + [X], axis=1)
-        
+
         X_stacked.index = org_index.copy()
         X.index = org_index.copy()
         return X_stacked
@@ -625,7 +627,7 @@ class AutoML:
                 continue
             ds = ldb[ldb.model_type == model_type].copy()
             ds.sort_values(by="metric_value", inplace=True)
-            
+
             for n in list(ds.name.iloc[:models_limit].values):
                 self._stacked_models += [models_map[n]]
 
@@ -635,7 +637,7 @@ class AutoML:
         ]
 
     def stacked_ensemble_step(self):
-        #print("Stacked models ....")
+        # print("Stacked models ....")
         # do we have enough models?
         if len(self._models) < 5:
             return
@@ -664,21 +666,17 @@ class AutoML:
 
         # resue old params
         for m in self._stacked_models:
-            #print(m.get_type())
-            # use only Xgboost, LightGBM and CatBoost as stacked models 
-            if m.get_type() not in [
-                "Xgboost",
-                "LightGBM",
-                "CatBoost"
-            ]:
+            # print(m.get_type())
+            # use only Xgboost, LightGBM and CatBoost as stacked models
+            if m.get_type() not in ["Xgboost", "LightGBM", "CatBoost"]:
                 continue
 
-            params = copy.deepcopy(m.params)    
+            params = copy.deepcopy(m.params)
             params["validation"]["X_train_path"] = X_train_stacked_path
 
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
-            #print(params)
+            # print(params)
 
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
@@ -695,7 +693,7 @@ class AutoML:
                 if scale is not None:
                     for col in added_columns:
                         params["preprocessing"]["columns_preprocessing"][col] = [scale]
-            
+
             self.train_model(params)
 
     def _set_ml_task(self, y):
@@ -927,7 +925,6 @@ class AutoML:
             self._time_spend = {}
             self._time_start = {}
 
-            
             # 1. Check simple algorithms
             self._fit_level = "simple_algorithms"
             start = time.time()
@@ -960,7 +957,6 @@ class AutoML:
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)
             self._time_spend["hill_climbing"] = np.round(time.time() - start, 2)
-            
 
             # 5. Ensemble unstacked models
             self._fit_level = "ensemble_unstacked"
@@ -969,7 +965,6 @@ class AutoML:
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
 
-            
             if self._stack:
                 # 6. Stack best models
                 self._fit_level = "stack"

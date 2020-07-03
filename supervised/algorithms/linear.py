@@ -19,6 +19,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+
 class LinearAlgorithm(SklearnAlgorithm):
 
     algorithm_name = "Logistic Regression"

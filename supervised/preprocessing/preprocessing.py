@@ -216,10 +216,14 @@ class Preprocessing(object):
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
                 X_validation = missing.transform(X_validation)
-        
+
         # to be sure that all missing are filled
         # in case new data there can be gaps!
-        if X_validation is not None and np.sum(np.sum(pd.isnull(X_validation))) > 0 and len(self._params["columns_preprocessing"]) > 0:
+        if (
+            X_validation is not None
+            and np.sum(np.sum(pd.isnull(X_validation))) > 0
+            and len(self._params["columns_preprocessing"]) > 0
+        ):
             # there is something missing, fill it
             # we should notice user about it!
             warnings.warn(

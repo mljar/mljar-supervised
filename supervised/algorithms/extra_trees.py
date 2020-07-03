@@ -6,7 +6,7 @@ from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import (
     SklearnTreesEnsembleClassifierAlgorithm,
-    SklearnTreesEnsembleRegressorAlgorithm
+    SklearnTreesEnsembleRegressorAlgorithm,
 )
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
@@ -59,7 +59,9 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
         self.library_version = sklearn.__version__
         self.trees_in_step = regression_additional.get("trees_in_step", 100)
         self.max_steps = regression_additional.get("max_steps", 50)
-        self.early_stopping_rounds = regression_additional.get("early_stopping_rounds", 50)
+        self.early_stopping_rounds = regression_additional.get(
+            "early_stopping_rounds", 50
+        )
         self.model = ExtraTreesRegressor(
             n_estimators=self.trees_in_step,
             criterion=params.get("criterion", "mse"),
