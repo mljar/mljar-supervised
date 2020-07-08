@@ -138,16 +138,17 @@ class AdditionalMetrics:
         else:
             # multiclass coding with one-hot encoding
             old_columns = target.columns
-            print(old_columns)
             t = target[old_columns[0]]
             for l in all_labels:
                 t[target[f"target_{l}"] == 1] = l
-                print(l, t)
 
             target = pd.DataFrame({"target": t})
 
         # Print the confusion matrix
         predictions = predictions["label"]
+        if not pd.api.types.is_string_dtype(target):
+            target = target.astype(str)
+
         conf_matrix = confusion_matrix(target, predictions, labels=all_labels)
 
         rows = [f"Predicted as {a}" for a in all_labels]

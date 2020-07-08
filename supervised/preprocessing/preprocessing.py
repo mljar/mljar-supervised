@@ -298,6 +298,7 @@ class Preprocessing(object):
 
     def prepare_target_labels(self, y):
         pos_label, neg_label = "1", "0"
+
         if self._categorical_y is not None:
             if len(y.shape) == 1:
                 # binary classification
@@ -336,6 +337,7 @@ class Preprocessing(object):
                 df["label"] = np.argmax(np.array(df[cols]), axis=1)
 
                 df["label"] = df["label"].map(labels)
+                
                 return df
         else:  # self._categorical_y is None
             if "ml_task" in self._params:

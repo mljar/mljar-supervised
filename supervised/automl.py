@@ -279,7 +279,7 @@ class AutoML:
         self._time_spend = {}
         self._start_time = time.time()  # it will be updated in `fit` method
 
-        if self._validation["validation_type"] != "kfold":
+        if self._validation["validation_type"] != "kfold" and self._stack_models:
             print("Models cannot be stacked. Please set validation to k-fold to stack models.")
             # stacking only available of k-fold validation
             self._stack_models = False
@@ -934,6 +934,9 @@ class AutoML:
         self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
 
         X_train.to_parquet(self._X_train_path, index=False)
+
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            y_train = y_train.astype(str)
 
         pd.DataFrame({"target": y_train}).to_parquet(self._y_train_path, index=False)
 
