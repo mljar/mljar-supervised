@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/mljar/mljar-supervised.svg?branch=master)](https://travis-ci.org/mljar/mljar-supervised)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmljar%2Fmljar-supervised.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmljar%2Fmljar-supervised?ref=badge_shield)
 
 ## Automated Machine Learning 
 
@@ -108,3 +109,7 @@ pip install -r requirements_dev.txt
 
 The `mljar-supervised` is an open-source project created by [MLJAR](https://mljar.com). We care about ease of use in the Machine Learning. 
 The [mljar.com](https://mljar.com) provides a beautiful and simple user interface for building machine learning models.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmljar%2Fmljar-supervised.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmljar%2Fmljar-supervised?ref=badge_large)
