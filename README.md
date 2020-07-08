@@ -67,9 +67,9 @@ It should be used for machine learning competitions.
  - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network` and `Nearest Neighbors`. It uses ensemble and **stacking**. 
  - It has only learning curves in the reports.
 
-## Examples
+# Examples
 
-### :point_right: Classification example
+## :point_right: Classification example
 
 There is a simple interface available with `fit` and `predict` methods.
 
@@ -91,7 +91,7 @@ predictions = automl.predict(X)
 For details please check [AutoML API Docs](docs/api.md).
 
 
-### :point_right: Multi-Class Classification Example
+## :point_right: Multi-Class Classification Example
 
 The example code for classification of the optical recognition of handwritten digits dataset. Running this code in less than 30 minutes will result in test accuracy ~98%.
 
@@ -121,7 +121,7 @@ print(predictions.head())
 print("Test accuracy:", accuracy_score(y_test, predictions["label"].astype(int)))
 ```
 
-### :point_right: Regression Example
+## :point_right: Regression Example
 
 Regression example on Boston house prices data. On test data it scores ~ 10.85 mean squared error (MSE).
 
@@ -159,7 +159,7 @@ print("Test MSE:", mean_squared_error(y_test, predictions["prediction"]))
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
 
-## Markdown reports
+# Markdown reports
 
 
 ![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
@@ -171,7 +171,7 @@ The example for `LightGBM` summary:
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
-## Installation :package: :wrench:
+# Installation :package: 
 
 From PyPi repository:
 
@@ -196,11 +196,15 @@ pip install -r requirements.txt
 pip install -r requirements_dev.txt
 ```
 
-## License :scroll: :necktie:
+# Contributing
+
+To get started take a look at our [Contribution Guide](docs/contributing.md) for information about our process and where you can fit in!
+
+# License :necktie:
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
 
-## :heart: MLJAR :heart:
+# MLJAR :heart:
 <p align="center">
   <img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
 </p>
