@@ -163,16 +163,25 @@ print("Test MSE:", mean_squared_error(y_test, predictions["prediction"]))
 
 ## The AutoML Report
 
-The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :thropy:.
+The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :throphy:.
 
 ![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
 
-## The `Decision Tree` report
+## The `Decision Tree` Report
 
-The example for `Decision Tree` summary:
+The example for `Decision Tree` summary with trees visualization. For classification tasks additional metrics are provided:
+- confusion matrix
+- threshold (optimized in the case of binary classification task)
+- F1 score
+- Accuracy
+- Precision, Recall, MCC
+
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
 
+## The `LightGBM` Report
+
 The example for `LightGBM` summary:
+
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
