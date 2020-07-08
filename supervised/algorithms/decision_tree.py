@@ -191,7 +191,7 @@ dt_regression_params = {
         "mse",
         "friedman_mse",
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
-    "max_depth": [1, 2, 3, 4],
+    "max_depth": [2, 3, 4],
 }
 regression_required_preprocessing = ["missing_values_inputation", "convert_categorical"]
 

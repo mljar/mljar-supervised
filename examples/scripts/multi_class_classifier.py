@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
 from supervised.automl import AutoML
-import supervised 
+import supervised
 
 
 import warnings
-#warnings.filterwarnings('error')
-warnings.filterwarnings("error", category=pd.core.common.SettingWithCopyWarning) # message="*ndarray*")
+
+# warnings.filterwarnings('error')
+warnings.filterwarnings(
+    "error", category=pd.core.common.SettingWithCopyWarning
+)  # message="*ndarray*")
 
 
 # df = pd.read_csv("tests/data/iris_classes_missing_values_missing_target.csv")
@@ -15,18 +18,18 @@ X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
 y = df["class"]
 
 automl = AutoML(
-    #results_path="AutoML_41",
-    #algorithms=["CatBoost"],
+    # results_path="AutoML_41",
+    # algorithms=["CatBoost"],
     algorithms=["Neural Network"],
     #    "Linear",
     #    "Xgboost",
     #    "Random Forest"
-    #],
+    # ],
     total_time_limit=100,
     tuning_mode="Normal",
-    explain_level=0
+    explain_level=0,
 )
-#automl.set_advanced(start_random_models=1)
+# automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 predictions = automl.predict(X)

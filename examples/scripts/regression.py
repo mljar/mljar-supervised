@@ -13,19 +13,19 @@ print("y", y[:10])
 print(X.shape)
 
 automl = AutoML(
-    #results_path="AutoML_43",
-    #total_time_limit=100,
-    #algorithms=["Linear"],
-        # "Decision Tree",
-        # ,
-        # "Extra Trees"
-    #],
-    #explain_level=0,
-    #tuning_mode="Normal"
-    mode = 'Explain',
-    #train_ensemble = True
+    # results_path="AutoML_43",
+    # total_time_limit=100,
+    # algorithms=["Linear"],
+    # "Decision Tree",
+    # ,
+    # "Extra Trees"
+    # ],
+    # explain_level=0,
+    # tuning_mode="Normal"
+    mode="Explain",
+    # train_ensemble = True
 )
-#automl.set_advanced(start_random_models=1)
+# automl.set_advanced(start_random_models=1)
 automl.fit(X, y)
 
 df["predictions"] = automl.predict(X)

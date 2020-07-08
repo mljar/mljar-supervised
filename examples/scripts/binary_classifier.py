@@ -5,7 +5,8 @@ from sklearn.model_selection import train_test_split
 import os
 
 import warnings
-#warnings.filterwarnings("error", category=RuntimeWarning) #pd.core.common.SettingWithCopyWarning) 
+
+# warnings.filterwarnings("error", category=RuntimeWarning) #pd.core.common.SettingWithCopyWarning)
 
 df = pd.read_csv(
     "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
@@ -18,10 +19,10 @@ y = df["income"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
-    #results_path="AutoML_8",
-    #algorithms=["Neural Network"], 
-    #total_time_limit=200,
-    #explain_level=0
+    # results_path="AutoML_8",
+    # algorithms=["Neural Network"],
+    # total_time_limit=200,
+    # explain_level=0
     mode="Perform"
 )
 automl.fit(X_train, y_train)
