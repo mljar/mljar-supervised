@@ -15,7 +15,7 @@ class AutoMLIntegrationTest(unittest.TestCase):
     automl_dir = "automl_1"
 
     def tearDown(self):
-        shutil.rmtree(self.automl_dir)
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_integration(self):
         a = AutoML(results_path=self.automl_dir, total_time_limit=1)

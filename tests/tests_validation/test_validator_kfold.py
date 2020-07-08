@@ -18,7 +18,7 @@ class KFoldValidatorTest(unittest.TestCase):
     def tearDownClass(cls):
         print("TEAR DOWN CLASS")
 
-        shutil.rmtree(cls._results_path)
+        shutil.rmtree(cls._results_path, ignore_errors=True)
 
     def test_create(self):
 

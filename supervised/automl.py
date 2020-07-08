@@ -6,39 +6,33 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+from tabulate import tabulate
 
-from supervised.model_framework import ModelFramework
+from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import REGRESSION
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.learner_time_constraint import LearnerTimeConstraint
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
-
-from supervised.utils.metric import Metric
-from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-)
-from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.ensemble import Ensemble
+from supervised.exceptions import AutoMLException
+from supervised.model_framework import ModelFramework
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.tuner.data_info import DataInfo
+from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
-from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.utils.metric import Metric
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
-
-from supervised.exceptions import AutoMLException
-from supervised.tuner.data_info import DataInfo
-import gc
-from supervised.utils.config import mem
-
-from tabulate import tabulate
 
 
 class AutoML:
@@ -49,52 +43,49 @@ class AutoML:
     def __init__(
         self,
         results_path=None,
-        total_time_limit=60 * 60,
-        model_time_limit=None,
-        algorithms=[
-            "Baseline",
-            "Linear",
-            "Decision Tree",
-            "Random Forest",
-            "Extra Trees",
-            "LightGBM",
-            "Xgboost",
-            "CatBoost",
-            "Neural Network",
-            "Nearest Neighbors",
-        ],
-        tuning_mode="Normal",
-        train_ensemble=True,
-        stack=True,
-        optimize_metric=None,
-        validation={
-            "validation_type": "kfold",
-            "k_folds": 10,
-            "shuffle": True,
-            "stratify": True,
-        },
-        verbose=True,
-        ml_task=None,
-        explain_level=2,
-        seed=1,
+        total_time_limit=30 * 60,
+        mode="Explain",
+        **kwargs
     ):
+    
         """
-        Create the AutoML object. Initialize directory for results.
-
-        :param results_path: The path where all results will be saved. 
-        If left `None` then the name of directory will be generated, with schema: AutoML_{number},
-        where number can be from 1 to 100 - depends which direcory name will be available.
-
-        If the `results_path` will point to directory with AutoML results, then all models will be loaded.
+        Initialize the AutoML object. 
         
-        :param total_time_limit: The time limit in seconds for AutoML training. It is not used when `model_time_limit` is not `None`.
+        :param results_path: The path with results. 
+        If left `None` then the name of directory will be generated, with template: AutoML_{number},
+        where the number can be from 1 to 1,000 - depends which direcory name will be available.
+
+        If the `results_path` will point to directory with AutoML results (`params.json` must be present), 
+        then all models will be loaded.
         
-        :param model_time_limit: The time limit in seconds for training single model. 
+        :param total_time_limit: The time limit in seconds for AutoML training. 
+        It is not used when `model_time_limit` is not `None`.
+        
+        :params mode
+
+        ## Additional (optional parameters)
+
+        :param model_time_limit: The time limit for training a single model, in seconds. 
         If `model_time_limit` is set, the `total_time_limit` is not respected. 
-        Single model can contain several learners, for example in the case of 10-fold cross-validation, one model will have 10 learners.
-        Based on `model_time_limit` the time limit for single learner is computed.
-        
-        :param algorithms: The list of algorithms that will be used in the training.
+        The single model can contain several learners.
+        The time limit for single learner is computed based on `model_time_limit`.
+
+        For example, in the case of 10-fold cross-validation, one model will have 10 learners. 
+        The `model_time_limit` is time for all 10 learners.
+
+        :param algorithms: The list of algorithms that will be used in the training. The algorithms can be:
+            [
+                "Baseline",
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Extra Trees",
+                "LightGBM",
+                "Xgboost",
+                "CatBoost",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]
         
         :param tuning_mode: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
         
@@ -109,7 +100,7 @@ class AutoML:
         
         :param train_ensemble: If true then at the end of models training the ensemble will be created. (Default is `True`)
 
-        :param stack: If true then stacked models will be created. Stack level is 1. (Default is `True`)
+        :param stack_models: If true then stacked models will be created. Stack level is 1. (Default is `True`)
         
         :param optimize_metric: The metric to be optimized. (not implemented yet, please left `None`)
         
@@ -119,6 +110,7 @@ class AutoML:
         {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
         ```
         :param verbose: Not implemented yet.
+
         :param ml_task: The machine learning task that will be solved. Can be: `"binary_classification", "multiclass_classification", "regression"`.
         If left `None` AutoML will try to guess the task based on target values. 
         If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
@@ -129,44 +121,152 @@ class AutoML:
         `explain_level = 0` means no explanations
         `explain_level = 1` means produce importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients
         `explain_level = 2` the same as for `1` plus SHAP explanations
-        :param seed: The seed for random generator.
         
+        :param seed: The seed for random generator.
+
         """
         logger.debug("AutoML.__init__")
 
-        # total_time_limit is the time for computing for all models
-        # model_time_limit is the time for computing a single model
-        # if model_time_limit is None then its value is computed from total_time_limit
-        # if total_time_limit is set and model_time_limit is set, then total_time_limit constraint will be omitted
+        self._results_path = results_path
+        '''
+        total_time_limit is the time for computing for all models
+        model_time_limit is the time for computing a single model
+        if model_time_limit is None then its value is computed from total_time_limit
+        if total_time_limit is set and model_time_limit is set, then total_time_limit constraint will be omitted
+        '''
         self._total_time_limit = total_time_limit
-        self._model_time_limit = model_time_limit
-        # time limit in seconds for single learner (model consists of learners)
-        # the value is computed before fit, initilize with any number
-        self._time_limit = 1
+        
+        if mode not in ["Explain", "Perform", "Compete"]:
+            print("mode should be: Explain, Perform or Compete")
+            print("Setting mode=Explain")
+            mode = "Explain"
 
-        self._train_ensemble = train_ensemble
-        self._stack = stack
+        self._mode = mode
+
+        if self._mode == "Explain":
+            self._train_ensemble = True
+            self._stack_models = False
+            self._validation = {
+                "validation_type": "split",
+                "train_ratio": 0.75,
+                "shuffle": True,
+                "stratify": True,
+            }
+            self._algorithms = [
+                    "Baseline",
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Xgboost",
+                    "Neural Network"
+                ]
+            self._explain_level = 2
+            self._start_random_models = 1
+            self._hill_climbing_steps = 0
+            self._top_models_to_improve = 0
+        elif self._mode == "Perform":
+            self._train_ensemble = True
+            self._stack_models = False
+            self._validation = {
+               "validation_type": "kfold", 
+               "k_folds": 5, 
+               "shuffle": True, 
+               "stratify": True
+            }
+            self._algorithms = [
+                    "Linear",
+                    "Random Forest",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network"
+                ]
+            self._explain_level = 1
+            self._start_random_models = 5
+            self._hill_climbing_steps = 2
+            self._top_models_to_improve = 2
+        elif self._mode == "Compete":
+            self._train_ensemble = True
+            self._stack_models = True
+            self._validation = {
+               "validation_type": "kfold", 
+               "k_folds": 10, 
+               "shuffle": True, 
+               "stratify": True
+            }
+            self._algorithms = [
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Extra Trees",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                    "Nearest Neighbors",
+                ]
+            self._explain_level = 0
+            self._start_random_models = 10
+            self._hill_climbing_steps = 2
+            self._top_models_to_improve = 3
+        
+        self._model_time_limit = None
+        if "model_time_limit" in kwargs:
+            self._model_time_limit = kwargs["model_time_limit"]
+
+        # algorithms are checked during the fit method call, 
+        # we need to know the data to tell if allgorithm is proper
+        if "algorithms" in kwargs:
+            self._algorithms = kwargs["algorithms"]
+        
+        if "validation" in kwargs:
+            self._validation = kwargs["validation"]
+
+        if "train_ensemble" in kwargs:
+            self._train_ensemble = kwargs["train_ensemble"]
+
+        if "stack_models" in kwargs:
+            self._stack_models = kwargs["stack_models"]    
+
+        if "explain_level" in kwargs:
+            self._explain_level = kwargs["explain_level"]
+
+        self._ml_task = None
+        if "ml_task" in kwargs:
+            self._ml_task = kwargs["ml_task"]
+
+        self._user_set_optimize_metric = None
+        if "optimize_metric" in kwargs:
+            self._user_set_optimize_metric = kwargs["optimize_metric"]
+
+        if "tuning_mode" in kwargs:
+            self.set_tuning_mode(kwargs["tuning_mode"])
+
+        self._verbose = True
+        if "verbose" is kwargs:
+            self._verbose = kwargs["verbose"]
+
+        self._seed = 1234
+        if "seed" in kwargs:
+            self._seed = kwargs["seed"]
+
+        self._tuner_params = {
+            "start_random_models": self._start_random_models,
+            "hill_climbing_steps": self._hill_climbing_steps,
+            "top_models_to_improve": self._top_models_to_improve,
+        }
         self._models = []  # instances of iterative learner framework or ensemble
 
         # it is instance of model framework or ensemble
         self._best_model = None
-        self._validation = validation
-        self.set_tuning_mode(tuning_mode)
-
-        self._algorithms = algorithms
-        self._verbose = verbose
+        self._verbose = True
 
         self._fit_time = None
         self._models_train_time = {}
-        self._threshold, self._metrics_details, self._max_metrics, self._confusion_matrix = (
-            None,
-            None,
-            None,
-            None,
-        )
-        self._seed = seed
-        self._user_set_optimize_metric = optimize_metric
-        self._ml_task = ml_task
+        self._threshold = None 
+        self._metrics_details = None 
+        self._max_metrics = None
+        self._confusion_matrix = None 
 
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
@@ -174,19 +274,20 @@ class AutoML:
         self._data_info = None
         self._model_paths = []
         self._stacked_models = None
-        self._explain_level = explain_level
-        self._results_path = results_path
+        
         self._fit_level = None
         self._time_spend = {}
         self._start_time = time.time()  # it will be updated in `fit` method
 
         if self._validation["validation_type"] != "kfold":
-            # stack only available of k-fold validation
-            self._stack = False
+            print("Models cannot be stacked. Please set validation to k-fold to stack models.")
+            # stacking only available of k-fold validation
+            self._stack_models = False
 
         # this should be last in the constrcutor
         # in case there is a dir, it might load models
         self._set_results_dir()
+    
 
     def set_tuning_mode(self, mode="Normal"):
         if mode == "Sport":
@@ -370,7 +471,7 @@ class AutoML:
                 - self._time_spend["simple_algorithms"]
                 - self._time_spend["default_algorithms"]
             )
-            if self._stack:
+            if self._stack_models:
                 tt *= (
                     0.6
                 )  # leave some time for stacking (approx. 40% for stacking of time left)
@@ -386,7 +487,7 @@ class AutoML:
                 - self._time_spend["default_algorithms"]
                 - self._time_spend["not_so_random"]
             )
-            if self._stack:
+            if self._stack_models:
                 tt *= (
                     0.4
                 )  # leave some time for stacking (approx. 60% for stacking of time left)
@@ -394,7 +495,7 @@ class AutoML:
             tt /= k_folds  # time is per learner (per fold)
             return tt
 
-        if self._stack and self._fit_level == "stack":
+        if self._stack_models and self._fit_level == "stack":
             tt = time_left
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
@@ -411,7 +512,7 @@ class AutoML:
             {
                 "learner_time_limit": self._get_learner_time_limit(
                     params["learner"]["model_type"]
-                ),  # self._time_limit,
+                ),  
                 "min_steps": params["additional"].get("min_steps"),
             }
         )
@@ -496,7 +597,7 @@ class AutoML:
                 - self._time_spend["simple_algorithms"]
                 - self._time_spend["default_algorithms"]
             )
-            if self._stack:
+            if self._stack_models:
                 time_should_use *= 0.6  # leave time for stacking
             if self._hill_climbing_steps > 0:
                 time_should_use /= 2.0  # leave time for hill-climbing
@@ -520,7 +621,7 @@ class AutoML:
                 - self._time_spend["default_algorithms"]
                 - self._time_spend["not_so_random"]
             )
-            if self._stack:
+            if self._stack_models:
                 time_should_use *= 0.4  # leave time for stacking
 
             if (
@@ -965,7 +1066,7 @@ class AutoML:
             self.ensemble_step()
             self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
 
-            if self._stack:
+            if self._stack_models:
                 # 6. Stack best models
                 self._fit_level = "stack"
                 start = time.time()

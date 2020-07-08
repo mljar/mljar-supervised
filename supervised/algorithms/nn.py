@@ -131,7 +131,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         pass
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-
+        
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
         

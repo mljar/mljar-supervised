@@ -16,7 +16,7 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
     automl_dir = "automl_tests"
 
     def tearDown(self):
-        shutil.rmtree(self.automl_dir)
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_set_total_time_limit(self):
         model_type = "Xgboost"

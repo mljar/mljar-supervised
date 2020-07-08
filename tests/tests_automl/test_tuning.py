@@ -19,7 +19,7 @@ class AutoMLTuningTest(unittest.TestCase):
     rows = 50
 
     def tearDown(self):
-        shutil.rmtree(self.automl_dir)
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_tune_only_default(self):
         X = np.random.rand(self.rows, 3)

@@ -20,9 +20,10 @@ automl = AutoML(
         # ,
         # "Extra Trees"
     #],
-    explain_level=0,
-    tuning_mode="Normal"
-
+    #explain_level=0,
+    #tuning_mode="Normal"
+    mode = 'Explain',
+    #train_ensemble = True
 )
 #automl.set_advanced(start_random_models=1)
 automl.fit(X, y)

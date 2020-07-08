@@ -64,8 +64,10 @@ class PlotSHAP:
             "CatBoost",
         ]:
             explainer = shap.TreeExplainer(algorithm.model)
-        if algorithm.algorithm_short_name in ["Linear"]:
+        elif algorithm.algorithm_short_name in ["Linear"]:
             explainer = shap.LinearExplainer(algorithm.model, X_train)
+        elif algorithm.algorithm_short_name in ["Neural Network"]:
+            explainer = shap.KernelExplainer(algorithm.model, X_train)
 
         return explainer
 
@@ -178,7 +180,6 @@ class PlotSHAP:
     ):
         if not PlotSHAP.is_available(algorithm, X_train, y_train, ml_task):
             return
-
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")

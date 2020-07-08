@@ -1,5 +1,6 @@
 import os
 import logging
+import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -36,14 +37,16 @@ class PermutationImportance:
         else:
             scoring = "neg_mean_squared_error"
 
-        importance = permutation_importance(
-            model,
-            X_validation,
-            y_validation,
-            scoring=scoring,
-            n_jobs=-1,
-            random_state=12,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            importance = permutation_importance(
+                model,
+                X_validation,
+                y_validation,
+                scoring=scoring,
+                n_jobs=-1,
+                random_state=12,
+            )
 
         sorted_idx = importance["importances_mean"].argsort()
 

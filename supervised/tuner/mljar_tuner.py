@@ -52,7 +52,9 @@ class MljarTuner:
         for model_type in ["Baseline", "Decision Tree", "Linear"]:
             if model_type not in self._algorithms:
                 continue
-            models_to_check = 3 if model_type == "Decision Tree" else 1
+            models_to_check = 1 
+            if model_type == "Decision Tree":
+                models_to_check = min(3, self._start_random_models)
             for i in range(models_to_check):
                 logger.info(f"Generate parameters for {model_type} (#{models_cnt + 1})")
                 params = self._get_model_params(model_type, seed=i + 1)

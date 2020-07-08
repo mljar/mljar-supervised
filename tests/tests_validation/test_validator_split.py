@@ -14,7 +14,7 @@ class SplitValidatorTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls._results_path)
+        shutil.rmtree(cls._results_path, ignore_errors=True)
 
     def test_create(self):
 

@@ -151,7 +151,7 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
             logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")
 
 
-dt_params = {"criterion": ["gini", "entropy"], "max_depth": [1, 2, 3, 4]}
+dt_params = {"criterion": ["gini", "entropy"], "max_depth": [2, 3, 4]}
 
 classification_default_params = {"criterion": "gini", "max_depth": 3}
 

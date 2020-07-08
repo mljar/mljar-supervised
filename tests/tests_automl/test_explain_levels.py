@@ -21,7 +21,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
     automl_dir = "automl_1"
 
     def tearDown(self):
-        shutil.rmtree(self.automl_dir)
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_explain_default(self):
         a = AutoML(
