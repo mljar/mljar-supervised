@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-## Automated Machine Learning :rocket:
+## Automated Machine Learning :computer: :bulb: :rocket:
 
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :muscle:. 
 
@@ -49,7 +49,7 @@ The example for `LightGBM` summary:
 - It can compute Ensemble based on greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
 
-## Classification example
+## :point_right: Classification example
 
 There is a simple interface available with `fit` and `predict` methods.
 
@@ -71,7 +71,7 @@ predictions = automl.predict(X)
 For details please check [AutoML API Docs](docs/api.md).
 
 
-### Multi-Class Classification Example
+### :point_right: Multi-Class Classification Example
 
 The example code for classification of the optical recognition of handwritten digits dataset. Running this code in less than 30 minutes will result in test accuracy ~98%.
 
@@ -100,13 +100,13 @@ print(predictions.head())
 print("Test accuracy:", accuracy_score(y_test, predictions["label"].astype(int)))
 ```
 
-## More Examples
+## :point_right: More Examples
 
 - [**Income classification**](https://github.com/mljar/mljar-examples/tree/master/Income_classification) - it is a binary classification task on census data
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
-## Installation
+## Installation :hammer: :wrench: :nut_and_bolt: :package:
 
 From PyPi repository:
 
@@ -131,11 +131,11 @@ pip install -r requirements.txt
 pip install -r requirements_dev.txt
 ```
 
-## License
+## License :scroll:
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
 
-## MLJAR
+## MLJAR :heart:
 <p align="center">
   <img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
 </p>
