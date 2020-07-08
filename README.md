@@ -6,11 +6,27 @@
 
 ## Automated Machine Learning 
 
-`mljar-supervised` is an Automated Machine Learning python package. It can train ML models for:
+The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model. 
 
-- binary classification,
-- multi-class classification,
-- regression.
+It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model).
+
+It has built-in three modes of work:
+ - `Explain` mode, which is ideal for explaining and understanding the data, with many data explanations, like decision trees visualization, linear models coefficients display, permutation importances and SHAP explanations of data,
+ - `Perform` for building ML pipelines to use in production,
+ - `Compete` mode that trains highly-tuned ML models with ensembling and stacking, with a purpose to use in ML competitions.
+
+Of course, you can further customize the details of each mode to meet requirements.
+
+It integrates many popular frameworks:
+
+ - pandas
+ - scikit-learn
+ - xgboost
+ - lightGBM
+ - CatBoost
+ - Tensorflow
+ - Keras
+
 
 ## What's good in it?
 
