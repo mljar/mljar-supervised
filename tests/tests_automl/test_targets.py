@@ -135,7 +135,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             self.assertTrue(col in pred.columns.tolist())
         u = np.unique(pred["label"].values)
 
-        self.assertTrue(0 in u or 1 in u or 2 in u or 3 in u)
+        self.assertTrue("0" in u or "1" in u or "2" in u or "3" in u)
         self.assertTrue(len(u) <= 4)
 
     def test_multi_class_abcd(self):

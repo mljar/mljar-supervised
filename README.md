@@ -1,4 +1,4 @@
-# mljar-supervised
+# `mljar-supervised` AutoML Python Package
 
 [![Build Status](https://travis-ci.org/mljar/mljar-supervised.svg?branch=master)](https://travis-ci.org/mljar/mljar-supervised)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
@@ -33,19 +33,20 @@ It integrates many popular frameworks:
 
 ## What's good in it? :eyes: :cake: :boom:
 
-- `mljar-supervised` creates markdown reports from AutoML training.
-- This package is computing `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
+- `mljar-supervised` creates markdown reports from AutoML training full of ML details and charts. 
+- It can compute the `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
 - This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
 - The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
-- It is using a vast set of algorithms: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost` (`Neural Networks` will be added soon).
+- It is using a many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
 - It can do features preprocessing, like: missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing (You won't believe how often it is needed!). For example, converting categorical target into numeric.
 - It can tune hyper-parameters with `not-so-random-search` algorithm (random-search over defined set of values) and hill climbing to fine-tune final models.
 - It can compute Ensemble based on greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
+- It can stack models to build level 2 ensemble (available in `Compete` mode or after setting `stack_models` parameter).
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
 
 ## Available Modes :school: :books:
 
-### Explain
+### Explain 
 
 It is aimed to be used when the user wants to explain and understand the data.
  - It is using 75%/25% train/test split. 
@@ -106,7 +107,8 @@ from supervised.automl import AutoML
 # load the data
 digits = load_digits()
 X_train, X_test, y_train, y_test = train_test_split(
-    pd.DataFrame(digits.data), digits.target, stratify=digits.target, test_size=0.25
+    pd.DataFrame(digits.data), digits.target, stratify=digits.target, test_size=0.25,
+    random_state=123
 )
 
 # train models with AutoML
@@ -121,7 +123,7 @@ print("Test accuracy:", accuracy_score(y_test, predictions["label"].astype(int))
 
 ### :point_right: Regression Example
 
-Regression example on Boston house prices data. On test data it scores ~ 10.66 mean squared error (MSE).
+Regression example on Boston house prices data. On test data it scores ~ 10.85 mean squared error (MSE).
 
 ```python
 import numpy as np
@@ -136,9 +138,8 @@ housing = load_boston()
 X_train, X_test, y_train, y_test = train_test_split(
     pd.DataFrame(housing.data, columns=housing.feature_names),
     housing.target,
-    train_size=0.75,
     test_size=0.25,
-    random_state=42,
+    random_state=123,
 )
 
 # train models with AutoML
@@ -170,7 +171,7 @@ The example for `LightGBM` summary:
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
-## Installation :package: :hammer: :wrench:
+## Installation :package: :wrench:
 
 From PyPi repository:
 
@@ -195,11 +196,11 @@ pip install -r requirements.txt
 pip install -r requirements_dev.txt
 ```
 
-## License :scroll: :office: :necktie:
+## License :scroll: :necktie:
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
 
-## MLJAR :heart:
+## :heart: MLJAR :heart:
 <p align="center">
   <img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
 </p>
