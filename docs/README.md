@@ -4,3 +4,4 @@
 - [Supported Algorithms](algorithms.md)
 - [Usage](api.md)
 - [Hyper-parameters Tuning](tuning.md)
+- [Contributing](contributing.md)
