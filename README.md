@@ -6,7 +6,7 @@
 
 ## Automated Machine Learning :computer: :bulb: :rocket:
 
-The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :muscle:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
+The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
 The `mljar-supervised` will help you with:
  - explaining and understanding your data,
@@ -161,13 +161,27 @@ print("Test MSE:", mean_squared_error(y_test, predictions["prediction"]))
 
 # Markdown reports
 
+## The AutoML Report
+
+The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :throphy:.
 
 ![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
 
-The example for `Decision Tree` summary:
+## The `Decision Tree` Report
+
+The example for `Decision Tree` summary with trees visualization. For classification tasks additional metrics are provided:
+- confusion matrix
+- threshold (optimized in the case of binary classification task)
+- F1 score
+- Accuracy
+- Precision, Recall, MCC
+
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
 
+## The `LightGBM` Report
+
 The example for `LightGBM` summary:
+
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
