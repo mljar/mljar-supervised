@@ -11,7 +11,7 @@ class LabelBinarizer(object):
     def fit(self, X, column):
         self._old_column = column
         self._uniq_values = np.unique(X[column].values)
-        #self._uniq_values = [str(u) for u in self._uniq_values]
+        # self._uniq_values = [str(u) for u in self._uniq_values]
 
         if len(self._uniq_values) == 2:
             self._new_columns.append(column + "_" + str(self._uniq_values[1]))

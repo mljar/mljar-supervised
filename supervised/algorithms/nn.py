@@ -131,16 +131,16 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         pass
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        
+
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
-        
+
         batch_size = 1024
         if X.shape[0] < batch_size * 5:
             batch_size = 32
-        
+
         self.model.fit(X, y, batch_size=batch_size, epochs=self.rounds, verbose=False)
-        
+
         """
         # Experimental ...
         es = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=50)

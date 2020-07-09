@@ -16,6 +16,17 @@ from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
 
+from sklearn.metrics import make_scorer, log_loss
+import sys
+
+
+def log_loss_eps(y_true, y_pred):
+    ll = log_loss(y_true, y_pred, eps=1e-7)
+    return ll
+
+
+log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, needs_proba=True)
+
 
 class PermutationImportance:
     @staticmethod
@@ -31,9 +42,9 @@ class PermutationImportance:
 
         # for scoring check https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
         if ml_task == BINARY_CLASSIFICATION:
-            scoring = "neg_log_loss"
+            scoring = log_loss_scorer
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            scoring = "neg_log_loss"
+            scoring = log_loss_scorer
         else:
             scoring = "neg_mean_squared_error"
 
@@ -44,8 +55,9 @@ class PermutationImportance:
                 X_validation,
                 y_validation,
                 scoring=scoring,
-                n_jobs=-1,
+                n_jobs=-1,  # all cores
                 random_state=12,
+                n_repeats=5,  # default
             )
 
         sorted_idx = importance["importances_mean"].argsort()

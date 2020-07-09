@@ -337,7 +337,7 @@ class Preprocessing(object):
                 df["label"] = np.argmax(np.array(df[cols]), axis=1)
 
                 df["label"] = df["label"].map(labels)
-                
+
                 return df
         else:  # self._categorical_y is None
             if "ml_task" in self._params:

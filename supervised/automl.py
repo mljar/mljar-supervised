@@ -41,13 +41,9 @@ class AutoML:
     """
 
     def __init__(
-        self,
-        results_path=None,
-        total_time_limit=30 * 60,
-        mode="Explain",
-        **kwargs
+        self, results_path=None, total_time_limit=30 * 60, mode="Explain", **kwargs
     ):
-    
+
         """
         Initialize the AutoML object. 
         
@@ -128,14 +124,14 @@ class AutoML:
         logger.debug("AutoML.__init__")
 
         self._results_path = results_path
-        '''
+        """
         total_time_limit is the time for computing for all models
         model_time_limit is the time for computing a single model
         if model_time_limit is None then its value is computed from total_time_limit
         if total_time_limit is set and model_time_limit is set, then total_time_limit constraint will be omitted
-        '''
+        """
         self._total_time_limit = total_time_limit
-        
+
         if mode not in ["Explain", "Perform", "Compete"]:
             print("mode should be: Explain, Perform or Compete")
             print("Setting mode=Explain")
@@ -153,13 +149,13 @@ class AutoML:
                 "stratify": True,
             }
             self._algorithms = [
-                    "Baseline",
-                    "Linear",
-                    "Decision Tree",
-                    "Random Forest",
-                    "Xgboost",
-                    "Neural Network"
-                ]
+                "Baseline",
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Xgboost",
+                "Neural Network",
+            ]
             self._explain_level = 2
             self._start_random_models = 1
             self._hill_climbing_steps = 0
@@ -168,19 +164,19 @@ class AutoML:
             self._train_ensemble = True
             self._stack_models = False
             self._validation = {
-               "validation_type": "kfold", 
-               "k_folds": 5, 
-               "shuffle": True, 
-               "stratify": True
+                "validation_type": "kfold",
+                "k_folds": 5,
+                "shuffle": True,
+                "stratify": True,
             }
             self._algorithms = [
-                    "Linear",
-                    "Random Forest",
-                    "LightGBM",
-                    "Xgboost",
-                    "CatBoost",
-                    "Neural Network"
-                ]
+                "Linear",
+                "Random Forest",
+                "LightGBM",
+                "Xgboost",
+                "CatBoost",
+                "Neural Network",
+            ]
             self._explain_level = 1
             self._start_random_models = 5
             self._hill_climbing_steps = 2
@@ -189,36 +185,36 @@ class AutoML:
             self._train_ensemble = True
             self._stack_models = True
             self._validation = {
-               "validation_type": "kfold", 
-               "k_folds": 10, 
-               "shuffle": True, 
-               "stratify": True
+                "validation_type": "kfold",
+                "k_folds": 10,
+                "shuffle": True,
+                "stratify": True,
             }
             self._algorithms = [
-                    "Linear",
-                    "Decision Tree",
-                    "Random Forest",
-                    "Extra Trees",
-                    "LightGBM",
-                    "Xgboost",
-                    "CatBoost",
-                    "Neural Network",
-                    "Nearest Neighbors",
-                ]
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Extra Trees",
+                "LightGBM",
+                "Xgboost",
+                "CatBoost",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]
             self._explain_level = 0
             self._start_random_models = 10
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 3
-        
+
         self._model_time_limit = None
         if "model_time_limit" in kwargs:
             self._model_time_limit = kwargs["model_time_limit"]
 
-        # algorithms are checked during the fit method call, 
+        # algorithms are checked during the fit method call,
         # we need to know the data to tell if allgorithm is proper
         if "algorithms" in kwargs:
             self._algorithms = kwargs["algorithms"]
-        
+
         if "validation" in kwargs:
             self._validation = kwargs["validation"]
 
@@ -226,7 +222,7 @@ class AutoML:
             self._train_ensemble = kwargs["train_ensemble"]
 
         if "stack_models" in kwargs:
-            self._stack_models = kwargs["stack_models"]    
+            self._stack_models = kwargs["stack_models"]
 
         if "explain_level" in kwargs:
             self._explain_level = kwargs["explain_level"]
@@ -263,10 +259,10 @@ class AutoML:
 
         self._fit_time = None
         self._models_train_time = {}
-        self._threshold = None 
-        self._metrics_details = None 
+        self._threshold = None
+        self._metrics_details = None
         self._max_metrics = None
-        self._confusion_matrix = None 
+        self._confusion_matrix = None
 
         self._X_train_path, self._y_train_path = None, None
         self._X_validation_path, self._y_validation_path = None, None
@@ -274,20 +270,21 @@ class AutoML:
         self._data_info = None
         self._model_paths = []
         self._stacked_models = None
-        
+
         self._fit_level = None
         self._time_spend = {}
         self._start_time = time.time()  # it will be updated in `fit` method
 
         if self._validation["validation_type"] != "kfold" and self._stack_models:
-            print("Models cannot be stacked. Please set validation to k-fold to stack models.")
+            print(
+                "Models cannot be stacked. Please set validation to k-fold to stack models."
+            )
             # stacking only available of k-fold validation
             self._stack_models = False
 
         # this should be last in the constrcutor
         # in case there is a dir, it might load models
         self._set_results_dir()
-    
 
     def set_tuning_mode(self, mode="Normal"):
         if mode == "Sport":
@@ -512,7 +509,7 @@ class AutoML:
             {
                 "learner_time_limit": self._get_learner_time_limit(
                     params["learner"]["model_type"]
-                ),  
+                ),
                 "min_steps": params["additional"].get("min_steps"),
             }
         )
