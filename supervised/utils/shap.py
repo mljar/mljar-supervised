@@ -23,9 +23,10 @@ import warnings
 class PlotSHAP:
     @staticmethod
     def is_available(algorithm, X_train, y_train, ml_task):
-        # disable CatBoost for now
-        # see https://github.com/catboost/catboost/issues/1216
-        if algorithm.algorithm_short_name in ["Baseline", "CatBoost"]:
+        
+        # https://github.com/mljar/mljar-supervised/issues/112 disable for NN
+        # https://github.com/mljar/mljar-supervised/issues/114 disable for CatBoost
+        if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]:
             return False
         if (
             algorithm.algorithm_short_name == "Xgboost"
@@ -187,7 +188,6 @@ class PlotSHAP:
                 X_vald, y_vald = PlotSHAP.get_sample(X_validation, y_validation)
                 shap_values = explainer.shap_values(X_vald)
                 
-
             # fix problem with 1 or 2 dimensions for binary classification
             expected_value = explainer.expected_value
             if ml_task == BINARY_CLASSIFICATION and isinstance(shap_values, list):
