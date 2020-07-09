@@ -8,7 +8,7 @@ import sys
 
 stderr = sys.stderr
 sys.stderr = open(os.devnull, "w")
-import keras
+import tensorflow.keras as keras
 
 sys.stderr = stderr
 ################################################################################
@@ -20,7 +20,7 @@ import random as rn
 
 np.random.seed(42)
 rn.seed(12345)
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 tf.random.set_seed(1234)
 # tf.logging.set_verbosity(tf.logging.ERROR)
@@ -31,16 +31,15 @@ import numpy as np
 import pandas as pd
 import os
 import json
-import keras
 
-from keras.optimizers import SGD
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.models import model_from_json
-from keras.utils import to_categorical
-from keras.callbacks import ModelCheckpoint
-from keras.models import load_model
-from keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import EarlyStopping
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
