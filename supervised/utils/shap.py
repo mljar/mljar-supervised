@@ -23,7 +23,7 @@ import warnings
 class PlotSHAP:
     @staticmethod
     def is_available(algorithm, X_train, y_train, ml_task):
-        
+
         # https://github.com/mljar/mljar-supervised/issues/112 disable for NN
         # https://github.com/mljar/mljar-supervised/issues/114 disable for CatBoost
         if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]:
@@ -67,9 +67,9 @@ class PlotSHAP:
             explainer = shap.TreeExplainer(algorithm.model)
         elif algorithm.algorithm_short_name in ["Linear"]:
             explainer = shap.LinearExplainer(algorithm.model, X_train)
-        #elif algorithm.algorithm_short_name in ["Neural Network"]:
+        # elif algorithm.algorithm_short_name in ["Neural Network"]:
         #    explainer = shap.GradientExplainer(algorithm.model, X_train) #, link="logit")
-        
+
         return explainer
 
     @staticmethod
@@ -187,7 +187,7 @@ class PlotSHAP:
                 explainer = PlotSHAP.get_explainer(algorithm, X_train)
                 X_vald, y_vald = PlotSHAP.get_sample(X_validation, y_validation)
                 shap_values = explainer.shap_values(X_vald)
-                
+
             # fix problem with 1 or 2 dimensions for binary classification
             expected_value = explainer.expected_value
             if ml_task == BINARY_CLASSIFICATION and isinstance(shap_values, list):
@@ -246,7 +246,9 @@ class PlotSHAP:
                     class_names,
                 )
         except Exception as e:
-            print(f"Exception while producing SHAP explanations. {str(e)}\nContinuing ...")
+            print(
+                f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+            )
             logger.info(
                 f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
             )

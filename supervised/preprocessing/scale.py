@@ -37,7 +37,11 @@ class Scale(object):
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
 
-                X[self.columns] = np.log(X[self.columns] - self.X_min_values + 1)
+                X[self.columns] = np.log(
+                    np.clip(
+                        X[self.columns] - self.X_min_values + 1, a_min=1, a_max=None
+                    )
+                )
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
         return X
 
