@@ -69,23 +69,27 @@ It should be used for machine learning competitions.
 
 # Examples
 
-## :point_right: Classification example
+## :point_right: Binary Classification Example
 
 There is a simple interface available with `fit` and `predict` methods.
 
 ```python
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from supervised.automl import AutoML
 
-df = pd.read_csv("https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv", skipinitialspace=True)
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
+    skipinitialspace=True,
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    df[df.columns[:-1]], df["income"], test_size=0.25
+)
 
-X = df[df.columns[:-1]]
-y = df["income"]
+automl = AutoML()
+automl.fit(X_train, y_train)
 
-automl = AutoML(results_path="directory_with_reports")
-automl.fit(X, y)
-
-predictions = automl.predict(X)
+predictions = automl.predict(X_test)
 ```
 
 For details please check [AutoML API Docs](docs/api.md).
