@@ -19,6 +19,19 @@ Please try first to find existing issue. If not issue found, please create the n
 - Before any contribution please reach out and disccuss what do you want to implement and how (ideally in the created issue).
 - For code formatting we use [Black](https://github.com/psf/black).
 
+To run all tests locally:
+
+```
+pytest tests 
+```
+
+To run only tests for selected file (for example NN algorithm):
+```
+pytest tests/tests_algorithms/test_nn.py -vsx
+```
+
+I add `vsx` flags to see what's going on.
+
 ## Documentation :scroll:
 
 The project documentation is on GitHub in [docs](/docs) directory.
