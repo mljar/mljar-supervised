@@ -92,7 +92,25 @@ automl.fit(X_train, y_train)
 predictions = automl.predict(X_test)
 ```
 
-For details please check [AutoML API Docs](docs/api.md).
+AutoML `fit` will print:
+```py
+Create directory AutoML_1
+AutoML task to be solved: binary_classification
+AutoML will use algorithms: ['Baseline', 'Linear', 'Decision Tree', 'Random Forest', 'Xgboost', 'Neural Network']
+AutoML will optimize for metric: logloss
+1_Baseline final logloss 0.5519845471086654 time 0.08 seconds
+2_DecisionTree final logloss 0.3655910192804364 time 10.28 seconds
+3_Linear final logloss 0.38139916864708445 time 3.19 seconds
+4_Default_RandomForest final logloss 0.2975204390214936 time 79.19 seconds
+5_Default_Xgboost final logloss 0.2731086827200411 time 5.17 seconds
+6_Default_NeuralNetwork final logloss 0.319812276905242 time 21.19 seconds
+Ensemble final logloss 0.2731086821194617 time 1.43 seconds
+```
+
+- the AutoML results in [Markdown report](https://github.com/mljar/mljar-examples/tree/master/Income_classification/AutoML_1#automl-leaderboard)
+- the Xgboost [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/5_Default_Xgboost/README.md), please take a look at amazing dependence plots produced by SHAP package :sparkling_heart:
+- the Decision Tree [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/2_DecisionTree/README.md), please take a look at beautiful tree visualization :sparkles:
+- the Logistic Regression [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/3_Linear/README.md), please take a look at coefficients table, and you can compare the SHAP plots between (Xgboost, Decision Tree and Logistic Regression) :coffee:
 
 
 ## :point_right: Multi-Class Classification Example
@@ -162,6 +180,9 @@ print("Test MSE:", mean_squared_error(y_test, predictions["prediction"]))
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
+# Documentation
+
+For details please check [AutoML API Docs](docs/api.md).
 
 # Markdown reports
 
