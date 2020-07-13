@@ -1,6 +1,9 @@
 language: python
 python:
   - "3.6"
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install graphviz 
 install:
   - pip install --upgrade setuptools
   - pip install -U -r requirements.txt
