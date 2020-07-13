@@ -6,6 +6,7 @@ from supervised.validation.validator_split import SplitValidator
 import os
 import shutil
 
+
 class SplitValidatorTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -21,9 +22,14 @@ class SplitValidatorTest(unittest.TestCase):
         data = {
             "train": {
                 "X": pd.DataFrame(
-                    np.array([[0, 0], [0, 1], [1, 0], [0, 1], [1, 0], [0, 1], [1, 0], [1, 1]]), columns=["a", "b"]
+                    np.array(
+                        [[0, 0], [0, 1], [1, 0], [0, 1], [1, 0], [0, 1], [1, 0], [1, 1]]
+                    ),
+                    columns=["a", "b"],
                 ),
-                "y": pd.DataFrame(np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]),
+                "y": pd.DataFrame(
+                    np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]
+                ),
             }
         }
 
@@ -136,4 +142,3 @@ class SplitValidatorTest(unittest.TestCase):
             self.assertEqual(y_train.shape[0], 2)
             self.assertEqual(X_validation.shape[0], 2)
             self.assertEqual(y_validation.shape[0], 2)
-

@@ -70,4 +70,3 @@ class KNeighborsAlgorithmTest(unittest.TestCase):
         la.fit(self.X, self.y)
         y_predicted = la.predict(self.X)
         self.assertTrue(metric(self.y, y_predicted) < 0.6)
-

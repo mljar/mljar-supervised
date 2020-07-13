@@ -45,11 +45,15 @@ class PreprocessingTuner:
             # convert to categorical only for categorical types
             convert_to_integer_will_be_applied = False
             if (
-                "convert_categorical" in required_preprocessing
-                and "categorical" in preprocessing_needed
+                "convert_categorical"
+                in required_preprocessing  # the algorithm needs converted categoricals
+                and "categorical" in preprocessing_needed  # the feature is categorical
             ):
-                preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
-                convert_to_integer_will_be_applied = True
+                if PreprocessingCategorical.CONVERT_ONE_HOT in preprocessing_needed:
+                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_ONE_HOT]
+                else:
+                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
+                    convert_to_integer_will_be_applied = True  # maybe scale needed
 
             if "scale" in required_preprocessing:
                 if convert_to_integer_will_be_applied:

@@ -133,7 +133,10 @@ class Preprocessing(object):
             X_train = missing.transform(X_train)
             self._missing_values += [missing]
 
-        for convert_method in [PreprocessingCategorical.CONVERT_INTEGER]:
+        for convert_method in [
+            PreprocessingCategorical.CONVERT_INTEGER,
+            PreprocessingCategorical.CONVERT_ONE_HOT,
+        ]:
             cols_to_process = list(
                 filter(
                     lambda k: convert_method in columns_preprocessing[k],

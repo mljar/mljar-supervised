@@ -35,7 +35,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
             "learning_rate": 0.01,
             "momentum": 0.9,
             "decay": 0.001,
-            "ml_task": "binary_classification"
+            "ml_task": "binary_classification",
         }
 
     def test_fit_predict(self):
@@ -111,7 +111,7 @@ class RegressionNeuralNetworkAlgorithmTest(unittest.TestCase):
             "learning_rate": 0.01,
             "momentum": 0.9,
             "decay": 0.001,
-            "ml_task": "regression"
+            "ml_task": "regression",
         }
 
         cls.y = preprocessing.scale(cls.y)
@@ -127,6 +127,7 @@ class RegressionNeuralNetworkAlgorithmTest(unittest.TestCase):
             if loss_prev is not None:
                 self.assertTrue(loss + 0.000001 < loss_prev)
             loss_prev = loss
+
 
 class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
     @classmethod
@@ -152,13 +153,12 @@ class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
             "momentum": 0.9,
             "decay": 0.001,
             "ml_task": "multiclass_classification",
-            "num_class": 3
+            "num_class": 3,
         }
 
         lb = preprocessing.LabelBinarizer()
         lb.fit(cls.y)
         cls.y = lb.transform(cls.y)
-        
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})

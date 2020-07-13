@@ -4,6 +4,7 @@ from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.scale import Scale
+from supervised.preprocessing.encoding_selector import EncodingSelector
 
 from supervised.algorithms.registry import (
     REGRESSION,
@@ -35,6 +36,7 @@ class DataInfo:
             #
             if PreprocessingUtils.is_categorical(X[col]):
                 columns_info[col] += ["categorical"]
+                columns_info[col] += [EncodingSelector.get(X, y, col)]
             else:
                 # numeric type, check if scale needed
                 if PreprocessingUtils.is_scale_needed(X[col]):

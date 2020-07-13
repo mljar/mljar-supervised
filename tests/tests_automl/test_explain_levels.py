@@ -10,11 +10,14 @@ from sklearn import datasets
 from supervised import AutoML
 
 from supervised.algorithms.random_forest import additional
+
 additional["max_steps"] = 1
 additional["trees_in_step"] = 1
 
 from supervised.algorithms.xgboost import additional
+
 additional["max_rounds"] = 1
+
 
 class AutoMLExplainLevelsTest(unittest.TestCase):
 
@@ -53,7 +56,9 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
 
         a.fit(X, y)
 
-        result_files = os.listdir(os.path.join(self.automl_dir, "1_Default_RandomForest"))
+        result_files = os.listdir(
+            os.path.join(self.automl_dir, "1_Default_RandomForest")
+        )
 
         # There should be files with:
         # - permutation importance
@@ -241,7 +246,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         a.fit(X, y)
 
         result_files = os.listdir(os.path.join(self.automl_dir, "1_DecisionTree"))
-        
+
         # There should be files with:
         # - decision tree visualization
         # - permutation importance
@@ -284,4 +289,3 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 produced = True
                 break
         self.assertTrue(produced)
-        

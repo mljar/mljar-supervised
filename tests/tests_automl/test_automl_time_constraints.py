@@ -23,17 +23,17 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
         automl = AutoML(
             results_path=self.automl_dir, total_time_limit=100, algorithms=[model_type]
         )
-        
-        automl._time_spend['simple_algorithms'] = 0
-        automl._time_spend['default_algorithms'] = 0
-        automl._fit_level = 'not_so_random'
+
+        automl._time_spend["simple_algorithms"] = 0
+        automl._time_spend["default_algorithms"] = 0
+        automl._fit_level = "not_so_random"
         time_spend = 0
         for _ in range(12):
             automl._start_time -= 10
             automl.log_train_time(model_type, 10)
             if automl._enough_time_to_train(model_type):
                 time_spend += 10
-                
+
         self.assertTrue(time_spend < 100)
 
     def test_set_model_time_limit(self):
@@ -41,7 +41,7 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
         automl = AutoML(
             results_path=self.automl_dir, model_time_limit=10, algorithms=[model_type]
         )
-        
+
         for _ in range(12):
             automl.log_train_time(model_type, 10)
             # should be always true
@@ -55,7 +55,7 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
             total_time_limit=10,  # this parameter setting should be omitted
             algorithms=[model_type],
         )
-        
+
         for _ in range(12):
             automl.log_train_time(model_type, 10)
             # should be always true

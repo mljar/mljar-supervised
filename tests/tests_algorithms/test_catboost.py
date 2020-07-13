@@ -14,6 +14,7 @@ import tempfile
 
 additional["max_rounds"] = 1
 
+
 class CatBoostRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

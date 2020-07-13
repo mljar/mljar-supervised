@@ -13,6 +13,7 @@ from supervised.utils.metric import Metric
 
 additional["max_rounds"] = 1
 
+
 class LightgbmAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

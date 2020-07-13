@@ -10,8 +10,8 @@ from sklearn import datasets
 from supervised.algorithms.random_forest import (
     RandomForestAlgorithm,
     RandomForestRegressorAlgorithm,
-    additional, 
-    regression_additional
+    additional,
+    regression_additional,
 )
 from supervised.utils.metric import Metric
 
@@ -21,6 +21,7 @@ additional["trees_in_step"] = 1
 regression_additional["trees_in_step"] = 1
 additional["max_steps"] = 1
 regression_additional["max_steps"] = 1
+
 
 class RandomForestRegressorAlgorithmTest(unittest.TestCase):
     @classmethod

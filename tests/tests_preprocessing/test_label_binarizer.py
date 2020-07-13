@@ -190,7 +190,7 @@ class LabelBinarizerTest(unittest.TestCase):
         self.assertTrue(np.sum(bb["col2_w"]) == 1)
         bb = lb.inverse_transform(bb)
         self.assertTrue("col2_w" not in bb.columns)
-        
+
 
 if __name__ == "__main__":
     unittest.main()

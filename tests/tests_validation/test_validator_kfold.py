@@ -140,4 +140,3 @@ class KFoldValidatorTest(unittest.TestCase):
             self.assertEqual(y_train.shape[0], 2)
             self.assertEqual(X_validation.shape[0], 2)
             self.assertEqual(y_validation.shape[0], 2)
-
