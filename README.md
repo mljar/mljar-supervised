@@ -48,6 +48,10 @@ It integrates many popular frameworks:
 
 ### Explain 
 
+```py
+automl = AutoML(mode="Explain")
+```
+
 It is aimed to be used when the user wants to explain and understand the data.
  - It is using 75%/25% train/test split. 
  - It is using: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `Xgboost`, `Neural Network` algorithms and ensemble. 
@@ -55,12 +59,20 @@ It is aimed to be used when the user wants to explain and understand the data.
 
 ### Perform
 
+```py
+automl = AutoML(mode="Perform")
+```
+
 It should be used when the user wants to train a model that will be used in real-life use cases.
  - It is using 5-fold CV.
  - It is using: `Linear`, `Random Forest`, `LightGBM`, `Xgboost`, `CatBoost` and `Neural Network`. It uses ensembling. 
  - It has learning curves and importance plots in reports.
 
 ### Compete
+
+```py
+automl = AutoML(mode="Compete")
+```
 
 It should be used for machine learning competitions.
  - It is using 10-fold CV. 
