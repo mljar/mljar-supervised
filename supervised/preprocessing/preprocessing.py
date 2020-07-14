@@ -9,6 +9,7 @@ from supervised.preprocessing.preprocessing_missing import PreprocessingMissingV
 from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
+from supervised.preprocessing.datetime_transformer import DateTimeTransformer
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -42,6 +43,7 @@ class Preprocessing(object):
         self._categorical = []
         self._scale = []
         self._remove_columns = []
+        self._datetime_transforms = []
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -148,6 +150,23 @@ class Preprocessing(object):
             X_train = convert.transform(X_train)
             self._categorical += [convert]
 
+        # datetime transform
+        cols_to_process = list(
+                filter(
+                    lambda k: "datetime_transform" in columns_preprocessing[k],
+                    columns_preprocessing,
+                )
+            )
+        
+        new_datetime_columns = []
+        for col in cols_to_process:
+            
+            t = DateTimeTransformer()
+            t.fit(X_train, col)
+            X_train = t.transform(X_train)
+            self._datetime_transforms += [t]
+            new_datetime_columns += t._new_columns
+
         # SCALE
         for scale_method in [Scale.SCALE_NORMAL, Scale.SCALE_LOG_AND_NORMAL]:
             cols_to_process = list(
@@ -156,6 +175,9 @@ class Preprocessing(object):
                     columns_preprocessing,
                 )
             )
+            if len(cols_to_process) and len(new_datetime_columns) and scale_method == Scale.SCALE_NORMAL:
+                cols_to_process += new_datetime_columns
+            
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
                 scale.fit(X_train)
@@ -244,6 +266,11 @@ class Preprocessing(object):
         for convert in self._categorical:
             if X_validation is not None and convert is not None:
                 X_validation = convert.transform(X_validation)
+
+        for dtt in self._datetime_transforms:
+            if X_validation is not None and dtt is not None:
+                X_validation = dtt.transform(X_validation)
+        
         for scale in self._scale:
             if X_validation is not None and scale is not None:
                 X_validation = scale.transform(X_validation)
@@ -372,6 +399,14 @@ class Preprocessing(object):
                     cats += [cat.to_json()]
             if cats:
                 preprocessing_params["categorical"] = cats
+
+        if self._datetime_transforms is not None and len(self._datetime_transforms):
+            dtts = []
+            for dtt in self._datetime_transforms:
+                dtts += [dtt.to_json()]
+            if dtts:
+                preprocessing_params["datetime_transforms"] = dtts
+
         if self._scale is not None and len(self._scale):
             scs = [sc.to_json() for sc in self._scale if sc.to_json()]
             if scs:
@@ -403,6 +438,14 @@ class Preprocessing(object):
                 cat = PreprocessingCategorical()
                 cat.from_json(cat_data)
                 self._categorical += [cat]
+
+        if "datetime_transforms" in data_json:
+            self._datetime_transforms = []
+            for dtt_params in data_json["datetime_transforms"]:
+                dtt = DateTimeTransformer()
+                dtt.from_json(dtt_params)
+                self._datetime_transforms += [dtt]
+            
         if "scale" in data_json:
             self._scale = []
             for scale_data in data_json["scale"]:

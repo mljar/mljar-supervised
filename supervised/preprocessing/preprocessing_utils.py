@@ -12,6 +12,7 @@ class PreprocessingUtils(object):
     CATEGORICAL = "categorical"
     CONTINOUS = "continous"
     DISCRETE = "discrete"
+    DATETIME = "datetime"
 
     @staticmethod
     def get_type(x):
@@ -26,12 +27,20 @@ class PreprocessingUtils(object):
             data_type = PreprocessingUtils.CONTINOUS
         elif col_type.startswith("int"):
             data_type = PreprocessingUtils.DISCRETE
+        elif col_type.startswith("datetime"):
+            data_type = PreprocessingUtils.DATETIME
+        
         return data_type
 
     @staticmethod
     def is_categorical(x_org):
         x = x_org[~pd.isnull(x_org)]
         return PreprocessingUtils.get_type(x) == PreprocessingUtils.CATEGORICAL
+
+    @staticmethod
+    def is_datetime(x_org):
+        x = x_org[~pd.isnull(x_org)]
+        return PreprocessingUtils.get_type(x) == PreprocessingUtils.DATETIME
 
     @staticmethod
     def is_0_1(x_org):

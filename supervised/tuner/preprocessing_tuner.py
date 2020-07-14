@@ -45,9 +45,8 @@ class PreprocessingTuner:
             # convert to categorical only for categorical types
             convert_to_integer_will_be_applied = False
             if (
-                "convert_categorical"
-                in required_preprocessing  # the algorithm needs converted categoricals
-                and "categorical" in preprocessing_needed  # the feature is categorical
+                "convert_categorical" in required_preprocessing  # the algorithm needs converted categoricals
+                and "categorical" in preprocessing_needed        # the feature is categorical
             ):
                 if PreprocessingCategorical.CONVERT_ONE_HOT in preprocessing_needed:
                     preprocessing_to_apply += [PreprocessingCategorical.CONVERT_ONE_HOT]
@@ -55,12 +54,11 @@ class PreprocessingTuner:
                     preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
                     convert_to_integer_will_be_applied = True  # maybe scale needed
 
+            if "datetime_transform" in preprocessing_needed:
+                preprocessing_to_apply += ["datetime_transform"]
+
             if "scale" in required_preprocessing:
-                if convert_to_integer_will_be_applied:
-                    preprocessing_to_apply += [Scale.SCALE_NORMAL]
-                # elif PreprocessingUtils.is_log_scale_needed(X[col]):
-                #    preprocessing_to_apply += [Scale.SCALE_LOG_AND_NORMAL]
-                elif "scale" in preprocessing_needed:
+                if convert_to_integer_will_be_applied or "scale" in preprocessing_needed:
                     preprocessing_to_apply += [Scale.SCALE_NORMAL]
 
             # remeber which preprocessing we need to apply
