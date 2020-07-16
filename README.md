@@ -4,7 +4,13 @@
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
-## Automated Machine Learning :computer: :bulb: :rocket:
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/automl_pic.png" width="78%" />
+</p>
+
+## Automated Machine Learning :rocket: :computer: :bulb: 
 
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
