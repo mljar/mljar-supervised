@@ -23,6 +23,7 @@ class PreprocessingUtils(object):
                     "Please select one column to get its type"
                 )
         col_type = str(x.dtype)
+        
         data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
             data_type = PreprocessingUtils.CONTINOUS
@@ -31,9 +32,14 @@ class PreprocessingUtils(object):
         elif col_type.startswith("datetime"):
             data_type = PreprocessingUtils.DATETIME
 
-        unique_cnt = len(np.unique(x[~pd.isnull(x)]))
-        if unique_cnt > 200 and unique_cnt > int(0.5 * x.shape[0]):
-            data_type = PreprocessingUtils.TEXT
+        if data_type == PreprocessingUtils.CATEGORICAL:
+            # check maybe this categorical is a text
+            # it is a text, if:
+            # has more than 200 unique values
+            # more than half of rows is unique
+            unique_cnt = len(np.unique(x[~pd.isnull(x)]))
+            if unique_cnt > 200 and unique_cnt > int(0.5 * x.shape[0]):
+                data_type = PreprocessingUtils.TEXT
 
         return data_type
 
