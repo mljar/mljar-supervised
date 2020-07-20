@@ -170,7 +170,12 @@ additional = {
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
-required_preprocessing = ["missing_values_inputation", "target_as_integer"]
+required_preprocessing = [
+    "missing_values_inputation",
+    "datetime_transform",
+    "text_transform",
+    "target_as_integer",
+]
 
 
 AlgorithmsRegistry.add(
@@ -193,7 +198,12 @@ AlgorithmsRegistry.add(
 
 regression_params = copy.deepcopy(classification_params)
 
-regression_required_preprocessing = ["missing_values_inputation", "target_scale"]
+regression_required_preprocessing = [
+    "missing_values_inputation",
+    "datetime_transform",
+    "text_transform",
+    "target_scale",
+]
 
 
 regression_default_params = {

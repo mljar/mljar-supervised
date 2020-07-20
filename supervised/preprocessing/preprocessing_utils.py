@@ -13,6 +13,7 @@ class PreprocessingUtils(object):
     CONTINOUS = "continous"
     DISCRETE = "discrete"
     DATETIME = "datetime"
+    TEXT = "text"
 
     @staticmethod
     def get_type(x):
@@ -29,7 +30,11 @@ class PreprocessingUtils(object):
             data_type = PreprocessingUtils.DISCRETE
         elif col_type.startswith("datetime"):
             data_type = PreprocessingUtils.DATETIME
-        
+
+        unique_cnt = len(np.unique(x[~pd.isnull(x)]))
+        if unique_cnt > 200 and unique_cnt > int(0.5 * x.shape[0]):
+            data_type = PreprocessingUtils.TEXT
+
         return data_type
 
     @staticmethod
@@ -41,6 +46,11 @@ class PreprocessingUtils(object):
     def is_datetime(x_org):
         x = x_org[~pd.isnull(x_org)]
         return PreprocessingUtils.get_type(x) == PreprocessingUtils.DATETIME
+
+    @staticmethod
+    def is_text(x_org):
+        x = x_org[~pd.isnull(x_org)]
+        return PreprocessingUtils.get_type(x) == PreprocessingUtils.TEXT
 
     @staticmethod
     def is_0_1(x_org):

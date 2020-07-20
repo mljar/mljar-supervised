@@ -90,6 +90,8 @@ additional = {"max_rows_limit": 100000, "max_cols_limit": 100}
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_as_integer",
 ]

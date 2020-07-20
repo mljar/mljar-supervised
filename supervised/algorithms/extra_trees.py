@@ -99,6 +99,8 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "target_as_integer",
 ]
 
@@ -149,6 +151,8 @@ regression_additional = {
 regression_required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "target_scale",
 ]
 

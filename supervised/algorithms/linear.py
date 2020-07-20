@@ -160,6 +160,8 @@ additional = {"max_steps": 1, "max_rows_limit": None, "max_cols_limit": None}
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_as_integer",
 ]
@@ -179,6 +181,8 @@ AlgorithmsRegistry.add(
 regression_required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_scale",
 ]

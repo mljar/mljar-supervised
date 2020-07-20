@@ -17,8 +17,6 @@ class PreprocessingMissingValues(object):
     MISSING_VALUE = "_missing_value_"
     REMOVE_COLUMN = "remove_column"
 
-
-
     def __init__(self, columns=[], na_fill_method=FILL_NA_MEDIAN):
         self._columns = columns
         # fill method
@@ -49,7 +47,7 @@ class PreprocessingMissingValues(object):
 
         if PreprocessingUtils.get_type(x) == PreprocessingUtils.DATETIME:
             return PreprocessingUtils.get_most_frequent(x)
-        
+
         # numerical type
         if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MIN:
             return PreprocessingUtils.get_min(x) - 1.0
@@ -81,7 +79,7 @@ class PreprocessingMissingValues(object):
         params = {
             "fill_method": self._na_fill_method,
             "fill_params": self._na_fill_params,
-            "datetime_columns": list(self._datetime_columns)
+            "datetime_columns": list(self._datetime_columns),
         }
         for col in self._datetime_columns:
             params["fill_params"][col] = str(params["fill_params"][col])

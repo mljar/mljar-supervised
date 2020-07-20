@@ -165,6 +165,8 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "target_as_integer",
 ]
 
@@ -193,7 +195,12 @@ dt_regression_params = {
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_depth": [2, 3, 4],
 }
-regression_required_preprocessing = ["missing_values_inputation", "convert_categorical"]
+regression_required_preprocessing = [
+    "missing_values_inputation",
+    "convert_categorical",
+    "datetime_transform",
+    "text_transform",
+]
 
 regression_default_params = {"criterion": "mse", "max_depth": 3}
 

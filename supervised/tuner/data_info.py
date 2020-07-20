@@ -39,6 +39,8 @@ class DataInfo:
                 columns_info[col] += [EncodingSelector.get(X, y, col)]
             elif PreprocessingUtils.is_datetime(X[col]):
                 columns_info[col] += ["datetime_transform"]
+            elif PreprocessingUtils.is_text(X[col]):
+                columns_info[col] = ["text_transform"]  # override other transforms
             else:
                 # numeric type, check if scale needed
                 if PreprocessingUtils.is_scale_needed(X[col]):

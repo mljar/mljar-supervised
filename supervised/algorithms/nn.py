@@ -240,6 +240,8 @@ additional = {
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_as_integer",
 ]
@@ -256,6 +258,8 @@ AlgorithmsRegistry.add(
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_as_one_hot",
 ]
@@ -271,6 +275,8 @@ AlgorithmsRegistry.add(
 required_preprocessing = [
     "missing_values_inputation",
     "convert_categorical",
+    "datetime_transform",
+    "text_transform",
     "scale",
     "target_scale",
 ]

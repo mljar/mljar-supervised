@@ -10,6 +10,7 @@ from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer
+from supervised.preprocessing.text_transformer import TextTransformer
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -44,6 +45,7 @@ class Preprocessing(object):
         self._scale = []
         self._remove_columns = []
         self._datetime_transforms = []
+        self._text_transforms = []
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -123,6 +125,25 @@ class Preprocessing(object):
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
 
+        # there can be missing values in the text data,
+        # but we don't want to handle it by fill missing methods
+        # zeros will be imputed by text_transform method
+        cols_to_process = list(
+            filter(
+                lambda k: "text_transform" in columns_preprocessing[k],
+                columns_preprocessing,
+            )
+        )
+
+        new_text_columns = []
+        for col in cols_to_process:
+            t = TextTransformer()
+            t.fit(X_train, col)
+            X_train = t.transform(X_train)
+            self._text_transforms += [t]
+            new_text_columns += t._new_columns
+        # end of text transform
+
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
                 filter(
@@ -152,15 +173,15 @@ class Preprocessing(object):
 
         # datetime transform
         cols_to_process = list(
-                filter(
-                    lambda k: "datetime_transform" in columns_preprocessing[k],
-                    columns_preprocessing,
-                )
+            filter(
+                lambda k: "datetime_transform" in columns_preprocessing[k],
+                columns_preprocessing,
             )
-        
+        )
+
         new_datetime_columns = []
         for col in cols_to_process:
-            
+
             t = DateTimeTransformer()
             t.fit(X_train, col)
             X_train = t.transform(X_train)
@@ -175,9 +196,19 @@ class Preprocessing(object):
                     columns_preprocessing,
                 )
             )
-            if len(cols_to_process) and len(new_datetime_columns) and scale_method == Scale.SCALE_NORMAL:
+            if (
+                len(cols_to_process)
+                and len(new_datetime_columns)
+                and scale_method == Scale.SCALE_NORMAL
+            ):
                 cols_to_process += new_datetime_columns
-            
+            if (
+                len(cols_to_process)
+                and len(new_text_columns)
+                and scale_method == Scale.SCALE_NORMAL
+            ):
+                cols_to_process += new_text_columns
+
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
                 scale.fit(X_train)
@@ -238,6 +269,11 @@ class Preprocessing(object):
             ]
             X_validation.drop(cols_to_remove, axis=1, inplace=True)
 
+        # text transform
+        for tt in self._text_transforms:
+            if X_validation is not None and tt is not None:
+                X_validation = tt.transform(X_validation)
+
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
                 X_validation = missing.transform(X_validation)
@@ -270,7 +306,7 @@ class Preprocessing(object):
         for dtt in self._datetime_transforms:
             if X_validation is not None and dtt is not None:
                 X_validation = dtt.transform(X_validation)
-        
+
         for scale in self._scale:
             if X_validation is not None and scale is not None:
                 X_validation = scale.transform(X_validation)
@@ -407,6 +443,13 @@ class Preprocessing(object):
             if dtts:
                 preprocessing_params["datetime_transforms"] = dtts
 
+        if self._text_transforms is not None and len(self._text_transforms):
+            tts = []
+            for tt in self._text_transforms:
+                tts += [tt.to_json()]
+            if tts:
+                preprocessing_params["text_transforms"] = tts
+
         if self._scale is not None and len(self._scale):
             scs = [sc.to_json() for sc in self._scale if sc.to_json()]
             if scs:
@@ -445,7 +488,14 @@ class Preprocessing(object):
                 dtt = DateTimeTransformer()
                 dtt.from_json(dtt_params)
                 self._datetime_transforms += [dtt]
-            
+
+        if "text_transforms" in data_json:
+            self._text_transforms = []
+            for tt_params in data_json["text_transforms"]:
+                tt = TextTransformer()
+                tt.from_json(tt_params)
+                self._text_transforms += [tt]
+
         if "scale" in data_json:
             self._scale = []
             for scale_data in data_json["scale"]:
