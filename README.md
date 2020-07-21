@@ -10,6 +10,19 @@
   <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/automl_pic.png" width="78%" />
 </p>
 
+## Table of Contents
+
+ - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket-computer-bulb)
+ - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it-eyes-cake-boom)
+ - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-school-books)
+ - [Examples](https://github.com/mljar/mljar-supervised#examples)
+ - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
+ - [Markdown Reports](https://github.com/mljar/mljar-supervised#markdown-reports)
+ - [Installation](https://github.com/mljar/mljar-supervised#installation-package)
+ - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
+ - [License](https://github.com/mljar/mljar-supervised#license-necktie)
+ - [MLJAR](https://github.com/mljar/mljar-supervised#mljar-heart)
+
 ## Automated Machine Learning :rocket: :computer: :bulb: 
 
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
