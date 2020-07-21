@@ -23,7 +23,7 @@ class PreprocessingUtils(object):
                     "Please select one column to get its type"
                 )
         col_type = str(x.dtype)
-        
+
         data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
             data_type = PreprocessingUtils.CONTINOUS

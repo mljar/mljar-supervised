@@ -60,9 +60,9 @@ class HillClimbing:
             params_2 = copy.deepcopy(params)
             params_2[key_to_update] = right
 
-        if "model_architecture_json" in params_1:
+        if params_1 is not None and "model_architecture_json" in params_1:
             del params_1["model_architecture_json"]
-        if "model_architecture_json" in params_2:
+        if params_2 is not None and "model_architecture_json" in params_2:
             del params_2["model_architecture_json"]
 
         return [params_1, params_2]
