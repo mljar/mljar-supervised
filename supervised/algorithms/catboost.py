@@ -149,7 +149,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
 
 classification_params = {
-    "learning_rate": [0.005, 0.01, 0.05, 0.1, 0.2],
+    "learning_rate": [0.05, 0.1, 0.2],
     "depth": [2, 3, 4, 5, 6],
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
     "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
