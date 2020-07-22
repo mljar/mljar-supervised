@@ -30,7 +30,7 @@ class LinearAlgorithm(SklearnAlgorithm):
         logger.debug("LinearAlgorithm.__init__")
         self.max_iters = 1
         self.library_version = sklearn.__version__
-        self.model = LogisticRegression(max_iter=1000, n_jobs=-1)
+        self.model = LogisticRegression(max_iter=500, tol=5e-4, n_jobs=-1)
 
     def file_extension(self):
         return "linear"
