@@ -15,14 +15,14 @@ print(X.shape)
 automl = AutoML(
     # results_path="AutoML_43",
     # total_time_limit=100,
-    # algorithms=["Linear"],
+    #algorithms=["Xgboost"],
     # "Decision Tree",
     # ,
     # "Extra Trees"
     # ],
     # explain_level=0,
     # tuning_mode="Normal"
-    # mode="Explain",
+    mode="Perform",
     # train_ensemble = True
 )
 # automl.set_advanced(start_random_models=1)

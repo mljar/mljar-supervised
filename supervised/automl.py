@@ -160,6 +160,7 @@ class AutoML:
             self._start_random_models = 1
             self._hill_climbing_steps = 0
             self._top_models_to_improve = 0
+            self._golden_features = False
         elif self._mode == "Perform":
             self._train_ensemble = True
             self._stack_models = False
@@ -181,6 +182,7 @@ class AutoML:
             self._start_random_models = 5
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 2
+            self._golden_features = True
         elif self._mode == "Compete":
             self._train_ensemble = True
             self._stack_models = True
@@ -205,6 +207,7 @@ class AutoML:
             self._start_random_models = 10
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 3
+            self._golden_features = True
 
         self._model_time_limit = None
         if "model_time_limit" in kwargs:
@@ -237,6 +240,9 @@ class AutoML:
 
         if "tuning_mode" in kwargs:
             self.set_tuning_mode(kwargs["tuning_mode"])
+
+        if "golden_features" in kwargs:
+            self._golden_features = kwargs["golden_features"]
 
         self._verbose = True
         if "verbose" is kwargs:
@@ -1055,6 +1061,13 @@ class AutoML:
             self._fit_level = "hill_climbing"
             start = time.time()
             self._time_start[self._fit_level] = start
+            # check golden features
+            if self._golden_features:
+                for params in tuner.get_golden_features_params(
+                    self._models, self._results_path
+                ):
+                    self.train_model(params)
+            # do hill climbing
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)
             self._time_spend["hill_climbing"] = np.round(time.time() - start, 2)

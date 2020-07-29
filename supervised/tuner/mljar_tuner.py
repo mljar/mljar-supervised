@@ -218,10 +218,47 @@ class MljarTuner:
                                 all_params["learner"]["model_type"], model_max_index + 1
                             )
 
+                            if "golden_features" in all_params["preprocessing"]:
+                                all_params["name"] += "_GoldenFeatures"
+                            
                             unique_params_key = MljarTuner.get_params_key(all_params)
                             if unique_params_key not in self._unique_params_keys:
                                 self._unique_params_keys += [unique_params_key]
                                 yield all_params
+
+    def get_golden_features_params(self, current_models, results_path):
+        # get models orderer by loss
+        # TODO: refactor this callbacks.callbacks[0]
+        scores = [m.get_final_loss() for m in current_models]
+        model_types = [m.get_type() for m in current_models]
+        df_models = pd.DataFrame(
+            {"model": current_models, "score": scores, "model_type": model_types}
+        )
+        # do group by for debug reason
+        df_models = df_models.groupby("model_type").apply(
+            lambda x: x.sort_values("score")
+        )
+        unique_model_types = np.unique(df_models.model_type)
+
+        for m_type in unique_model_types:
+            # try to add golden features only for below algorithms
+            if m_type not in ["Xgboost", "LightGBM", "CatBoost"]:
+                continue
+            models = df_models[df_models.model_type == m_type]["model"]
+
+            for i in range(min(1, len(models))):
+                m = models[i]
+
+                params = copy.deepcopy(m.params)
+                params["preprocessing"]["golden_features"] = {
+                    "results_path": results_path,
+                    "ml_task": self._ml_task,
+                }
+                params["name"] += "_GoldenFeatures"
+                unique_params_key = MljarTuner.get_params_key(params)
+                if unique_params_key not in self._unique_params_keys:
+                    self._unique_params_keys += [unique_params_key]
+                    yield params
 
     def _get_model_params(self, model_type, seed, params_type="random"):
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]

@@ -28,10 +28,10 @@ class TextTransformerTest(unittest.TestCase):
         df = transf.transform(df)
         self.assertTrue(df.shape[0] == 5)
         self.assertTrue("col1" not in df.columns)
-        
+
         transf2 = TextTransformer()
         transf2.from_json(transf.to_json())
         df2 = transf2.transform(df_org)
         self.assertTrue("col1" not in df2.columns)
-        
-        assert_almost_equal(df.iloc[0,0], df2.iloc[0,0])
+
+        assert_almost_equal(df.iloc[0, 0], df2.iloc[0, 0])

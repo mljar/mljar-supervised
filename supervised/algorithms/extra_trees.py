@@ -83,14 +83,14 @@ et_params = {
     "criterion": ["gini", "entropy"],
     "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     "min_samples_split": [10, 20, 30, 40, 50],
-    "max_depth": [4,6,8,10,12]
+    "max_depth": [4, 6, 8, 10, 12],
 }
 
 classification_default_params = {
     "criterion": "gini",
     "max_features": 0.6,
     "min_samples_split": 30,
-    "max_depth": 6
+    "max_depth": 6,
 }
 
 additional = {
@@ -137,14 +137,14 @@ regression_et_params = {
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     "min_samples_split": [10, 20, 30, 40, 50],
-    "max_depth": [4,6,8,10,12]
+    "max_depth": [4, 6, 8, 10, 12],
 }
 
 regression_default_params = {
     "criterion": "mse",
     "max_features": 0.6,
     "min_samples_split": 30,
-    "max_depth": 6
+    "max_depth": 6,
 }
 
 regression_additional = {

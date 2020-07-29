@@ -3,7 +3,7 @@ import pandas as pd
 from supervised.automl import AutoML
 from sklearn.model_selection import train_test_split
 import os
-
+from sklearn.metrics import log_loss
 import warnings
 
 # warnings.filterwarnings("error", category=RuntimeWarning) #pd.core.common.SettingWithCopyWarning)
@@ -19,11 +19,12 @@ y = df["income"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
-    # results_path="AutoML_11",
-    # algorithms=["Xgboost"],
+    #results_path="AutoML_35",
+    #algorithms=["Xgboost", "CatBoost"],
     # total_time_limit=200,
     # explain_level=0
-    # mode="Perform"
+    # validation={"validation_type": "split"},
+    mode="Perform"
 )
 automl.fit(X_train, y_train)
 
@@ -32,3 +33,4 @@ predictions = automl.predict(X_test)
 print(predictions.head())
 print(predictions.tail())
 print(X_test.shape, predictions.shape)
+print("LogLoss", log_loss(y_test, predictions["prediction_>50K"]))

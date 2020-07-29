@@ -11,6 +11,9 @@ from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer
 from supervised.preprocessing.text_transformer import TextTransformer
+from supervised.preprocessing.goldenfeatures_transformer import (
+    GoldenFeaturesTransformer,
+)
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -46,6 +49,7 @@ class Preprocessing(object):
         self._remove_columns = []
         self._datetime_transforms = []
         self._text_transforms = []
+        self._golden_features = None
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -156,6 +160,19 @@ class Preprocessing(object):
             X_train = missing.transform(X_train)
             self._missing_values += [missing]
 
+        # golden features
+        golden_columns = []
+
+        if "golden_features" in self._params:
+            numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
+            results_path = self._params["golden_features"]["results_path"]
+            ml_task = self._params["golden_features"]["ml_task"]
+            # if ml_task in [BINARY_CLASSIFICATION]:
+            self._golden_features = GoldenFeaturesTransformer(results_path, ml_task)
+            self._golden_features.fit(X_train[numeric_cols], y_train)
+            X_train = self._golden_features.transform(X_train)
+            golden_columns = self._golden_features._new_columns
+
         for convert_method in [
             PreprocessingCategorical.CONVERT_INTEGER,
             PreprocessingCategorical.CONVERT_ONE_HOT,
@@ -208,6 +225,13 @@ class Preprocessing(object):
                 and scale_method == Scale.SCALE_NORMAL
             ):
                 cols_to_process += new_text_columns
+
+            if (
+                len(cols_to_process)
+                and len(golden_columns)
+                and scale_method == Scale.SCALE_NORMAL
+            ):
+                cols_to_process += golden_columns
 
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
@@ -299,6 +323,11 @@ class Preprocessing(object):
             )
             missing.fit(X_validation)
             X_validation = missing.transform(X_validation)
+
+        # golden features
+        if self._golden_features is not None:
+            X_validation = self._golden_features.transform(X_validation)
+
         for convert in self._categorical:
             if X_validation is not None and convert is not None:
                 X_validation = convert.transform(X_validation)
@@ -450,6 +479,9 @@ class Preprocessing(object):
             if tts:
                 preprocessing_params["text_transforms"] = tts
 
+        if self._golden_features is not None:
+            preprocessing_params["golden_features"] = self._golden_features.to_json()
+
         if self._scale is not None and len(self._scale):
             scs = [sc.to_json() for sc in self._scale if sc.to_json()]
             if scs:
@@ -495,6 +527,10 @@ class Preprocessing(object):
                 tt = TextTransformer()
                 tt.from_json(tt_params)
                 self._text_transforms += [tt]
+
+        if "golden_features" in data_json:
+            self._golden_features = GoldenFeaturesTransformer()
+            self._golden_features.from_json(data_json["golden_features"])
 
         if "scale" in data_json:
             self._scale = []

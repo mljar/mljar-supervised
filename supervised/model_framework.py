@@ -245,7 +245,7 @@ class ModelFramework:
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
             # preprocessing goes here
-            X_data, _ = self.preprocessings[ind].transform(X, None)
+            X_data, _ = self.preprocessings[ind].transform(X.copy(), None)
             y_p = learner.predict(X_data)
 
             y_p = self.preprocessings[ind].inverse_scale_target(y_p)
