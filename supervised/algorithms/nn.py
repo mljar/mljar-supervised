@@ -87,6 +87,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
 
         logger.debug("NeuralNetworkAlgorithm __init__")
 
+
     def create_model(self, input_dim):
         self.model = Sequential()
         for i in range(self.learner_params.get("dense_layers")):
@@ -118,6 +119,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
             momentum=self.learner_params.get("momentum"),
             decay=self.learner_params.get("decay"),
             nesterov=True,
+            clipnorm=1.0
         )
 
         if self.ml_task == MULTICLASS_CLASSIFICATION:

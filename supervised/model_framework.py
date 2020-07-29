@@ -138,10 +138,11 @@ class ModelFramework:
             log_to_file = os.path.join(model_path, f"learner_{k_fold+1}_training.log")
 
             for i in range(learner.max_iters):
+                
                 self.callbacks.on_iteration_start()
-
+                
                 learner.fit(X_train, y_train, X_validation, y_validation, log_to_file)
-
+                
                 self.callbacks.on_iteration_end(
                     {"iter_cnt": i},
                     self.predictions(
@@ -153,6 +154,7 @@ class ModelFramework:
                         y_validation,
                     ),
                 )
+                
                 if learner.stop_training:
                     break
                 learner.update({"step": i})
