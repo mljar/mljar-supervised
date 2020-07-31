@@ -131,6 +131,11 @@ class Preprocessing(object):
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
 
+        numeric_cols = [] # get numeric cols before text transformations
+        # needed for golden features
+        if X_train is not None and "golden_features" in self._params:
+            numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
+
         # there can be missing values in the text data,
         # but we don't want to handle it by fill missing methods
         # zeros will be imputed by text_transform method
@@ -164,9 +169,7 @@ class Preprocessing(object):
 
         # golden features
         golden_columns = []
-
         if "golden_features" in self._params:
-            numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
             results_path = self._params["golden_features"]["results_path"]
             ml_task = self._params["golden_features"]["ml_task"]
             # if ml_task in [BINARY_CLASSIFICATION]:
