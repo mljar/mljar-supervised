@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import copy
 import numpy as np
@@ -368,6 +369,45 @@ class AdditionalMetrics:
         fig.savefig(os.path.join(model_path, "permutation_importance.png"))
         fout.write("\n\n## Permutation-based Importance\n")
         fout.write(f"![Permutation-based Importance](permutation_importance.png)")
+
+        if "random_feature" in df.index.tolist():
+
+            df["counter"] = 0
+            df = df.fillna(
+                0
+            )  # there might be not-used features between different learners
+            max_counter = 0.0
+            for col in df.columns:
+                if "Learner" not in col:
+                    continue
+                score = max(0, df[col]["random_feature"]) + 1e-6
+                df["counter"] += (df[col] <= score).astype(int)
+                max_counter += 1.0
+
+            """ version 1
+            df["min_score"] = df.min(axis=1)
+            df["max_score"] = df.max(axis=1)
+            random_feature_score = max(
+                0.0, float(df["max_score"]["random_feature"])
+            )  # it should be at least 0
+            drop_features = df.index[
+                df["min_score"] < random_feature_score + 1e-6
+            ].tolist()
+            """
+
+            # version 2 - should be better
+            threshold = max_counter / 2.0
+            drop_features = df.index[df["counter"] >= threshold].tolist()
+
+            fname = os.path.join(os.path.dirname(model_path), "drop_features.json")
+            with open(fname, "w") as fout:
+                fout.write(json.dumps(drop_features, indent=4))
+
+            fname = os.path.join(
+                os.path.dirname(model_path),
+                f"features_scores_threshold_{threshold}.csv",
+            )
+            df.to_csv(fname, index=False)
 
     @staticmethod
     def add_shap_importance(fout, model_path):

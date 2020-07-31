@@ -10,10 +10,11 @@ X = df[df.columns[2:]]
 y = df["Survived"]
 
 automl = AutoML(
-    # results_path="AutoML_11",
-    # algorithms=["Linear"],
+    #results_path="AutoML_1",
+    #algorithms=["Xgboost"],
     # model_time_limit=20,
     # train_ensemble=True,
+    mode="Perform"
 )
 # automl.set_advanced(start_random_models=3)
 automl.fit(X, y)
