@@ -161,6 +161,7 @@ class AutoML:
             self._hill_climbing_steps = 0
             self._top_models_to_improve = 0
             self._golden_features = False
+            self._feature_selection = False
         elif self._mode == "Perform":
             self._train_ensemble = True
             self._stack_models = False
@@ -183,6 +184,7 @@ class AutoML:
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 2
             self._golden_features = True
+            self._feature_selection = True
         elif self._mode == "Compete":
             self._train_ensemble = True
             self._stack_models = True
@@ -208,6 +210,7 @@ class AutoML:
             self._hill_climbing_steps = 2
             self._top_models_to_improve = 3
             self._golden_features = True
+            self._feature_selection = True
 
         self._model_time_limit = None
         if "model_time_limit" in kwargs:
@@ -243,6 +246,9 @@ class AutoML:
 
         if "golden_features" in kwargs:
             self._golden_features = kwargs["golden_features"]
+
+        if "feature_selection" in kwargs:
+            self._feature_selection = kwargs["feature_selection"]
 
         self._verbose = True
         if "verbose" is kwargs:
@@ -991,9 +997,9 @@ class AutoML:
         """
         try:
 
-            if self._best_model is not None:
-                print("Best model is already set, no need to run fit. Skipping ...")
-                return
+            # if self._best_model is not None:
+            #    print("Best model is already set, no need to run fit. Skipping ...")
+            #    return
 
             self._start_time = time.time()
 
@@ -1067,6 +1073,17 @@ class AutoML:
                     self._models, self._results_path
                 ):
                     self.train_model(params)
+            # feature selection
+            if self._feature_selection:
+                # step #1 - insert random feature
+                for params in tuner.get_params_to_insert_random_feature(self._models):
+                    self.train_model(params)
+                # step #2 - train models on selected features ...
+                for params in tuner.get_feature_selection_params(
+                    self._models, self._results_path
+                ):
+                    self.train_model(params)
+
             # do hill climbing
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)

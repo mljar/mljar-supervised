@@ -50,6 +50,8 @@ class Preprocessing(object):
         self._datetime_transforms = []
         self._text_transforms = []
         self._golden_features = None
+        self._add_random_feature = self._params.get("add_random_feature", False)
+        self._drop_features = self._params.get("drop_features", [])
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -239,6 +241,17 @@ class Preprocessing(object):
                 X_train = scale.transform(X_train)
                 self._scale += [scale]
 
+        if self._add_random_feature:
+            # -1, 1, with 0 mean
+            X_train["random_feature"] = np.random.rand(X_train.shape[0]) * 2.0 - 1.0
+
+        if self._drop_features:
+            available_cols = X_train.columns.tolist()
+            drop_cols = [c for c in self._drop_features if c in available_cols]
+            if drop_cols:
+                X_train.drop(drop_cols, axis=1, inplace=True)
+            self._drop_features = drop_cols
+
         return X_train, y_train
 
     def transform(self, X_validation, y_validation):
@@ -339,6 +352,15 @@ class Preprocessing(object):
         for scale in self._scale:
             if X_validation is not None and scale is not None:
                 X_validation = scale.transform(X_validation)
+
+        if self._add_random_feature:
+            # -1, 1, with 0 mean
+            X_validation["random_feature"] = (
+                np.random.rand(X_validation.shape[0]) * 2.0 - 1.0
+            )
+
+        if self._drop_features and X_validation is not None:
+            X_validation.drop(self._drop_features, axis=1, inplace=True)
 
         return X_validation, y_validation
 
@@ -495,6 +517,13 @@ class Preprocessing(object):
 
         if "ml_task" in self._params:
             preprocessing_params["ml_task"] = self._params["ml_task"]
+
+        if self._add_random_feature:
+            preprocessing_params["add_random_feature"] = True
+
+        if self._drop_features:
+            preprocessing_params["drop_features"] = self._drop_features
+
         return preprocessing_params
 
     def from_json(self, data_json):
@@ -550,3 +579,6 @@ class Preprocessing(object):
             self._scale_y.from_json(data_json["scale_y"])
         if "ml_task" in data_json:
             self._params["ml_task"] = data_json["ml_task"]
+
+        self._add_random_feature = data_json.get("add_random_feature", False)
+        self._drop_features = data_json.get("drop_features", [])

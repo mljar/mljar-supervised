@@ -1,6 +1,8 @@
+import os
+import copy
+import json
 import numpy as np
 import pandas as pd
-import copy
 
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -220,7 +222,11 @@ class MljarTuner:
 
                             if "golden_features" in all_params["preprocessing"]:
                                 all_params["name"] += "_GoldenFeatures"
-                            
+                            if "drop_features" in all_params["preprocessing"] and len(
+                                all_params["preprocessing"]["drop_features"]
+                            ):
+                                all_params["name"] += "_SelectedFeatures"
+
                             unique_params_key = MljarTuner.get_params_key(all_params)
                             if unique_params_key not in self._unique_params_keys:
                                 self._unique_params_keys += [unique_params_key]
@@ -255,6 +261,85 @@ class MljarTuner:
                     "ml_task": self._ml_task,
                 }
                 params["name"] += "_GoldenFeatures"
+                if "model_architecture_json" in params["learner"]:
+                    del params["learner"]["model_architecture_json"]
+                unique_params_key = MljarTuner.get_params_key(params)
+                if unique_params_key not in self._unique_params_keys:
+                    self._unique_params_keys += [unique_params_key]
+                    yield params
+
+    def get_params_to_insert_random_feature(self, current_models):
+        # get models orderer by loss
+        # TODO: refactor this callbacks.callbacks[0]
+        scores = [m.get_final_loss() for m in current_models]
+        model_types = [m.get_type() for m in current_models]
+        df_models = pd.DataFrame(
+            {"model": current_models, "score": scores, "model_type": model_types}
+        )
+        df_models.sort_values(by="score", ascending=True, inplace=True)
+
+        m = df_models.iloc[0]["model"]
+
+        params = copy.deepcopy(m.params)
+        params["preprocessing"]["add_random_feature"] = True
+        params["name"] += "_RandomFeature"
+        params["explain_level"] = 1
+        if "model_architecture_json" in params["learner"]:
+            del params["learner"]["model_architecture_json"]
+
+        unique_params_key = MljarTuner.get_params_key(params)
+        if unique_params_key not in self._unique_params_keys:
+            self._unique_params_keys += [unique_params_key]
+            yield params
+
+    def get_feature_selection_params(self, current_models, results_path):
+
+        fname = os.path.join(results_path, "drop_features.json")
+        if not os.path.exists(fname):
+            print("The file with features to drop is missing")
+            return None
+
+        drop_features = json.load(open(fname, "r"))
+        print("Drop features", drop_features)
+
+        # in case of droping only one feature (random_feature)
+        # skip this step
+        if len(drop_features) <= 1:
+            return None
+        # get models orderer by loss
+        # TODO: refactor this callbacks.callbacks[0]
+        scores = [m.get_final_loss() for m in current_models]
+        model_types = [m.get_type() for m in current_models]
+        df_models = pd.DataFrame(
+            {"model": current_models, "score": scores, "model_type": model_types}
+        )
+        # do group by for debug reason
+        df_models = df_models.groupby("model_type").apply(
+            lambda x: x.sort_values("score")
+        )
+        unique_model_types = np.unique(df_models.model_type)
+
+        for m_type in unique_model_types:
+            # try to add golden features only for below algorithms
+            if m_type not in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost",
+                "Neural Network",
+                "Random Forest",
+                "Extra Trees",
+            ]:
+                continue
+            models = df_models[df_models.model_type == m_type]["model"]
+
+            for i in range(min(1, len(models))):
+                m = models[i]
+
+                params = copy.deepcopy(m.params)
+                params["preprocessing"]["drop_features"] = drop_features
+                params["name"] += "_SelectedFeatures"
+                if "model_architecture_json" in params["learner"]:
+                    del params["learner"]["model_architecture_json"]
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     self._unique_params_keys += [unique_params_key]
