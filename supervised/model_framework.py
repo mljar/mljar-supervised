@@ -175,6 +175,13 @@ class ModelFramework:
                 explain_level=self._explain_level,
             )
 
+            # save learner and free the memory
+            p = os.path.join(model_path, f"learner_{k_fold+1}.{learner.file_extension()}")
+            learner.save(p)
+            del learner.model
+            learner.model = None
+            # end of learner training
+
         # end of validation loop
         self.callbacks.on_framework_train_end()
         self.train_time = time.time() - start_time
@@ -303,7 +310,7 @@ class ModelFramework:
         saved = []
         for i, l in enumerate(self.learners):
             p = os.path.join(model_path, f"learner_{i+1}.{l.file_extension()}")
-            l.save(p)
+            #l.save(p)
             saved += [p]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:

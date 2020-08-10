@@ -165,6 +165,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         """
 
     def predict(self, X):
+        self.reload()
         if "num_class" in self.params:
             return self.model.predict(X)
         return np.ravel(self.model.predict(X))
@@ -175,10 +176,12 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
     def save(self, model_file_path):
         self.model.save_weights(model_file_path)
         logger.debug(f"Neural Network save model to {model_file_path}")
+        self.model_file_path = model_file_path
 
     def load(self, model_file_path):
         logger.debug(f"Load Neural Network from {model_file_path}")
         self.model.load_weights(model_file_path)
+        self.model_file_path = model_file_path
 
     def get_params(self):
         self.params["model_architecture_json"] = json.dumps(

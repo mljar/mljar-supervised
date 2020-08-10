@@ -435,10 +435,10 @@ class AutoML:
             return
         self._models += [model]
         self.verbose_print(
-            "{} final {} {} time {} seconds".format(
+            "{} {} {} training time {} seconds".format(
                 model.get_name(),
                 self._optimize_metric,
-                model.get_final_loss(),
+                np.round(model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
         )

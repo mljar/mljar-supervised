@@ -101,6 +101,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 result.to_csv(log_to_file, index=False, header=False)
 
     def predict(self, X):
+        self.reload()
         return self.model.predict(X)
 
     def copy(self):
@@ -109,10 +110,12 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def save(self, model_file_path):
         self.model.save_model(model_file_path)
+        self.model_file_path = model_file_path
         logger.debug("LightgbmAlgorithm save model to %s" % model_file_path)
 
     def load(self, model_file_path):
         logger.debug("LightgbmAlgorithm load model from %s" % model_file_path)
+        self.model_file_path = model_file_path
         self.model = lgb.Booster(model_file=model_file_path)
 
     def get_params(self):

@@ -109,13 +109,18 @@ class XgbAlgorithm(BaseAlgorithm):
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
+        '''
+        # disable, for now all learners are saved to hard disk and then deleted from RAM
         with tempfile.NamedTemporaryFile() as tmp:
             self.model.save_model(tmp.name)
             del self.model
             self.model = xgb.Booster()
             self.model.load_model(tmp.name)
+        '''
 
     def predict(self, X):
+        self.reload()
+
         if self.model is None:
             raise XgbAlgorithmException("Xgboost model is None")
 
@@ -128,12 +133,14 @@ class XgbAlgorithm(BaseAlgorithm):
 
     def save(self, model_file_path):
         self.model.save_model(model_file_path)
+        self.model_file_path = model_file_path
         logger.debug("XgbAlgorithm save model to %s" % model_file_path)
 
     def load(self, model_file_path):
         logger.debug("XgbLearner load model from %s" % model_file_path)
         self.model = xgb.Booster()  # init model
         self.model.load_model(model_file_path)
+        self.model_file_path = model_file_path
 
     def get_params(self):
         return {

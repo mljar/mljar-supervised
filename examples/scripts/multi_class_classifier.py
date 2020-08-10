@@ -20,7 +20,7 @@ y = df["class"]
 automl = AutoML(
     
     # results_path="AutoML_41",
-    # algorithms=["CatBoost"],
+    algorithms=["Xgboost"],
     #algorithms=["Neural Network"],
     #    "Linear",
     #    "Xgboost",

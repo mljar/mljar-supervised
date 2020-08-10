@@ -103,6 +103,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             result.to_csv(log_to_file, index=False, header=False)
 
     def predict(self, X):
+        self.reload()
         if self.params["ml_task"] == BINARY_CLASSIFICATION:
             return self.model.predict_proba(X)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
@@ -114,6 +115,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
     def save(self, model_file_path):
         self.model.save_model(model_file_path)
+        self.model_file_path = model_file_path
         logger.debug("CatBoostAlgorithm save model to %s" % model_file_path)
 
     def load(self, model_file_path):
@@ -125,6 +127,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             Algo = CatBoostRegressor
 
         self.model = Algo().load_model(model_file_path)
+        self.model_file_path = model_file_path
 
     def get_params(self):
         return {
