@@ -5,6 +5,9 @@ import copy
 import time
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 import logging
 from tabulate import tabulate
 
@@ -27,6 +30,7 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -1240,3 +1244,68 @@ class AutoML:
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
+
+
+    def eda(self, X_train, y_train):
+
+        inform = {}
+
+        if not isinstance(X_train, pd.DataFrame):
+                raise AutoMLException(
+                    "AutoML needs X_train matrix to be a Pandas DataFrame"
+                )
+
+        if not isinstance(y_train, pd.Series):
+                raise AutoMLException(
+                    "AutoML needs target matrix to be a Pandas Series"
+                )
+
+
+        self._set_ml_task(y_train)
+        os.mkdir(os.path.join(self._results_path,"EDA"))
+        eda_path = os.path.join(self._results_path,"EDA")
+        
+        if ((self._ml_task == BINARY_CLASSIFICATION) | (self._ml_task == MULTICLASS_CLASSIFICATION)):
+
+            plt.figure(figsize=(10,7))
+            sns.countplot(y_train)
+            plt.title("Target class distribution")
+            plt.tight_layout(pad=2.0)
+            plot_path = os.path.join(eda_path,"target_distribution.png")
+            plt.savefig(plot_path)
+            plt.close("all")
+
+            inform["missing"]=[pd.isnull(y_train).sum()/y_train.shape[0]]
+
+            inform["unique"] = [y_train.nunique()]
+            inform["desc"]  = [str((y_train).describe().to_dict())]
+            inform['feature_type'] = ['categorical']
+            
+                   
+        elif self._ml_task == REGRESSION:
+
+            plt.figure(figsize=(10,7))
+            sns.distplot(y_train)
+            plt.title("Target class distribution")
+            plt.tight_layout(pad=2.0)
+            plot_path = os.path.join(eda_path,"target_distribution.png")
+            plt.savefig(plot_path)
+            plt.close("all")
+
+            inform["missing"]=[pd.isnull(y_train).sum()/y_train.shape[0]]
+            inform["unique"] = [y_train.nunique()]
+            inform["desc"] = str((y_train).describe().to_dict())
+            inform['feature_type'] = ['continues']
+
+
+        inform['plot'] = [plot_path]
+        inform['feature'] = ["target"]
+
+        
+        print(inform)
+
+
+
+
+
+
