@@ -30,6 +30,8 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+
 
 
 logging.basicConfig(
@@ -1279,7 +1281,7 @@ class AutoML:
 
             inform["unique"] = [y_train.nunique()]
             inform["desc"]  = [str((y_train).describe().to_dict())]
-            inform['feature_type'] = ['categorical']
+            inform['feature_type'] = [PreprocessingUtils.get_type(y_train)]
             
                    
         elif self._ml_task == REGRESSION:
@@ -1295,14 +1297,68 @@ class AutoML:
             inform["missing"]=[pd.isnull(y_train).sum()/y_train.shape[0]]
             inform["unique"] = [y_train.nunique()]
             inform["desc"] = str((y_train).describe().to_dict())
-            inform['feature_type'] = ['continues']
+            inform['feature_type'] = [PreprocessingUtils.get_type(y_train)]
 
 
         inform['plot'] = [plot_path]
         inform['feature'] = ["target"]
 
         
-        print(inform)
+        #df=pd.DataFrame(inform)
+        #return df
+        for col in X_train.columns:
+
+            inform['feature_type'] += [PreprocessingUtils.get_type(X_train[col])]
+
+            if PreprocessingUtils.get_type(X_train[col]) in ("categorical","discrete"):
+
+                    plt.figure(figsize=(10,7))
+                    sns.countplot(X_train[col])
+                    plt.title(f"{col} class distribution")
+                    plt.tight_layout(pad=2.0)
+                    plot_path = os.path.join(eda_path,f"{col}.png")
+                    plt.savefig(plot_path)
+                    plt.close("all")
+
+
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+
+                    inform["unique"] += [X_train[col].nunique()]
+                    inform["desc"]  += [str((X_train[col]).describe().to_dict())]
+                    inform['plot'] += [plot_path]
+                    inform['feature'] += [str(col)]
+            
+            elif PreprocessingUtils.get_type(X_train[col]) in ("continous"): 
+
+                    plt.figure(figsize=(10,7))
+                    sns.distplot(X_train[col])
+                    plt.title(f"{col} value distribution")
+                    plt.tight_layout(pad=2.0)
+                    plot_path = os.path.join(eda_path,f"{col}.png")
+                    plt.savefig(plot_path)
+                    plt.close("all")
+
+
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+
+                    inform["unique"] += [X_train[col].nunique()]
+                    inform["desc"]  += [str((X_train[col]).describe().to_dict())]
+                    inform['plot'] += [plot_path]
+                    inform['feature'] += [str(col)]
+            
+            else :
+
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+
+                    inform["unique"] += [X_train[col].nunique()]
+                    inform["desc"]  += [str((X_train[col]).describe().to_dict())]
+                    inform['plot'] += ["No plot"]
+                    inform['feature'] += [str(col)]
+
+        df = pd.DataFrame(inform)
+
+        return df
+
 
 
 
