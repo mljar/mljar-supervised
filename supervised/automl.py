@@ -1318,9 +1318,9 @@ class AutoML:
                     plt.close("all")
 
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
 
-                    inform["unique"] += [X_train[col].nunique()]
+                    inform["unique"] += [int(X_train[col].nunique())]
                     inform['plot'] +=  [f'![]({col}.png)']
                     inform['feature'] += [str(col)]
             
@@ -1335,9 +1335,9 @@ class AutoML:
                     plt.close("all")
 
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
 
-                    inform["unique"] += [X_train[col].nunique()]
+                    inform["unique"] += [int(X_train[col].nunique())]
                     inform['plot'] +=  [f'![]({col}.png)']
                     inform['feature'] += [str(col)]
             
@@ -1356,9 +1356,9 @@ class AutoML:
                     plot_path = os.path.join(eda_path,f"{col}.png")
                     plt.savefig(plot_path)
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
 
-                    inform["unique"] += [X_train[col].nunique()]
+                    inform["unique"] += [int(X_train[col].nunique())]
                     inform['plot'] += [f'![]({col}.png)']
                     inform['feature'] += [str(col)]
 
@@ -1372,9 +1372,9 @@ class AutoML:
                     plt.savefig(plot_path)
                     plt.close("all")         
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()/X_train.shape[0]]
+                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
 
-                    inform["unique"] += [X_train[col].nunique()]
+                    inform["unique"] += [int(X_train[col].nunique())]
                     inform['plot'] += [f'![]({col}).png']
                     inform['feature'] += [str(col)]
 
@@ -1390,18 +1390,18 @@ class AutoML:
             for i,row in df.iterrows():
     
                     fout.write(f"## Feature : {row['feature']}\n")
-                    fout.write(f"- ### Feature type {row['feature_type']}\n")
-                    fout.write(f"- ### Missing {row['missing']}\n")
-                    fout.write(f"- ### Unique {row['unique']}\n")
+                    fout.write(f"- **Feature type** {row['feature_type']}\n")
+                    fout.write(f"- **Missing** {row['missing']}%\n")
+                    fout.write(f"- **Unique** {row['unique']}\n")
 
                     for key in row['desc'].keys():
                     
                         if key in ("25%","50%","75%"):
 
-                            fout.write(f"- ### {key} of values lies below {row['desc'][key]}\n")
+                            fout.write(f"- **{key.capitalize()}** of values lies below {row['desc'][key]}\n")
                         else :
 
-                            fout.write(f"- ### {key} {row['desc'][key]}\n")
+                            fout.write(f"- **{key.capitalize()}** {row['desc'][key]}\n")
 
 
 
