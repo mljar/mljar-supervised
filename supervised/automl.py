@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 import logging
 from tabulate import tabulate
-from wordcloud import WordCloud, STOPWORDS
+from wordcloud import WordCloud
+from wordcloud import STOPWORDS
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -1250,6 +1251,15 @@ class AutoML:
 
 
     def eda(self, X_train, y_train):
+
+
+        """"
+        Generate exploratory data analysis
+
+        :param X : The pandas dataframe  with input train features
+        :param y : The pandas series with target feature
+
+        """"
 
         inform = {}
 
