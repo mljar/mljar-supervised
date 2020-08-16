@@ -35,10 +35,9 @@ from supervised.utils.metric import Metric
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
-
 logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
-)
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    level=logging.ERROR)
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
@@ -49,32 +48,34 @@ class AutoML:
     """
 
     def __init__(
-        self, results_path=None, total_time_limit=30 * 60, mode="Explain", **kwargs
-    ):
-
+            self,
+            results_path=None,
+            total_time_limit=30 * 60,
+            mode="Explain",
+            **kwargs):
         """
-        Initialize the AutoML object. 
-        
-        :param results_path: The path with results. 
+        Initialize the AutoML object.
+
+        :param results_path: The path with results.
         If left `None` then the name of directory will be generated, with template: AutoML_{number},
         where the number can be from 1 to 1,000 - depends which direcory name will be available.
 
-        If the `results_path` will point to directory with AutoML results (`params.json` must be present), 
+        If the `results_path` will point to directory with AutoML results (`params.json` must be present),
         then all models will be loaded.
-        
-        :param total_time_limit: The time limit in seconds for AutoML training. 
+
+        :param total_time_limit: The time limit in seconds for AutoML training.
         It is not used when `model_time_limit` is not `None`.
-        
+
         :params mode
 
         ## Additional (optional parameters)
 
-        :param model_time_limit: The time limit for training a single model, in seconds. 
-        If `model_time_limit` is set, the `total_time_limit` is not respected. 
+        :param model_time_limit: The time limit for training a single model, in seconds.
+        If `model_time_limit` is set, the `total_time_limit` is not respected.
         The single model can contain several learners.
         The time limit for single learner is computed based on `model_time_limit`.
 
-        For example, in the case of 10-fold cross-validation, one model will have 10 learners. 
+        For example, in the case of 10-fold cross-validation, one model will have 10 learners.
         The `model_time_limit` is time for all 10 learners.
 
         :param algorithms: The list of algorithms that will be used in the training. The algorithms can be:
@@ -90,25 +91,25 @@ class AutoML:
                 "Neural Network",
                 "Nearest Neighbors",
             ]
-        
+
         :param tuning_mode: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
-        
+
         Each mode describe how many models will be checked:
-        
+
         - `Normal` - about 5-10 models of each algorithm will be trained,
         - `Sport` - about 10-15 models of each algorithm will be trained,
         - `Insane` - about 15-20 models of each algorithm will be trained,
         - `Perfect` - about 25-35 models of each algorithm will be trained.
-        
+
         You can also set how many models will be trained with `set_advanced` method.
-        
+
         :param train_ensemble: If true then at the end of models training the ensemble will be created. (Default is `True`)
 
         :param stack_models: If true then stacked models will be created. Stack level is 1. (Default is `True`)
-        
+
         :param optimize_metric: The metric to be optimized. (not implemented yet, please left `None`)
-        
-        :param validation: The JSON with validation type. Right now only Cross-Validation is supported. 
+
+        :param validation: The JSON with validation type. Right now only Cross-Validation is supported.
         The example JSON parameters for validation:
         ```
         {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
@@ -116,16 +117,16 @@ class AutoML:
         :param verbose: Not implemented yet.
 
         :param ml_task: The machine learning task that will be solved. Can be: `"binary_classification", "multiclass_classification", "regression"`.
-        If left `None` AutoML will try to guess the task based on target values. 
+        If left `None` AutoML will try to guess the task based on target values.
         If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
         If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
         In all other casses, the task is set to `"regression"`.
-        
+
         :param explain_level: The level of explanations included to each model.
         `explain_level = 0` means no explanations
         `explain_level = 1` means produce importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients
         `explain_level = 2` the same as for `1` plus SHAP explanations
-        
+
         :param seed: The seed for random generator.
 
         """
@@ -330,10 +331,12 @@ class AutoML:
         }
 
     def set_advanced(
-        self, start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0
-    ):
+            self,
+            start_random_models=1,
+            hill_climbing_steps=0,
+            top_models_to_improve=0):
         """
-        Advanced set of tuning parameters. 
+        Advanced set of tuning parameters.
 
         :param start_random_models: Number of not-so-random models to check for each algorithm.
         :param hill_climbing_steps: Number of hill climbing steps during tuning.
@@ -357,7 +360,8 @@ class AutoML:
                     found = True
                     break
             if not found:
-                raise AutoMLException("Cannot create directory for AutoML results")
+                raise AutoMLException(
+                    "Cannot create directory for AutoML results")
 
         if os.path.exists(self._results_path) and os.path.exists(
             os.path.join(self._results_path, "params.json")
@@ -386,7 +390,11 @@ class AutoML:
     def load(self):
         logger.info("Loading AutoML models ...")
         try:
-            params = json.load(open(os.path.join(self._results_path, "params.json")))
+            params = json.load(
+                open(
+                    os.path.join(
+                        self._results_path,
+                        "params.json")))
 
             self._model_paths = params["saved"]
             self._ml_task = params["ml_task"]
@@ -489,9 +497,9 @@ class AutoML:
                 - self._time_spend["default_algorithms"]
             )
             if self._stack_models:
-                tt *= (
-                    0.6
-                )  # leave some time for stacking (approx. 40% for stacking of time left)
+                # leave some time for stacking (approx. 40% for stacking of
+                # time left)
+                tt *= (0.6)
             tt /= 2.0  # leave some time for hill-climbing
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
@@ -505,9 +513,9 @@ class AutoML:
                 - self._time_spend["not_so_random"]
             )
             if self._stack_models:
-                tt *= (
-                    0.4
-                )  # leave some time for stacking (approx. 60% for stacking of time left)
+                # leave some time for stacking (approx. 60% for stacking of
+                # time left)
+                tt *= (0.4)
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
             return tt
@@ -545,7 +553,10 @@ class AutoML:
 
         mf = ModelFramework(
             params,
-            callbacks=[early_stop, learner_time_constraint, total_time_constraint],
+            callbacks=[
+                early_stop,
+                learner_time_constraint,
+                total_time_constraint],
         )
 
         if self._enough_time_to_train(mf.get_type()):
@@ -570,7 +581,8 @@ class AutoML:
             # save the best one in the case the training will be interrupted
             self.select_and_save_best()
         else:
-            logger.info(f"Cannot train {mf.get_type()} because of time constraint")
+            logger.info(
+                f"Cannot train {mf.get_type()} because of time constraint")
         # self._progress_bar.update(1)
 
     def verbose_print(self, msg):
@@ -684,12 +696,13 @@ class AutoML:
             self.keep_model(self.ensemble)
 
             ensemble_path = os.path.join(
-                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
-            )
+                self._results_path,
+                "Ensemble_Stacked" if is_stacked else "Ensemble")
             try:
                 os.mkdir(ensemble_path)
             except Exception as e:
-                raise AutoMLException(f"Cannot create directory {ensemble_path}")
+                raise AutoMLException(
+                    f"Cannot create directory {ensemble_path}")
             self.ensemble.save(ensemble_path)
             self._model_paths += [ensemble_path]
             # save the best one in the case the training will be interrupted
@@ -736,7 +749,8 @@ class AutoML:
         ldb = self.get_leaderboard()
         ldb = ldb.sort_values(by="metric_value", ascending=True)
 
-        models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
+        models_map = {
+            m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 10
 
@@ -761,7 +775,8 @@ class AutoML:
             return
         # do we have time?
         if self._total_time_limit is not None:
-            time_left = self._total_time_limit - (time.time() - self._start_time)
+            time_left = self._total_time_limit - \
+                (time.time() - self._start_time)
             # we need at least 60 seconds to do anything
             if time_left < 60:
                 return
@@ -801,7 +816,8 @@ class AutoML:
                 del params["learner"]["model_architecture_json"]
 
             if self._ml_task == REGRESSION:
-                # scale added predictions in regression if the target was scaled (in the case of NN)
+                # scale added predictions in regression if the target was
+                # scaled (in the case of NN)
                 target_preprocessing = params["preprocessing"]["target_preprocessing"]
                 scale = None
                 if "scale_log_and_normal" in target_preprocessing:
@@ -810,14 +826,15 @@ class AutoML:
                     scale = "scale_normal"
                 if scale is not None:
                     for col in added_columns:
-                        params["preprocessing"]["columns_preprocessing"][col] = [scale]
+                        params["preprocessing"]["columns_preprocessing"][col] = [
+                            scale]
 
             self.train_model(params)
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
-        
-        If ML task is not set, it trys to guess ML task based on count of unique values in the target. 
+
+        If ML task is not set, it trys to guess ML task based on count of unique values in the target.
         Then it performs validation.
         """
         # if not set, guess
@@ -850,10 +867,12 @@ class AutoML:
         Then perform vadlidation of algorithms.
         """
         if len(self._algorithms) == 0:
-            self._algorithms = list(AlgorithmsRegistry.registry[self._ml_task].keys())
+            self._algorithms = list(
+                AlgorithmsRegistry.registry[self._ml_task].keys())
 
         for a in self._algorithms:
-            if a not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
+            if a not in list(
+                    AlgorithmsRegistry.registry[self._ml_task].keys()):
                 raise AutoMLException(
                     "The algorithm {} is not allowed to use for ML task: {}. Allowed algorithms: {}".format(
                         a,
@@ -900,8 +919,8 @@ class AutoML:
             else:
                 self._optimize_metric = self._user_set_optimize_metric
         logger.info(
-            "AutoML will optimize for metric: {0}".format(self._optimize_metric)
-        )
+            "AutoML will optimize for metric: {0}".format(
+                self._optimize_metric))
         print(f"AutoML will optimize for metric: {self._optimize_metric}")
 
     def _check_imbalanced(self, y):
@@ -920,7 +939,12 @@ class AutoML:
                 f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
             )
 
-    def _initial_prep(self, X_train, y_train, X_validation=None, y_validation=None):
+    def _initial_prep(
+            self,
+            X_train,
+            y_train,
+            X_validation=None,
+            y_validation=None):
 
         if not isinstance(X_train, pd.DataFrame):
             X_train = pd.DataFrame(X_train)
@@ -945,23 +969,32 @@ class AutoML:
 
         return X_train, y_train, X_validation, y_validation
 
-    def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
+    def _save_data(
+            self,
+            X_train,
+            y_train,
+            X_validation=None,
+            y_validation=None):
 
-        self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
-        self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
+        self._X_train_path = os.path.join(
+            self._results_path, "X_train.parquet")
+        self._y_train_path = os.path.join(
+            self._results_path, "y_train.parquet")
 
         X_train.to_parquet(self._X_train_path, index=False)
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y_train = y_train.astype(str)
 
-        pd.DataFrame({"target": y_train}).to_parquet(self._y_train_path, index=False)
+        pd.DataFrame({"target": y_train}).to_parquet(
+            self._y_train_path, index=False)
 
         self._validation["X_train_path"] = self._X_train_path
         self._validation["y_train_path"] = self._y_train_path
         self._validation["results_path"] = self._results_path
 
-        columns_and_target_info = DataInfo.compute(X_train, y_train, self._ml_task)
+        columns_and_target_info = DataInfo.compute(
+            X_train, y_train, self._ml_task)
 
         self._data_info = {
             "columns": X_train.columns.tolist(),
@@ -995,13 +1028,13 @@ class AutoML:
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
         """
         Fit AutoML
-        
+
         :param X_train: Pandas DataFrame with training data.
         :param y_train: Numpy Array with target training data.
-        
+
         :param X_validation: Pandas DataFrame with validation data. (Not implemented yet)
         :param y_validation: Numpy Array with target of validation data. (Not implemented yet)
-        
+
         """
         try:
 
@@ -1030,7 +1063,9 @@ class AutoML:
             self._set_metric()
             # self._estimate_training_times()
 
-            if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+            if self._ml_task in [
+                    BINARY_CLASSIFICATION,
+                    MULTICLASS_CLASSIFICATION]:
                 self._check_imbalanced(y_train)
 
             tuner = MljarTuner(
@@ -1052,7 +1087,8 @@ class AutoML:
             self._time_start[self._fit_level] = start
             for params in tuner.simple_algorithms_params():
                 self.train_model(params)
-            self._time_spend["simple_algorithms"] = np.round(time.time() - start, 2)
+            self._time_spend["simple_algorithms"] = np.round(
+                time.time() - start, 2)
 
             # 2. Default parameters
             self._fit_level = "default_algorithms"
@@ -1060,16 +1096,19 @@ class AutoML:
             self._time_start[self._fit_level] = start
             for params in tuner.default_params(len(self._models)):
                 self.train_model(params)
-            self._time_spend["default_algorithms"] = np.round(time.time() - start, 2)
+            self._time_spend["default_algorithms"] = np.round(
+                time.time() - start, 2)
 
             # 3. The not-so-random step
             self._fit_level = "not_so_random"
             start = time.time()
             self._time_start[self._fit_level] = start
-            generated_params = tuner.get_not_so_random_params(len(self._models))
+            generated_params = tuner.get_not_so_random_params(
+                len(self._models))
             for params in generated_params:
                 self.train_model(params)
-            self._time_spend["not_so_random"] = np.round(time.time() - start, 2)
+            self._time_spend["not_so_random"] = np.round(
+                time.time() - start, 2)
 
             # 4. The hill-climbing step
             self._fit_level = "hill_climbing"
@@ -1084,7 +1123,8 @@ class AutoML:
             # feature selection
             if self._feature_selection:
                 # step #1 - insert random feature
-                for params in tuner.get_params_to_insert_random_feature(self._models):
+                for params in tuner.get_params_to_insert_random_feature(
+                        self._models):
                     self.train_model(params)
                 # step #2 - train models on selected features ...
                 for params in tuner.get_feature_selection_params(
@@ -1095,14 +1135,16 @@ class AutoML:
             # do hill climbing
             for params in tuner.get_hill_climbing_params(self._models):
                 self.train_model(params)
-            self._time_spend["hill_climbing"] = np.round(time.time() - start, 2)
+            self._time_spend["hill_climbing"] = np.round(
+                time.time() - start, 2)
 
             # 5. Ensemble unstacked models
             self._fit_level = "ensemble_unstacked"
             start = time.time()
             self._time_start[self._fit_level] = start
             self.ensemble_step()
-            self._time_spend["ensemble_unstacked"] = np.round(time.time() - start, 2)
+            self._time_spend["ensemble_unstacked"] = np.round(
+                time.time() - start, 2)
 
             if self._stack_models:
                 # 6. Stack best models
@@ -1122,7 +1164,8 @@ class AutoML:
                     self._fit_level = "ensemble_all"
                     start = time.time()
                     self.ensemble_step(is_stacked=True)
-                    self._time_spend["ensemble_all"] = np.round(time.time() - start, 2)
+                    self._time_spend["ensemble_all"] = np.round(
+                        time.time() - start, 2)
 
             self._fit_time = time.time() - self._start_time
 
@@ -1151,16 +1194,23 @@ class AutoML:
                 "saved": self._model_paths,
             }
             if self._stacked_models is not None:
-                params["stacked"] = [m.get_name() for m in self._stacked_models]
+                params["stacked"] = [m.get_name()
+                                     for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4))
 
         ldb = self.get_leaderboard()
-        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+        ldb.to_csv(
+            os.path.join(
+                self._results_path,
+                "leaderboard.csv"),
+            index=False)
 
         # save report
-        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+        ldb["Link"] = [
+            f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
+        ldb.loc[ldb.name == self._best_model.get_name(),
+                "Best model"] = "**the best**"
 
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
@@ -1214,7 +1264,8 @@ class AutoML:
                 neg_label = int(neg_label)
                 pos_label = int(pos_label)
             # assume that it is binary classification
-            predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
+            predictions["label"] = predictions.iloc[:,
+                                                    1] > self._best_model._threshold
             predictions["label"] = predictions["label"].map(
                 {True: pos_label, False: neg_label}
             )
@@ -1243,16 +1294,14 @@ class AutoML:
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
         else:
-            self._best_model = ModelFramework(json_data["best_model"].get("params"))
+            self._best_model = ModelFramework(
+                json_data["best_model"].get("params"))
             self._best_model.from_json(json_data["best_model"])
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
 
-
     def eda(self, X_train, y_train):
-
-
         """"
         Generate exploratory data analysis
 
@@ -1264,170 +1313,164 @@ class AutoML:
         inform = {}
 
         if not isinstance(X_train, pd.DataFrame):
-                raise AutoMLException(
-                    "AutoML needs X_train matrix to be a Pandas DataFrame"
-                )
+            raise AutoMLException(
+                "AutoML needs X_train matrix to be a Pandas DataFrame"
+            )
 
         if not isinstance(y_train, pd.Series):
-                raise AutoMLException(
-                    "AutoML needs target matrix to be a Pandas Series"
-                )
-
+            raise AutoMLException(
+                "AutoML needs target matrix to be a Pandas Series"
+            )
 
         self._set_ml_task(y_train)
-        os.mkdir(os.path.join(self._results_path,"EDA"))
-        eda_path = os.path.join(self._results_path,"EDA")
-        
-        if ((self._ml_task == BINARY_CLASSIFICATION) | (self._ml_task == MULTICLASS_CLASSIFICATION)):
+        os.mkdir(os.path.join(self._results_path, "EDA"))
+        eda_path = os.path.join(self._results_path, "EDA")
 
-            plt.figure(figsize=(5,5))
-            sns.countplot(y_train,color='blue')
+        if ((self._ml_task == BINARY_CLASSIFICATION) | (
+                self._ml_task == MULTICLASS_CLASSIFICATION)):
+
+            plt.figure(figsize=(5, 5))
+            sns.countplot(y_train, color='blue')
             plt.title("Target class distribution")
             plt.tight_layout(pad=2.0)
-            plot_path = os.path.join(eda_path,"target.png")
+            plot_path = os.path.join(eda_path, "target.png")
             plt.savefig(plot_path)
             plt.close("all")
 
-            inform["missing"]=[pd.isnull(y_train).sum()/y_train.shape[0]]
+            inform["missing"] = [pd.isnull(y_train).sum() / y_train.shape[0]]
 
             inform["unique"] = [y_train.nunique()]
             inform['feature_type'] = [PreprocessingUtils.get_type(y_train)]
-            
-                   
+
         elif self._ml_task == REGRESSION:
 
-            plt.figure(figsize=(5,5))
-            sns.distplot(y_train,color='blue')
+            plt.figure(figsize=(5, 5))
+            sns.distplot(y_train, color='blue')
             plt.title("Target class distribution")
             plt.tight_layout(pad=2.0)
-            plot_path = os.path.join(eda_path,"target.png")
+            plot_path = os.path.join(eda_path, "target.png")
             plt.savefig(plot_path)
             plt.close("all")
 
-            inform["missing"]=[pd.isnull(y_train).sum()/y_train.shape[0]]
+            inform["missing"] = [pd.isnull(y_train).sum() / y_train.shape[0]]
             inform["unique"] = [y_train.nunique()]
             inform['feature_type'] = [PreprocessingUtils.get_type(y_train)]
-
 
         inform['plot'] = ['![](target.png)']
         inform['feature'] = ["target"]
         inform['desc'] = [y_train.describe().to_dict()]
-        
+
         for col in X_train.columns:
 
-            inform['feature_type'] += [PreprocessingUtils.get_type(X_train[col])]
+            inform['feature_type'] += [
+                PreprocessingUtils.get_type(
+                    X_train[col])]
 
-            if PreprocessingUtils.get_type(X_train[col]) in ("categorical","discrete"):
+            if PreprocessingUtils.get_type(
+                    X_train[col]) in (
+                    "categorical",
+                    "discrete"):
 
-                    plt.figure(figsize=(5,5))
-                    sns.countplot(X_train[col],order=X_train[col].value_counts().iloc[:10].index,color='blue')
-                    plt.title(f"{col} class distribution")
-                    plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path,f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
+                plt.figure(figsize=(5, 5))
+                sns.countplot(
+                    X_train[col], order=X_train[col].value_counts().iloc[:10].index, color='blue')
+                plt.title(f"{col} class distribution")
+                plt.tight_layout(pad=2.0)
+                plot_path = os.path.join(eda_path, f"{col}.png")
+                plt.savefig(plot_path)
+                plt.close("all")
 
+                inform["missing"] += [pd.isnull(X_train[col]).sum()
+                                      * 100 / X_train.shape[0]]
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
+                inform["unique"] += [int(X_train[col].nunique())]
+                inform['plot'] += [f'![]({col}.png)']
+                inform['feature'] += [str(col)]
 
-                    inform["unique"] += [int(X_train[col].nunique())]
-                    inform['plot'] +=  [f'![]({col}.png)']
-                    inform['feature'] += [str(col)]
-            
-            elif PreprocessingUtils.get_type(X_train[col]) in ("continous"): 
+            elif PreprocessingUtils.get_type(X_train[col]) in ("continous"):
 
-                    plt.figure(figsize=(5,5))
-                    sns.distplot(X_train[col],color='blue')
-                    plt.title(f"{col} value distribution")
-                    plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path,f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
+                plt.figure(figsize=(5, 5))
+                sns.distplot(X_train[col], color='blue')
+                plt.title(f"{col} value distribution")
+                plt.tight_layout(pad=2.0)
+                plot_path = os.path.join(eda_path, f"{col}.png")
+                plt.savefig(plot_path)
+                plt.close("all")
 
+                inform["missing"] += [pd.isnull(X_train[col]).sum()
+                                      * 100 / X_train.shape[0]]
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
+                inform["unique"] += [int(X_train[col].nunique())]
+                inform['plot'] += [f'![]({col}.png)']
+                inform['feature'] += [str(col)]
 
-                    inform["unique"] += [int(X_train[col].nunique())]
-                    inform['plot'] +=  [f'![]({col}.png)']
-                    inform['feature'] += [str(col)]
-            
             elif PreprocessingUtils.get_type(X_train[col]) in ('text'):
 
-                    fig = plt.figure(figsize=(5,5),dpi=70)
-                    word_string=" ".join(X_train[col].str.lower())
-                    wordcloud = WordCloud(width=500,height=500,stopwords=STOPWORDS,
-                                            background_color='white', 
-                                        max_words=400,max_font_size=None,
-                                            ).generate(word_string)
+                fig = plt.figure(figsize=(5, 5), dpi=70)
+                word_string = " ".join(X_train[col].str.lower())
+                wordcloud = WordCloud(
+                    width=500,
+                    height=500,
+                    stopwords=STOPWORDS,
+                    background_color='white',
+                    max_words=400,
+                    max_font_size=None,
+                ).generate(word_string)
 
-                
-                    plt.imshow(wordcloud, aspect="auto", interpolation="nearest")
-                    plt.axis('off')
-                    plot_path = os.path.join(eda_path,f"{col}.png")
-                    plt.savefig(plot_path)
+                plt.imshow(wordcloud, aspect="auto", interpolation="nearest")
+                plt.axis('off')
+                plot_path = os.path.join(eda_path, f"{col}.png")
+                plt.savefig(plot_path)
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
+                inform["missing"] += [pd.isnull(X_train[col]).sum()
+                                      * 100 / X_train.shape[0]]
 
-                    inform["unique"] += [int(X_train[col].nunique())]
-                    inform['plot'] += [f'![]({col}.png)']
-                    inform['feature'] += [str(col)]
+                inform["unique"] += [int(X_train[col].nunique())]
+                inform['plot'] += [f'![]({col}.png)']
+                inform['feature'] += [str(col)]
 
             elif PreprocessingUtils.get_type(X_train[col]) in ('datetime'):
 
+                plt.figure(figsize=(5, 5))
+                pd.to_datetime(df[col]).plot(grid='True', color='blue')
+                plt.tight_layout(pad=2.0)
+                plot_path = os.path.join(eda_path, f"{col}.png")
+                plt.savefig(plot_path)
+                plt.close("all")
 
-                    plt.figure(figsize=(5,5))
-                    pd.to_datetime(df[col]).plot(grid='True',color='blue')
-                    plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path,f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")         
+                inform["missing"] += [pd.isnull(X_train[col]).sum()
+                                      * 100 / X_train.shape[0]]
 
-                    inform["missing"]+=[pd.isnull(X_train[col]).sum()*100/X_train.shape[0]]
-
-                    inform["unique"] += [int(X_train[col].nunique())]
-                    inform['plot'] += [f'![]({col}).png']
-                    inform['feature'] += [str(col)]
+                inform["unique"] += [int(X_train[col].nunique())]
+                inform['plot'] += [f'![]({col}).png']
+                inform['feature'] += [str(col)]
 
             inform['desc'] += [X_train[col].describe().to_dict()]
 
-
         df = pd.DataFrame(inform)
 
-        #return df
+        # return df
 
-        with open(os.path.join(eda_path,"Readme.md"),"w") as fout:
+        with open(os.path.join(eda_path, "Readme.md"), "w") as fout:
 
-            for i,row in df.iterrows():
-    
-                    fout.write(f"## Feature : {row['feature']}\n")
-                    fout.write(f"- **Feature type** {row['feature_type']}\n")
-                    fout.write(f"- **Missing** {row['missing']}%\n")
-                    fout.write(f"- **Unique** {row['unique']}\n")
+            for i, row in df.iterrows():
 
-                    for key in row['desc'].keys():
-                    
-                        if key in ("25%","50%","75%"):
+                fout.write(f"## Feature : {row['feature']}\n")
+                fout.write(f"- **Feature type** {row['feature_type']}\n")
+                fout.write(f"- **Missing** {row['missing']}%\n")
+                fout.write(f"- **Unique** {row['unique']}\n")
 
-                            fout.write(f"- **{key.capitalize()}** of values lies below {row['desc'][key]}\n")
-                        else :
+                for key in row['desc'].keys():
 
-                            fout.write(f"- **{key.capitalize()}** {row['desc'][key]}\n")
+                    if key in ("25%", "50%", "75%"):
 
+                        fout.write(
+                            f"- **{key.capitalize()}** of values lies below {row['desc'][key]}\n")
+                    else:
 
+                        fout.write(
+                            f"- **{key.capitalize()}** {row['desc'][key]}\n")
 
-                    fout.write(f"- {row['plot']}\n")
+                fout.write(f"- {row['plot']}\n")
 
         fout.close()
-
-
-
-        
-        
-                
-
-
-
-
-
-
-
