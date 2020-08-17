@@ -1302,13 +1302,15 @@ class AutoML:
         self._ml_task = json_data.get("ml_task")
 
     def eda(self, X_train, y_train):
-        """"
+
+        """
+
         Generate exploratory data analysis
 
         :param X : The pandas dataframe  with input train features
         :param y : The pandas series with target feature
-
-        """"
+        
+        """
 
         inform = {}
 
@@ -1456,20 +1458,20 @@ class AutoML:
             for i, row in df.iterrows():
 
                 fout.write(f"## Feature : {row['feature']}\n")
-                fout.write(f"- **Feature type** {row['feature_type']}\n")
-                fout.write(f"- **Missing** {row['missing']}%\n")
-                fout.write(f"- **Unique** {row['unique']}\n")
+                fout.write(f"- **Feature type** : {row['feature_type']}\n")
+                fout.write(f"- **Missing** : {row['missing']}%\n")
+                fout.write(f"- **Unique** : {row['unique']}\n")
 
                 for key in row['desc'].keys():
 
                     if key in ("25%", "50%", "75%"):
 
                         fout.write(
-                            f"- **{key.capitalize()}** of values lies below {row['desc'][key]}\n")
+                            f"- **{key.capitalize()}th Percentile** : {row['desc'][key]}\n")
                     else:
 
                         fout.write(
-                            f"- **{key.capitalize()}** {row['desc'][key]}\n")
+                            f"- **{key.capitalize()}** :{row['desc'][key]}\n")
 
                 fout.write(f"- {row['plot']}\n")
 
