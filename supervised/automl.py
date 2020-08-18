@@ -27,7 +27,7 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
-from preprocessing.eda import EDA
+from supervised.preprocessing.eda import EDA
 
 
 logging.basicConfig(
@@ -1254,8 +1254,6 @@ class AutoML:
         :param y : The pandas series with target feature
         
         """
-
-        inform = {}
 
         if not isinstance(X_train, pd.DataFrame):
             raise AutoMLException(
