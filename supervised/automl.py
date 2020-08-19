@@ -27,6 +27,8 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+from supervised.preprocessing.eda import EDA
+
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -1240,3 +1242,37 @@ class AutoML:
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
+
+
+    def eda(self, X_train, y_train):
+
+        """
+
+        Generate exploratory data analysis
+
+        :param X : The pandas dataframe  with input train features
+        :param y : The pandas series with target feature
+        
+        """
+
+        if not isinstance(X_train, pd.DataFrame):
+            raise AutoMLException(
+                "AutoML needs X_train matrix to be a Pandas DataFrame"
+            )
+
+        if not isinstance(y_train, pd.Series):
+            raise AutoMLException(
+                "AutoML needs target matrix to be a Pandas Series"
+            )
+
+        self._set_ml_task(y_train)
+        os.mkdir(os.path.join(self._results_path, "EDA"))
+        eda_path = os.path.join(self._results_path, "EDA")
+
+        eda = EDA(X_train,y_train,self._ml_task,eda_path)
+
+        eda.compute(X_train,y_train)
+
+
+
+       
