@@ -1244,7 +1244,7 @@ class AutoML:
         self._ml_task = json_data.get("ml_task")
 
 
-    def eda(self, X_train, y_train):
+    def eda(self, X_train, y_train=None):
 
         """
 
@@ -1260,18 +1260,12 @@ class AutoML:
                 "AutoML needs X_train matrix to be a Pandas DataFrame"
             )
 
-        if not isinstance(y_train, pd.Series):
-            raise AutoMLException(
-                "AutoML needs target matrix to be a Pandas Series"
-            )
-
-        self._set_ml_task(y_train)
+      
         os.mkdir(os.path.join(self._results_path, "EDA"))
         eda_path = os.path.join(self._results_path, "EDA")
 
-        eda = EDA(X_train,y_train,self._ml_task,eda_path)
-
-        eda.compute(X_train,y_train)
+        
+        EDA.compute(X_train, y_train, eda_path)
 
 
 
