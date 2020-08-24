@@ -483,9 +483,7 @@ class AutoML:
                 - self._time_spend["default_algorithms"]
             )
             if self._stack_models:
-                tt *= (
-                    0.6
-                )  # leave some time for stacking (approx. 40% for stacking of time left)
+                tt *= 0.6  # leave some time for stacking (approx. 40% for stacking of time left)
             tt /= 2.0  # leave some time for hill-climbing
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
@@ -499,9 +497,7 @@ class AutoML:
                 - self._time_spend["not_so_random"]
             )
             if self._stack_models:
-                tt *= (
-                    0.4
-                )  # leave some time for stacking (approx. 60% for stacking of time left)
+                tt *= 0.4  # leave some time for stacking (approx. 60% for stacking of time left)
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
             return tt
@@ -1010,6 +1006,14 @@ class AutoML:
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
                 )
 
+            ## EDA
+            if self._explain_level == 2:
+
+                os.mkdir(os.path.join(self._results_path, "EDA"))
+                eda_path = os.path.join(self._results_path, "EDA")
+
+                EDA.compute(X_train, y_train, eda_path)
+
             self._set_ml_task(y_train)
 
             if X_train is not None:
@@ -1242,31 +1246,3 @@ class AutoML:
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
-
-
-    def eda(self, X_train, y_train=None):
-
-        """
-
-        Generate exploratory data analysis
-
-        :param X : The pandas dataframe  with input train features
-        :param y : The pandas series with target feature
-        
-        """
-
-        if not isinstance(X_train, pd.DataFrame):
-            raise AutoMLException(
-                "AutoML needs X_train matrix to be a Pandas DataFrame"
-            )
-
-      
-        os.mkdir(os.path.join(self._results_path, "EDA"))
-        eda_path = os.path.join(self._results_path, "EDA")
-
-        
-        EDA.compute(X_train, y_train, eda_path)
-
-
-
-       
