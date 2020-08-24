@@ -23,6 +23,7 @@ class EDATest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Random Forest"],
             train_ensemble=False,
+            explain_level=2,
         )
 
         X, y = datasets.make_classification(n_samples=100, n_features=5,)
@@ -30,7 +31,7 @@ class EDATest(unittest.TestCase):
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
         y = pd.Series(y, name="class")
 
-        a.eda(X, y)
+        a.fit(X, y)
 
         result_files = os.listdir(os.path.join(a._results_path, "EDA"))
 
@@ -48,20 +49,6 @@ class EDATest(unittest.TestCase):
 
         if "Readme.md" not in result_files:
             produced = False
-        self.assertTrue(produced)
-
-        self.tearDown()
-
-        a.eda(X)
-
-        result_files = os.listdir(os.path.join(a._results_path, "EDA"))
-
-        for col in X.columns:
-
-            produced = True
-            if "".join((col, ".png")) not in result_files:
-                produced = False
-                break
         self.assertTrue(produced)
 
         self.tearDown()
