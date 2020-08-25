@@ -27,6 +27,8 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+from supervised.preprocessing.eda import EDA
+
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -481,9 +483,7 @@ class AutoML:
                 - self._time_spend["default_algorithms"]
             )
             if self._stack_models:
-                tt *= (
-                    0.6
-                )  # leave some time for stacking (approx. 40% for stacking of time left)
+                tt *= 0.6  # leave some time for stacking (approx. 40% for stacking of time left)
             tt /= 2.0  # leave some time for hill-climbing
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
@@ -497,9 +497,7 @@ class AutoML:
                 - self._time_spend["not_so_random"]
             )
             if self._stack_models:
-                tt *= (
-                    0.4
-                )  # leave some time for stacking (approx. 60% for stacking of time left)
+                tt *= 0.4  # leave some time for stacking (approx. 60% for stacking of time left)
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
             return tt
@@ -1007,6 +1005,14 @@ class AutoML:
                 raise AutoMLException(
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
                 )
+
+            ## EDA
+            if self._explain_level == 2:
+
+                os.mkdir(os.path.join(self._results_path, "EDA"))
+                eda_path = os.path.join(self._results_path, "EDA")
+
+                EDA.compute(X_train, y_train, eda_path)
 
             self._set_ml_task(y_train)
 
