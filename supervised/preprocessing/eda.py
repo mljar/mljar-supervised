@@ -14,6 +14,7 @@ from supervised.algorithms.registry import REGRESSION
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
+BLUE = "#007cf2"
 
 class EDA:
     @staticmethod
@@ -26,7 +27,7 @@ class EDA:
             if PreprocessingUtils.get_type(y_train) in ("categorical"):
 
                 plt.figure(figsize=(5, 5))
-                sns.countplot(y_train, color="blue")
+                sns.countplot(y_train, color=BLUE)
                 plt.title("Target class distribution")
                 plt.tight_layout(pad=2.0)
                 plot_path = os.path.join(eda_path, "target.png")
@@ -36,7 +37,7 @@ class EDA:
             else:
 
                 plt.figure(figsize=(5, 5))
-                sns.distplot(y_train, color="blue")
+                sns.distplot(y_train, color=BLUE)
                 plt.title("Target class distribution")
                 plt.tight_layout(pad=2.0)
                 plot_path = os.path.join(eda_path, "target.png")
@@ -57,11 +58,12 @@ class EDA:
             if PreprocessingUtils.get_type(X_train[col]) in ("categorical", "discrete"):
 
                 plt.figure(figsize=(5, 5))
-                sns.countplot(
+                chart = sns.countplot(
                     X_train[col],
                     order=X_train[col].value_counts().iloc[:10].index,
-                    color="blue",
+                    color=BLUE,
                 )
+                chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                 plt.title(f"{col} class distribution")
                 plt.tight_layout(pad=2.0)
                 plot_path = os.path.join(eda_path, f"{col}.png")
@@ -71,7 +73,7 @@ class EDA:
             elif PreprocessingUtils.get_type(X_train[col]) in ("continous"):
 
                 plt.figure(figsize=(5, 5))
-                sns.distplot(X_train[col], color="blue")
+                sns.distplot(X_train[col], color=BLUE)
                 plt.title(f"{col} value distribution")
                 plt.tight_layout(pad=2.0)
                 plot_path = os.path.join(eda_path, f"{col}.png")
@@ -99,7 +101,7 @@ class EDA:
             elif PreprocessingUtils.get_type(X_train[col]) in ("datetime"):
 
                 plt.figure(figsize=(5, 5))
-                pd.to_datetime(X_train[col]).plot(grid="True", color="blue")
+                pd.to_datetime(X_train[col]).plot(grid="True", color=BLUE)
                 plt.tight_layout(pad=2.0)
                 plot_path = os.path.join(eda_path, f"{col}.png")
                 plt.savefig(plot_path)
