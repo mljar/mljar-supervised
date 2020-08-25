@@ -131,7 +131,7 @@ class Preprocessing(object):
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
 
-        numeric_cols = [] # get numeric cols before text transformations
+        numeric_cols = []  # get numeric cols before text transformations
         # needed for golden features
         if X_train is not None and "golden_features" in self._params:
             numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
@@ -327,13 +327,14 @@ class Preprocessing(object):
         ):
             # there is something missing, fill it
             # we should notice user about it!
-            warnings.warn(
-                "There are columns {} with missing values which didnt have missing values in train dataset.".format(
-                    list(
-                        X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
-                    )
-                )
-            )
+            # warnings should go to the separate file ...
+            # warnings.warn(
+            #    "There are columns {} with missing values which didnt have missing values in train dataset.".format(
+            #        list(
+            #            X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
+            #        )
+            #    )
+            # )
             missing = PreprocessingMissingValues(
                 X_validation.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
             )

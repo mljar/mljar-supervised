@@ -22,7 +22,6 @@ class BaseAlgorithm:
         self.ml_task = params.get("ml_task")
         self.model_file_path = None
 
-
     def reload(self):
         if self.model is None and self.model_file_path is not None:
             self.load(self.model_file_path)

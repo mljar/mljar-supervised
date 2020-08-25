@@ -109,14 +109,14 @@ class XgbAlgorithm(BaseAlgorithm):
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
-        '''
+        """
         # disable, for now all learners are saved to hard disk and then deleted from RAM
         with tempfile.NamedTemporaryFile() as tmp:
             self.model.save_model(tmp.name)
             del self.model
             self.model = xgb.Booster()
             self.model.load_model(tmp.name)
-        '''
+        """
 
     def predict(self, X):
         self.reload()
