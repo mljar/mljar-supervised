@@ -24,7 +24,7 @@ automl = AutoML(
     # total_time_limit=200,
     # explain_level=0
     # validation={"validation_type": "split"},
-    mode="Compete",
+    mode="Explain",
     #golden_features=False,
     #feature_selection=False
 )

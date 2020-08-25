@@ -29,7 +29,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
     def test_explain_default(self):
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
+            total_time_limit=10,
             algorithms=["Random Forest"],
             train_ensemble=False,
             validation={
@@ -225,7 +225,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
     def test_build_decision_tree(self):
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
+            total_time_limit=10,
             algorithms=["Decision Tree"],
             train_ensemble=False,
             validation={
