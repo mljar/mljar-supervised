@@ -82,7 +82,7 @@ class EDA:
 
             elif PreprocessingUtils.get_type(X_train[col]) in ("text"):
 
-                plt.figure(figsize=(5, 5), dpi=70)
+                plt.figure(figsize=(10, 10), dpi=70)
                 word_string = " ".join(X_train[col].str.lower())
                 wordcloud = WordCloud(
                     width=500,
@@ -118,7 +118,7 @@ class EDA:
 
         df = pd.DataFrame(inform)
 
-        with open(os.path.join(eda_path, "Readme.md"), "w") as fout:
+        with open(os.path.join(eda_path, "README.md"), "w") as fout:
 
             for i, row in df.iterrows():
 
