@@ -38,3 +38,35 @@ class AutoMLIntegrationTest(unittest.TestCase):
         p = a.predict(X)
 
         self.assertTrue("label" in p.columns)
+
+
+
+    def test_one_column_input_regression(self):
+        a = AutoML(results_path=self.automl_dir, total_time_limit=5, explain_level = 0)
+        a.set_advanced(start_random_models=1)
+
+        X = pd.DataFrame({"feature_1": np.random.rand(100)})
+        y = np.random.rand(100)
+
+        a.fit(X, y)
+        p = a.predict(X)
+
+        self.assertTrue("prediction" in p.columns)
+        self.assertTrue(p.shape[0] == 100)
+
+
+    def test_one_column_input_bin_class(self):
+        a = AutoML(results_path=self.automl_dir, total_time_limit=5, explain_level = 0)
+        a.set_advanced(start_random_models=1)
+
+        X = pd.DataFrame({"feature_1": np.random.rand(100)})
+        y = (np.random.rand(100) > 0.5).astype(int)
+
+        a.fit(X, y)
+        p = a.predict(X)
+
+        self.assertTrue("label" in p.columns)
+        self.assertTrue("prediction_0" in p.columns)
+        self.assertTrue("prediction_1" in p.columns)
+        self.assertTrue(p.shape[0] == 100)
+        
