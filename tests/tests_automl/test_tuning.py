@@ -33,7 +33,8 @@ class AutoMLTuningTest(unittest.TestCase):
             total_time_limit=1,
             tuning_mode="Insane",
             algorithms=["Xgboost"],
+            explain_level=0
         )
 
         automl.fit(X, y)
-        self.assertEqual(len(automl._models), 1)
+        self.assertTrue(len(automl._models) > 0)
