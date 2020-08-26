@@ -20,13 +20,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
     results_path="AutoML_4",
-    #algorithms=["Xgboost", "CatBoost"],
+    # algorithms=["Xgboost", "CatBoost"],
     # total_time_limit=200,
     # explain_level=0
     # validation={"validation_type": "split"},
     mode="Explain",
-    #golden_features=False,
-    #feature_selection=False
+    # golden_features=False,
+    # feature_selection=False
 )
 automl.fit(X_train, y_train)
 

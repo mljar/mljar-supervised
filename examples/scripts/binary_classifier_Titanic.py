@@ -10,8 +10,8 @@ X = df[df.columns[2:]]
 y = df["Survived"]
 
 automl = AutoML(
-    #results_path="AutoML_1",
-    #algorithms=["Xgboost"],
+    # results_path="AutoML_1",
+    # algorithms=["Xgboost"],
     # model_time_limit=20,
     # train_ensemble=True,
     mode="Explain"

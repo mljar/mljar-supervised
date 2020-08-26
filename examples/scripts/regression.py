@@ -15,7 +15,7 @@ print(X.shape)
 automl = AutoML(
     # results_path="AutoML_43",
     # total_time_limit=100,
-    #algorithms=["Xgboost"],
+    # algorithms=["Xgboost"],
     # "Decision Tree",
     # ,
     # "Extra Trees"

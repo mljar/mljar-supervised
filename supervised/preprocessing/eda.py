@@ -16,6 +16,7 @@ from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 BLUE = "#007cf2"
 
+
 class EDA:
     @staticmethod
     def compute(X_train, y_train, eda_path):

@@ -131,7 +131,7 @@ class Preprocessing(object):
             X_train.drop(cols_to_remove, axis=1, inplace=True)
         self._remove_columns = cols_to_remove
 
-        numeric_cols = [] # get numeric cols before text transformations
+        numeric_cols = []  # get numeric cols before text transformations
         # needed for golden features
         if X_train is not None and "golden_features" in self._params:
             numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
