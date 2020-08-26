@@ -24,7 +24,6 @@ automl = AutoML(
     # total_time_limit=200,
     # explain_level=0
     # validation={"validation_type": "split"},
-<<<<<<< HEAD
     mode="Compete",
     # validation={"validation_type": "split"}
     validation={
@@ -38,11 +37,6 @@ automl = AutoML(
 )
 automl.set_advanced(
     start_random_models=1, hill_climbing_steps=1, top_models_to_improve=1
-=======
-    mode="Explain",
-    #golden_features=False,
-    #feature_selection=False
->>>>>>> master
 )
 automl.fit(X_train, y_train)
 
