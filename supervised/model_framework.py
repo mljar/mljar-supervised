@@ -4,6 +4,7 @@ import pandas as pd
 import time
 import zipfile
 import os
+import copy
 import logging
 import json
 
@@ -129,7 +130,9 @@ class ModelFramework:
             )
 
             self.learner_params["explain_level"] = self._explain_level
-            self.learners += [AlgorithmFactory.get_algorithm(self.learner_params)]
+            self.learners += [
+                AlgorithmFactory.get_algorithm(copy.deepcopy(self.learner_params))
+            ]
             learner = self.learners[-1]
 
             self.callbacks.add_and_set_learner(learner)
@@ -174,6 +177,15 @@ class ModelFramework:
                 ml_task=self._ml_task,
                 explain_level=self._explain_level,
             )
+
+            # save learner and free the memory
+            p = os.path.join(
+                model_path, f"learner_{k_fold+1}.{learner.file_extension()}"
+            )
+            learner.save(p)
+            del learner.model
+            learner.model = None
+            # end of learner training
 
         # end of validation loop
         self.callbacks.on_framework_train_end()
@@ -232,8 +244,7 @@ class ModelFramework:
     """
 
     def get_type(self):
-        prefix = ""  # "Stacked" if self._is_stacked else ""
-        return prefix + self.learner_params.get("model_type")
+        return self.learner_params.get("model_type")
 
     def get_name(self):
         return self._name
@@ -303,7 +314,7 @@ class ModelFramework:
         saved = []
         for i, l in enumerate(self.learners):
             p = os.path.join(model_path, f"learner_{i+1}.{l.file_extension()}")
-            l.save(p)
+            # l.save(p)
             saved += [p]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:

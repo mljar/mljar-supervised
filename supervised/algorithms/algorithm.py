@@ -20,6 +20,11 @@ class BaseAlgorithm:
         self.model = None
         self.uid = params.get("uid", str(uuid.uuid4()))
         self.ml_task = params.get("ml_task")
+        self.model_file_path = None
+
+    def reload(self):
+        if self.model is None and self.model_file_path is not None:
+            self.load(self.model_file_path)
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         pass

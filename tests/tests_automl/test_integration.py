@@ -18,7 +18,7 @@ class AutoMLIntegrationTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_integration(self):
-        a = AutoML(results_path=self.automl_dir, total_time_limit=1)
+        a = AutoML(results_path=self.automl_dir, total_time_limit=1, explain_level = 0)
         a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_classification(

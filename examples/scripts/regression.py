@@ -13,7 +13,7 @@ print("y", y[:10])
 print(X.shape)
 
 automl = AutoML(
-    # results_path="AutoML_43",
+    results_path="AutoML_27",
     # total_time_limit=100,
     # algorithms=["Xgboost"],
     # "Decision Tree",

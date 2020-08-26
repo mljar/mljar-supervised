@@ -20,7 +20,7 @@ class EDATest(unittest.TestCase):
     def test_explain_default(self):
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
+            total_time_limit=10,
             algorithms=["Random Forest"],
             train_ensemble=False,
             explain_level=2,
@@ -47,7 +47,7 @@ class EDATest(unittest.TestCase):
             produced = False
         self.assertTrue(produced)
 
-        if "Readme.md" not in result_files:
+        if "README.md" not in result_files:
             produced = False
         self.assertTrue(produced)
 

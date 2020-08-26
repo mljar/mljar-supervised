@@ -58,6 +58,10 @@ class TunerHillClimbingTest(unittest.TestCase):
             explain_level=2,
             data_info={"columns_info": [], "target_info": []},
             seed=12,
+            golden_features=False,
+            feature_selection=False,
+            train_ensemble=False,
+            stack_models=False
         )
         ind = 121
         score = 0.1

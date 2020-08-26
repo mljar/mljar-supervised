@@ -327,13 +327,14 @@ class Preprocessing(object):
         ):
             # there is something missing, fill it
             # we should notice user about it!
-            warnings.warn(
-                "There are columns {} with missing values which didnt have missing values in train dataset.".format(
-                    list(
-                        X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
-                    )
-                )
-            )
+            # warnings should go to the separate file ...
+            # warnings.warn(
+            #    "There are columns {} with missing values which didnt have missing values in train dataset.".format(
+            #        list(
+            #            X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
+            #        )
+            #    )
+            # )
             missing = PreprocessingMissingValues(
                 X_validation.columns, PreprocessingMissingValues.FILL_NA_MEDIAN
             )

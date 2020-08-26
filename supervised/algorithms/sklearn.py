@@ -29,10 +29,12 @@ class SklearnAlgorithm(BaseAlgorithm):
     def save(self, model_file_path):
         logger.debug("SklearnAlgorithm save to {0}".format(model_file_path))
         joblib.dump(self.model, model_file_path, compress=True)
+        self.model_file_path = model_file_path
 
     def load(self, model_file_path):
         logger.debug("SklearnAlgorithm loading model from {0}".format(model_file_path))
         self.model = joblib.load(model_file_path)
+        self.model_file_path = model_file_path
 
     def get_params(self):
         return {
@@ -53,6 +55,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         self.params = json_desc.get("params", self.params)
 
     def predict(self, X):
+        self.reload()
         if self.params["ml_task"] == BINARY_CLASSIFICATION:
             return self.model.predict_proba(X)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:

@@ -79,12 +79,13 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         }
         self.model = None  # we need input data shape to construct model
 
+        """
         if "model_architecture_json" in params:
             self.model = model_from_json(
                 json.loads(params.get("model_architecture_json"))
             )
             self.compile_model()
-
+        """
         logger.debug("NeuralNetworkAlgorithm __init__")
 
     def create_model(self, input_dim):
@@ -165,6 +166,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         """
 
     def predict(self, X):
+        self.reload()
         if "num_class" in self.params:
             return self.model.predict(X)
         return np.ravel(self.model.predict(X))
@@ -175,15 +177,25 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
     def save(self, model_file_path):
         self.model.save_weights(model_file_path)
         logger.debug(f"Neural Network save model to {model_file_path}")
-
-    def load(self, model_file_path):
-        logger.debug(f"Load Neural Network from {model_file_path}")
-        self.model.load_weights(model_file_path)
-
-    def get_params(self):
+        self.model_file_path = model_file_path
         self.params["model_architecture_json"] = json.dumps(
             self.model.to_json(), indent=4
         )
+
+    def load(self, model_file_path):
+        logger.debug(f"Load Neural Network from {model_file_path}")
+
+        if self.model is None and "model_architecture_json" in self.params:
+            self.model = model_from_json(
+                json.loads(self.params.get("model_architecture_json"))
+            )
+            self.compile_model()
+
+        self.model.load_weights(model_file_path)
+        self.model_file_path = model_file_path
+
+    def get_params(self):
+
         return {
             "library_version": self.library_version,
             "algorithm_name": self.algorithm_name,

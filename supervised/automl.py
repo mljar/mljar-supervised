@@ -287,6 +287,7 @@ class AutoML:
 
         self._fit_level = None
         self._time_spend = {}
+        self._time_start = {}
         self._start_time = time.time()  # it will be updated in `fit` method
 
         if self._validation["validation_type"] != "kfold" and self._stack_models:
@@ -295,6 +296,8 @@ class AutoML:
             )
             # stacking only available of k-fold validation
             self._stack_models = False
+
+        self._all_params = {}
 
         # this should be last in the constrcutor
         # in case there is a dir, it might load models
@@ -434,15 +437,18 @@ class AutoML:
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
         return pd.DataFrame(ldb)
 
-    def keep_model(self, model):
+    def keep_model(self, model, model_path):
         if model is None:
             return
         self._models += [model]
+        self._model_paths += [model_path]
+        self.select_and_save_best()
+
         self.verbose_print(
-            "{} final {} {} time {} seconds".format(
+            "{} {} {} trained in {} seconds".format(
                 model.get_name(),
                 self._optimize_metric,
-                model.get_final_loss(),
+                np.round(model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
         )
@@ -514,55 +520,65 @@ class AutoML:
             tt /= k_folds  # time is per learner (per fold)
             return tt
 
-    def train_model(self, params):
-
-        model_path = os.path.join(self._results_path, params["name"])
-        early_stop = EarlyStopping(
-            {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
-        )
-
-        learner_time_constraint = LearnerTimeConstraint(
-            {
-                "learner_time_limit": self._get_learner_time_limit(
-                    params["learner"]["model_type"]
-                ),
-                "min_steps": params["additional"].get("min_steps"),
-            }
-        )
-
-        total_time_constraint = TotalTimeConstraint(
-            {
-                "total_time_limit": self._total_time_limit
-                if self._model_time_limit is None
-                else None,
-                "total_time_start": self._start_time,
-            }
-        )
-
-        mf = ModelFramework(
-            params,
-            callbacks=[early_stop, learner_time_constraint,
-                       total_time_constraint],
-        )
-
-        if self._enough_time_to_train(mf.get_type()):
-
-            # self.verbose_print(params["name"] + " training start ...")
-            logger.info(
-                f"Train model #{len(self._models)+1} / Model name: {params['name']}"
-            )
-
+    def create_dir(self, model_path):
+        if not os.path.exists(model_path):
             try:
                 os.mkdir(model_path)
             except Exception as e:
-                raise AutoMLException(f"Cannot create directory {model_path}")
+                raise AutoMLException(
+                    f"Cannot create directory {model_path}. {str(e)}")
 
+    def train_model(self, params):
+
+        # do we have enough time to train?
+        # if not, skip
+        if not self._enough_time_to_train(params["learner"]["model_type"]):
+            logger.info(
+                f"Cannot train {params['name']} because of the time constraint")
+            return False
+
+            # let's create directory to log all training artifacts
+            model_path = os.path.join(self._results_path, params["name"])
+            self.create_dir(model_path)
+
+            # prepare callbacks
+            early_stop = EarlyStopping(
+                {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
+            )
+
+            learner_time_constraint = LearnerTimeConstraint(
+                {
+                    "learner_time_limit": self._get_learner_time_limit(
+                        params["learner"]["model_type"]
+                    ),
+                    "min_steps": params["additional"].get("min_steps"),
+                }
+            )
+
+            total_time_constraint = TotalTimeConstraint(
+                {
+                    "total_time_limit": self._total_time_limit
+                    if self._model_time_limit is None
+                    else None,
+                    "total_time_start": self._start_time,
+                }
+            )
+
+            # create model framework
+            mf = ModelFramework(
+                params,
+                callbacks=[early_stop, learner_time_constraint,
+                           total_time_constraint],
+            )
+
+            # start training
+            logger.info(
+                f"Train model #{len(self._models)+1} / Model name: {params['name']}"
+            )
             mf.train(model_path)
 
+            # save the model
             mf.save(model_path)
-            self._model_paths += [model_path]
-
-            self.keep_model(mf)
 
             # save the best one in the case the training will be interrupted
             self.select_and_save_best()
@@ -570,6 +586,9 @@ class AutoML:
             logger.info(
                 f"Cannot train {mf.get_type()} because of time constraint")
         # self._progress_bar.update(1)
+        # and keep info about the model
+        self.keep_model(mf, model_path)
+        return True
 
     def verbose_print(self, msg):
         if self._verbose:
@@ -628,7 +647,7 @@ class AutoML:
         ##################
         # hill climbing check
 
-        if self._fit_level == "hill_climbing":
+        if self._fit_level is not None and "hill_climbing" in self._fit_level:
 
             time_should_use = (
                 self._total_time_limit
@@ -674,25 +693,21 @@ class AutoML:
 
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
+
+            ensemble_path = os.path.join(
+                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
+            )
+            self.create_dir(ensemble_path)
+
             self.ensemble = Ensemble(
                 self._optimize_metric, self._ml_task, is_stacked=is_stacked
             )
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
-            self.keep_model(self.ensemble)
-
-            ensemble_path = os.path.join(
-                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
-            )
-            try:
-                os.mkdir(ensemble_path)
-            except Exception as e:
-                raise AutoMLException(
-                    f"Cannot create directory {ensemble_path}")
             self.ensemble.save(ensemble_path)
-            self._model_paths += [ensemble_path]
-            # save the best one in the case the training will be interrupted
-            self.select_and_save_best()
+            self.keep_model(self.ensemble, ensemble_path)
+            return True
+        return False
 
     def can_we_stack_them(self, y):
         # if multiclass and too many classes then No
@@ -754,7 +769,7 @@ class AutoML:
             self._stacked_models[i] for i in np.argsort(scores).tolist()
         ]
 
-    def stacked_ensemble_step(self):
+    def prepare_for_stacking(self):
         # print("Stacked models ....")
         # do we have enough models?
         if len(self._models) < 5:
@@ -767,22 +782,24 @@ class AutoML:
             if time_left < 60:
                 return
 
-        # read X directly from parquet
-        X = pd.read_parquet(self._X_train_path)
-
         self.stack_models()
 
+        X_train_stacked_path = os.path.join(
+            self._results_path, "X_train_stacked.parquet"
+        )
+        if os.path.exists(X_train_stacked_path):
+            return
+
+        X = pd.read_parquet(self._X_train_path)
         org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
         new_columns = X_stacked.columns.tolist()
         added_columns = [c for c in new_columns if c not in org_columns]
 
-        # save stacked data
-        X_train_stacked_path = os.path.join(
-            self._results_path, "X_train_stacked.parquet"
-        )
+        # save stacked train data
         X_stacked.to_parquet(X_train_stacked_path, index=False)
 
+        """
         # resue old params
         for m in self._stacked_models:
             # print(m.get_type())
@@ -815,6 +832,7 @@ class AutoML:
                             scale]
 
             self.train_model(params)
+        """
 
     def _set_ml_task(self, y):
         """ Set and validate the ML task.
@@ -1002,6 +1020,31 @@ class AutoML:
         os.remove(self._X_train_path)
         os.remove(self._y_train_path)
 
+    def save_progress(self, step=None, generated_params=None):
+
+        if step is not None and generated_params is not None:
+            self._all_params[step] = generated_params
+
+        state = {}
+
+        state["fit_level"] = self._fit_level
+        state["time_spend"] = self._time_spend
+        state["all_params"] = self._all_params
+
+        fname = os.path.join(self._results_path, "progress.json")
+        with open(fname, "w") as fout:
+            fout.write(json.dumps(state, indent=4))
+
+    def load_progress(self):
+        state = {}
+        fname = os.path.join(self._results_path, "progress.json")
+        if not os.path.exists(fname):
+            return
+        state = json.load(open(fname, "r"))
+        self._fit_level = state.get("fit_level", self._fit_level)
+        self._time_spend = state.get("time_spend", self._time_spend)
+        self._all_params = state.get("all_params", self._all_params)
+
     def fit(self, X_train, y_train, X_validation=None, y_validation=None) -> None:
         """
         Fit the AutoML model.
@@ -1017,13 +1060,20 @@ class AutoML:
         y_validation : list or numpy.ndarray or pandas.DataFrame
             Targets for validation data
         """
+
         try:
+
+            self.load_progress()
+
+            if self._fit_level == "finished":
+                print("AutoML is trained. Skipping fit step ...")
+                return
 
             # if self._best_model is not None:
             #    print("Best model is already set, no need to run fit. Skipping ...")
             #    return
 
-            self._start_time = time.time()
+            self._start_time = time.time() - np.sum(list(self._time_spend.values()))
 
             if not isinstance(X_train, (pd.DataFrame)):
                 raise AutoMLException(
@@ -1047,10 +1097,8 @@ class AutoML:
                 X_train, y_train, X_validation, y_validation
             )
             self._save_data(X_train, y_train, X_validation, y_validation)
-
             self._set_algorithms()
             self._set_metric()
-            # self._estimate_training_times()
 
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
                 self._check_imbalanced(y_train)
@@ -1062,98 +1110,66 @@ class AutoML:
                 self._validation,
                 self._explain_level,
                 self._data_info,
+                self._golden_features,
+                self._feature_selection,
+                self._train_ensemble,
+                self._stack_models,
                 self._seed,
             )
             self.tuner = tuner
-            self._time_spend = {}
-            self._time_start = {}
 
-            # 1. Check simple algorithms
-            self._fit_level = "simple_algorithms"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            for params in tuner.simple_algorithms_params():
-                self.train_model(params)
-            self._time_spend["simple_algorithms"] = np.round(
-                time.time() - start, 2)
+            steps = tuner.steps()
 
-            # 2. Default parameters
-            self._fit_level = "default_algorithms"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            for params in tuner.default_params(len(self._models)):
-                self.train_model(params)
-            self._time_spend["default_algorithms"] = np.round(
-                time.time() - start, 2)
-
-            # 3. The not-so-random step
-            self._fit_level = "not_so_random"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            generated_params = tuner.get_not_so_random_params(
-                len(self._models))
-            for params in generated_params:
-                self.train_model(params)
-            self._time_spend["not_so_random"] = np.round(
-                time.time() - start, 2)
-
-            # 4. The hill-climbing step
-            self._fit_level = "hill_climbing"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            # check golden features
-            if self._golden_features:
-                for params in tuner.get_golden_features_params(
-                    self._models, self._results_path
-                ):
-                    self.train_model(params)
-            # feature selection
-            if self._feature_selection:
-                # step #1 - insert random feature
-                for params in tuner.get_params_to_insert_random_feature(self._models):
-                    self.train_model(params)
-                # step #2 - train models on selected features ...
-                for params in tuner.get_feature_selection_params(
-                    self._models, self._results_path
-                ):
-                    self.train_model(params)
-
-            # do hill climbing
-            for params in tuner.get_hill_climbing_params(self._models):
-                self.train_model(params)
-            self._time_spend["hill_climbing"] = np.round(
-                time.time() - start, 2)
-
-            # 5. Ensemble unstacked models
-            self._fit_level = "ensemble_unstacked"
-            start = time.time()
-            self._time_start[self._fit_level] = start
-            self.ensemble_step()
-            self._time_spend["ensemble_unstacked"] = np.round(
-                time.time() - start, 2)
-
-            if self._stack_models:
-                # 6. Stack best models
-                self._fit_level = "stack"
+            for step in steps:
+                self._fit_level = step
                 start = time.time()
-                self._time_start[self._fit_level] = start
-                self.stacked_ensemble_step()
-                self._time_spend["stack"] = np.round(time.time() - start, 2)
+                self._time_start[step] = start
 
-                # 7. Ensemble all models (original and stacked)
-                any_stacked = False
-                for m in self._models:
-                    if m._is_stacked:
-                        any_stacked = True
-                        break
-                if any_stacked:
-                    self._fit_level = "ensemble_all"
-                    start = time.time()
-                    self.ensemble_step(is_stacked=True)
-                    self._time_spend["ensemble_all"] = np.round(
-                        time.time() - start, 2)
+                if step == "stack":
+                    self.prepare_for_stacking()
+
+                generated_params = []
+                if step in self._all_params:
+                    generated_params = self._all_params[step]
+                else:
+                    generated_params = tuner.generate_params(
+                        step, self._models, self._results_path, self._stacked_models
+                    )
+                if generated_params is None:
+                    continue
+                if generated_params:
+                    print("-" * 72)
+                    print(
+                        f"{step} with {len(generated_params)} models to train ...")
+
+                for params in generated_params:
+                    if params.get("status", "") == "trained":
+                        print(f"Skipping {params['name']}, already trained.")
+                        continue
+                    if params.get("status", "") == "skipped":
+                        print(f"Skipped {params['name']}.")
+                        continue
+
+                    trained = False
+                    if "ensemble" in step:
+                        trained = self.ensemble_step(
+                            is_stacked=params["is_stacked"])
+                    else:
+                        trained = self.train_model(params)
+
+                    params["status"] = "trained" if trained else "skipped"
+                    params["final_loss"] = self._models[-1].get_final_loss()
+                    params["train_time"] = self._models[-1].get_train_time()
+                    self.save_progress(step, generated_params)
+
+                self._time_spend[step] = np.round(
+                    time.time() - start, 2
+                ) + self._time_spend.get(step, 0)
 
             self._fit_time = time.time() - self._start_time
+
+            self._fit_level = "finished"
+            self.save_progress()
 
             logger.info(f"AutoML fit time: {self._fit_time}")
 
