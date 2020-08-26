@@ -215,6 +215,8 @@ print("Test MSE:", mean_squared_error(y_test, predictions["prediction"]))
 
 For details please check [AutoML API Docs](docs/api.md).
 
+If you need help: submit the issue or join our [Slack channel](https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/).
+
 # Markdown reports
 
 ## The AutoML Report
