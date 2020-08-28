@@ -97,12 +97,12 @@ class TimeController:
 
             time_should_use = self.time_should_use(fit_level)
 
-            #print("not_so_random should use", time_should_use)
-            #print(total_time_spend)
-            #print(
+            # print("not_so_random should use", time_should_use)
+            # print(total_time_spend)
+            # print(
             #    self.step_spend("simple_algorithms")
             #    + self.step_spend("default_algorithms")
-            #)
+            # )
 
             if total_time_spend > time_should_use + self.step_spend(
                 "simple_algorithms"
@@ -164,7 +164,7 @@ class TimeController:
         time_left = self._total_time_limit - total_time_spend
         # no time left, do not train any more models, sorry ...
         if time_left < 0:
-            #print("No time left", time_left)
+            # print("No time left", time_left)
             return False
 
         # there is still time and model_type was not tested yet
@@ -175,7 +175,7 @@ class TimeController:
         # check the fit level type
         # we dont want to spend too much time on one step
         if not self.enough_time_for_step(step):
-            #print("Not enough time for step", step)
+            # print("Not enough time for step", step)
             return False
 
         # check if there is enough time for model to train
@@ -233,8 +233,8 @@ class TimeController:
                 "train_time": train_time,
             }
         ]
-        #print(pd.DataFrame(self._spend))
-        #print("Already spend", self.already_spend())
+        # print(pd.DataFrame(self._spend))
+        # print("Already spend", self.already_spend())
 
     def step_spend(self, step):
         return np.sum([s["train_time"] for s in self._spend if s["fit_level"] == step])

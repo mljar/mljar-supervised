@@ -20,11 +20,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
     #results_path="AutoML_30",
-    #algorithms=["Neural Network"],
-    total_time_limit=200,
+    algorithms=["Random Forest"],
+    total_time_limit=20,
     explain_level=0,
     # validation={"validation_type": "split"},
-    mode="Compete",
+    mode="Explain",
     # validation={"validation_type": "split"}
     validation={
         "validation_type": "kfold",

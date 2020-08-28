@@ -943,7 +943,9 @@ class AutoML:
                     self._algorithms,
                 )
 
-            self._time_ctrl.log_time("prepare_data", "prep_0", "prepare_data", time.time()-self._start_time)
+            self._time_ctrl.log_time(
+                "prepare_data", "prepare_data", "prepare_data", time.time() - self._start_time
+            )
 
             for step in steps:
                 self._fit_level = step
