@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn import datasets
 from supervised import AutoML
 
+
 class EnsembleSaveLoadTest(unittest.TestCase):
 
     automl_dir = "automl_1"
@@ -44,4 +45,3 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         p2 = a2.predict(X)
 
         self.assertTrue((p["label"] == p2["label"]).all())
-

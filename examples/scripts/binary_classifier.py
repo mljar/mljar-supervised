@@ -19,10 +19,10 @@ y = df["income"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
-    results_path="AutoML_30",
+    #results_path="AutoML_30",
     #algorithms=["Neural Network"],
-    # total_time_limit=200,
-    # explain_level=0
+    total_time_limit=200,
+    explain_level=0,
     # validation={"validation_type": "split"},
     mode="Compete",
     # validation={"validation_type": "split"}
@@ -31,12 +31,12 @@ automl = AutoML(
         "k_folds": 2,
         "shuffle": True,
         "stratify": True,
-    }
-    # golden_features=False,
-    # feature_selection=False
+    },
+    golden_features=True,
+    feature_selection=True
 )
 automl.set_advanced(
-    start_random_models=1, hill_climbing_steps=1, top_models_to_improve=1
+    start_random_models=20, hill_climbing_steps=10, top_models_to_improve=3
 )
 automl.fit(X_train, y_train)
 
