@@ -39,8 +39,6 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        self.assertTrue(a._best_model.get_type() == "Ensemble")
-
         a2 = AutoML(results_path=self.automl_dir)
         p2 = a2.predict(X)
 
