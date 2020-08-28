@@ -12,7 +12,8 @@ from copy import deepcopy
 from varname import nameof
 
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_x
+from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.utils.multiclass import unique_labels
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -285,7 +286,7 @@ class AutoML(BaseEstimator):
         start_random_models="auto",
         hill_climbing_steps="auto",
         top_models_to_improve="auto",
-        random_state=None,
+        random_state=1234,
     ):
         self.mode = mode
         self.ml_task = ml_task
@@ -769,38 +770,40 @@ class AutoML(BaseEstimator):
                 f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
             )
 
+    # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
+    # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
     def _build_dataframe(self, X, y=None, X_validation=None, y_validation=None):
-        # If Inputs are not pandas dataframes use scikit-learn validation for X and y
+        # TODO: Implement logic for X_validation
+        # If Inputs are not pandas dataframes use scikit-learn validation for X array
         if not isinstance(X, pd.DataFrame):
-            X_train, y_train = check_X_y(X_train, y_train)
+            X = check_array(X)
+            # X_train, y_train = check_X_y(X_train, y_train)
             # Create Pandas dataframe from np.arrays, columns get names with the schema: feature_{index}
-            X_train = pd.DataFrame(
-                X_train,
-                columns=["feature_" + str(i) for i in range(1, len(X_train[1]) + 1)],
+            X = pd.DataFrame(
+                X,
+                columns=["feature_" + str(i) for i in range(1, len(X[1]) + 1)],
             )
 
         # Enforce X_train columns to be string
-        X_train.columns = X_train.columns.astype(str)
+        X.columns = X.columns.astype(str)
 
-        X_train.reset_index(drop=True, inplace=True)
+        X.reset_index(drop=True, inplace=True)
 
-        if not isinstance(y_train, pd.DataFrame):
-            _, y_train = check_X_y(
-                X_train, y_train
-            )  # use of discard '_' is important, otherwise it will invalidate previous operations, and lead AutoML to crash
-            y_train = pd.DataFrame(y_train, columns=["target"])
-        else:
-            # Check if target is only 1 column
-            if y_train.columns != 1:
-                raise AutoMLException(
-                    f"Expected y_train to have 1 column, got {y_train.columns}."
-                )
+        if y is not None:
+            # If Inputs are not pandas dataframes use scikit-learn validation for y array
+            if not isinstance(y, pd.DataFrame):
+                y = check_array(y, ensure_2d=False)
+                y = pd.DataFrame(y, columns=["target"])
+            else:
+                # Check if target is only 1 column
+                if y.columns != 1:
+                    raise AutoMLException(
+                        f"Expected y to have 1 column, got {y.columns}."
+                    )
 
-        X_train, y_train = ExcludeRowsMissingTarget.transform(
-            X_train, y_train, warn=True
-        )
+        X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
 
-        return X_train, y_train, X_validation, y_validation
+        return X, y, X_validation, y_validation
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
 
@@ -870,9 +873,9 @@ class AutoML(BaseEstimator):
         if not os.path.exists(fname):
             return
         state = json.load(open(fname, "r"))
-        self.fit_level = state.get("fit_level", self.fit_level)
-        self.time_spend = state.get("time_spend", self.time_spend)
-        self.all_params = state.get("all_params", self.all_params)
+        self._fit_level = state.get("fit_level", self._fit_level)
+        self._time_spend = state.get("time_spend", self._time_spend)
+        self._all_params = state.get("all_params", self._all_params)
 
     def _validate_model(self):
         # All the necessary validation to params provided in __init__
@@ -934,7 +937,7 @@ class AutoML(BaseEstimator):
         # Validate `random_state`
         self._set_random_state()
 
-    def fit(self, X_train, y_train, X_validation=None, y_validation=None):
+    def fit(self, X, y, X_validation=None, y_validation=None):
         """
         Fit the AutoML model.
         Parameters
@@ -949,12 +952,11 @@ class AutoML(BaseEstimator):
             Targets for validation data
         """
         # Validate input and build dataframes
-        X_train, y_train, X_validation, y_validation = self._build_train_dataframe(
-            X_train, y_train, X_validation, y_validation
+        X, y, X_validation, y_validation = self._build_dataframe(
+            X, y, X_validation, y_validation
         )
         # Set the classes_ attribute
-        self.classes_, y = np.unique(np.array(y_train), return_inverse=True)
-
+        self.classes_ = unique_labels(np.array(y))
         # Validate model
         self._validate_model()
 
@@ -986,11 +988,11 @@ class AutoML(BaseEstimator):
 
             ## EDA
             if self.explain_level == 2:
-
-                os.mkdir(os.path.join(self.results_path, "EDA"))
+                if not os.path.exists(os.path.join(self.results_path, "EDA")):
+                    os.mkdir(os.path.join(self.results_path, "EDA"))
                 eda_path = os.path.join(self.results_path, "EDA")
 
-                EDA.compute(X_train, y_train, eda_path)
+                EDA.compute(X, y, eda_path)
 
             self._set_ml_task()
 
@@ -998,7 +1000,7 @@ class AutoML(BaseEstimator):
             # if X_train is not None:
             #     X_train = X_train.copy()
 
-            self._save_data(X_train, y_train, X_validation, y_validation)
+            self._save_data(X, y, X_validation, y_validation)
 
             # if self.ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
             #     self._check_imbalanced(y_train)
@@ -1075,7 +1077,7 @@ class AutoML(BaseEstimator):
             raise e
         finally:
             if self._X_train_path is not None:
-                self._load_data_variables(X_train)
+                self._load_data_variables(X)
 
         return self
 
@@ -1114,6 +1116,8 @@ class AutoML(BaseEstimator):
 
     def _base_predict(self, X):
 
+        # Ensure X is a dataframe, discard the rest
+        X, _, _, _ = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
 
@@ -1301,6 +1305,7 @@ class AutoML(BaseEstimator):
             raise ValueError(
                 f"Expected `{nameof(self.mode)}` to be {' or '.join(valid_modes)}, got '{self.mode}'"
             )
+        print(f"Current AutoML mode: { self.mode}")
 
     def _set_ml_task(self):
         # if not set, guess
@@ -1342,6 +1347,7 @@ class AutoML(BaseEstimator):
             raise ValueError(
                 f"Expected `{nameof(self.tuning_mode)}` to be {'or'.join(valid_tuning_modes)}, got {self.tuning_mode}"
             )
+        print(f"Current AutoML tuning mode: { self.tuning_mode}")
 
     def _set_results_path(self):
         if self.results_path is None:
@@ -1398,7 +1404,6 @@ class AutoML(BaseEstimator):
                     "Decision Tree",
                     "Random Forest",
                     "Xgboost",
-                    "Neural Network",
                 ]
             if self.mode == "Perform":
                 self.algorithms = [
@@ -1421,7 +1426,6 @@ class AutoML(BaseEstimator):
                     "Neural Network",
                     "Nearest Neighbors",
                 ]
-        print(self.ml_task)
         for a in self.algorithms:
             if a not in list(AlgorithmsRegistry.registry[self.ml_task].keys()):
                 raise AutoMLException(
@@ -1572,7 +1576,7 @@ class AutoML(BaseEstimator):
             if self.mode == "Compete":
                 self.hill_climbing_steps = 2
         else:
-            check_greater_than_zero_integer(
+            check_positive_integer(
                 self.hill_climbing_steps, nameof(self.hill_climbing_steps)
             )
 
@@ -1585,7 +1589,7 @@ class AutoML(BaseEstimator):
             if self.mode == "Compete":
                 self.top_models_to_improve = 3
         else:
-            check_greater_than_zero_integer(
+            check_positive_integer(
                 self.top_models_to_improve, nameof(self.top_models_to_improve)
             )
 

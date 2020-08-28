@@ -20,7 +20,7 @@ def no_fit_required(f):
     def decorated(*args, **kwargs):
         if f.is_fitted() == True:
             raise AutoMLException(
-                f"Cannot use method `{f.__name__}` after AutoML has been fitted`."
+                f"Cannot use this method after AutoML has been fitted`."
             )
         return f(*args, **kwargs)
 
