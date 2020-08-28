@@ -941,6 +941,11 @@ class AutoML:
                 y_train = y_train["target"]
         y_train = pd.Series(np.array(y_train), name="target")
 
+        if y_train.dtype == object:
+            raise AutoMLException(
+                f"y_train has type {y_train.dtype}, which is not supported. Please cast y_train to an appropriate type, perhaps using .astype()."
+            )
+
         X_train, y_train = ExcludeRowsMissingTarget.transform(
             X_train, y_train, warn=True
         )
@@ -1057,14 +1062,16 @@ class AutoML:
 
                 EDA.compute(X_train, y_train, eda_path)
 
-            self._set_ml_task(y_train)
-
             if X_train is not None:
                 X_train = X_train.copy(deep=False)
 
             X_train, y_train, X_validation, y_validation = self._initial_prep(
                 X_train, y_train, X_validation, y_validation
             )
+
+            #Ensure that y_train is prepared, then set the task
+            self._set_ml_task(y_train)
+            
             self._save_data(X_train, y_train, X_validation, y_validation)
             self._set_algorithms()
             self._set_metric()

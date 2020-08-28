@@ -37,6 +37,8 @@ class PreprocessingMissingValues(object):
                 self._datetime_columns += [column]
 
     def _get_fill_value(self, x):
+        
+
         # categorical type
         if PreprocessingUtils.get_type(x) == PreprocessingUtils.CATEGORICAL:
             if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MIN:
@@ -46,6 +48,9 @@ class PreprocessingMissingValues(object):
             return PreprocessingUtils.get_most_frequent(x)
 
         if PreprocessingUtils.get_type(x) == PreprocessingUtils.DATETIME:
+            return PreprocessingUtils.get_most_frequent(x)
+
+        if PreprocessingUtils.get_type(x) == PreprocessingUtils.OBJECT:
             return PreprocessingUtils.get_most_frequent(x)
 
         # numerical type

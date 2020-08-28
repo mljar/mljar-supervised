@@ -2,6 +2,8 @@ import unittest
 import numpy as np
 import pandas as pd
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.automl import AutoML
+from supervised.exceptions import AutoMLException
 
 
 class PreprocessingUtilsTest(unittest.TestCase):
@@ -42,6 +44,20 @@ class PreprocessingUtilsTest(unittest.TestCase):
 
         self.assertEqual(1, PreprocessingUtils.get_most_frequent(df["col1"]))
         self.assertEqual("a", PreprocessingUtils.get_most_frequent(df["col2"]))
+
+
+    def test_object_datatype_input(self):
+        """ Checks an Exception is thrown  
+            if X or y have the type of object."""
+        obj_array = np.array([1, 2, "A"], dtype=object)
+        y = pd.DataFrame(obj_array, columns=["target"])
+        X = y.copy()
+
+        a = AutoML(total_time=30,tuning_mode="Normal")
+
+        with self.assertRaises(AutoMLException) as context:
+            a.fit(X, y)
+        self.assertTrue("object" in str(context.exception))
 
 
 if __name__ == "__main__":
