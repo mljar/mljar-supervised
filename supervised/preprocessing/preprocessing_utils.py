@@ -14,6 +14,7 @@ class PreprocessingUtils(object):
     DISCRETE = "discrete"
     DATETIME = "datetime"
     TEXT = "text"
+    OBJECT = "object"
 
     @staticmethod
     def get_type(x):
@@ -24,24 +25,36 @@ class PreprocessingUtils(object):
                 )
         col_type = str(x.dtype)
 
-        data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
-            data_type = PreprocessingUtils.CONTINOUS
-        elif col_type.startswith("int"):
-            data_type = PreprocessingUtils.DISCRETE
-        elif col_type.startswith("datetime"):
-            data_type = PreprocessingUtils.DATETIME
+            return PreprocessingUtils.CONTINOUS
 
-        if data_type == PreprocessingUtils.CATEGORICAL:
+        if col_type.startswith("int"):
+            return PreprocessingUtils.DISCRETE
+
+        if col_type.startswith("datetime"):
+            return PreprocessingUtils.DATETIME
+
+        #Check if the column type is a flavour of Numpy string
+        if np.issubdtype(x.dtype, np.string_) or np.issubdtype(x.dtype, np.unicode_):
+            return PreprocessingUtils.TEXT
+
+        #Ignore issues with object types
+        try:
             # check maybe this categorical is a text
             # it is a text, if:
             # has more than 200 unique values
             # more than half of rows is unique
             unique_cnt = len(np.unique(x[~pd.isnull(x)]))
             if unique_cnt > 200 and unique_cnt > int(0.5 * x.shape[0]):
-                data_type = PreprocessingUtils.TEXT
+                return PreprocessingUtils.TEXT
 
-        return data_type
+        #Likely the column contains both string and numeric values
+        except:
+            return PreprocessingUtils.CATEGORICAL
+        
+        #Exception or not, when in doubt return CATEGORICAL
+        return PreprocessingUtils.CATEGORICAL
+
 
     @staticmethod
     def is_categorical(x_org):

@@ -941,11 +941,6 @@ class AutoML:
                 y_train = y_train["target"]
         y_train = pd.Series(np.array(y_train), name="target")
 
-        if y_train.dtype == object:
-            raise AutoMLException(
-                f"y_train has type {y_train.dtype}, which is not supported. Please cast y_train to an appropriate type, perhaps using .astype()."
-            )
-
         X_train, y_train = ExcludeRowsMissingTarget.transform(
             X_train, y_train, warn=True
         )

@@ -47,17 +47,28 @@ class PreprocessingUtilsTest(unittest.TestCase):
 
 
     def test_object_datatype_input(self):
-        """ Checks an Exception is thrown  
-            if X or y have the type of object."""
+        """ The following use cases cover the possible handling paths for object datatypes:"""
+
+        mixed_input = np.array([1, "B", 3], dtype=object)
+
+        nums_as_object = np.array([1, 2, "3"], dtype=object)
+
+        strs_as_object = np.array(["A", "B", "C"], dtype=object)
+
+
+    
+
         obj_array = np.array([1, 2, "A"], dtype=object)
         y = pd.DataFrame(obj_array, columns=["target"])
         X = y.copy()
 
         a = AutoML(total_time=30,tuning_mode="Normal")
+        a.fit(X, y)
 
-        with self.assertRaises(AutoMLException) as context:
-            a.fit(X, y)
-        self.assertTrue("object" in str(context.exception))
+
+        # with self.assertRaises(AutoMLException) as context:
+        #     a.fit(X, y)
+        # self.assertTrue("object" in str(context.exception))
 
 
 if __name__ == "__main__":
