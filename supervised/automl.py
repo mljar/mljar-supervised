@@ -28,8 +28,12 @@ from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
+<<<<<<< HEAD
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
+=======
+from supervised.tuner.time_controller import TimeController
+>>>>>>> da013d6bda3af20677a3555fcd91c050969ad8eb
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -272,8 +276,6 @@ class AutoML:
         self._best_model = None
         self._verbose = True
 
-        self._fit_time = None
-        self._models_train_time = {}
         self._threshold = None
         self._metrics_details = None
         self._max_metrics = None
@@ -287,9 +289,10 @@ class AutoML:
         self._stacked_models = None
 
         self._fit_level = None
-        self._time_spend = {}
-        self._time_start = {}
+
         self._start_time = time.time()  # it will be updated in `fit` method
+
+        self._time_ctrl = None
 
         if self._validation["validation_type"] != "kfold" and self._stack_models:
             print(
@@ -451,69 +454,9 @@ class AutoML:
                 np.round(model.get_train_time(), 2),
             )
         )
-        self.log_train_time(model.get_type(), model.get_train_time())
-
-    def _get_learner_time_limit(self, model_type):
-
-        logger.debug(
-            f"Fit level: {self._fit_level}, model type: {model_type}. "
-            + f"Time spend: {json.dumps(self._time_spend, indent=4)}"
+        self._time_ctrl.log_time(
+            model.get_name(), model.get_type(), self._fit_level, model.get_train_time()
         )
-
-        if self._model_time_limit is not None:
-            k = self._validation.get("k_folds", 1.0)
-            return self._model_time_limit / k
-
-        if self._fit_level == "simple_algorithms":
-            return None
-        if self._fit_level == "default_algorithms":
-            return None
-
-        tune_algorithms = [
-            a
-            for a in self._algorithms
-            if a not in ["Baseline", "Linear", "Decision Tree", "Nearest Neighbors"]
-        ]
-        tune_algs_cnt = len(tune_algorithms)
-        if tune_algs_cnt == 0:
-            return None
-
-        time_elapsed = time.time() - self._start_time
-        time_left = self._total_time_limit - time_elapsed
-
-        k_folds = self._validation.get("k_folds", 1.0)
-
-        if self._fit_level == "not_so_random":
-            tt = (
-                self._total_time_limit
-                - self._time_spend["simple_algorithms"]
-                - self._time_spend["default_algorithms"]
-            )
-            if self._stack_models:
-                tt *= 0.6  # leave some time for stacking (approx. 40% for stacking of time left)
-            tt /= 2.0  # leave some time for hill-climbing
-            tt /= tune_algs_cnt  # give time equally for each algorithm
-            tt /= k_folds  # time is per learner (per fold)
-            return tt
-
-        if self._fit_level == "hill_climbing":
-            tt = (
-                self._total_time_limit
-                - self._time_spend["simple_algorithms"]
-                - self._time_spend["default_algorithms"]
-                - self._time_spend["not_so_random"]
-            )
-            if self._stack_models:
-                tt *= 0.4  # leave some time for stacking (approx. 60% for stacking of time left)
-            tt /= tune_algs_cnt  # give time equally for each algorithm
-            tt /= k_folds  # time is per learner (per fold)
-            return tt
-
-        if self._stack_models and self._fit_level == "stack":
-            tt = time_left
-            tt /= tune_algs_cnt  # give time equally for each algorithm
-            tt /= k_folds  # time is per learner (per fold)
-            return tt
 
     def create_dir(self, model_path):
         if not os.path.exists(model_path):
@@ -526,7 +469,9 @@ class AutoML:
 
         # do we have enough time to train?
         # if not, skip
-        if not self._enough_time_to_train(params["learner"]["model_type"]):
+        if not self._time_ctrl.enough_time(
+            params["learner"]["model_type"], self._fit_level
+        ):
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
 
@@ -541,8 +486,10 @@ class AutoML:
 
         learner_time_constraint = LearnerTimeConstraint(
             {
-                "learner_time_limit": self._get_learner_time_limit(
-                    params["learner"]["model_type"]
+                "learner_time_limit": self._time_ctrl.learner_time_limit(
+                    params["learner"]["model_type"],
+                    self._fit_level,
+                    self._validation.get("k_folds", 1.0),
                 ),
                 "min_steps": params["additional"].get("min_steps"),
             }
@@ -580,102 +527,6 @@ class AutoML:
         if self._verbose:
             # self._progress_bar.write(msg)
             print(msg)
-
-    def log_train_time(self, model_type, train_time):
-        if model_type in self._models_train_time:
-            self._models_train_time[model_type] += [train_time]
-        else:
-            self._models_train_time[model_type] = [train_time]
-
-    def _enough_time_to_train(self, model_type):
-        # if model_time_limit is set, train every model
-        # do not apply total_time_limit
-        if self._model_time_limit is not None:
-            return True
-        # no total time limit, just train, dont ask
-        if self._total_time_limit is None:
-            return True
-
-        total_time_spend = time.time() - self._start_time
-        # no time left, do not train more models, sorry ...
-        time_left = self._total_time_limit - total_time_spend
-        if time_left < 0:
-            return False
-
-        # there is still time and model_type was not tested yet
-        # we should try it
-        if time_left > 0 and model_type not in self._models_train_time:
-            return True
-
-        # check the fit level type
-        # we dont want to spend too much time on one level
-
-        if self._fit_level == "not_so_random":
-
-            time_should_use = (
-                self._total_time_limit
-                - self._time_spend["simple_algorithms"]
-                - self._time_spend["default_algorithms"]
-            )
-            if self._stack_models:
-                time_should_use *= 0.6  # leave time for stacking
-            if self._hill_climbing_steps > 0:
-                time_should_use /= 2.0  # leave time for hill-climbing
-
-            if (
-                total_time_spend
-                > time_should_use
-                + self._time_spend["simple_algorithms"]
-                + self._time_spend["default_algorithms"]
-            ):
-                return False
-
-        ##################
-        # hill climbing check
-
-        if self._fit_level is not None and "hill_climbing" in self._fit_level:
-
-            time_should_use = (
-                self._total_time_limit
-                - self._time_spend["simple_algorithms"]
-                - self._time_spend["default_algorithms"]
-                - self._time_spend["not_so_random"]
-            )
-            if self._stack_models:
-                time_should_use *= 0.4  # leave time for stacking
-
-            if (
-                total_time_spend
-                > time_should_use
-                + self._time_spend["simple_algorithms"]
-                + self._time_spend["default_algorithms"]
-                + self._time_spend["not_so_random"]
-            ):
-                return False
-
-        model_total_time_spend = (
-            0
-            if model_type not in self._models_train_time
-            else np.sum(self._models_train_time[model_type])
-        )
-        model_mean_time_spend = (
-            0
-            if model_type not in self._models_train_time
-            else np.mean(self._models_train_time[model_type])
-        )
-
-        algo_cnt = float(len(self._algorithms))
-        for a in ["Baseline", "Decision Tree", "Linear", "Nearest Neighbors"]:
-            if a in self._algorithms:
-                algo_cnt -= 1.0
-        if algo_cnt < 1.0:
-            algo_cnt = 1.0
-
-        model_time_left = time_left / algo_cnt
-        if model_mean_time_spend <= model_time_left:
-            return True
-
-        return False
 
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
@@ -1020,7 +871,7 @@ class AutoML:
         state = {}
 
         state["fit_level"] = self._fit_level
-        state["time_spend"] = self._time_spend
+        state["time_controller"] = self._time_ctrl.to_json()
         state["all_params"] = self._all_params
 
         fname = os.path.join(self._results_path, "progress.json")
@@ -1034,8 +885,8 @@ class AutoML:
             return
         state = json.load(open(fname, "r"))
         self._fit_level = state.get("fit_level", self._fit_level)
-        self._time_spend = state.get("time_spend", self._time_spend)
         self._all_params = state.get("all_params", self._all_params)
+        self._time_ctrl = TimeController.from_json(state.get("time_controller"))
 
     def fit(self, X_train, y_train, X_validation=None, y_validation=None):
         """
@@ -1060,20 +911,18 @@ class AutoML:
             #    print("Best model is already set, no need to run fit. Skipping ...")
             #    return
 
-            self._start_time = time.time() - np.sum(list(self._time_spend.values()))
+            self._start_time = time.time()
+            if self._time_ctrl is not None:
+                self._start_time -= self._time_ctrl.already_spend()
 
             if not isinstance(X_train, pd.DataFrame):
                 raise AutoMLException(
                     "AutoML needs X_train matrix to be a Pandas DataFrame"
                 )
 
-            ## EDA
+            # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
-
-                os.mkdir(os.path.join(self._results_path, "EDA"))
-                eda_path = os.path.join(self._results_path, "EDA")
-
-                EDA.compute(X_train, y_train, eda_path)
+                EDA.compute(X_train, y_train, os.path.join(self._results_path, "EDA"))
 
             if X_train is not None:
                 X_train = X_train.copy(deep=False)
@@ -1109,10 +958,23 @@ class AutoML:
 
             steps = tuner.steps()
 
+            if self._time_ctrl is None:
+                self._time_ctrl = TimeController(
+                    self._start_time,
+                    self._total_time_limit,
+                    self._model_time_limit,
+                    steps,
+                    self._algorithms,
+                )
+
+            self._time_ctrl.log_time(
+                "prepare_data", "prepare_data", "prepare_data", time.time() - self._start_time
+            )
+
             for step in steps:
                 self._fit_level = step
                 start = time.time()
-                self._time_start[step] = start
+                # self._time_start[step] = start
 
                 if step == "stack":
                     self.prepare_for_stacking()
@@ -1124,6 +986,7 @@ class AutoML:
                     generated_params = tuner.generate_params(
                         step, self._models, self._results_path, self._stacked_models
                     )
+
                 if generated_params is None:
                     continue
                 if generated_params:
@@ -1149,16 +1012,10 @@ class AutoML:
                     params["train_time"] = self._models[-1].get_train_time()
                     self.save_progress(step, generated_params)
 
-                self._time_spend[step] = np.round(
-                    time.time() - start, 2
-                ) + self._time_spend.get(step, 0)
-
-            self._fit_time = time.time() - self._start_time
-
             self._fit_level = "finished"
             self.save_progress()
 
-            logger.info(f"AutoML fit time: {self._fit_time}")
+            print(f"AutoML fit time: {time.time() - self._start_time}")
 
         except Exception as e:
             raise e

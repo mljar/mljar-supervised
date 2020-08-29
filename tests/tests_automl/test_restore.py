@@ -34,7 +34,7 @@ class AutoMLRestoreTest(unittest.TestCase):
             tuning_mode="Explain",
             algorithms=["Decision Tree"],
             explain_level=0,
-            train_ensemble=False
+            train_ensemble=False,
         )
         automl.fit(X, y)
 
@@ -52,7 +52,7 @@ class AutoMLRestoreTest(unittest.TestCase):
             tuning_mode="Explain",
             algorithms=["Decision Tree", "Xgboost"],
             explain_level=0,
-            train_ensemble=False
+            train_ensemble=False,
         )
         automl.fit(X, y)
 

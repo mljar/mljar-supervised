@@ -19,7 +19,7 @@ y = df["class"]
 
 automl = AutoML(
     # results_path="AutoML_41",
-    algorithms=["Xgboost"],
+    algorithms=["Random Forest"],
     # algorithms=["Neural Network"],
     #    "Linear",
     #    "Xgboost",
