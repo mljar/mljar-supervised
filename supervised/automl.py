@@ -28,12 +28,8 @@ from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
-<<<<<<< HEAD
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
-
-=======
 from supervised.tuner.time_controller import TimeController
->>>>>>> da013d6bda3af20677a3555fcd91c050969ad8eb
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
