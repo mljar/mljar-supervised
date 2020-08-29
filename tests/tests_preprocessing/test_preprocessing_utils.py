@@ -46,24 +46,21 @@ class PreprocessingUtilsTest(unittest.TestCase):
         self.assertEqual("a", PreprocessingUtils.get_most_frequent(df["col2"]))
 
 
-    def test_object_datatype_input(self):
-        """ The following use cases cover the possible handling paths for object datatypes:"""
+    # def test_object_datatype_input(self):
+    #     """ The following use cases cover the possible handling paths for object datatypes:"""
 
-        mixed_input = np.array([1, "B", 3], dtype=object)
+    #     mixed_input = np.array([1, "B", 3]*10, dtype=object)
 
-        nums_as_object = np.array([1, 2, "3"], dtype=object)
+    #     nums_as_object = np.array([1, 2, "3"]*10, dtype=object)
 
-        strs_as_object = np.array(["A", "B", "C"], dtype=object)
+    #     strs_as_object = np.array(["A", "B", "C"]*10, dtype=object)
 
 
-    
+    #     y = pd.DataFrame(mixed_input, columns=["target"])
+    #     X = y.copy()
 
-        obj_array = np.array([1, 2, "A"], dtype=object)
-        y = pd.DataFrame(obj_array, columns=["target"])
-        X = y.copy()
-
-        a = AutoML(total_time=30,tuning_mode="Normal")
-        a.fit(X, y)
+    #     a = AutoML(total_time=30,tuning_mode="Normal")
+    #     a.fit(X, y)
 
 
         # with self.assertRaises(AutoMLException) as context:

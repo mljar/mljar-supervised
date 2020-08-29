@@ -34,10 +34,6 @@ class PreprocessingUtils(object):
         if col_type.startswith("datetime"):
             return PreprocessingUtils.DATETIME
 
-        #Check if the column type is a flavour of Numpy string
-        if np.issubdtype(x.dtype, np.string_) or np.issubdtype(x.dtype, np.unicode_):
-            return PreprocessingUtils.TEXT
-
         #Ignore issues with object types
         try:
             # check maybe this categorical is a text

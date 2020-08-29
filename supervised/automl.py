@@ -963,12 +963,13 @@ class AutoML:
 
         try:
             X_train.to_parquet(self._X_train_path, index=False)
-            
+
         #Failure in parquet encoding due to columns with mixed data types.
         except TypeError as e:
+            #Ensure type encodings are either numeric or strings, not mixed.
             type_encodings = {col: X_train[col].dtype if pd.api.types.is_numeric_dtype(X_train[col]) else str for col in X_train.columns}
-
             X_train = X_train.astype(type_encodings)
+            #Try writing again.
             X_train.to_parquet(self._X_train_path, index=False)
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
