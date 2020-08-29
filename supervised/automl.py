@@ -28,6 +28,7 @@ from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 logging.basicConfig(
@@ -941,6 +942,14 @@ class AutoML:
                 y_train = y_train["target"]
         y_train = pd.Series(np.array(y_train), name="target")
 
+        #Ensure target variable is cast to the correct type
+        y_train_type = PreprocessingUtils.get_type(y_train)
+        if y_train_type == PreprocessingUtils.DISCRETE or y_train_type == PreprocessingUtils.CONTINUOUS:
+            y_train = pd.to_numeric(y_train, errors='coerce')
+
+        elif y_train_type == PreprocessingUtils.CATEGORICAL:
+            y_train = pd.Series([str(y) for y in y_train], name="target")
+
         X_train, y_train = ExcludeRowsMissingTarget.transform(
             X_train, y_train, warn=True
         )
@@ -952,7 +961,13 @@ class AutoML:
         self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
         self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
 
-        X_train.to_parquet(self._X_train_path, index=False)
+        try:
+            X_train.to_parquet(self._X_train_path, index=False)
+        except TypeError as e:
+            #Failure in parquet encoding due to columns with mixed data types.
+            X_train = X_train.astype(str)
+            X_train.to_parquet(self._X_train_path, index=False)
+
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y_train = y_train.astype(str)

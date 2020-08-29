@@ -70,7 +70,7 @@ class EDA:
                 plt.savefig(plot_path)
                 plt.close("all")
 
-            elif PreprocessingUtils.get_type(X_train[col]) in ("continous"):
+            elif PreprocessingUtils.get_type(X_train[col]) in ("CONTINUOUS"):
 
                 plt.figure(figsize=(5, 5))
                 sns.distplot(X_train[col], color=BLUE)
