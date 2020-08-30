@@ -15,6 +15,7 @@ from varname import nameof
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
+from sklearn.metrics import r2_score, accuracy_score
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -41,7 +42,6 @@ from supervised.utils.data_validation import (
     check_greater_than_zero_integer,
     check_bool,
 )
-
 from supervised.tuner.time_controller import TimeController
 
 logging.basicConfig(
@@ -71,11 +71,11 @@ class _AutoML(BaseEstimator, ABC):
     def load(self):
         logger.info("Loading AutoML models ...")
         try:
-            params = json.load(open(os.path.join(self.results_path, "params.json")))
+            params = json.load(open(os.path.join(self._results_path, "params.json")))
 
             self._model_paths = params["saved"]
-            self.ml_task = params["ml_task"]
-            self.eval_metric = params["eval_metric"]
+            self._ml_task = params["ml_task"]
+            self._eval_metric = params["optimize_metric"]
             stacked_models = params.get("stacked")
 
             models_map = {}
@@ -97,12 +97,12 @@ class _AutoML(BaseEstimator, ABC):
                     self._stacked_models += [models_map[stacked_model_name]]
 
             best_model_name = None
-            with open(os.path.join(self.results_path, "best_model.txt"), "r") as fin:
+            with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
 
             self._best_model = models_map[best_model_name]
 
-            data_info_path = os.path.join(self.results_path, "data_info.json")
+            data_info_path = os.path.join(self._results_path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
@@ -118,7 +118,7 @@ class _AutoML(BaseEstimator, ABC):
         for m in self._models:
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
-            ldb["metric_type"] += [self.eval_metric]
+            ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
         return pd.DataFrame(ldb)
@@ -133,7 +133,7 @@ class _AutoML(BaseEstimator, ABC):
         self.verbose_print(
             "{} {} {} trained in {} seconds".format(
                 model.get_name(),
-                self.eval_metric,
+                self._eval_metric,
                 np.round(model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
@@ -160,12 +160,12 @@ class _AutoML(BaseEstimator, ABC):
             return False
 
         # let's create directory to log all training artifacts
-        model_path = os.path.join(self.results_path, params["name"])
+        model_path = os.path.join(self._path, params["name"])
         self.create_dir(model_path)
 
         # prepare callbacks
         early_stop = EarlyStopping(
-            {"metric": {"name": self._get_eval_metric()}, "log_to_dir": model_path}
+            {"metric": {"name": self._eval_metric}, "log_to_dir": model_path}
         )
 
         learner_time_constraint = LearnerTimeConstraint(
@@ -173,7 +173,7 @@ class _AutoML(BaseEstimator, ABC):
                 "learner_time_limit": self._time_ctrl.learner_time_limit(
                     params["learner"]["model_type"],
                     self._fit_level,
-                    self._validation.get("k_folds", 1.0),
+                    self._validation_strategy.get("k_folds", 1.0),
                 ),
                 "min_steps": params["additional"].get("min_steps"),
             }
@@ -181,8 +181,8 @@ class _AutoML(BaseEstimator, ABC):
 
         total_time_constraint = TotalTimeConstraint(
             {
-                "total_time_limit": self.total_time_limit
-                if self.model_time_limit is None
+                "total_time_limit": self._total_time_limit
+                if self._model_time_limit is None
                 else None,
                 "total_time_start": self._start_time,
             }
@@ -208,20 +208,20 @@ class _AutoML(BaseEstimator, ABC):
         return True
 
     def verbose_print(self, msg):
-        if self.verbose != 0:
-            # self.progress_bar.write(msg)
+        if self._verbose:
+            # self._progress_bar.write(msg)
             print(msg)
 
     def ensemble_step(self, is_stacked=False):
-        if self.train_ensemble and len(self._models) > 1:
+        if self._train_ensemble and len(self._models) > 1:
 
             ensemble_path = os.path.join(
-                self.results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
+                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
             )
             self.create_dir(ensemble_path)
 
             self.ensemble = Ensemble(
-                self.eval_metric, self.ml_task, is_stacked=is_stacked
+                self._eval_metric, self._ml_task, is_stacked=is_stacked
             )
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
@@ -245,7 +245,7 @@ class _AutoML(BaseEstimator, ABC):
                 oof = m.get_out_of_folds()
             else:
                 oof = m.predict(X)
-                if self.ml_task == BINARY_CLASSIFICATION:
+                if self._ml_task == BINARY_CLASSIFICATION:
                     cols = [f for f in oof.columns if "prediction" in f]
                     if len(cols) == 2:
                         oof = pd.DataFrame({"prediction": oof[cols[1]]})
@@ -295,8 +295,8 @@ class _AutoML(BaseEstimator, ABC):
         if len(self._models) < 5:
             return
         # do we have time?
-        if self.total_time_limit is not None:
-            time_left = self.total_time_limit - (time.time() - self._start_time)
+        if self._total_time_limit is not None:
+            time_left = self._total_time_limit - (time.time() - self._start_time)
             # we need at least 60 seconds to do anything
             if time_left < 60:
                 return
@@ -304,7 +304,7 @@ class _AutoML(BaseEstimator, ABC):
         self.stack_models()
 
         X_train_stacked_path = os.path.join(
-            self.results_path, "X_train_stacked.parquet"
+            self._results_path, "X_train_stacked.parquet"
         )
         if os.path.exists(X_train_stacked_path):
             return
@@ -400,8 +400,8 @@ class _AutoML(BaseEstimator, ABC):
 
     def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
 
-        self.X_train_path = os.path.join(self.results_path, "X_train.parquet")
-        self.y_train_path = os.path.join(self.results_path, "y_train.parquet")
+        self.X_train_path = os.path.join(self._path, "X_train.parquet")
+        self.y_train_path = os.path.join(self._path, "y_train.parquet")
 
         X_train.to_parquet(self.X_train_path, index=False)
 
@@ -410,9 +410,9 @@ class _AutoML(BaseEstimator, ABC):
 
         y_train.to_parquet(self.y_train_path, index=False)
 
-        self.validation["X_train_path"] = self.X_train_path
-        self.validation["y_train_path"] = self.y_train_path
-        self.validation["results_path"] = self.results_path
+        self._validation_strategy["X_train_path"] = self.X_train_path
+        self._validation_strategy["y_train_path"] = self.y_train_path
+        self._validation_strategy["path"] = self._path
 
         columns_and_target_info = DataInfo.compute(X_train, y_train, self.ml_task)
 
@@ -426,7 +426,7 @@ class _AutoML(BaseEstimator, ABC):
         }
         if columns_and_target_info.get("num_class") is not None:
             self.data_info["num_class"] = columns_and_target_info["num_class"]
-        data_info_path = os.path.join(self.results_path, "data_info.json")
+        data_info_path = os.path.join(self._path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self.data_info, indent=4))
 
@@ -456,7 +456,7 @@ class _AutoML(BaseEstimator, ABC):
         state["time_controller"] = self._time_ctrl.to_json()
         state["all_params"] = self._all_params
 
-        fname = os.path.join(self.results_path, "progress.json")
+        fname = os.path.join(self._path, "progress.json")
         with open(fname, "w") as fout:
             fout.write(json.dumps(state, indent=4))
 
@@ -469,68 +469,6 @@ class _AutoML(BaseEstimator, ABC):
         self._fit_level = state.get("fit_level", self._fit_level)
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
-
-    def _validate_model(self):
-        # All the necessary validation to params provided in __init__
-        # Any of the below methods CANNOT change the correspondent param value.
-        # Can only validate it
-
-        # Validate `mode`
-        self._validate_mode()
-
-        # Validate `ml_task` -> this needs to be on top, because some of the methods below depend on task type
-        self._validate_ml_task()
-
-        # Validate `tuning_mode`
-        self._validate_tuning_mode()
-
-        # Validate `path`
-        self._validate_path()
-
-        # Validate `total_time_limit`
-        self._validate_total_time_limit()
-
-        # Validate `model_time_limit`
-        self._validate_model_time_limit()
-
-        # Validate `algorithms`
-        self._validate_algorithms()
-
-        # Validate `train_ensemble`
-        self._validate_train_ensemble()
-
-        # Validate `stack_models`
-        self._validate_stack_models()
-
-        # Validate metrics
-        self._validate_eval_metric()
-
-        # Validate `validation`
-        self._validate_validation_strategy()
-
-        # Validate `verbose`
-        self._validate_verbose()
-
-        # Validate `explain_level`
-        self._validate_explain_level()
-
-        # Validate `golden_features`
-        self._validate_golden_features()
-
-        # Validate `feature_selection`
-        self._validate_feature_selection()
-
-        # Validate `start_random_models`
-        self._validate_start_random_models()
-
-        # Validate `hill_climbing_steps`
-        self._validate_hill_climbing_steps()
-
-        # Validate `top_models_to_improve`
-        self._validate_top_models_to_improve()
-
-        # Validate `random_state`
-        self._validate_random_state()
 
     def _fit(self, X, y, X_validation=None, y_validation=None):
         """
@@ -555,8 +493,8 @@ class _AutoML(BaseEstimator, ABC):
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
         # self.classes_, _ = np.unique(y, return_inverse=True)
         # print(self.classes_)
-        # Validate model
-        self._validate_model()
+        # # Validate model
+        # self._validate_model()
 
         # Create needed attributes
         self._best_model = None
@@ -577,6 +515,7 @@ class _AutoML(BaseEstimator, ABC):
         self._time_start = {}
         self._start_time = time.time()  # it will be updated in `fit` method
         self._all_params = {}
+        self._time_ctrl = None
         ##########################
 
         #  Check for all params that have 'auto' as default, and get their values.
@@ -587,70 +526,32 @@ class _AutoML(BaseEstimator, ABC):
         # Also check for params with None default type
 
         # `ml_task`
-        if isinstance(self.ml_task, str) and self.ml_task == "auto":
-            ml_task = self._get_ml_task()
+        self._mode = self._get_mode()
+        self._ml_task = self._get_ml_task()
+        self._tuning_mode = self._get_tuning_mode()
+        self._path = self._get_path()
+        self._total_time_limit = self._get_total_time_limit()
+        self._model_time_limit = self._get_model_time_limit()
+        self._algorithms = self._get_algorithms()
+        self._train_ensemble = self._get_train_ensemble()
+        self._stack_models = self._get_stack_models()
+        self._eval_metric = self._get_eval_metric()
+        self._validation_strategy = self._get_validation_strategy()
+        self._verbose = self._get_verbose()
+        self._explain_level = self._get_explain_level()
+        self._golden_features = self._get_golden_features()
+        self._feature_selection = self._get_feature_selection()
+        self._start_random_models = self._get_start_random_models()
+        self._hill_climbing_steps = self._get_hill_climbing_steps()
+        self._top_models_to_improve = self._get_top_models_to_improve()
+        self._random_state = self._get_random_state()
 
-        # `results_path`
-        if self.path is None:
-            self.results_path = self._get_path()
-
-        # `algorithms`
-        if isinstance(self.algorithms, str) and self.algorithms == "auto":
-            algorithms = self._get_algorithms()
-
-        # `stack_models`
-        if isinstance(self.stack_models, str) and self.stack_models == "auto":
-            stack_models = self._get_stack_models()
-
-        # `eval_metric`
-        if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
-            eval_metric = self._get_eval_metric()
-
-        # `validation`
-        if (
-            isinstance(self.validation_strategy, str)
-            and self.validation_strategy == "auto"
-        ):
-            self.validation = self._get_validation_strategy()
-            if ml_task == REGRESSION:
-                del self.validation["stratify"]
-
-        # `explain_level`
-        if isinstance(self.explain_level, str) and self.explain_level == "auto":
-            explain_level = self._get_explain_level()
-
-        # `golden_features`
-        if isinstance(self.golden_features, str) and self.golden_features == "auto":
-            golden_features = self._get_golden_features()
-
-        # `feature_selection`
-        if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
-            feature_selection = self._get_feature_selection()
-
-        # `start_random_models`
-        if (
-            isinstance(self.start_random_models, str)
-            and self.start_random_models == "auto"
-        ):
-            start_random_models = self._get_start_random_models()
-
-        # `hill_climbing_steps`
-        if (
-            isinstance(self.hill_climbing_steps, str)
-            and self.hill_climbing_steps == "auto"
-        ):
-            hill_climbing_steps = self._get_hill_climbing_steps()
-
-        # `top_models_to_improve`
-        if (
-            isinstance(self.top_models_to_improve, str)
-            and self.top_models_to_improve == "auto"
-        ):
-            top_models_to_improve = self._get_top_models_to_improve()
-
-        print(f"ML task to be solved: {ml_task}")
+        print(f"ML task to be solved: {self._ml_task}")
         # Set '_estimator_type' for sklearn api
-        if ml_task == BINARY_CLASSIFICATION or ml_task == MULTICLASS_CLASSIFICATION:
+        if (
+            self._ml_task == BINARY_CLASSIFICATION
+            or self._ml_task == MULTICLASS_CLASSIFICATION
+        ):
             self._estimator_type = "classifier"
         else:
             self._estimator_type = "regressor"
@@ -665,7 +566,7 @@ class _AutoML(BaseEstimator, ABC):
 
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
-                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+                EDA.compute(X, y, os.path.join(self._path, "EDA"))
 
             self._save_data(X, y, X_validation, y_validation)
 
@@ -675,18 +576,20 @@ class _AutoML(BaseEstimator, ABC):
 
             self.tuner = MljarTuner(
                 self._get_tuner_params(
-                    start_random_models, hill_climbing_steps, top_models_to_improve
+                    self._start_random_models,
+                    self._hill_climbing_steps,
+                    self._top_models_to_improve,
                 ),
-                algorithms,
-                ml_task,
-                self.validation,
-                explain_level,
+                self._algorithms,
+                self._ml_task,
+                self._validation_strategy,
+                self._explain_level,
                 self.data_info,
-                golden_features,
-                feature_selection,
-                self.train_ensemble,
-                stack_models,
-                self.random_state,
+                self._golden_features,
+                self._feature_selection,
+                self._train_ensemble,
+                self._stack_models,
+                self._random_state,
             )
 
             steps = self.tuner.steps()
@@ -720,7 +623,7 @@ class _AutoML(BaseEstimator, ABC):
                     generated_params = self._all_params[step]
                 else:
                     generated_params = self.tuner.generate_params(
-                        step, self._models, self.results_path, self._stacked_models
+                        step, self._models, self._path, self._stacked_models
                     )
 
                 if generated_params is None:
@@ -768,12 +671,12 @@ class _AutoML(BaseEstimator, ABC):
                 self.best_model = m
                 max_loss = m.get_final_loss()
 
-        with open(os.path.join(self.results_path, "best_model.txt"), "w") as fout:
+        with open(os.path.join(self._path, "best_model.txt"), "w") as fout:
             fout.write(f"{self.best_model.get_name()}")
 
-        with open(os.path.join(self.results_path, "params.json"), "w") as fout:
+        with open(os.path.join(self._path, "params.json"), "w") as fout:
             params = {
-                "ml_task": self.ml_task,
+                "ml_task": self._ml_task,
                 "eval_metric": self.eval_metric,
                 "saved": self._model_paths,
             }
@@ -782,17 +685,17 @@ class _AutoML(BaseEstimator, ABC):
             fout.write(json.dumps(params, indent=4))
 
         ldb = self.get_leaderboard()
-        ldb.to_csv(os.path.join(self.results_path, "leaderboard.csv"), index=False)
+        ldb.to_csv(os.path.join(self._path, "leaderboard.csv"), index=False)
 
         # save report
         ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
         ldb.loc[ldb.name == self.best_model.get_name(), "Best model"] = "**the best**"
 
-        with open(os.path.join(self.results_path, "README.md"), "w") as fout:
+        with open(os.path.join(self._path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-            LeaderboardPlots.compute(ldb, self.results_path, fout)
+            LeaderboardPlots.compute(ldb, self._path, fout)
 
     def _base_predict(self, X):
 
@@ -823,7 +726,7 @@ class _AutoML(BaseEstimator, ABC):
         else:
             predictions = self.best_model.predict(X)
 
-        if self.ml_task == BINARY_CLASSIFICATION:
+        if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
             neg_label, pos_label = (
                 predictions.columns[0][11:],
@@ -841,7 +744,7 @@ class _AutoML(BaseEstimator, ABC):
                 predictions.iloc[:, 1] > self.best_model._threshold
             ).astype(np.int32)
             return predictions
-        elif self.ml_task == MULTICLASS_CLASSIFICATION:
+        elif self._ml_task == MULTICLASS_CLASSIFICATION:
             target_is_numeric = self.data_info.get("target_is_numeric", False)
             if target_is_numeric:
                 predictions["label"] = predictions["label"].astype(np.int32)
@@ -859,13 +762,13 @@ class _AutoML(BaseEstimator, ABC):
         # If regression task the result is in column 'prediction'
         return (
             predictions["label"].to_numpy()
-            if self.ml_task != REGRESSION
+            if self._ml_task != REGRESSION
             else predictions["prediction"].to_numpy()
         )
 
     def _predict_proba(self, X):
         # Check is task type is correct
-        if self.ml_task == REGRESSION:
+        if self._ml_task == REGRESSION:
             raise AutoMLException(
                 f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._get_ml_task()}'."
             )
@@ -880,14 +783,29 @@ class _AutoML(BaseEstimator, ABC):
         # parameter simulates a drop if column exists behavior.
         return self._base_predict(X).drop(["label"], axis=1, errors="ignore").to_numpy()
 
+    def _score(self, X, y=None):
+        # y default must be None for scikit-learn compatibility
+
+        # Check if y is None
+        if y is None:
+            raise AutoML("y must be specified.")
+
+        predictions = self._predict(X)
+
+        return (
+            r2_score(y, predictions)
+            if self._ml_task == REGRESSION
+            else accuracy_score(y, predictions)
+        )
+
     def to_json(self):
         if self.best_model is None:
             return None
 
         return {
             "best_model": self.best_model.to_json(),
-            "threshold": self.threshold,
-            "ml_task": self.ml_task,
+            "threshold": self._threshold,
+            "ml_task": self._ml_task,
         }
 
     def from_json(self, json_data):
@@ -898,20 +816,37 @@ class _AutoML(BaseEstimator, ABC):
         else:
             self.best_model = ModelFramework(json_data["best_model"].get("params"))
             self.best_model.from_json(json_data["best_model"])
-        self.threshold = json_data.get("threshold")
+        self._threshold = json_data.get("threshold")
 
         self.ml_task = json_data.get("ml_task")
 
+    def _get_mode(self):
+        """ Gets the current mode"""
+        self._validate_mode()
+        return self.mode
+
     def _get_ml_task(self):
-        classes_number = self.n_classes
-        if classes_number == 2:
-            return BINARY_CLASSIFICATION
-        elif classes_number <= 20:
-            return MULTICLASS_CLASSIFICATION
+        """ Gets the current ml_task. If "auto" it is determined"""
+        self._validate_ml_task()
+        if self.ml_task == "auto":
+            classes_number = self.n_classes
+            if classes_number == 2:
+                return BINARY_CLASSIFICATION
+            elif classes_number <= 20:
+                return MULTICLASS_CLASSIFICATION
+            else:
+                return REGRESSION
         else:
-            return REGRESSION
+            return self.ml_task
+
+    def _get_tuning_mode(self):
+        self._validate_tuning_mode()
+        return self.tuning_mode
 
     def _get_path(self):
+        """ Gets the current path"""
+        self._validate_path()
+
         path = self.path
 
         if path is None:
@@ -943,121 +878,193 @@ class _AutoML(BaseEstimator, ABC):
 
         raise AutoMLException("Cannot set directory for AutoML results")
 
+    def _get_total_time_limit(self):
+        """ Gets the current total_time_limit"""
+        self._validate_total_time_limit()
+        return self.total_time_limit
+
+    def _get_model_time_limit(self):
+        """ Gets the current model_time_limit"""
+        self._validate_model_time_limit()
+        return self.model_time_limit
+
     def _get_algorithms(self):
-        if self.mode == "Explain":
-            return [
-                "Baseline",
-                "Linear",
-                "Decision Tree",
-                "Random Forest",
-                "Xgboost",
-                # "Neural Network"
-            ]
-        if self.mode == "Perform":
-            return [
-                "Linear",
-                "Random Forest",
-                "LightGBM",
-                "Xgboost",
-                "CatBoost",
-                "Neural Network",
-            ]
-        if self.mode == "Compete":
-            return [
-                "Linear",
-                "Decision Tree",
-                "Random Forest",
-                "Extra Trees",
-                "LightGBM",
-                "Xgboost",
-                "CatBoost",
-                "Neural Network",
-                "Nearest Neighbors",
-            ]
+        """ Gets the current algorithms. If "auto" it is determined"""
+        self._validate_algorithms()
+        if self.algorithms == "auto":
+            if self._get_mode() == "Explain":
+                return [
+                    "Baseline",
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Xgboost",
+                    # "Neural Network"
+                ]
+            if self._get_mode() == "Perform":
+                return [
+                    "Linear",
+                    "Random Forest",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                ]
+            if self._get_mode() == "Compete":
+                return [
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Extra Trees",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                    "Nearest Neighbors",
+                ]
+        else:
+            return self.algorithms
+
+    def _get_train_ensemble(self):
+        """ Gets the current train_ensemble"""
+        self._validate_train_ensemble()
+        return self.train_ensemble
 
     def _get_stack_models(self):
-        return True if self.mode == "Compete" else False
+        """ Gets the current stack_models"""
+        self._validate_stack_models()
+        if self.stack_models == "auto":
+            return True if self.mode == "Compete" else False
+        else:
+            return self.stack_models
 
     def _get_eval_metric(self):
-        if self._get_ml_task() == BINARY_CLASSIFICATION:
-            return "logloss"
-        elif self._get_ml_task() == MULTICLASS_CLASSIFICATION:
-            return "logloss"
-        elif self._get_ml_task() == REGRESSION:
-            return "rmse"
+        """ Gets the current eval_metric"""
+        self._validate_eval_metric()
+        if self.eval_metric == "auto":
+            if self._get_ml_task() == BINARY_CLASSIFICATION:
+                return "logloss"
+            elif self._get_ml_task() == MULTICLASS_CLASSIFICATION:
+                return "logloss"
+            elif self._get_ml_task() == REGRESSION:
+                return "rmse"
+        else:
+            return self.eval_metric
 
     def _get_validation_strategy(self):
-        strat = {}
-        if self.mode == "Explain":
-            strat = {
-                "validation_type": "split",
-                "train_ratio": 0.75,
-                "shuffle": True,
-                "stratify": True,
-            }
-        elif self.mode == "Perform":
-            strat = {
-                "validation_type": "kfold",
-                "k_folds": 5,
-                "shuffle": True,
-                "stratify": True,
-            }
-        elif self.mode == "Compete":
-            strat = {
-                "validation_type": "kfold",
-                "k_folds": 10,
-                "shuffle": True,
-                "stratify": True,
-            }
-        return strat
+        """ Gets the current validation_strategy"""
+        self._validate_validation_strategy()
+        if self.validation_strategy == "auto":
+            if self._get_mode() == "Explain":
+                return {
+                    "validation_type": "split",
+                    "train_ratio": 0.75,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+            elif self._get_mode() == "Perform":
+                return {
+                    "validation_type": "kfold",
+                    "k_folds": 5,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+            elif self._get_mode() == "Compete":
+                return {
+                    "validation_type": "kfold",
+                    "k_folds": 10,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+        else:
+            return self.validation_strategy
+
+    def _get_verbose(self):
+        """Gets the current verbose"""
+        self._validate_verbose()
+        return self.verbose
 
     def _get_explain_level(self):
-        if self.mode == "Explain":
-            return 2
-        if self.mode == "Perform":
-            return 1
-        if self.mode == "Compete":
-            return 0
+        """ Gets the current explain_level"""
+        self._validate_explain_level()
+        if self.explain_level == "auto":
+            if self._get_mode() == "Explain":
+                return 2
+            if self._get_mode() == "Perform":
+                return 1
+            if self._get_mode() == "Compete":
+                return 0
+        else:
+            return self.explain_level
 
     def _get_golden_features(self):
-        if self.mode == "Explain":
-            return False
-        if self.mode == "Perform":
-            return True
-        if self.mode == "Compete":
-            return True
+        self._validate_golden_features()
+        if self.golden_features == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return True
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return self.golden_features
 
     def _get_feature_selection(self):
-        if self.mode == "Explain":
-            return False
-        if self.mode == "Perform":
-            return True
-        if self.mode == "Compete":
-            return True
+        """ Gets the current feature_selection"""
+        self._validate_feature_selection()
+        if self.feature_selection == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return True
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return self.feature_selection
 
     def _get_start_random_models(self):
-        if self.mode == "Explain":
-            return 1
-        if self.mode == "Perform":
-            return 5
-        if self.mode == "Compete":
-            return 10
+        """ Gets the current start_random_models"""
+        self._validate_start_random_models()
+        if self.start_random_models == "auto":
+            if self._get_mode() == "Explain":
+                return 1
+            if self._get_mode() == "Perform":
+                return 5
+            if self._get_mode() == "Compete":
+                return 10
+        else:
+            return self.start_random_models
 
     def _get_hill_climbing_steps(self):
-        if self.mode == "Explain":
-            return 0
-        if self.mode == "Perform":
-            return 2
-        if self.mode == "Compete":
-            return 2
+        """ Gets the current hill_climbing_steps"""
+        self._validate_hill_climbing_steps()
+        if self.hill_climbing_steps == "auto":
+            if self._get_mode() == "Explain":
+                return 0
+            if self._get_mode() == "Perform":
+                return 2
+            if self._get_mode() == "Compete":
+                return 2
+        else:
+            return self.hill_climbing_steps
 
     def _get_top_models_to_improve(self):
-        if self.mode == "Explain":
-            return 0
-        if self.mode == "Perform":
-            return 2
-        if self.mode == "Compete":
-            return 3
+        """ Gets the current top_models_to_improve"""
+        self._validate_top_models_to_improve()
+        if self.top_models_to_improve == "auto":
+            if self._get_mode() == "Explain":
+                return 0
+            if self._get_mode() == "Perform":
+                return 2
+            if self._get_mode() == "Compete":
+                return 3
+        else:
+            return self.top_models_to_improve
+
+    def _get_random_state(self):
+        """ Gets the current random_state"""
+        self._validate_random_state()
+        return self.random_state
 
     def _validate_mode(self):
         """ Validates mode parameter"""
@@ -1536,3 +1543,6 @@ class AutoML(_AutoML):
 
         """
         return self._predict_proba(X)
+
+    def score(self, X, y=None):
+        return self._score(X,y)
