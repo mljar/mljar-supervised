@@ -66,7 +66,7 @@ class MljarTuner:
             # "stack",
             # "ensemble_stack",
         ]
-        if self._start_random_models > 0:
+        if self._start_random_models > 1:
             all_steps += ["not_so_random"]
         if self._golden_features:
             all_steps += ["golden_features"]

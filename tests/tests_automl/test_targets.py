@@ -33,7 +33,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -54,7 +54,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -76,7 +76,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -104,7 +104,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -126,7 +126,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -157,7 +157,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -189,7 +189,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -218,7 +218,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
@@ -238,7 +238,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            explain_level = 0
+            explain_level=0,
         )
         automl.set_advanced(start_random_models=1)
         automl.fit(X, y)

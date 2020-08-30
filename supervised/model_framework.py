@@ -189,8 +189,8 @@ class ModelFramework:
 
         # end of validation loop
         self.callbacks.on_framework_train_end()
-        self.train_time = time.time() - start_time
         self.get_additional_metrics()
+        self.train_time = time.time() - start_time
         logger.debug("ModelFramework end of training")
 
     def get_metric_name(self):
@@ -300,6 +300,7 @@ class ModelFramework:
         return self._additional_metrics
 
     def save(self, model_path):
+        start_time = time.time()
         logger.info(f"Save the model {model_path}")
 
         type_of_predictions = (
@@ -352,6 +353,9 @@ class ModelFramework:
 
         with open(os.path.join(model_path, "status.txt"), "w") as fout:
             fout.write("ALL OK!")
+        # I'm adding save time to total train time
+        # there is always save after the training
+        self.train_time += time.time() - start_time
 
     def model_markdown(self):
         long_name = AlgorithmsRegistry.get_long_name(

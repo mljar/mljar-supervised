@@ -85,10 +85,10 @@ class LearningCurves:
                 label=f"Fold {l+1}, train",
             )
             plt.plot(df.iteration, df.test, color=colors[l], label=f"Fold {l+1}, test")
-            
+
             best_iter = df.test.argmin()
-            plt.axvline(best_iter,color=colors[l],alpha=0.3)
-            
+            plt.axvline(best_iter, color=colors[l], alpha=0.3)
+
         if trees_in_iteration is not None:
             plt.xlabel("#Trees")
         else:

@@ -26,7 +26,7 @@ class EDATest(unittest.TestCase):
             explain_level=2,
         )
 
-        X, y = datasets.make_classification(n_samples=100, n_features=5,)
+        X, y = datasets.make_classification(n_samples=100, n_features=5)
 
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
         y = pd.Series(y, name="class")

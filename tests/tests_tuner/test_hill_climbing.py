@@ -61,7 +61,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             golden_features=False,
             feature_selection=False,
             train_ensemble=False,
-            stack_models=False
+            stack_models=False,
         )
         ind = 121
         score = 0.1
