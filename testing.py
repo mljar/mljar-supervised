@@ -41,7 +41,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 # # print(X_train.head)
 automl = AutoML()
 check_estimator(automl)
-# automl.fit(X_train, y_train)
+#automl.fit(X_train, y_train)
 
 # s = pd.Series(list("x1x2x3y"))
 # df = pd.read_excel("output_test_multi.xlsx")

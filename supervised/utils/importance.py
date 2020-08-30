@@ -40,7 +40,6 @@ class PermutationImportance:
         metric_name=None,
         ml_task=None,
     ):
-
         # for scoring check https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
         if ml_task == BINARY_CLASSIFICATION:
             scoring = log_loss_scorer

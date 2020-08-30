@@ -8,6 +8,7 @@ import pandas as pd
 import logging
 from tabulate import tabulate
 from copy import deepcopy
+from abc import ABC
 
 from varname import nameof
 
@@ -35,7 +36,7 @@ from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
-from supervised.utils.decorators import (
+from supervised.utils.data_validation import (
     check_positive_integer,
     check_greater_than_zero_integer,
     check_bool,
@@ -49,279 +50,22 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class AutoML(BaseEstimator):
-    """
-    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
-
-    Provides scikit-learn API compatibily
-
-    Parameters
-    ----------
-
-    mode : str {"Explain", "Perform", "Compete"}, optional, default="Explain"
-        Defines the goal and how intensive the AutoML search will be.
-        There are three available modes:
-        - `Explain` : To to be used when the user wants to explain and understand the data.
-            - Uses 75%/25% train/test split.
-            - Uses the following models: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `XGBoost`, `Artificial Neural Network`, and `Ensemble`.
-            - Has full explanations in reports: learning curves, importance plots, and SHAP plots.
-        - `Perform` : To be used when the user wants to train a model that will be used in real-life use cases.
-            - Uses 5-fold CV (Cross-Validation).
-            - Uses the following models: `Linear`, `Random Forest`, `LightGBM`, `XGBoost`, `CatBoost`, `Artificial Neural Network`, and `Ensemble`.
-            - Has learning curves and importance plots in reports.
-        - `Compete` : To be used for machine learning competitions (maximum performance).
-            - Uses 10-fold CV (Cross-Validation).
-            - Uses the following models: `Linear`, `DecisionTree`, `Random Forest`, `Extra Trees`, `XGBoost`, `CatBoost`, `Artificial Neural Network`,
-                `Artificial Neural Network`, `Nearest Neighbors`, `Ensemble`, and `Stacking`.
-            - It has only learning curves in the reports.
-
-    results_path : str, optional, default=None
-        The path with results. If None, then the name of directory will be generated with the template: AutoML_{number},
-        where the number can be from 1 to 1,000 - depends which direcory name will be available.
-        If the `results_path` will point to directory with AutoML results (`params.json` must be present),
-        then all models will be loaded.
-
-    total_time_limit : int or None, optional, default=1800
-        The time limit in seconds for AutoML training. If None, then
-        `model_time_limit` is not used.
-
-    model_time_limit : int, optional, default=None
-        The time limit for training a single model, in seconds.
-        If `model_time_limit` is set, the `total_time_limit` is not respected.
-        The single model can contain several learners. The time limit for subsequent learners is computed based on `model_time_limit`.
-        For example, in the case of 10-fold cross-validation, one model will have 10 learners.
-        The `model_time_limit` is the time for all 10 learners.
-
-    algorithms : list of str
-        The list of algorithms that will be used in the training. The algorithms can be:
-        [
-            "Baseline",
-            "Linear",
-            "Decision Tree",
-            "Random Forest",
-            "Extra Trees",
-            "LightGBM",
-            "Xgboost",
-            "CatBoost",
-            "Neural Network",
-            "Nearest Neighbors",
-        ]
-
-    tuning_mode :  str {"Normal", "Sport", "Insane", "Perfect"}, default="Normal"
-        The mode for tuning. The names are kept the same as `MLjar web application <https://mljar.com>`
-        Each mode describe how many models will be checked:
-        - `Normal` : about 5-10 models of each algorithm will be trained,
-        - `Sport` : about 10-15 models of each algorithm will be trained,
-        - `Insane` : about 15-20 models of each algorithm will be trained,
-        - `Perfect` : about 25-35 models of each algorithm will be trained.
-        You can also set how many models will be trained with `set_advanced` method.
-
-    train_ensemble : bool, default=True
-        Whether an ensemble gets created at the end of the training.
-
-    stack_models : bool, default=True
-        Whether a models stack gets created at the end of the training. Stack level is 1.
-
-    eval_metric : str, default=None
-        The metric to be optimized.
-        If None, then:
-            - `logloss` is used for classifications taks.
-            - `rmse` is used for regression taks.
-        .. note:: Still not implemented, please left `None`
-
-    validation : JSON, default=None
-        The JSON with validation type. Right now only Cross-Validation is supported.
-        Example::
-
-        {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
-
-    verbose : int, default=0
-        Controls the verbosity when fitting and predicting.
-        .. note:: Still not implemented, please left `None`
-
-    ml_task : str {"binary_classification", "multiclass_classification", "regression"} or None, default=None
-        If left `None` AutoML will try to guess the task based on target values.
-        If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
-        If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
-        In all other casses, the task is set to `"regression"`.
-
-    explain_level : int {0,1,2} or None, default=None
-        The level of explanations included to each model:
-        - if `explain_level` is `0` no explanations are produced.
-        - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
-        - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
-        If left `None` AutoML will produce explanations based on the selected `mode`.
-
-    random_state : int, default=None
-        Controls the randomness of the MLjar Tuner
-
-    #TODO:Complete attribute description
-    Attributes
-    ----------
-    models : list
-        The list of built models
-    best_model : 'ModelFramework' or 'Ensemble'
-        The best model found by AutoML
-    fit_time : int
-        Duration of `fit()` method
-    models_train_time :
-
-    max_metrics :
-
-    confusion_matrix :
-
-    threshold : float
-        The threshold used in binary classification
-    metrics_details :
-        Details about metrics
-
-    X_train_path :
-
-    y_train_path :
-
-    X_validation_path :
-
-    y_validation_path :
-
-    data_info :
-
-    model_paths : list
-
-    stacked_models :
-
-    time_spend :
-
-    time_start :
-
-    all_params :
-
-    _init_params :
-
-
-    Examples
-    --------
-    Binary Classification Example:
-    >>> import pandas as pd
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.metrics import roc_auc_score
-    >>> from supervised import AutoML
-    >>> df = pd.read_csv(
-    ...        "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
-    ...       skipinitialspace=True
-    ...    )
-    >>> X_train, X_test, y_train, y_test = train_test_split(
-    ... df[df.columns[:-1]], df["income"], test_size=0.25
-    ... )
-    >>> automl = AutoML()
-    >>> automl.fit(X_train, y_train)
-    >>> y_pred_prob = automl.predict_proba(X_test)
-    >>> print(f"AUROC: {roc_auc_score(y_test, y_pred_prob):.2f}%")
-
-    Multi-Class Classification Example:
-    >>> import pandas as pd
-    >>> from sklearn.datasets import load_digits
-    >>> from sklearn.metrics import accuracy_score
-    >>> from sklearn.model_selection import train_test_split
-    >>> from supervised import AutoML
-    >>> digits = load_digits()
-    >>> X_train, X_test, y_train, y_test = train_test_split(
-    ...     pd.DataFrame(digits.data), digits.target, stratify=digits.target, test_size=0.25,
-    ...     random_state=123
-    ... )
-    >>> automl = AutoML(mode="Perform")
-    >>> automl.fit(X_train, y_train)
-    >>> y_pred = automl.predict(X_test)
-    >>> print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}%")
-
-    Regression Example:
-    >>> import numpy as np
-    >>> import pandas as pd
-    >>> from sklearn.datasets import load_boston
-    >>> from sklearn.model_selection import train_test_split
-    >>> from sklearn.metrics import mean_squared_error
-    >>> from supervised import AutoML
-    >>> housing = load_boston()
-    >>> X_train, X_test, y_train, y_test = train_test_split(
-    ...       pd.DataFrame(housing.data, columns=housing.feature_names),
-    ...       housing.target,
-    ...       test_size=0.25,
-    ...       random_state=123,
-    ... )
-    >>> automl = AutoML(mode="Compete")
-    >>> automl.fit(X_train, y_train)
-    >>> predictions = automl.predict(X_test)
-    >>> print("Test MSE:", mean_squared_error(y_test, predictions))
-
-    """
-
+class _AutoML(BaseEstimator, ABC):
     @property
     def is_fitted(self):
         return self._fit_level == "finished"
 
-    @property
-    def tuner_params(self):
+    def _get_tuner_params(
+        self, start_random_models, hill_climbing_steps, top_models_to_improve
+    ):
         return {
-            "start_random_models": self.start_random_models,
-            "hill_climbing_steps": self.hill_climbing_steps,
-            "top_models_to_improve": self.top_models_to_improve,
+            "start_random_models": start_random_models,
+            "hill_climbing_steps": hill_climbing_steps,
+            "top_models_to_improve": top_models_to_improve,
         }
 
-    def __init__(
-        self,
-        mode="Explain",
-        ml_task="auto",
-        tuning_mode="Normal",
-        results_path=None,
-        total_time_limit=30 * 60,
-        model_time_limit=None,
-        algorithms="auto",
-        train_ensemble=True,
-        stack_models="auto",
-        eval_metric="auto",
-        validation="auto",
-        verbose=0,
-        explain_level="auto",
-        golden_features="auto",
-        feature_selection="auto",
-        start_random_models="auto",
-        hill_climbing_steps="auto",
-        top_models_to_improve="auto",
-        random_state=1234,
-    ):
-        self.mode = mode
-        self.ml_task = ml_task
-        self.tuning_mode = tuning_mode
-        self.results_path = results_path
-        self.total_time_limit = total_time_limit
-        self.model_time_limit = model_time_limit
-        self.algorithms = algorithms
-        self.train_ensemble = train_ensemble
-        self.stack_models = stack_models
-        self.eval_metric = eval_metric
-        self.validation = validation
-        self.verbose = verbose
-        self.explain_level = explain_level
-        self.golden_features = golden_features
-        self.feature_selection = feature_selection
-        self.start_random_models = start_random_models
-        self.hill_climbing_steps = hill_climbing_steps
-        self.top_models_to_improve = top_models_to_improve
-        self.random_state = random_state
+    def __init__(self):
         logger.debug("AutoML.__init__")
-
-    def set_advanced(
-        self, start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0
-    ):
-        """
-        Advanced set of tuning parameters.
-
-        :param start_random_models: Number of not-so-random models to check for each algorithm.
-        :param hill_climbing_steps: Number of hill climbing steps during tuning.
-        :param top_models_to_improve: Number of top models (of each algorithm) which will be considered for improving in hill climbing steps.
-        """
-        self.start_random_models = start_random_models
-        self.hill_climbing_steps = hill_climbing_steps
-        self.top_models_to_improve = top_models_to_improve
 
     def load(self):
         logger.info("Loading AutoML models ...")
@@ -478,7 +222,7 @@ class AutoML(BaseEstimator):
 
         # prepare callbacks
         early_stop = EarlyStopping(
-            {"metric": {"name": self.eval_metric}, "log_to_dir": model_path}
+            {"metric": {"name": self._get_eval_metric()}, "log_to_dir": model_path}
         )
 
         learner_time_constraint = LearnerTimeConstraint(
@@ -879,65 +623,67 @@ class AutoML(BaseEstimator):
 
     def _validate_model(self):
         # All the necessary validation to params provided in __init__
+        # Any of the below methods CANNOT change the correspondent param value.
+        # Can only validate it
 
         # Validate `mode`
-        self._set_mode()
+        self._validate_mode()
 
         # Validate `ml_task` -> this needs to be on top, because some of the methods below depend on task type
-        self._set_ml_task()
+        self._validate_ml_task()
 
         # Validate `tuning_mode`
-        self._set_tuning_mode()
+        self._validate_tuning_mode()
 
-        # Validate `results_path`
-        self._set_results_path()
+        # Validate `path`
+        self._validate_path()
 
         # Validate `total_time_limit`
-        self._set_total_time_limit()
+        self._validate_total_time_limit()
 
         # Validate `model_time_limit`
-        self._set_model_time_limit()
+        self._validate_model_time_limit()
 
         # Validate `algorithms`
-        self._set_algorithms()
+        self._validate_algorithms()
 
         # Validate `train_ensemble`
-        self._set_train_ensemble()
+        self._validate_train_ensemble()
 
         # Validate `stack_models`
-        self._set_stack_models()
+        self._validate_stack_models()
 
         # Validate metrics
-        self._set_eval_metric()
+        self._validate_eval_metric()
 
         # Validate `validation`
-        self._set_validation()
+        self._validate_validation_strategy()
 
         # Validate `verbose`
-        self._set_verbose()
+        self._validate_verbose()
 
         # Validate `explain_level`
-        self._set_explain_level()
+        self._validate_explain_level()
 
         # Validate `golden_features`
-        self._set_golden_features()
+        self._validate_golden_features()
 
         # Validate `feature_selection`
-        self._set_feature_selection()
+        self._validate_feature_selection()
 
         # Validate `start_random_models`
-        self._set_start_random_models()
+        self._validate_start_random_models()
 
         # Validate `hill_climbing_steps`
-        self._set_hill_climbing_steps()
+        self._validate_hill_climbing_steps()
 
         # Validate `top_models_to_improve`
-        self._set_top_models_to_improve()
+        self._validate_top_models_to_improve()
 
         # Validate `random_state`
-        self._set_random_state()
+        self._validate_random_state()
 
-    def fit(self, X, y, X_validation=None, y_validation=None):
+    def _fit(self, X, y, X_validation=None, y_validation=None):
         """
         Fit the AutoML model.
         Parameters
@@ -955,8 +701,11 @@ class AutoML(BaseEstimator):
         X, y, X_validation, y_validation = self._build_dataframe(
             X, y, X_validation, y_validation
         )
-        # Set the classes_ attribute
-        self.classes_ = unique_labels(np.array(y))
+        # print(X)
+        # print(y)
+        self.n_classes=len(np.unique(y[~pd.isnull(y)]))
+        # self.classes_, _ = np.unique(y, return_inverse=True)
+        # print(self.classes_)
         # Validate model
         self._validate_model()
 
@@ -980,6 +729,83 @@ class AutoML(BaseEstimator):
         self._start_time = time.time()  # it will be updated in `fit` method
         self._all_params = {}
         ##########################
+
+        #  Check for all params that have 'auto' as default, and get their values.
+        # IMPORTANT: Can't set the new values directly to 'self.param', instead a
+        # new 'param' should receive the new value. This is because params that were given
+        # in __init__ can't be changed during fit. Otherwise, scikit-learn `check_estimator()`
+        # will fail.
+        # Also check for params with None default type
+
+        # `ml_task`
+        if isinstance(self.ml_task, str) and self.ml_task == "auto":
+            ml_task = self._get_ml_task()
+
+        # `results_path`
+        if self.path is None:
+            self.results_path = self._get_path()
+
+        # `algorithms`
+        if isinstance(self.algorithms, str) and self.algorithms == "auto":
+            algorithms = self._get_algorithms()
+
+        # `stack_models`
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            stack_models = self._get_stack_models()
+
+        # `eval_metric`
+        if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
+            eval_metric = self._get_eval_metric()
+
+        # `validation`
+        if (
+            isinstance(self.validation_strategy, str)
+            and self.validation_strategy == "auto"
+        ):
+            self.validation = self._get_validation_strategy()
+            if ml_task == REGRESSION:
+                del self.validation["stratify"]
+
+        # `explain_level`
+        if isinstance(self.explain_level, str) and self.explain_level == "auto":
+            explain_level = self._get_explain_level()
+
+        # `golden_features`
+        if isinstance(self.golden_features, str) and self.golden_features == "auto":
+            golden_features = self._get_golden_features()
+
+        # `feature_selection`
+        if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
+            feature_selection = self._get_feature_selection()
+
+        # `start_random_models`
+        if (
+            isinstance(self.start_random_models, str)
+            and self.start_random_models == "auto"
+        ):
+            start_random_models = self._get_start_random_models()
+
+        # `hill_climbing_steps`
+        if (
+            isinstance(self.hill_climbing_steps, str)
+            and self.hill_climbing_steps == "auto"
+        ):
+            hill_climbing_steps = self._get_hill_climbing_steps()
+
+        # `top_models_to_improve`
+        if (
+            isinstance(self.top_models_to_improve, str)
+            and self.top_models_to_improve == "auto"
+        ):
+            top_models_to_improve = self._get_top_models_to_improve()
+
+        print(f"ML task to be solved: {ml_task}")
+        # Set '_estimator_type' for sklearn api
+        if ml_task == BINARY_CLASSIFICATION or ml_task == MULTICLASS_CLASSIFICATION:
+            self._estimator_type = "classifier"
+        else:
+            self._estimator_type = "regressor"
+
         try:
 
             self.load_progress()
@@ -988,39 +814,35 @@ class AutoML(BaseEstimator):
 
             ## EDA
             if self.explain_level == 2:
-                if not os.path.exists(os.path.join(self.results_path, "EDA")):
-                    os.mkdir(os.path.join(self.results_path, "EDA"))
+                if not os.path.exists(os.path.join(results_path, "EDA")):
+                    os.mkdir(os.path.join(results_path, "EDA"))
                 eda_path = os.path.join(self.results_path, "EDA")
 
                 EDA.compute(X, y, eda_path)
 
-            self._set_ml_task()
-
-            # Useless lines?
-            # if X_train is not None:
-            #     X_train = X_train.copy()
-
             self._save_data(X, y, X_validation, y_validation)
 
+            # Produces error in `check_estimator()`
             # if self.ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
             #     self._check_imbalanced(y_train)
 
-            tuner = MljarTuner(
-                self.tuner_params,
-                self.algorithms,
-                self.ml_task,
+            self.tuner = MljarTuner(
+                self._get_tuner_params(
+                    start_random_models, hill_climbing_steps, top_models_to_improve
+                ),
+                algorithms,
+                ml_task,
                 self.validation,
-                self.explain_level,
+                explain_level,
                 self.data_info,
-                self.golden_features,
-                self.feature_selection,
+                golden_features,
+                feature_selection,
                 self.train_ensemble,
-                self.stack_models,
+                stack_models,
                 self.random_state,
             )
-            self.tuner = tuner
 
-            steps = tuner.steps()
+            steps = self.tuner.steps()
 
             for step in steps:
                 self._fit_level = step
@@ -1034,12 +856,10 @@ class AutoML(BaseEstimator):
                 if step in self._all_params:
                     generated_params = self._all_params[step]
                 else:
-                    generated_params = tuner.generate_params(
+                    generated_params = self.tuner.generate_params(
                         step, self._models, self.results_path, self._stacked_models
                     )
-                if generated_params is None:
-                    continue
-                if generated_params:
+                if generated_params is not None:
                     print("-" * 72)
                     print(f"{step} with {len(generated_params)} models to train ...")
 
@@ -1116,6 +936,7 @@ class AutoML(BaseEstimator):
 
     def _base_predict(self, X):
 
+        check_is_fitted(self)
         # Ensure X is a dataframe, discard the rest
         X, _, _, _ = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
@@ -1169,24 +990,7 @@ class AutoML(BaseEstimator):
         else:
             return predictions
 
-    # @fit_required
-    def predict(self, X):
-        """
-        Computes predictions from AutoML best model.
-        Parameters
-        ----------
-        X : pandas.DataFrame
-            The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
-        Returns
-        -------
-        predictions : numpy.ndarray
-            One-dimensional array of class label for each object.
-        Raises
-        ------
-        AutoMLException
-            The input data doesn't have the same columns as data used for training.
-            Model has not yet been fitted.
-        """
+    def _predict(self, X):
 
         predictions = self._base_predict(X)
 
@@ -1199,32 +1003,11 @@ class AutoML(BaseEstimator):
             else predictions["prediction"].to_numpy()
         )
 
-    # @fit_required
-    def predict_proba(self, X):
-        """
-        Computes class probabilities from AutoML best model. This method can only be used for classification ML task.
-
-        Parameters
-        ----------
-        X : pandas.DataFrame
-            The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
-
-        Returns
-        -------
-        predictions : numpy.ndarray of shape (n_samples, n_classes)
-            Matrix of containing class probabilities of the input samples
-
-        Raises
-        ------
-        AutoMLException
-            The input data doesn't have the same columns as data used for training.
-            Model has not yet been fitted.
-
-        """
+    def _predict_proba(self, X):
         # Check is task type is correct
         if self.ml_task == REGRESSION:
             raise AutoMLException(
-                f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self.ml_task}'."
+                f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._get_ml_task()}'."
             )
 
         # Make and return predictions
@@ -1236,46 +1019,6 @@ class AutoML(BaseEstimator):
         # classification the label column does not exist when `predict()` is called. This
         # parameter simulates a drop if column exists behavior.
         return self._base_predict(X).drop(["label"], axis=1, errors="ignore").to_numpy()
-
-    # def get_params(self, deep=True):
-    #     """
-    #     Get parameters from AutoML model.
-
-    #     Parameters
-    #     ----------
-    #     deep : bool, default=True
-    #         If True, will return the parameters for this estimator and
-    #         contained subobjects that are estimators.
-    #     Returns
-    #     -------
-    #     params : dict
-    #         Dictionary of {param_key: param_value}
-    #     """
-    #     params = self._init_params.copy()
-    #     if deep:
-    #         return deepcopy(params)
-    #     else:
-    #         return params
-
-    # @no_fit_required
-    # def set_params(self, **params):
-    #     """
-    #     Get parameters for this estimator.
-
-    #     Parameters
-    #     ----------
-    #     deep : bool, default=True
-    #         If True, will return the parameters for this estimator and
-    #         contained subobjects that are estimators.
-    #     Returns
-    #     -------
-    #     params : dict
-    #         Dictionary of {param_key: param_value}
-    #     """
-    #     for key, value in params.items():
-    #         self._init_params[key] = value
-
-    #     return self
 
     def to_json(self):
         if self.best_model is None:
@@ -1299,300 +1042,637 @@ class AutoML(BaseEstimator):
 
         self.ml_task = json_data.get("ml_task")
 
-    def _set_mode(self):
-        valid_modes = ["Explain", "Perform", "Compete"]
-        if self.mode not in valid_modes:
-            raise ValueError(
-                f"Expected `{nameof(self.mode)}` to be {' or '.join(valid_modes)}, got '{self.mode}'"
-            )
-        print(f"Current AutoML mode: { self.mode}")
-
-    def _set_ml_task(self):
-        # if not set, guess
-        if self.ml_task == "auto":
-            classes_number = len(self.classes_)
-            if classes_number == 2:
-                self.ml_task = BINARY_CLASSIFICATION
-            elif classes_number <= 20:
-                self.ml_task = MULTICLASS_CLASSIFICATION
-            else:
-                self.ml_task = REGRESSION
-        # validation
-        if self.ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
-            raise Exception(
-                "Unknow Machine Learning task '{}'."
-                " Supported tasks are: {}".format(
-                    self.ml_task, AlgorithmsRegistry.get_supported_ml_tasks()
-                )
-            )
-        if self.ml_task == REGRESSION:
-            if "stratify" in self.validation:
-                del self.validation["stratify"]
-        logger.info("AutoML task to be solved: {}".format(self.ml_task))
-        print(f"AutoML task to be solved: { self.ml_task}")
-
-        # Set '_estimator_type' for sklearn api
-        if (
-            self.ml_task == BINARY_CLASSIFICATION
-            or self.ml_task == MULTICLASS_CLASSIFICATION
-        ):
-            self._estimator_type = "classifier"
+    def _get_ml_task(self):
+        classes_number = self.n_classes
+        if classes_number == 2:
+            return BINARY_CLASSIFICATION
+        elif classes_number <= 20:
+            return MULTICLASS_CLASSIFICATION
         else:
-            self._estimator_type = "regressor"
+            return REGRESSION
 
-    def _set_tuning_mode(self):
-        # Validate tuning modes
-        valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
-        if self.tuning_mode not in valid_tuning_modes:
-            raise ValueError(
-                f"Expected `{nameof(self.tuning_mode)}` to be {'or'.join(valid_tuning_modes)}, got {self.tuning_mode}"
-            )
-        print(f"Current AutoML tuning mode: { self.tuning_mode}")
+    def _get_path(self):
+        path = self.path
 
-    def _set_results_path(self):
-        if self.results_path is None:
-            found = False
+        if path is None:
             for i in range(1, 10001):
-                self.results_path = f"AutoML_{i}"
-                if not os.path.exists(self.results_path):
-                    found = True
-                    break
-            if not found:
-                raise AutoMLException("Cannot create directory for AutoML results")
+                name = f"AutoML_{i}"
+                if not os.path.exists(name):
+                    # Make dir and return dir name
+                    os.mkdir(name)
+                    print(f"AutoML directory: {name}")
+                    return name
+            # If it got here, could not create, raise expection
+            raise AutoMLException("Cannot create directory for AutoML results")
 
-        if os.path.exists(self.results_path) and os.path.exists(
-            os.path.join(self.results_path, "params.json")
-        ):
-            print(f"Directory {self.results_path} already exists")
+        # Dir exists and can be loaded
+        if os.path.exists(path) and os.path.exists(os.path.join(path, "params.json")):
+            print(f"Directory '{path}' already exists. Loading it.")
             self.load()
-        elif self.results_path is not None:
-
-            if not os.path.exists(self.results_path):
-                print(f"Create directory {self.results_path}")
-                try:
-                    os.mkdir(self.results_path)
-                except Exception as e:
-                    raise AutoMLException(
-                        f"Cannot create directory {self.results_path}"
-                    )
-            elif os.path.exists(self.results_path) and len(
-                os.listdir(self.results_path)
-            ):
-                raise AutoMLException(
-                    f"Cannot set directory for AutoML. Directory {self.results_path} is not empty."
-                )
-        else:
-            raise AutoMLException("Cannot set directory for AutoML results")
-
-    def _set_total_time_limit(self):
-        check_greater_than_zero_integer(
-            self.total_time_limit, nameof(self.total_time_limit)
-        )
-
-    def _set_model_time_limit(self):
-        if self.model_time_limit is not None:
-            check_greater_than_zero_integer(
-                self.model_time_limit, nameof(self.model_time_limit)
+            return
+        # Dir does not exist, create it
+        elif not os.path.exists(path):
+            os.mkdir(path)
+            print(f"AutoML directory: {path}")
+            return path
+        # Dir exists, but has no params.json and is not empty. Cannot use this dir
+        elif os.path.exists(path) and len(os.listdir(path)):
+            raise ValueError(
+                f"Cannot set directory for AutoML. Directory {self._results_path} is not empty."
             )
 
-    def _set_algorithms(self):
-        if self.algorithms == "auto":
-            if self.mode == "Explain":
-                self.algorithms = [
-                    "Baseline",
-                    "Linear",
-                    "Decision Tree",
-                    "Random Forest",
-                    "Xgboost",
-                ]
-            if self.mode == "Perform":
-                self.algorithms = [
-                    "Linear",
-                    "Random Forest",
-                    "LightGBM",
-                    "Xgboost",
-                    "CatBoost",
-                    "Neural Network",
-                ]
-            if self.mode == "Compete":
-                self.algorithms = [
-                    "Linear",
-                    "Decision Tree",
-                    "Random Forest",
-                    "Extra Trees",
-                    "LightGBM",
-                    "Xgboost",
-                    "CatBoost",
-                    "Neural Network",
-                    "Nearest Neighbors",
-                ]
-        for a in self.algorithms:
-            if a not in list(AlgorithmsRegistry.registry[self.ml_task].keys()):
-                raise AutoMLException(
-                    f"The algorithm {a} is not allowed to use for ML task: {self.ml_task}. Allowed algorithms: {list(AlgorithmsRegistry.registry[self.ml_task].keys())}"
-                )
-        logger.info(f"AutoML will use algorithms: {self.algorithms}")
-        print(f"AutoML will use algorithms: {self.algorithms}")
+        raise AutoMLException("Cannot set directory for AutoML results")
 
-    def _set_train_ensemble(self):
-        # `train_ensemble` defaults to True, no further checking required
-        check_bool(self.train_ensemble, nameof(self.train_ensemble))
+    def _get_algorithms(self):
+        if self.mode == "Explain":
+            return [
+                "Baseline",
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Xgboost",
+                # "Neural Network"
+            ]
+        if self.mode == "Perform":
+            return [
+                "Linear",
+                "Random Forest",
+                "LightGBM",
+                "Xgboost",
+                "CatBoost",
+                "Neural Network",
+            ]
+        if self.mode == "Compete":
+            return [
+                "Linear",
+                "Decision Tree",
+                "Random Forest",
+                "Extra Trees",
+                "LightGBM",
+                "Xgboost",
+                "CatBoost",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]
 
-    def _set_stack_models(self):
-        # `stack_models` defaults to auto, which only enables it on `Compete` mode
-        if self.stack_models == "auto":
-            self.stack_models = True if self.mode == "Compete" else False
-        else:  # if not auto, check if input is valid bool
-            check_bool(self.stack_models, nameof(self.stack_models))
+    def _get_stack_models(self):
+        return True if self.mode == "Compete" else False
 
-    def _set_eval_metric(self):
-        """ Set and validate the metric to be optimized. """
-        if self.ml_task == BINARY_CLASSIFICATION:
-            if self.eval_metric == "auto":
-                self.eval_metric = "logloss"
-            elif self.eval_metric not in ["logloss", "auc"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self.eval_metric, self.ml_task
-                    )
-                )
+    def _get_eval_metric(self):
+        if self._get_ml_task() == BINARY_CLASSIFICATION:
+            return "logloss"
+        elif self._get_ml_task() == MULTICLASS_CLASSIFICATION:
+            return "logloss"
+        elif self._get_ml_task() == REGRESSION:
+            return "rmse"
 
-        elif self.ml_task == MULTICLASS_CLASSIFICATION:
-            if self.eval_metric == "auto":
-                self.eval_metric = "logloss"
-            elif self.eval_metric not in ["logloss"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self.eval_metric, self.ml_task
-                    )
-                )
-        elif self.ml_task == REGRESSION:
-            if self.eval_metric == "auto":
-                self.eval_metric = "rmse"
-            elif self.eval_metric not in ["rmse"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self.eval_metric, self.ml_task
-                    )
-                )
-
-        msg = f"AutoML will optimize for metric: {self.eval_metric}"
-        logger.info(msg)
-        print(msg)
-
-    def _set_validation(self):
-        if self.validation == "auto":
-            if self.mode == "Explain":
-                self.validation = {
-                    "validation_type": "split",
-                    "train_ratio": 0.75,
-                    "shuffle": True,
-                    "stratify": True,
-                }
+    def _get_validation_strategy(self):
+        strat = {}
+        if self.mode == "Explain":
+            strat = {
+                "validation_type": "split",
+                "train_ratio": 0.75,
+                "shuffle": True,
+                "stratify": True,
+            }
         elif self.mode == "Perform":
-            self.validation = {
+            strat = {
                 "validation_type": "kfold",
                 "k_folds": 5,
                 "shuffle": True,
                 "stratify": True,
             }
         elif self.mode == "Compete":
-            self.validation = {
+            strat = {
                 "validation_type": "kfold",
                 "k_folds": 10,
                 "shuffle": True,
                 "stratify": True,
             }
+        return strat
 
-        if self.validation["validation_type"] != "kfold" and self.stack_models:
-            raise AutoMLException(
-                "AutoML cannot stack models. Please set validation to 'kfold' to stack models."
+    def _get_explain_level(self):
+        if self.mode == "Explain":
+            return 2
+        if self.mode == "Perform":
+            return 1
+        if self.mode == "Compete":
+            return 0
+
+    def _get_golden_features(self):
+        if self.mode == "Explain":
+            return False
+        if self.mode == "Perform":
+            return True
+        if self.mode == "Compete":
+            return True
+
+    def _get_feature_selection(self):
+        if self.mode == "Explain":
+            return False
+        if self.mode == "Perform":
+            return True
+        if self.mode == "Compete":
+            return True
+
+    def _get_start_random_models(self):
+        if self.mode == "Explain":
+            return 1
+        if self.mode == "Perform":
+            return 5
+        if self.mode == "Compete":
+            return 10
+
+    def _get_hill_climbing_steps(self):
+        if self.mode == "Explain":
+            return 0
+        if self.mode == "Perform":
+            return 2
+        if self.mode == "Compete":
+            return 2
+
+    def _get_top_models_to_improve(self):
+        if self.mode == "Explain":
+            return 0
+        if self.mode == "Perform":
+            return 2
+        if self.mode == "Compete":
+            return 3
+
+    def _validate_mode(self):
+        """ Validates mode parameter"""
+        valid_modes = ["Explain", "Perform", "Compete"]
+        if self.mode not in valid_modes:
+            raise ValueError(
+                f"Expected `{nameof(self.mode)}` to be {' or '.join(valid_modes)}, got '{self.mode}'"
             )
-        # TODO: Implement further validations of validation
 
-    def _set_verbose(self):
-        check_positive_integer(self.verbose, nameof(self.verbose))
+    def _validate_ml_task(self):
+        """ Validates ml_task parameter"""
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            return
+        if self.ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
+            raise Exception(
+                f"Unknow Machine Learning task '{self._get_ml_task()}'. \
+                Supported tasks are: {AlgorithmsRegistry.get_supported_ml_tasks()}. \
+                You can also specify 'ml_task' to 'auto', so AutoML automatically guesses it."
+            )
 
-    def _set_explain_level(self):
-        valid_explain_levels = [0, 1, 2]
-        if self.explain_level == "auto":
-            if self.mode == "Explain":
-                self.explain_level = 2
-            if self.mode == "Perform":
-                self.explain_level = 1
-            if self.mode == "Compete":
-                self.explain_level = 0
-        else:
-            # Check if explain level is 0 or greater integer
-            if not (
-                isinstance(self.explain_level, int)
-                and self.explain_level in valid_explain_levels
-            ):
-                raise ValueError(
-                    f"Expected `{nameof(self.explain_level)}` to be {' or '.join([str(x) for x in valid_explain_levels])}, got '{self.explain_level}'"
+    def _validate_tuning_mode(self):
+        """ Validates tuning_mode parameter"""
+        valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
+        if self.tuning_mode not in valid_tuning_modes:
+            raise ValueError(
+                f"Expected `{nameof(self.tuning_mode)}` to be {'or'.join(valid_tuning_modes)}, got '{self.tuning_mode}''"
+            )
+
+    def _validate_path(self):
+        """ Validates path parameter"""
+        if self.path is None or isinstance(self.path, str):
+            return
+
+        raise ValueError(
+            f"Expected `{nameof(self.path)}` to be of type string, got '{type(self.path)}''"
+        )
+
+    def _validate_total_time_limit(self):
+        """ Validates total_time_limit parameter"""
+        check_greater_than_zero_integer(
+            self.total_time_limit, nameof(self.total_time_limit)
+        )
+
+    def _validate_model_time_limit(self):
+        """ Validates model_time_limit parameter"""
+        if self.model_time_limit is not None:
+            check_greater_than_zero_integer(
+                self.model_time_limit, nameof(self.model_time_limit)
+            )
+
+    def _validate_algorithms(self):
+        """ Validates algorithms parameter"""
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            return
+
+        for algo in self.algorithms:
+            if algo not in list(AlgorithmsRegistry.registry[self.ml_task].keys()):
+                raise AutoMLException(
+                    f"The algorithm {algo} is not allowed to use for ML task: {self.ml_task}. Allowed algorithms: {list(AlgorithmsRegistry.registry[self.ml_task].keys())}"
                 )
 
-    def _set_golden_features(self):
-        if self.golden_features == "auto":
-            if self.mode == "Explain":
-                self.golden_features = False
-            if self.mode == "Perform":
-                self.golden_features = True
-            if self.mode == "Compete":
-                self.golden_features = True
-        else:
-            check_bool(self.golden_features, nameof(self.golden_features))
+    def _validate_train_ensemble(self):
+        """ Validates train_ensemble parameter"""
+        # `train_ensemble` defaults to True, no further checking required
+        check_bool(self.train_ensemble, nameof(self.train_ensemble))
 
-    def _set_feature_selection(self):
-        if self.feature_selection == "auto":
-            if self.mode == "Explain":
-                self.feature_selection = False
-            if self.mode == "Perform":
-                self.feature_selection = True
-            if self.mode == "Compete":
-                self.feature_selection = True
-        else:
-            check_bool(self.feature_selection, nameof(self.feature_selection))
+    def _validate_stack_models(self):
+        """ Validates stack_models parameter"""
+        # `stack_models` defaults to "auto". If "auto" return, else check if is valid bool
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            return
 
-    def _set_start_random_models(self):
-        if self.start_random_models == "auto":
-            if self.mode == "Explain":
-                self.start_random_models = 1
-            if self.mode == "Perform":
-                self.start_random_models = 5
-            if self.mode == "Compete":
-                self.start_random_models = 10
-        else:
-            check_greater_than_zero_integer(
-                self.start_random_models, nameof(self.start_random_models)
+        check_bool(self.stack_models, nameof(self.stack_models))
+
+    def _validate_eval_metric(self):
+        """ Validates eval_metric parameter"""
+        # `stack_models` defaults to "auto". If not "auto", check if is valid bool
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            return
+
+        if (
+            self._get_ml_task() == BINARY_CLASSIFICATION
+            or self._get_ml_task() == MULTICLASS_CLASSIFICATION
+        ) and self.eval_metric != "logloss":
+            raise AutoMLException(
+                f"Metric {self.eval_metricself.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use 'log_loss'"
             )
 
-    def _set_hill_climbing_steps(self):
-        if self.hill_climbing_steps == "auto":
-            if self.mode == "Explain":
-                self.hill_climbing_steps = 0
-            if self.mode == "Perform":
-                self.hill_climbing_steps = 2
-            if self.mode == "Compete":
-                self.hill_climbing_steps = 2
-        else:
-            check_positive_integer(
-                self.hill_climbing_steps, nameof(self.hill_climbing_steps)
+        elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":
+            raise AutoMLException(
+                f"Metric {self.eval_metricself.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                Use 'rmse'"
             )
 
-    def _set_top_models_to_improve(self):
-        if self.top_models_to_improve == "auto":
-            if self.mode == "Explain":
-                self.top_models_to_improve = 0
-            if self.mode == "Perform":
-                self.top_models_to_improve = 2
-            if self.mode == "Compete":
-                self.top_models_to_improve = 3
-        else:
-            check_positive_integer(
-                self.top_models_to_improve, nameof(self.top_models_to_improve)
+    def _validate_validation_strategy(self):
+        """ Validates validation parameter"""
+        if (
+            isinstance(self.validation_strategy, str)
+            and self.validation_strategy == "auto"
+        ):
+            return
+        # TODO: Verify if it build correct json and has params
+
+    def _validate_verbose(self):
+        """ Validates verbose parameter"""
+        check_positive_integer(self.verbose, nameof(self.verbose))
+
+    def _validate_explain_level(self):
+        """ Validates explain_level parameter"""
+        if isinstance(self.explain_level, str) and self.explain_level == "auto":
+            return
+        valid_explain_levels = [0, 1, 2]
+        # Check if explain level is 0 or greater integer
+        if not (
+            isinstance(self.explain_level, int)
+            and self.explain_level in valid_explain_levels
+        ):
+            raise ValueError(
+                f"Expected `{nameof(self.explain_level)}` to be {' or '.join([str(x) for x in valid_explain_levels])}, got '{self.explain_level}'"
             )
 
-    def _set_random_state(self):
-        if self.random_state is not None:
-            check_positive_integer(self.random_state, nameof(self.random_state))
+    def _validate_golden_features(self):
+        """ Validates golden_features parameter"""
+        if isinstance(self.golden_features, str) and self.golden_features == "auto":
+            return
+        check_bool(self.golden_features, nameof(self.golden_features))
+
+    def _validate_feature_selection(self):
+        """ Validates feature_selection parameter"""
+        if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
+            return
+        check_bool(self.feature_selection, nameof(self.feature_selection))
+
+    def _validate_start_random_models(self):
+        """ Validates start_random_models parameter"""
+        if (
+            isinstance(self.start_random_models, str)
+            and self.start_random_models == "auto"
+        ):
+            return
+        check_greater_than_zero_integer(
+            self.start_random_models, nameof(self.start_random_models)
+        )
+
+    def _validate_hill_climbing_steps(self):
+        """ Validates hill_climbing_steps parameter"""
+        if (
+            isinstance(self.hill_climbing_steps, str)
+            and self.hill_climbing_steps == "auto"
+        ):
+            return
+        check_positive_integer(
+            self.hill_climbing_steps, nameof(self.hill_climbing_steps)
+        )
+
+    def _validate_top_models_to_improve(self):
+        """ Validates top_models_to_improve parameter"""
+        if (
+            isinstance(self.top_models_to_improve, str)
+            and self.top_models_to_improve == "auto"
+        ):
+            return
+        check_positive_integer(
+            self.top_models_to_improve, nameof(self.top_models_to_improve)
+        )
+
+    def _validate_random_state(self):
+        """ Validates random_state parameter"""
+        check_positive_integer(self.random_state, nameof(self.random_state))
+
+
+class AutoML(_AutoML):
+
+    """
+    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
+
+    Provides scikit-learn API compatibily
+
+    Parameters
+    ----------
+
+    mode : str {"Explain", "Perform", "Compete"}, optional, default="Explain"
+        Defines the goal and how intensive the AutoML search will be.
+        There are three available modes:
+        - `Explain` : To to be used when the user wants to explain and understand the data.
+            - Uses 75%/25% train/test split.
+            - Uses the following models: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `XGBoost`, `Artificial Neural Network`, and `Ensemble`.
+            - Has full explanations in reports: learning curves, importance plots, and SHAP plots.
+        - `Perform` : To be used when the user wants to train a model that will be used in real-life use cases.
+            - Uses 5-fold CV (Cross-Validation).
+            - Uses the following models: `Linear`, `Random Forest`, `LightGBM`, `XGBoost`, `CatBoost`, `Artificial Neural Network`, and `Ensemble`.
+            - Has learning curves and importance plots in reports.
+        - `Compete` : To be used for machine learning competitions (maximum performance).
+            - Uses 10-fold CV (Cross-Validation).
+            - Uses the following models: `Linear`, `DecisionTree`, `Random Forest`, `Extra Trees`, `XGBoost`, `CatBoost`, `Artificial Neural Network`,
+                `Artificial Neural Network`, `Nearest Neighbors`, `Ensemble`, and `Stacking`.
+            - It has only learning curves in the reports.
+
+    results_path : str, optional, default=None
+        The path with results. If None, then the name of directory will be generated with the template: AutoML_{number},
+        where the number can be from 1 to 1,000 - depends which direcory name will be available.
+        If the `results_path` will point to directory with AutoML results (`params.json` must be present),
+        then all models will be loaded.
+
+    total_time_limit : int or None, optional, default=1800
+        The time limit in seconds for AutoML training. If None, then
+        `model_time_limit` is not used.
+
+    model_time_limit : int, optional, default=None
+        The time limit for training a single model, in seconds.
+        If `model_time_limit` is set, the `total_time_limit` is not respected.
+        The single model can contain several learners. The time limit for subsequent learners is computed based on `model_time_limit`.
+        For example, in the case of 10-fold cross-validation, one model will have 10 learners.
+        The `model_time_limit` is the time for all 10 learners.
+
+    algorithms : list of str
+        The list of algorithms that will be used in the training. The algorithms can be:
+        [
+            "Baseline",
+            "Linear",
+            "Decision Tree",
+            "Random Forest",
+            "Extra Trees",
+            "LightGBM",
+            "Xgboost",
+            "CatBoost",
+            "Neural Network",
+            "Nearest Neighbors",
+        ]
+
+    tuning_mode :  str {"Normal", "Sport", "Insane", "Perfect"}, default="Normal"
+        The mode for tuning. The names are kept the same as `MLjar web application <https://mljar.com>`
+        Each mode describe how many models will be checked:
+        - `Normal` : about 5-10 models of each algorithm will be trained,
+        - `Sport` : about 10-15 models of each algorithm will be trained,
+        - `Insane` : about 15-20 models of each algorithm will be trained,
+        - `Perfect` : about 25-35 models of each algorithm will be trained.
+        You can also set how many models will be trained with `set_advanced` method.
+
+    train_ensemble : bool, default=True
+        Whether an ensemble gets created at the end of the training.
+
+    stack_models : bool, default=True
+        Whether a models stack gets created at the end of the training. Stack level is 1.
+
+    eval_metric : str, default=None
+        The metric to be optimized.
+        If None, then:
+            - `logloss` is used for classifications taks.
+            - `rmse` is used for regression taks.
+        .. note:: Still not implemented, please left `None`
+
+    validation : JSON, default=None
+        The JSON with validation type. Right now only Cross-Validation is supported.
+        Example::
+
+        {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
+
+    verbose : int, default=0
+        Controls the verbosity when fitting and predicting.
+        .. note:: Still not implemented, please left `None`
+
+    ml_task : str {"binary_classification", "multiclass_classification", "regression"} or None, default=None
+        If left `None` AutoML will try to guess the task based on target values.
+        If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
+        If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
+        In all other casses, the task is set to `"regression"`.
+
+    explain_level : int {0,1,2} or None, default=None
+        The level of explanations included to each model:
+        - if `explain_level` is `0` no explanations are produced.
+        - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
+        - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
+        If left `None` AutoML will produce explanations based on the selected `mode`.
+
+    random_state : int, default=None
+        Controls the randomness of the MLjar Tuner
+
+    #TODO:Complete attribute description
+    Attributes
+    ----------
+    models : list
+        The list of built models
+    best_model : 'ModelFramework' or 'Ensemble'
+        The best model found by AutoML
+    fit_time : int
+        Duration of `fit()` method
+    models_train_time :
+
+    max_metrics :
+
+    confusion_matrix :
+
+    threshold : float
+        The threshold used in binary classification
+    metrics_details :
+        Details about metrics
+
+    X_train_path :
+
+    y_train_path :
+
+    X_validation_path :
+
+    y_validation_path :
+
+    data_info :
+
+    model_paths : list
+
+    stacked_models :
+
+    time_spend :
+
+    time_start :
+
+    all_params :
+
+    _init_params :
+
+
+    Examples
+    --------
+    Binary Classification Example:
+    >>> import pandas as pd
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.metrics import roc_auc_score
+    >>> from supervised import AutoML
+    >>> df = pd.read_csv(
+    ...        "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
+    ...       skipinitialspace=True
+    ...    )
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ... df[df.columns[:-1]], df["income"], test_size=0.25
+    ... )
+    >>> automl = AutoML()
+    >>> automl.fit(X_train, y_train)
+    >>> y_pred_prob = automl.predict_proba(X_test)
+    >>> print(f"AUROC: {roc_auc_score(y_test, y_pred_prob):.2f}%")
+
+    Multi-Class Classification Example:
+    >>> import pandas as pd
+    >>> from sklearn.datasets import load_digits
+    >>> from sklearn.metrics import accuracy_score
+    >>> from sklearn.model_selection import train_test_split
+    >>> from supervised import AutoML
+    >>> digits = load_digits()
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...     pd.DataFrame(digits.data), digits.target, stratify=digits.target, test_size=0.25,
+    ...     random_state=123
+    ... )
+    >>> automl = AutoML(mode="Perform")
+    >>> automl.fit(X_train, y_train)
+    >>> y_pred = automl.predict(X_test)
+    >>> print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}%")
+
+    Regression Example:
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.metrics import mean_squared_error
+    >>> from supervised import AutoML
+    >>> housing = load_boston()
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...       pd.DataFrame(housing.data, columns=housing.feature_names),
+    ...       housing.target,
+    ...       test_size=0.25,
+    ...       random_state=123,
+    ... )
+    >>> automl = AutoML(mode="Compete")
+    >>> automl.fit(X_train, y_train)
+    >>> predictions = automl.predict(X_test)
+    >>> print("Test MSE:", mean_squared_error(y_test, predictions))
+
+    """
+
+    def __init__(
+        self,
+        mode="Explain",
+        ml_task="auto",
+        tuning_mode="Normal",
+        path=None,
+        total_time_limit=30 * 60,
+        model_time_limit=None,
+        algorithms="auto",
+        train_ensemble=True,
+        stack_models="auto",
+        eval_metric="auto",
+        validation_strategy="auto",
+        verbose=0,
+        explain_level="auto",
+        golden_features="auto",
+        feature_selection="auto",
+        start_random_models="auto",
+        hill_climbing_steps="auto",
+        top_models_to_improve="auto",
+        random_state=1234,
+    ):
+        super(AutoML, self).__init__()
+        self.mode = mode
+        self.ml_task = ml_task
+        self.tuning_mode = tuning_mode
+        self.path = path
+        self.total_time_limit = total_time_limit
+        self.model_time_limit = model_time_limit
+        self.algorithms = algorithms
+        self.train_ensemble = train_ensemble
+        self.stack_models = stack_models
+        self.eval_metric = eval_metric
+        self.validation_strategy = validation_strategy
+        self.verbose = verbose
+        self.explain_level = explain_level
+        self.golden_features = golden_features
+        self.feature_selection = feature_selection
+        self.start_random_models = start_random_models
+        self.hill_climbing_steps = hill_climbing_steps
+        self.top_models_to_improve = top_models_to_improve
+        self.random_state = random_state
+
+    def fit(self, X, y, X_validation=None, y_validation=None):
+        """
+        Fit the AutoML model.
+        Parameters
+        ----------
+        X_train : list or numpy.ndarray or pandas.DataFrame
+            Training data
+        y_train : list or numpy.ndarray or pandas.DataFrame
+            Training targets
+        X_validation : list or numpy.ndarray or pandas.DataFrame
+            Validation data
+        y_validation : list or numpy.ndarray or pandas.DataFrame
+            Targets for validation data
+        """
+        return self._fit(X, y, X_validation, y_validation)
+
+    def predict(self, X):
+        """
+        Computes predictions from AutoML best model.
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
+        Returns
+        -------
+        predictions : numpy.ndarray
+            One-dimensional array of class label for each object.
+        Raises
+        ------
+        AutoMLException
+            The input data doesn't have the same columns as data used for training.
+            Model has not yet been fitted.
+        """
+        return self._predict(X)
+
+    def predict_proba(self, X):
+        """
+        Computes class probabilities from AutoML best model. This method can only be used for classification ML task.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame
+            The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
+
+        Returns
+        -------
+        predictions : numpy.ndarray of shape (n_samples, n_classes)
+            Matrix of containing class probabilities of the input samples
+
+        Raises
+        ------
+        AutoMLException
+            The input data doesn't have the same columns as data used for training.
+            Model has not yet been fitted.
+
+        """
+        return self._predict_proba(X)

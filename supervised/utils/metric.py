@@ -52,7 +52,7 @@ class Metric(object):
         elif self.name == "mae":
             self.metric = mean_absolute_error
         else:
-            raise MetricException("Unknown metric {0}".format(self.name))
+            raise MetricException(f"Unknown metric '{self.name}'")
 
     def __call__(self, y_true, y_predicted):
 
