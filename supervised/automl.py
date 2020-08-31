@@ -13,8 +13,7 @@ from copy import deepcopy
 from varname import nameof
 
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
+from sklearn.utils.validation import check_array
 from sklearn.metrics import r2_score, accuracy_score
 
 from supervised.algorithms.registry import AlgorithmsRegistry
