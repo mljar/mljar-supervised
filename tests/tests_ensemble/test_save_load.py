@@ -42,4 +42,4 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a2 = AutoML(results_path=self.automl_dir)
         p2 = a2.predict(X)
 
-        self.assertTrue((p["label"] == p2["label"]).all())
+        self.assertTrue((p == p2).all())
