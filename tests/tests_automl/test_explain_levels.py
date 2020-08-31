@@ -38,8 +38,8 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "shuffle": True,
                 "stratify": True,
             },
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_classification(
             n_samples=100,
@@ -108,8 +108,8 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "stratify": True,
             },
             explain_level=0,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
@@ -175,8 +175,8 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "stratify": True,
             },
             explain_level=1,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
@@ -235,8 +235,8 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 "stratify": True,
             },
             explain_level=2,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0

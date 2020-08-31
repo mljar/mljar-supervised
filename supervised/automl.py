@@ -438,7 +438,7 @@ class _AutoML(BaseEstimator, ABC):
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
     # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
-    def _build_dataframe(self, X, y):
+    def _build_dataframe(self, X, y=None):
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
         if not isinstance(X, pd.DataFrame):
             # Validate X as array
