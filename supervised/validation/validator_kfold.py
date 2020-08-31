@@ -42,11 +42,11 @@ class KFoldValidator(BaseValidator):
             )
 
         self._results_path = self.params.get("results_path")
-        self._X_train_path = self.params.get("X_train_path")
-        self._y_train_path = self.params.get("y_train_path")
+        self._X_path = self.params.get("X_path")
+        self._y_path = self.params.get("y_path")
 
-        if self._X_train_path is None or self._y_train_path is None:
-            raise AutoMLException("No training data path set in KFoldValidator params")
+        if self._X_path is None or self._y_path is None:
+            raise AutoMLException("No data path set in KFoldValidator params")
 
         folds_path = os.path.join(self._results_path, "folds")
 
@@ -54,8 +54,8 @@ class KFoldValidator(BaseValidator):
 
             os.mkdir(folds_path)
 
-            X = pd.read_parquet(self._X_train_path)
-            y = pd.read_parquet(self._y_train_path)
+            X = pd.read_parquet(self._X_path)
+            y = pd.read_parquet(self._y_path)
             y = y["target"]
 
             if isinstance(y[0], bytes):
@@ -97,8 +97,8 @@ class KFoldValidator(BaseValidator):
         train_index = np.load(train_index_file)
         validation_index = np.load(validation_index_file)
 
-        X = pd.read_parquet(self._X_train_path)
-        y = pd.read_parquet(self._y_train_path)
+        X = pd.read_parquet(self._X_path)
+        y = pd.read_parquet(self._y_path)
         y = y["target"]
 
         return (
