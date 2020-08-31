@@ -639,7 +639,7 @@ class _AutoML(BaseEstimator, ABC):
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
                 "ml_task": self._ml_task,
-                "optimize_metric": self._eval_metric,
+                "eval_metric": self._eval_metric,
                 "saved": self._model_paths,
             }
             if self._stacked_models is not None:
@@ -807,7 +807,7 @@ class _AutoML(BaseEstimator, ABC):
         # Dir exists and can be loaded
         if os.path.exists(path) and os.path.exists(os.path.join(path, "params.json")):
             self.load(path)
-            return
+            return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
             self.create_dir(path)
