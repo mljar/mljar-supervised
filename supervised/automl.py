@@ -69,16 +69,14 @@ class _AutoML(BaseEstimator, ABC):
     def __init__(self):
         logger.debug("AutoML.__init__")
 
-    def load(self):
+    def load(self, path):
         logger.info("Loading AutoML models ...")
-        # self._results_path still does not exist
-        self._results_path = None
         try:
-            params = json.load(open(os.path.join(self._results_path, "params.json")))
+            params = json.load(open(os.path.join(path, "params.json")))
 
             self._model_paths = params["saved"]
             self._ml_task = params["ml_task"]
-            self._optimize_metric = params["optimize_metric"]
+            self._eval_metric = params["eval_metric"]
             stacked_models = params.get("stacked")
 
             models_map = {}
@@ -100,12 +98,12 @@ class _AutoML(BaseEstimator, ABC):
                     self._stacked_models += [models_map[stacked_model_name]]
 
             best_model_name = None
-            with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
+            with open(os.path.join(path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
 
             self._best_model = models_map[best_model_name]
 
-            data_info_path = os.path.join(self._results_path, "data_info.json")
+            data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
@@ -796,7 +794,6 @@ class _AutoML(BaseEstimator, ABC):
         self._validate_results_path()
 
         path = self.results_path
-        print(f"PATH IS :{path}")
 
         if path is None:
             for i in range(1, 10001):
@@ -809,7 +806,7 @@ class _AutoML(BaseEstimator, ABC):
 
         # Dir exists and can be loaded
         if os.path.exists(path) and os.path.exists(os.path.join(path, "params.json")):
-            self.load()
+            self.load(path)
             return
         # Dir does not exist, create it
         elif not os.path.exists(path):
