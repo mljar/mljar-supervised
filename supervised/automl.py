@@ -743,13 +743,8 @@ class _AutoML(BaseEstimator, ABC):
 
         # Make and return predictions
         # If classification task the result is in column 'label'
-        # If regression task the result is in column 'prediction'
-        # Need to drop `label` column because in case of multilabel classification,
-        # the pandas dataframe returned by `predict()` already contains the predicted label.
-        # Must pass `errors="ignore"` to pandas `drop()` method because in case of binary
-        # classification the label column does not exist when `predict()` is called. This
-        # parameter simulates a drop if column exists behavior.
-        return self._base_predict(X).drop(["label"], axis=1, errors="ignore").to_numpy()
+        # Need to drop `label` column.
+        return self._base_predict(X).drop(["label"], axis=1).to_numpy()
 
     def _score(self, X, y=None):
         # y default must be None for scikit-learn compatibility
