@@ -517,6 +517,9 @@ class _AutoML(BaseEstimator, ABC):
         self._n_features = None
         ######################################################################################
 
+        self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
+        self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
+
         try:
 
             self.load_progress()
@@ -817,7 +820,7 @@ class _AutoML(BaseEstimator, ABC):
 
         # Dir exists, but has no params.json and is not empty. Cannot use this dir
         elif os.path.exists(path) and len(os.listdir(path)):
-            raise ValueError(
+            raise AutoMLException(
                 f"Cannot set directory for AutoML. Directory {self._results_path} is not empty."
             )
 

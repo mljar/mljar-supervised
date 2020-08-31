@@ -61,30 +61,28 @@ class KFoldValidatorTest(unittest.TestCase):
     def test_missing_target_values(self):
 
         data = {
-            "train": {
-                "X": pd.DataFrame(
-                    np.array([[1, 0], [2, 1], [3, 0], [4, 1], [5, 1], [6, 1]]),
-                    columns=["a", "b"],
-                ),
-                "y": pd.DataFrame(
-                    np.array(["a", "b", "a", "b", np.nan, np.nan]), columns=["target"]
-                ),
-            }
+            "X": pd.DataFrame(
+                np.array([[1, 0], [2, 1], [3, 0], [4, 1], [5, 1], [6, 1]]),
+                columns=["a", "b"],
+            ),
+            "y": pd.DataFrame(
+                np.array(["a", "b", "a", "b", np.nan, np.nan]), columns=["target"]
+            ),
         }
 
-        X_train_path = os.path.join(self._results_path, "X_train.parquet")
-        y_train_path = os.path.join(self._results_path, "y_train.parquet")
+        X_path = os.path.join(self._results_path, "X.parquet")
+        y_path = os.path.join(self._results_path, "y.parquet")
 
-        data["train"]["X"].to_parquet(X_train_path, index=False)
-        data["train"]["y"].to_parquet(y_train_path, index=False)
+        data["X"].to_parquet(X_path, index=False)
+        data["y"].to_parquet(y_path, index=False)
 
         params = {
             "shuffle": True,
             "stratify": True,
             "k_folds": 2,
             "results_path": self._results_path,
-            "X_train_path": X_train_path,
-            "y_train_path": y_train_path,
+            "X_path": X_path,
+            "y_path": y_path,
         }
         vl = KFoldValidator(params)
 
@@ -120,8 +118,8 @@ class KFoldValidatorTest(unittest.TestCase):
             "stratify": True,
             "k_folds": 2,
             "results_path": self._results_path,
-            "X_train_path": X_path,
-            "y_train_path": y_path,
+            "X_path": X_path,
+            "y_path": y_path,
         }
         vl = KFoldValidator(params)
 

@@ -40,8 +40,8 @@ class SplitValidatorTest(unittest.TestCase):
             "stratify": False,
             "train_ratio": 0.5,
             "results_path": self._results_path,
-            "X_train_path": X_path,
-            "y_train_path": y_path,
+            "X_path": X_path,
+            "y_path": y_path,
         }
         vl = SplitValidator(params)
 
