@@ -32,7 +32,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=10,
             algorithms=["Random Forest"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
@@ -101,7 +101,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Linear"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
@@ -168,7 +168,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
@@ -228,7 +228,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=10,
             algorithms=["Decision Tree"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,

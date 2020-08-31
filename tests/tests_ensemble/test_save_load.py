@@ -20,8 +20,8 @@ class EnsembleSaveLoadTest(unittest.TestCase):
             explain_level=0,
             mode="Explain",
             train_ensemble=True,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_classification(
             n_samples=100,

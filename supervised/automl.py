@@ -364,7 +364,6 @@ class _AutoML(BaseEstimator, ABC):
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
-
         pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
         self._validation_strategy["X_path"] = self._X_path
@@ -1042,7 +1041,7 @@ class _AutoML(BaseEstimator, ABC):
         valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
         if self.tuning_mode not in valid_tuning_modes:
             raise ValueError(
-                f"Expected `{nameof(self.tuning_mode)}` to be {'or'.join(valid_tuning_modes)}, got '{self.tuning_mode}''"
+                f"Expected `{nameof(self.tuning_mode)}` to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}''"
             )
 
     def _validate_results_path(self):

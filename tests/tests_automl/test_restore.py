@@ -31,7 +31,7 @@ class AutoMLRestoreTest(unittest.TestCase):
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=3,
-            tuning_mode="Explain",
+            tuning_mode="Normal",
             algorithms=["Decision Tree"],
             explain_level=0,
             train_ensemble=False,

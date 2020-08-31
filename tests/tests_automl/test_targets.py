@@ -34,8 +34,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
         for col in ["prediction_0", "prediction_1", "label"]:
@@ -55,8 +55,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         p = automl.predict(X)
         pred = automl.predict(X)
@@ -77,8 +77,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         p = automl.predict(X)
         pred = automl.predict(X)
@@ -105,8 +105,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         p = automl.predict(X)
         pred = automl.predict(X)
@@ -127,8 +127,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
 
@@ -158,8 +158,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
 
@@ -190,8 +190,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
 
@@ -219,8 +219,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
         self.assertTrue(len(pred.columns.tolist()) == 1)
@@ -239,8 +239,8 @@ class AutoMLTargetsTest(unittest.TestCase):
             algorithms=["Xgboost"],
             train_ensemble=False,
             explain_level=0,
+            start_random_models=1,
         )
-        automl.set_advanced(start_random_models=1)
         automl.fit(X, y)
         pred = automl.predict(X)
         self.assertTrue(len(pred.columns.tolist()) == 1)

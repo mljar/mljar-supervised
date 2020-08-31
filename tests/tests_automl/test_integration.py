@@ -18,8 +18,12 @@ class AutoMLIntegrationTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_integration(self):
-        a = AutoML(results_path=self.automl_dir, total_time_limit=1, explain_level=0)
-        a.set_advanced(start_random_models=1)
+        a = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            explain_level=0,
+            start_random_models=1,
+        )
 
         X, y = datasets.make_classification(
             n_samples=100,
@@ -32,16 +36,18 @@ class AutoMLIntegrationTest(unittest.TestCase):
             shuffle=False,
             random_state=0,
         )
-        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
 
         a.fit(X, y)
         p = a.predict(X)
-
-        self.assertTrue("label" in p.columns)
+        self.assertTrue(isinstance(p, np.ndarray))
 
     def test_one_column_input_regression(self):
-        a = AutoML(results_path=self.automl_dir, total_time_limit=5, explain_level=0)
-        a.set_advanced(start_random_models=1)
+        a = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=5,
+            explain_level=0,
+            start_random_models=1,
+        )
 
         X = pd.DataFrame({"feature_1": np.random.rand(100)})
         y = np.random.rand(100)
@@ -49,12 +55,16 @@ class AutoMLIntegrationTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        self.assertTrue("prediction" in p.columns)
+        self.assertTrue(isinstance(p, np.ndarray))
         self.assertTrue(p.shape[0] == 100)
 
     def test_one_column_input_bin_class(self):
-        a = AutoML(results_path=self.automl_dir, total_time_limit=5, explain_level=0)
-        a.set_advanced(start_random_models=1)
+        a = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=5,
+            explain_level=0,
+            start_random_models=1,
+        )
 
         X = pd.DataFrame({"feature_1": np.random.rand(100)})
         y = (np.random.rand(100) > 0.5).astype(int)
@@ -62,7 +72,5 @@ class AutoMLIntegrationTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        self.assertTrue("label" in p.columns)
-        self.assertTrue("prediction_0" in p.columns)
-        self.assertTrue("prediction_1" in p.columns)
+        self.assertTrue(isinstance(p, np.ndarray))
         self.assertTrue(p.shape[0] == 100)
