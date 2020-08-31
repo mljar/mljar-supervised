@@ -696,8 +696,6 @@ class _AutoML(BaseEstimator, ABC):
         else:
             predictions = self._best_model.predict(X)
 
-        return predictions
-
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
             neg_label, pos_label = (
@@ -742,7 +740,7 @@ class _AutoML(BaseEstimator, ABC):
         # Check is task type is correct
         if self._ml_task == REGRESSION:
             raise AutoMLException(
-                f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._get_ml_task()}'."
+                f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
             )
 
         # Make and return predictions
@@ -798,6 +796,7 @@ class _AutoML(BaseEstimator, ABC):
         self._validate_results_path()
 
         path = self.results_path
+        print(f"PATH IS :{path}")
 
         if path is None:
             for i in range(1, 10001):
@@ -810,18 +809,16 @@ class _AutoML(BaseEstimator, ABC):
 
         # Dir exists and can be loaded
         if os.path.exists(path) and os.path.exists(os.path.join(path, "params.json")):
-            print(f"Directory '{path}' already exists. Loading it.")
             self.load()
             return
         # Dir does not exist, create it
         elif not os.path.exists(path):
             self.create_dir(path)
             return path
-
         # Dir exists, but has no params.json and is not empty. Cannot use this dir
         elif os.path.exists(path) and len(os.listdir(path)):
             raise AutoMLException(
-                f"Cannot set directory for AutoML. Directory {self._results_path} is not empty."
+                f"Cannot set directory for AutoML. Directory '{path}' is not empty."
             )
 
         raise AutoMLException("Cannot set directory for AutoML results")
