@@ -69,8 +69,28 @@ class _AutoML(BaseEstimator, ABC):
     def __init__(self):
         logger.debug("AutoML.__init__")
 
+    def _ensure_attributes(self):
+        self._models = []  # instances of iterative learner framework or ensemble
+        self._best_model = None
+        self._verbose = True
+        self._threshold = None
+        self._metrics_details = None
+        self._max_metrics = None
+        self._confusion_matrix = None
+        self._X_path, self._y_path = None, None
+        self._data_info = None
+        self._model_paths = []
+        self._stacked_models = None
+        self._fit_level = None
+        self._start_time = time.time()
+        self._time_ctrl = None
+        self._all_params = {}
+        self._n_features = None
+
     def load(self, path):
         logger.info("Loading AutoML models ...")
+        # Make sure attributes are created
+        self._ensure_attributes()
         try:
             params = json.load(open(os.path.join(path, "params.json")))
 
@@ -101,6 +121,9 @@ class _AutoML(BaseEstimator, ABC):
             with open(os.path.join(path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
 
+            print(f" MODEL map IS: {models_map}")
+            print(f"Best model is {best_model_name}")
+            print(models_map[best_model_name])
             self._best_model = models_map[best_model_name]
 
             data_info_path = os.path.join(path, "data_info.json")
@@ -495,26 +518,9 @@ class _AutoML(BaseEstimator, ABC):
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._random_state = self._get_random_state()
 
-        ######################################################################################
-        # Atributes
-        self._models = []  # instances of iterative learner framework or ensemble
-        self._best_model = None
-        self._verbose = True
-        self._threshold = None
-        self._metrics_details = None
-        self._max_metrics = None
-        self._confusion_matrix = None
-        self._X_path, self._y_path = None, None
-        self._data_info = None
-        self._model_paths = []
-        self._stacked_models = None
-        self._fit_level = None
-        self._start_time = time.time()
-        self._time_ctrl = None
-        self._all_params = {}
-        self._n_features = None
-        ######################################################################################
-
+        # Make sure attributes are created
+        self._ensure_attributes()
+        self.verbose_print(f"AutoML current task: {self._ml_task}")
         self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
         self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
 
@@ -708,9 +714,10 @@ class _AutoML(BaseEstimator, ABC):
                 neg_label = int(neg_label)
                 pos_label = int(pos_label)
             # assume that it is binary classification
-            predictions["label"] = (
-                predictions.iloc[:, 1] > self._best_model._threshold
-            ).astype(np.int32)
+            predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
+            predictions["label"] = predictions["label"].map(
+                {True: pos_label, False: neg_label}
+            )
             return predictions
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
             target_is_numeric = self._data_info.get("target_is_numeric", False)
