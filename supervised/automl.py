@@ -72,9 +72,10 @@ class _AutoML(BaseEstimator, ABC):
 
     def load(self):
         logger.info("Loading AutoML models ...")
+        # self._results_path still does not exist
+        self._results_path = None
         try:
-            params = json.load(
-                open(os.path.join(self._results_path, "params.json")))
+            params = json.load(open(os.path.join(self._results_path, "params.json")))
 
             self._model_paths = params["saved"]
             self._ml_task = params["ml_task"]
@@ -150,8 +151,7 @@ class _AutoML(BaseEstimator, ABC):
             try:
                 os.mkdir(model_path)
             except Exception as e:
-                raise AutoMLException(
-                    f"Cannot create directory {model_path}. {str(e)}")
+                raise AutoMLException(f"Cannot create directory {model_path}. {str(e)}")
 
     def train_model(self, params):
 
@@ -163,9 +163,9 @@ class _AutoML(BaseEstimator, ABC):
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
 
-            # let's create directory to log all training artifacts
-            model_path = os.path.join(self._results_path, params["name"])
-            self.create_dir(model_path)
+        # let's create directory to log all training artifacts
+        model_path = os.path.join(self._results_path, params["name"])
+        self.create_dir(model_path)
 
         # prepare callbacks
         early_stop = EarlyStopping(
@@ -183,37 +183,30 @@ class _AutoML(BaseEstimator, ABC):
             }
         )
 
-            total_time_constraint = TotalTimeConstraint(
-                {
-                    "total_time_limit": self._total_time_limit
-                    if self._model_time_limit is None
-                    else None,
-                    "total_time_start": self._start_time,
-                }
-            )
+        total_time_constraint = TotalTimeConstraint(
+            {
+                "total_time_limit": self._total_time_limit
+                if self._model_time_limit is None
+                else None,
+                "total_time_start": self._start_time,
+            }
+        )
 
-            # create model framework
-            mf = ModelFramework(
-                params,
-                callbacks=[early_stop, learner_time_constraint,
-                           total_time_constraint],
-            )
+        # create model framework
+        mf = ModelFramework(
+            params,
+            callbacks=[early_stop, learner_time_constraint, total_time_constraint],
+        )
 
-            # start training
-            logger.info(
-                f"Train model #{len(self._models)+1} / Model name: {params['name']}"
-            )
-            mf.train(model_path)
+        # start training
+        logger.info(
+            f"Train model #{len(self._models)+1} / Model name: {params['name']}"
+        )
+        mf.train(model_path)
 
-            # save the model
-            mf.save(model_path)
+        # save the model
+        mf.save(model_path)
 
-            # save the best one in the case the training will be interrupted
-            self.select_and_save_best()
-        else:
-            logger.info(
-                f"Cannot train {mf.get_type()} because of time constraint")
-        # self._progress_bar.update(1)
         # and keep info about the model
         self.keep_model(mf, model_path)
         return True
@@ -282,8 +275,7 @@ class _AutoML(BaseEstimator, ABC):
         ldb = self.get_leaderboard()
         ldb = ldb.sort_values(by="metric_value", ascending=True)
 
-        models_map = {
-            m.get_name(): m for m in self._models if not m._is_stacked}
+        models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 10
 
@@ -308,8 +300,7 @@ class _AutoML(BaseEstimator, ABC):
             return
         # do we have time?
         if self._total_time_limit is not None:
-            time_left = self._total_time_limit - \
-                (time.time() - self._start_time)
+            time_left = self._total_time_limit - (time.time() - self._start_time)
             # we need at least 60 seconds to do anything
             if time_left < 60:
                 return
@@ -374,7 +365,8 @@ class _AutoML(BaseEstimator, ABC):
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
-        y.to_parquet(self._y_path, index=False)
+
+        pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
         self._validation_strategy["X_path"] = self._X_path
         self._validation_strategy["y_path"] = self._y_path
@@ -469,13 +461,9 @@ class _AutoML(BaseEstimator, ABC):
             return X
 
         # If Inputs are not pandas dataframes use scikit-learn validation for y array
-        if not isinstance(y, pd.DataFrame):
+        if not isinstance(y, pd.Series):
             y = check_array(y, ensure_2d=False)
-            y = pd.DataFrame(y, columns=["target"])
-        else:
-            # Check if target is only 1 column
-            if y.columns != 1:
-                raise AutoMLException(f"Expected y to have 1 column, got {y.columns}.")
+            y = pd.Series(np.array(y), name="target")
 
         X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
 
@@ -605,8 +593,7 @@ class _AutoML(BaseEstimator, ABC):
                     continue
                 if generated_params:
                     print("-" * 72)
-                    print(
-                        f"{step} with {len(generated_params)} models to train ...")
+                    print(f"{step} with {len(generated_params)} models to train ...")
 
                 for params in generated_params:
                     if params.get("status", "") == "trained":
@@ -618,8 +605,7 @@ class _AutoML(BaseEstimator, ABC):
 
                     trained = False
                     if "ensemble" in step:
-                        trained = self.ensemble_step(
-                            is_stacked=params["is_stacked"])
+                        trained = self.ensemble_step(is_stacked=params["is_stacked"])
                     else:
                         trained = self.train_model(params)
 
@@ -658,20 +644,16 @@ class _AutoML(BaseEstimator, ABC):
                 "saved": self._model_paths,
             }
             if self._stacked_models is not None:
-                params["stacked"] = [m.get_name()
-                                     for m in self._stacked_models]
+                params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4))
 
         ldb = self.get_leaderboard()
-        ldb.to_csv(os.path.join(self._results_path,
-                                "leaderboard.csv"), index=False)
+        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
         # save report
-        ldb["Link"] = [
-            f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
         ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[ldb.name == self._best_model.get_name(),
-                "Best model"] = "**the best**"
+        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
 
         with open(os.path.join(self._results_path, "README.md"), "w") as fout:
             fout.write(f"# AutoML Leaderboard\n\n")
@@ -820,9 +802,7 @@ class _AutoML(BaseEstimator, ABC):
             for i in range(1, 10001):
                 name = f"AutoML_{i}"
                 if not os.path.exists(name):
-                    # Make dir and return dir name
-                    os.mkdir(name)
-                    print(f"AutoML directory: {name}")
+                    self.create_dir(name)
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
@@ -834,9 +814,9 @@ class _AutoML(BaseEstimator, ABC):
             return
         # Dir does not exist, create it
         elif not os.path.exists(path):
-            os.mkdir(path)
-            print(f"AutoML directory: {path}")
+            self.create_dir(path)
             return path
+
         # Dir exists, but has no params.json and is not empty. Cannot use this dir
         elif os.path.exists(path) and len(os.listdir(path)):
             raise ValueError(
@@ -1225,8 +1205,7 @@ class _AutoML(BaseEstimator, ABC):
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
         else:
-            self._best_model = ModelFramework(
-                json_data["best_model"].get("params"))
+            self._best_model = ModelFramework(json_data["best_model"].get("params"))
             self._best_model.from_json(json_data["best_model"])
         self._threshold = json_data.get("threshold")
 
