@@ -510,9 +510,7 @@ class _AutoML(BaseEstimator, ABC):
         """Fits the AutoML model with data"""
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
-
-        print(X.shape)
-        print(y.shape)
+        
         self.n_features = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
@@ -702,8 +700,6 @@ class _AutoML(BaseEstimator, ABC):
             X.columns = [str(c) for c in X.columns]
 
         input_columns = X.columns.tolist()
-        print(input_columns)
-        print(self._data_info["columns"])
         for column in self._data_info["columns"]:
             if column not in input_columns:
                 raise AutoMLException(
