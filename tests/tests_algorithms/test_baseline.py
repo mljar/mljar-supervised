@@ -85,11 +85,6 @@ class BaselineTest(unittest.TestCase):
             dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
             dt2.load(backup_name)
 
-            #Compare predictions between both models
-            y_predicted = dt2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
-
         #Ensure we clean up after ourselves.
         finally:
             if os.path.exists(backup_name): os.remove(backup_name)
