@@ -70,6 +70,7 @@ class BaselineTest(unittest.TestCase):
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
 
+        backup_name = None
         try: 
             with tempfile.NamedTemporaryFile() as tmp:
                 #Save and reload using temporary file
@@ -87,8 +88,10 @@ class BaselineTest(unittest.TestCase):
 
         #Ensure we clean up after ourselves.
         finally:
-            if os.path.exists(backup_name): os.remove(backup_name)
-            if os.path.exists(tmp.name): os.remove(tmp.name)
+            if backup_name is not None:
+                if os.path.exists(backup_name): os.remove(backup_name)
+            if tmp.name is not None:
+                if os.path.exists(tmp.name): os.remove(tmp.name)
 
         #Compare predictions between both models
         y_predicted = dt2.predict(self.X)
