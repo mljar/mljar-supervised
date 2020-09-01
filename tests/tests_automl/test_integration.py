@@ -66,7 +66,8 @@ class AutoMLIntegrationTest(unittest.TestCase):
             start_random_models=1,
         )
 
-        X, y = datasets.make_classification(n_features=1, n_classes=2)
+        X = pd.DataFrame({"feature_1": np.random.rand(100)})
+        y = (np.random.rand(X.shape[0]) > 0.5).astype(int)
 
         a.fit(X, y)
         p = a.predict(X)

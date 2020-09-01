@@ -63,9 +63,7 @@ class EDA:
                 inform["plot"].append("![](target.png)")
                 inform["feature"].append("target")
                 inform["desc"].append(y_train.describe().to_dict())
-
             for col in X_train.columns:
-
                 inform["feature_type"].append(PreprocessingUtils.get_type(X_train[col]))
 
                 if PreprocessingUtils.get_type(X_train[col]) in (

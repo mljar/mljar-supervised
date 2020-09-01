@@ -97,7 +97,6 @@ class _AutoML(BaseEstimator, ABC):
         self._time_ctrl = None
         self._all_params = {}
         self._n_features = None
-        self._loaded_model = False
 
     def load(self, path):
         logger.info("Loading AutoML models ...")
@@ -482,8 +481,11 @@ class _AutoML(BaseEstimator, ABC):
             # Force X to be 2D
             X = np.atleast_2d(X)
             # Create Pandas dataframe from np.arrays, columns get names with the schema: feature_{index}
-            X = pd.DataFrame(X)
+            X = pd.DataFrame(
+                X, columns=["feature_" + str(i) for i in range(1, len(X[0]) + 1)]
+            )
 
+        # Enforce column names
         # Enforce X_train columns to be string
         X.columns = X.columns.astype(str)
 
@@ -510,7 +512,7 @@ class _AutoML(BaseEstimator, ABC):
         """Fits the AutoML model with data"""
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
-        
+
         self.n_features = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
@@ -535,7 +537,8 @@ class _AutoML(BaseEstimator, ABC):
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._random_state = self._get_random_state()
 
-        self._save_data(X, y)
+        # Must pass copies otherwise, X and y get lost
+        self._save_data(deepcopy(X), deepcopy(y))
 
         self.verbose_print(f"AutoML current directory: {self._results_path}")
         self.verbose_print(f"AutoML current task: {self._ml_task}")
@@ -543,7 +546,6 @@ class _AutoML(BaseEstimator, ABC):
         self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
 
         try:
-
             self.load_progress()
 
             self._start_time = time.time()
@@ -552,7 +554,9 @@ class _AutoML(BaseEstimator, ABC):
 
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
-                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+                EDA.compute(
+                    deepcopy(X), deepcopy(y), os.path.join(self._results_path, "EDA")
+                )
 
             tuner = MljarTuner(
                 self._get_tuner_params(
