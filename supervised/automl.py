@@ -838,7 +838,9 @@ class _AutoML(BaseEstimator, ABC):
         elif not os.path.exists(path):
             self.create_dir(path)
             return path
-        # Dir exists, but has no params.json and is not empty. Cannot use this dir
+        # Dir exists and is empty, use it
+        elif os.path.exists(path) and not len(os.listdir(path)):
+            return path
         elif os.path.exists(path) and len(os.listdir(path)):
             raise AutoMLException(
                 f"Cannot set directory for AutoML. Directory '{path}' is not empty."

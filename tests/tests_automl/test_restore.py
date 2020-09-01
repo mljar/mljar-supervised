@@ -39,7 +39,7 @@ class AutoMLRestoreTest(unittest.TestCase):
         automl.fit(X, y)
 
         # Get number of starting models
-        n1 = len([x for x in os.listdir(dir) if x[0].isdigit()])
+        n1 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
 
         progress = json.load(open(os.path.join(self.automl_dir, "progress.json"), "r"))
         progress["fit_level"] = "default_algorithms"
@@ -57,5 +57,5 @@ class AutoMLRestoreTest(unittest.TestCase):
         )
         automl.fit(X, y)
         # Get number of models after second fit
-        n2 = len([x for x in os.listdir(dir) if x[0].isdigit()])
+        n2 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
         self.assertGreater(n2, n1)
