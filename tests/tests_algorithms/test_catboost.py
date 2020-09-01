@@ -4,7 +4,7 @@ import json
 import copy
 import numpy as np
 import pandas as pd
-
+import os
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
