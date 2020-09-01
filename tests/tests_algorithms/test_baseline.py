@@ -3,7 +3,7 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
-
+import os
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -70,12 +70,32 @@ class BaselineTest(unittest.TestCase):
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
-
-            dt.save(tmp.name)
+        try: 
+            with tempfile.NamedTemporaryFile() as tmp:
+                #Save and reload using temporary file
+                dt.save(tmp.name)
+                dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
+                dt2.load(tmp.name)
+           
+        #Catch Windows locking error from saving from within an existing NamedTemporaryFile.
+        except PermissionError as e:
+            #Try again in a new empty file
+            backup_name = tmp.name + os.urandom(6).hex()
+            dt.save(backup_name)
             dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
-            dt2.load(tmp.name)
+            dt2.load(backup_name)
 
+            #Compare predictions between both models
             y_predicted = dt2.predict(self.X)
             loss2 = metric(self.y, y_predicted)
             assert_almost_equal(loss, loss2)
+
+        #Ensure we clean up after ourselves.
+        finally:
+            if os.path.exists(backup_name): os.remove(backup_name)
+            if os.path.exists(tmp.name): os.remove(tmp.name)
+
+        #Compare predictions between both models
+        y_predicted = dt2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)
