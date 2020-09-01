@@ -2,6 +2,7 @@ import unittest
 import tempfile
 import json
 import numpy as np
+import os
 import pandas as pd
 
 from numpy.testing import assert_almost_equal
@@ -70,12 +71,14 @@ class BaselineTest(unittest.TestCase):
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
-            dt.save(tmp.name)
-            dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
-            dt2.load(tmp.name)
+        dt.save(filename)
+        dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})
+        dt2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
 
-            y_predicted = dt2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
+        y_predicted = dt2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)

@@ -3,6 +3,7 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
+import os
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
@@ -68,13 +69,16 @@ class XgboostAlgorithmTest(unittest.TestCase):
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            xgb.save(tmp.name)
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
-            xgb2 = XgbAlgorithm(params)
-            self.assertTrue(xgb2.model is None)
-            xgb2.load(tmp.name)
+        xgb.save(filename)
 
-            y_predicted = xgb2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
+        xgb2 = XgbAlgorithm(params)
+        self.assertTrue(xgb2.model is None)
+        xgb2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
+
+        y_predicted = xgb2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)

@@ -272,6 +272,12 @@ pip install -r requirements_dev.txt
 
 To get started take a look at our [Contribution Guide](docs/contributing.md) for information about our process and where you can fit in!
 
+### Contributors
+<a href="https://github.com/mljar/mljar-supervised/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
+</a>
+
+
 # License :necktie:
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).

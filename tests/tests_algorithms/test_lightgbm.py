@@ -2,6 +2,7 @@ import unittest
 import tempfile
 import json
 import copy
+import os
 
 import numpy as np
 import pandas as pd
@@ -87,16 +88,18 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            lgb.save(tmp.name)
-            lgb2 = LightgbmAlgorithm({})
-            self.assertTrue(lgb.uid != lgb2.uid)
-            self.assertTrue(lgb2.model is None)
-            lgb2.load(tmp.name)
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        lgb.save(filename)
+        lgb2 = LightgbmAlgorithm({})
+        self.assertTrue(lgb.uid != lgb2.uid)
+        self.assertTrue(lgb2.model is None)
+        lgb2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
 
-            y_predicted = lgb2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
+        y_predicted = lgb2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)
 
 
 if __name__ == "__main__":
