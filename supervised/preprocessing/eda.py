@@ -21,7 +21,7 @@ BLUE = "#007cf2"
 
 class EDA:
     @staticmethod
-    def compute(X_train, y_train, eda_path):
+    def compute(X, y, eda_path):
 
         try:
             # check if exists
@@ -35,12 +35,12 @@ class EDA:
 
             inform = defaultdict(list)
 
-            if isinstance(y_train, pd.Series):
+            if isinstance(y, pd.Series):
 
-                if PreprocessingUtils.get_type(y_train) in ("categorical"):
+                if PreprocessingUtils.get_type(y) in ("categorical"):
 
                     plt.figure(figsize=(5, 5))
-                    sns.countplot(y_train, color=BLUE)
+                    sns.countplot(y, color=BLUE)
                     plt.title("Target class distribution")
                     plt.tight_layout(pad=2.0)
                     plot_path = os.path.join(eda_path, "target.png")
@@ -50,31 +50,31 @@ class EDA:
                 else:
 
                     plt.figure(figsize=(5, 5))
-                    sns.distplot(y_train, color=BLUE)
+                    sns.distplot(y, color=BLUE)
                     plt.title("Target class distribution")
                     plt.tight_layout(pad=2.0)
                     plot_path = os.path.join(eda_path, "target.png")
                     plt.savefig(plot_path)
                     plt.close("all")
 
-                inform["missing"].append(pd.isnull(y_train).sum() / y_train.shape[0])
-                inform["unique"].append(y_train.nunique())
-                inform["feature_type"].append(PreprocessingUtils.get_type(y_train))
+                inform["missing"].append(pd.isnull(y).sum() / y.shape[0])
+                inform["unique"].append(y.nunique())
+                inform["feature_type"].append(PreprocessingUtils.get_type(y))
                 inform["plot"].append("![](target.png)")
                 inform["feature"].append("target")
-                inform["desc"].append(y_train.describe().to_dict())
-            for col in X_train.columns:
-                inform["feature_type"].append(PreprocessingUtils.get_type(X_train[col]))
+                inform["desc"].append(y.describe().to_dict())
+            for col in X.columns:
+                inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-                if PreprocessingUtils.get_type(X_train[col]) in (
+                if PreprocessingUtils.get_type(X[col]) in (
                     "categorical",
                     "discrete",
                 ):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        X_train[col],
-                        order=X_train[col].value_counts().iloc[:10].index,
+                        X[col],
+                        order=X[col].value_counts().iloc[:10].index,
                         color=BLUE,
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
@@ -84,20 +84,20 @@ class EDA:
                     plt.savefig(plot_path)
                     plt.close("all")
 
-                elif PreprocessingUtils.get_type(X_train[col]) in ("continous"):
+                elif PreprocessingUtils.get_type(X[col]) in ("continous"):
 
                     plt.figure(figsize=(5, 5))
-                    sns.distplot(X_train[col], color=BLUE)
+                    sns.distplot(X[col], color=BLUE)
                     plt.title(f"{col} value distribution")
                     plt.tight_layout(pad=2.0)
                     plot_path = os.path.join(eda_path, f"{col}.png")
                     plt.savefig(plot_path)
                     plt.close("all")
 
-                elif PreprocessingUtils.get_type(X_train[col]) in ("text"):
+                elif PreprocessingUtils.get_type(X[col]) in ("text"):
 
                     plt.figure(figsize=(10, 10), dpi=70)
-                    word_string = " ".join(X_train[col].str.lower())
+                    word_string = " ".join(X[col].str.lower())
                     wordcloud = WordCloud(
                         width=500,
                         height=500,
@@ -112,23 +112,21 @@ class EDA:
                     plot_path = os.path.join(eda_path, f"{col}.png")
                     plt.savefig(plot_path)
 
-                elif PreprocessingUtils.get_type(X_train[col]) in ("datetime"):
+                elif PreprocessingUtils.get_type(X[col]) in ("datetime"):
 
                     plt.figure(figsize=(5, 5))
-                    pd.to_datetime(X_train[col]).plot(grid="True", color=BLUE)
+                    pd.to_datetime(X[col]).plot(grid="True", color=BLUE)
                     plt.tight_layout(pad=2.0)
                     plot_path = os.path.join(eda_path, f"{col}.png")
                     plt.savefig(plot_path)
                     plt.close("all")
 
-                inform["missing"].append(
-                    pd.isnull(X_train[col]).sum() * 100 / X_train.shape[0]
-                )
+                inform["missing"].append(pd.isnull(X[col]).sum() * 100 / X.shape[0])
 
-                inform["unique"].append(int(X_train[col].nunique()))
+                inform["unique"].append(int(X[col].nunique()))
                 inform["plot"].append(f"![]({col}.png)")
                 inform["feature"].append(str(col))
-                inform["desc"].append(X_train[col].describe().to_dict())
+                inform["desc"].append(X[col].describe().to_dict())
 
             df = pd.DataFrame(inform)
 
