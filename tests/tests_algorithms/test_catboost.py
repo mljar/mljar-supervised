@@ -4,7 +4,7 @@ import json
 import copy
 import numpy as np
 import pandas as pd
-
+import os
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -126,13 +126,17 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
-            cat.save(tmp.name)
-            cat2 = CatBoostAlgorithm(self.params)
-            self.assertTrue(cat.uid != cat2.uid)
-            self.assertTrue(cat2.model is not None)
-            cat2.load(tmp.name)
+    
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
-            y_predicted = cat2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
+        cat.save(filename)
+        cat2 = CatBoostAlgorithm(self.params)
+        self.assertTrue(cat.uid != cat2.uid)
+        self.assertTrue(cat2.model is not None)
+        cat2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
+
+        y_predicted = cat2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)
