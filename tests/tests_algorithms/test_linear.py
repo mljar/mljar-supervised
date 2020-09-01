@@ -3,6 +3,7 @@ import tempfile
 import json
 import numpy as np
 import pandas as pd
+import os
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
@@ -92,12 +93,14 @@ class LinearAlgorithmTest(unittest.TestCase):
         y_predicted = model.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        with tempfile.NamedTemporaryFile() as tmp:
+        filename = tempfile.gettempdir() + os.urandom(12).hex()
 
-            model.save(tmp.name)
-            model2 = LinearAlgorithm({"ml_task": "binary_classification"})
-            model2.load(tmp.name)
+        model.save(filename)
+        model2 = LinearAlgorithm({"ml_task": "binary_classification"})
+        model2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
 
-            y_predicted = model2.predict(self.X)
-            loss2 = metric(self.y, y_predicted)
-            assert_almost_equal(loss, loss2)
+        y_predicted = model2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)

@@ -126,34 +126,17 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        backup_name = None
-        try: 
-            with tempfile.NamedTemporaryFile() as tmp:
-                #Save and reload using temporary file
-                cat.save(tmp.name)
-                cat2 = CatBoostAlgorithm(self.params)
-                self.assertTrue(cat.uid != cat2.uid)
-                self.assertTrue(cat2.model is not None)
-                cat2.load(tmp.name)
-           
-        #Catch Windows locking error from saving from within an existing NamedTemporaryFile.
-        except PermissionError as e:
-            #Try again in a new empty file
-            backup_name = tmp.name + os.urandom(6).hex()
-            cat.save(backup_name)
-            cat2 = CatBoostAlgorithm(self.params)
-            self.assertTrue(cat.uid != cat2.uid)
-            self.assertTrue(cat2.model is not None)
-            cat2.load(backup_name)
+    
+        filename = tempfile.gettempdir() + os.urandom(12).hex()
 
-        #Ensure we clean up after ourselves.
-        finally:
-            if backup_name is not None:
-                if os.path.exists(backup_name): os.remove(backup_name)
-            if tmp.name is not None:
-                if os.path.exists(tmp.name): os.remove(tmp.name)
+        cat.save(filename)
+        cat2 = CatBoostAlgorithm(self.params)
+        self.assertTrue(cat.uid != cat2.uid)
+        self.assertTrue(cat2.model is not None)
+        cat2.load(filename)
+        #Finished with the file, delete it
+        os.remove(filename)
 
-        #Compare predictions between both models
         y_predicted = cat2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
