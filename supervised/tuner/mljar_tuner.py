@@ -81,7 +81,6 @@ class MljarTuner:
             all_steps += ["stack"]
             if self._train_ensemble:
                 all_steps += ["ensemble_stacked"]
-        print("All steps:", all_steps)
         return all_steps
 
     def get_model_name(self, model_type, models_cnt, special=""):

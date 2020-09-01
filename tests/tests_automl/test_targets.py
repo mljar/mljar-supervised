@@ -195,7 +195,8 @@ class AutoMLTargetsTest(unittest.TestCase):
         automl.fit(X, y)
         pred = automl.predict(X)
 
-        # self.assertTrue(pred)
+        self.assertIsInstance(pred, np.ndarray)
+        self.assertEqual(len(pred), X.shape[0])
 
     def test_regression_missing_target(self):
         X = np.random.rand(self.rows, 3)
@@ -214,3 +215,6 @@ class AutoMLTargetsTest(unittest.TestCase):
         )
         automl.fit(X, y)
         pred = automl.predict(X)
+
+        self.assertIsInstance(pred, np.ndarray)
+        self.assertEqual(len(pred), X.shape[0])

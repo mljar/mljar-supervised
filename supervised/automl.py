@@ -70,6 +70,16 @@ class _AutoML(BaseEstimator, ABC):
         logger.debug("AutoML.__init__")
         self._ensure_attributes()
 
+    def _check_can_load(self):
+        """ Checks if AutoML can be loaded from a folder"""
+        if self.results_path is not None:
+            # Dir exists and can be loaded
+            if os.path.exists(self.results_path) and os.path.exists(
+                os.path.join(self.results_path, "params.json")
+            ):
+                self.load(self.results_path)
+                self._results_path = self.results_path
+
     def _ensure_attributes(self):
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
@@ -87,6 +97,7 @@ class _AutoML(BaseEstimator, ABC):
         self._time_ctrl = None
         self._all_params = {}
         self._n_features = None
+        self._loaded_model = False
 
     def load(self, path):
         logger.info("Loading AutoML models ...")
@@ -120,13 +131,13 @@ class _AutoML(BaseEstimator, ABC):
             with open(os.path.join(path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
 
-            print(f" MODEL map IS: {models_map}")
-            print(f"Best model is {best_model_name}")
-            print(models_map[best_model_name])
             self._best_model = models_map[best_model_name]
 
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
+            self.n_features = self._data_info["n_features"]
+            self.n_classes = self._data_info["n_classes"]
+            self._fit_level = "finished"
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
@@ -231,7 +242,7 @@ class _AutoML(BaseEstimator, ABC):
         return True
 
     def verbose_print(self, msg):
-        if self._verbose:
+        if self._verbose > 0:
             # self._progress_bar.write(msg)
             print(msg)
 
@@ -381,8 +392,8 @@ class _AutoML(BaseEstimator, ABC):
 
         X.to_parquet(self._X_path, index=False)
 
-        if self._ml_task == MULTICLASS_CLASSIFICATION:
-            y = y.astype(str)
+        # if self._ml_task == MULTICLASS_CLASSIFICATION:
+        #     y = y.astype(str)
 
         pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
@@ -392,6 +403,9 @@ class _AutoML(BaseEstimator, ABC):
 
         columns_and_target_info = DataInfo.compute(X, y, self._ml_task)
 
+        self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
+
         self._data_info = {
             "columns": X.columns.tolist(),
             "rows": y.shape[0],
@@ -399,6 +413,8 @@ class _AutoML(BaseEstimator, ABC):
             "target_is_numeric": pd.api.types.is_numeric_dtype(y),
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
+            "n_features": self.n_features,
+            "n_classes": self.n_classes,
         }
         if columns_and_target_info.get("num_class") is not None:
             self._data_info["num_class"] = columns_and_target_info["num_class"]
@@ -466,9 +482,7 @@ class _AutoML(BaseEstimator, ABC):
             # Force X to be 2D
             X = np.atleast_2d(X)
             # Create Pandas dataframe from np.arrays, columns get names with the schema: feature_{index}
-            X = pd.DataFrame(
-                X, columns=["feature_" + str(i) for i in range(1, len(X[0]) + 1)]
-            )
+            X = pd.DataFrame(X)
 
         # Enforce X_train columns to be string
         X.columns = X.columns.astype(str)
@@ -478,8 +492,13 @@ class _AutoML(BaseEstimator, ABC):
         if y is None:
             return X
 
-        # If Inputs are not pandas dataframes use scikit-learn validation for y array
-        if not isinstance(y, pd.Series):
+        # Check if y is np.ndarray, transform to pd.Series
+        if isinstance(y, np.ndarray):
+            y = check_array(y, ensure_2d=False)
+            y = pd.Series(np.array(y), name="target")
+        # if pd.DataFrame, slice first column
+        elif isinstance(y, pd.DataFrame):
+            y = np.array(y.iloc[:, 0])
             y = check_array(y, ensure_2d=False)
             y = pd.Series(np.array(y), name="target")
 
@@ -492,9 +511,10 @@ class _AutoML(BaseEstimator, ABC):
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
-        # Compute number of classes in y
-        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
+        print(X.shape)
+        print(y.shape)
         self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         # Get attributes (__init__ params)
         self._mode = self._get_mode()
@@ -517,6 +537,9 @@ class _AutoML(BaseEstimator, ABC):
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._random_state = self._get_random_state()
 
+        self._save_data(X, y)
+
+        self.verbose_print(f"AutoML current directory: {self._results_path}")
         self.verbose_print(f"AutoML current task: {self._ml_task}")
         self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
         self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
@@ -532,11 +555,6 @@ class _AutoML(BaseEstimator, ABC):
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
-
-            if X is not None:
-                X = X.copy(deep=False)
-
-            self._save_data(X, y)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -558,7 +576,7 @@ class _AutoML(BaseEstimator, ABC):
             self.tuner = tuner
 
             steps = tuner.steps()
-
+            self.verbose_print(f"AutoML steps: {steps}")
             if self._time_ctrl is None:
                 self._time_ctrl = TimeController(
                     self._start_time,
@@ -594,15 +612,19 @@ class _AutoML(BaseEstimator, ABC):
                 if generated_params is None:
                     continue
                 if generated_params:
-                    print("-" * 72)
-                    print(f"{step} with {len(generated_params)} models to train ...")
+                    self.verbose_print("-" * 72)
+                    self.verbose_print(
+                        f"{step} with {len(generated_params)} models to train ..."
+                    )
 
                 for params in generated_params:
                     if params.get("status", "") == "trained":
-                        print(f"Skipping {params['name']}, already trained.")
+                        self.verbose_print(
+                            f"Skipping {params['name']}, already trained."
+                        )
                         continue
                     if params.get("status", "") == "skipped":
-                        print(f"Skipped {params['name']}.")
+                        self.verbose_print(f"Skipped {params['name']}.")
                         continue
 
                     trained = False
@@ -619,7 +641,7 @@ class _AutoML(BaseEstimator, ABC):
             self._fit_level = "finished"
             self.save_progress()
 
-            print(f"AutoML fit time: {time.time() - self._start_time}")
+            self.verbose_print(f"AutoML fit time: {time.time() - self._start_time}")
 
         except Exception as e:
             raise e
@@ -663,6 +685,9 @@ class _AutoML(BaseEstimator, ABC):
             LeaderboardPlots.compute(ldb, self._results_path, fout)
 
     def _check_is_fitted(self):
+        # First check if model can be loaded
+        self._check_can_load()
+        # Check if fitted
         if self._fit_level != "finished":
             raise AutoMLException(
                 "This model has not been fitted yet. Please call `fit()` with some data first."
@@ -677,6 +702,8 @@ class _AutoML(BaseEstimator, ABC):
             X.columns = [str(c) for c in X.columns]
 
         input_columns = X.columns.tolist()
+        print(input_columns)
+        print(self._data_info["columns"])
         for column in self._data_info["columns"]:
             if column not in input_columns:
                 raise AutoMLException(
@@ -708,9 +735,7 @@ class _AutoML(BaseEstimator, ABC):
                 neg_label, pos_label = 0, 1
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                neg_label = int(
-                    
-                )
+                neg_label = int()
                 pos_label = int(pos_label)
             # assume that it is binary classification
             predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
@@ -730,7 +755,6 @@ class _AutoML(BaseEstimator, ABC):
     def _predict(self, X):
 
         predictions = self._base_predict(X)
-
         # Return predictions
         # If classification task the result is in column 'label'
         # If regression task the result is in column 'prediction'
@@ -760,7 +784,6 @@ class _AutoML(BaseEstimator, ABC):
             raise AutoML("y must be specified.")
 
         predictions = self._predict(X)
-
         return (
             r2_score(y, predictions)
             if self._ml_task == REGRESSION
@@ -778,10 +801,13 @@ class _AutoML(BaseEstimator, ABC):
         if self.ml_task == "auto":
             classes_number = self.n_classes
             if classes_number == 2:
+                self._estimator_type = "classifier"  # for sk-learn api
                 return BINARY_CLASSIFICATION
             elif classes_number <= 20:
+                self._estimator_type = "classifier"  # for sk-learn api
                 return MULTICLASS_CLASSIFICATION
             else:
+                self._estimator_type = "regressor"  # for sk-learn api
                 return REGRESSION
         else:
             return deepcopy(self.ml_task)
@@ -804,10 +830,9 @@ class _AutoML(BaseEstimator, ABC):
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
-
-        # Dir exists and can be loaded
-        if os.path.exists(path) and os.path.exists(os.path.join(path, "params.json")):
-            self.load(path)
+        elif os.path.exists(self.results_path) and os.path.exists(
+            os.path.join(self.results_path, "params.json")
+        ):  # AutoML already loaded, return path
             return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
@@ -1300,9 +1325,9 @@ class AutoML(_AutoML):
 
         {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
 
-    verbose : int, optional, default=0
+    verbose : int, optional, default=1
         Controls the verbosity when fitting and predicting.
-        .. note:: Still not implemented, please left `None`
+        .. note:: Still not implemented, please left `1`
 
 
     explain_level : "auto" or int {0,1,2}, optional, default="auto"
@@ -1428,7 +1453,7 @@ class AutoML(_AutoML):
         stack_models="auto",
         eval_metric="auto",
         validation_strategy="auto",
-        verbose=0,
+        verbose=1,
         explain_level="auto",
         golden_features="auto",
         feature_selection="auto",
@@ -1463,14 +1488,10 @@ class AutoML(_AutoML):
         Fit the AutoML model.
         Parameters
         ----------
-        X_train : list or numpy.ndarray or pandas.DataFrame
+        X : list or numpy.ndarray or pandas.DataFrame
             Training data
-        y_train : list or numpy.ndarray or pandas.DataFrame
+        y : list or numpy.ndarray or pandas.DataFrame
             Training targets
-        X_validation : list or numpy.ndarray or pandas.DataFrame
-            Validation data
-        y_validation : list or numpy.ndarray or pandas.DataFrame
-            Targets for validation data
 
         Returns
         -------

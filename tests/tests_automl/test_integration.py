@@ -39,7 +39,8 @@ class AutoMLIntegrationTest(unittest.TestCase):
 
         a.fit(X, y)
         p = a.predict(X)
-        self.assertTrue(isinstance(p, np.ndarray))
+        self.assertIsInstance(p, np.ndarray)
+        self.assertEqual(len(p), X.shape[0])
 
     def test_one_column_input_regression(self):
         a = AutoML(
@@ -49,14 +50,13 @@ class AutoMLIntegrationTest(unittest.TestCase):
             start_random_models=1,
         )
 
-        X = pd.DataFrame({"feature_1": np.random.rand(100)})
-        y = np.random.rand(100)
+        X, y = datasets.make_regression(n_features=1)
 
         a.fit(X, y)
         p = a.predict(X)
 
-        self.assertTrue(isinstance(p, np.ndarray))
-        self.assertTrue(p.shape[0] == 100)
+        self.assertIsInstance(p, np.ndarray)
+        self.assertEqual(len(p), X.shape[0])
 
     def test_one_column_input_bin_class(self):
         a = AutoML(
@@ -66,11 +66,44 @@ class AutoMLIntegrationTest(unittest.TestCase):
             start_random_models=1,
         )
 
-        X = pd.DataFrame({"feature_1": np.random.rand(100)})
-        y = (np.random.rand(100) > 0.5).astype(int)
+        X, y = datasets.make_classification(n_features=1, n_classes=2)
 
         a.fit(X, y)
         p = a.predict(X)
 
-        self.assertTrue(isinstance(p, np.ndarray))
-        self.assertTrue(p.shape[0] == 100)
+        self.assertIsInstance(p, np.ndarray)
+        self.assertEqual(len(p), X.shape[0])
+
+    def test_different_input_types(self):
+        """ Test the different data input types for AutoML"""
+        model = AutoML(
+            total_time_limit=10,
+            explain_level=0,
+            start_random_models=1,
+            algorithms=["Linear"],
+            verbose=0,
+        )
+        X, y = datasets.make_regression()
+
+        # First test - X and y as numpy arrays
+
+        pred = model.fit(X, y).predict(X)
+
+        self.assertIsInstance(pred, np.ndarray)
+        self.assertEqual(len(pred), X.shape[0])
+
+        # Second test - X and y as pandas dataframe
+        X_pandas = pd.DataFrame(X)
+        y_pandas = pd.DataFrame(y)
+        pred_pandas = model.fit(X_pandas, y_pandas).predict(X_pandas)
+
+        self.assertIsInstance(pred_pandas, np.ndarray)
+        self.assertEqual(len(pred_pandas), X.shape[0])
+
+        # Second test - X and y as lists
+        X_list = pd.DataFrame(X).values.tolist()
+        y_list = pd.DataFrame(y).values.tolist()
+        pred_list = model.fit(X_pandas, y_pandas).predict(X_pandas)
+
+        self.assertIsInstance(pred_list, np.ndarray)
+        self.assertEqual(len(pred_list), X.shape[0])
