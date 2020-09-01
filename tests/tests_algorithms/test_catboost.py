@@ -127,7 +127,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         loss = metric(self.y, y_predicted)
 
     
-        filename = tempfile.gettempdir() + os.urandom(12).hex()
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
         cat.save(filename)
         cat2 = CatBoostAlgorithm(self.params)

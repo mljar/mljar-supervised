@@ -71,7 +71,7 @@ class BaselineTest(unittest.TestCase):
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = tempfile.gettempdir() + os.urandom(12).hex()
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
         dt.save(filename)
         dt2 = BaselineRegressorAlgorithm({"ml_task": "regression"})

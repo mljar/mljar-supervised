@@ -85,7 +85,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
         y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = tempfile.gettempdir() + os.urandom(12).hex()
+        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
 
         nn.save(filename)
         json_desc = nn.get_params()
