@@ -90,7 +90,7 @@ class AutoMLTest(unittest.TestCase):
         X, y = datasets.make_classification(n_samples=30)
         with self.assertRaises(AutoMLException) as context:
             a = AutoML(results_path=self.automl_dir)
-            a.fit(X, y)  # AutoML only validates constructor params on `fit()` call
+            a.predict(X)  # AutoML tries to load on predict call
         self.assertTrue("Cannot load" in str(context.exception))
 
     def test_get_params(self):
@@ -131,7 +131,7 @@ class AutoMLTest(unittest.TestCase):
         # Fit with original X and y and predict X
         y_pred_pipe = pipeline.fit(X, y).predict(X)
         # y_pred_default must be equal to y_pred_pipe
-        self.assertEquals(y_pred_pipe, y_pred_default)
+        self.assertTrue((y_pred_pipe == y_pred_default).all())
 
     def test_iris_dataset(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)"""
