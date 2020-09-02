@@ -23,6 +23,11 @@ class EDA:
     @staticmethod
     def compute(X, y, eda_path):
 
+        # Check for empty dataframes in params
+        if X.empty:
+            raise ValueError("X is empty")
+        if y.empty:
+            raise ValueError("y is empty")
         try:
             # check if exists
             if os.path.exists(eda_path):

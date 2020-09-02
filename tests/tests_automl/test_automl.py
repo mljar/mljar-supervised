@@ -16,6 +16,10 @@ from supervised.exceptions import AutoMLException
 
 class AutoMLTest(unittest.TestCase):
 
+    iris = datasets.load_iris()
+    boston = datasets.load_boston()
+    breast_cancer = datasets.load_breast_cancer()
+
     automl_dir = "automl_testing"
 
     def tearDown(self):
@@ -135,23 +139,133 @@ class AutoMLTest(unittest.TestCase):
 
     def test_iris_dataset(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)"""
-        iris = datasets.load_iris()
         model = AutoML(explain_level=0, verbose=0, random_state=1)
         score = model.fit(iris.data, iris.target).score(iris.data, iris.target)
         self.assertGreater(score, 0.5)
 
     def test_boston_dataset(self):
         """ Tests AutoML in the boston dataset (Regression)"""
-        boston = datasets.load_boston()
         model = AutoML(explain_level=0, verbose=0, random_state=1)
         score = model.fit(boston.data, boston.target).score(boston.data, boston.target)
         self.assertGreater(score, 0.5)
 
     def test_breast_cancer_dataset(self):
         """ Tests AutoML in the boston dataset (Regression)"""
-        breast_cancer = datasets.load_breast_cancer()
         model = AutoML(explain_level=0, verbose=0, random_state=1)
         score = model.fit(breast_cancer.data, breast_cancer.target).score(
             breast_cancer.data, breast_cancer.target
         )
         self.assertGreater(score, 0.5)
+
+    def test_score_without_y(self):
+        """Tests the use of `score()` without passing y. Should raise AutoMLException"""
+        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        # Assert than an Exception is raised
+        with self.assertRaises(AutoMLException) as context:
+            model = AutoML(explain_level=0, verbose=0, random_state=1)
+            # Try to score without passing 'y'
+            score = model.fit(breast_cancer.data, breast_cancer.target).score(
+                breast_cancer.data
+            )
+
+        self.assertTrue("y must be specified" in str(context.exception))
+
+    def test_no_constructor_args(self):
+        """Tests the use of AutoML without passing any args. Should work without any arguments"""
+        # Create model with no arguments
+        model = AutoML()
+        # Assert than an Exception is raised
+        score = model.fit(iris.data, iris.target).score(iris.data, iris.target)
+        self.assertGreater(score, 0.5)
+
+    def test_fit_returns_self(self):
+        """Tests if the `fit()` method returns `self`. This allows to quickly implement one-liners with AutoML"""
+        model = AutoML()
+        self.assertTrue(
+            isinstance(model.fit(iris.data, iris.target), AutoML),
+            "`fit()` method must return 'self'",
+        )
+
+    def test_invalid_mode(self, mode):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"mode": "invalid_mode"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_ml_task(self, ml_task):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"ml_task": "invalid_task"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_tuning_mode(self, tuning_mode):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"tuning_mode": "not_legal_tuning_mode"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_tuning_mode(self, results_path):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"results_path": 2}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_total_time_limit(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"total_time_limit": -1}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_model_time_limit(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"model_time_limit": -1}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_model_time_limit(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"algorithms": ["Baseline", "Neural Netrk"]}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_train_ensemble(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"train_ensemble": "not bool"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_stack_models(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"stack_models": "not bool"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_eval_metric(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"eval_metric": "not_real_metric"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_validation_strategy(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"validation_strategy": "test"}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)
+
+    def test_invalid_verbose(self):
+        model = AutoML(explain_level=0, verbose=0)
+        param = {"verbose": -1}
+        model.set_params(**param)
+        with self.assertRaises(ValueError) as context:
+            model.fit(iris.data, iris.target)

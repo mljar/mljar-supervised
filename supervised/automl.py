@@ -10,8 +10,6 @@ from tabulate import tabulate
 from abc import ABC
 from copy import deepcopy
 
-from varname import nameof
-
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_array
 from sklearn.metrics import r2_score, accuracy_score
@@ -296,7 +294,7 @@ class _AutoML(BaseEstimator, ABC):
         X.index = org_index.copy()
         return X_stacked
 
-    def _stack_models(self):
+    def _perform_model_stacking(self):
 
         if self._stacked_models is not None:
             return
@@ -334,7 +332,7 @@ class _AutoML(BaseEstimator, ABC):
             if time_left < 60:
                 return
 
-        self.stack_models()
+        self._perform_model_stacking()
 
         X_stacked_path = os.path.join(self._results_path, "X_stacked.parquet")
         if os.path.exists(X_stacked_path):
@@ -554,9 +552,7 @@ class _AutoML(BaseEstimator, ABC):
 
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
-                EDA.compute(
-                    deepcopy(X), deepcopy(y), os.path.join(self._results_path, "EDA")
-                )
+                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -713,7 +709,7 @@ class _AutoML(BaseEstimator, ABC):
 
         # is stacked model
         if self._best_model._is_stacked:
-            self.stack_models()
+            self._perform_model_stacking()
             X_stacked = self.get_stacked_data(X, mode="predict")
 
             if self.best_model.get_type() == "Ensemble":
@@ -776,12 +772,22 @@ class _AutoML(BaseEstimator, ABC):
         # Need to drop `label` column.
         return self._base_predict(X).drop(["label"], axis=1).to_numpy()
 
+    def _predict_all(self, X):
+        # Check is task type is correct
+        if self._ml_task == REGRESSION:
+            raise AutoMLException(
+                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+            )
+
+        # Make and return predictions
+        return self._base_predict(X)
+
     def _score(self, X, y=None):
         # y default must be None for scikit-learn compatibility
 
         # Check if y is None
         if y is None:
-            raise AutoML("y must be specified.")
+            raise AutoMLException("y must be specified.")
 
         predictions = self._predict(X)
         return (
@@ -1047,18 +1053,17 @@ class _AutoML(BaseEstimator, ABC):
         valid_modes = ["Explain", "Perform", "Compete"]
         if self.mode not in valid_modes:
             raise ValueError(
-                f"Expected `{nameof(self.mode)}` to be {' or '.join(valid_modes)}, got '{self.mode}'"
+                f"Expected 'mode' to be {' or '.join(valid_modes)}, got '{self.mode}'"
             )
 
     def _validate_ml_task(self):
         """ Validates ml_task parameter"""
-        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+        if isinstance(self.ml_task, str) and self.ml_task == "auto":
             return
+
         if self.ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
-            raise Exception(
-                f"Unknow Machine Learning task '{self._get_ml_task()}'. \
-                Supported tasks are: {AlgorithmsRegistry.get_supported_ml_tasks()}. \
-                You can also specify 'ml_task' to 'auto', so AutoML automatically guesses it."
+            raise ValueError(
+                f"Expected 'ml_task' to be {' or '.join(AlgorithmsRegistry.get_supported_ml_tasks())}, got '{self.ml_task}''"
             )
 
     def _validate_tuning_mode(self):
@@ -1066,7 +1071,7 @@ class _AutoML(BaseEstimator, ABC):
         valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
         if self.tuning_mode not in valid_tuning_modes:
             raise ValueError(
-                f"Expected `{nameof(self.tuning_mode)}` to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}'"
+                f"Expected 'tuning_mode' to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}'"
             )
 
     def _validate_results_path(self):
@@ -1075,37 +1080,33 @@ class _AutoML(BaseEstimator, ABC):
             return
 
         raise ValueError(
-            f"Expected `{nameof(self.results_path)}` to be of type string, got '{type(self.results_path)}''"
+            f"Expected 'results_path' to be of type string, got '{type(self.results_path)}''"
         )
 
     def _validate_total_time_limit(self):
         """ Validates total_time_limit parameter"""
-        check_greater_than_zero_integer(
-            self.total_time_limit, nameof(self.total_time_limit)
-        )
+        check_greater_than_zero_integer(self.total_time_limit, "total_time_limit")
 
     def _validate_model_time_limit(self):
         """ Validates model_time_limit parameter"""
         if self.model_time_limit is not None:
-            check_greater_than_zero_integer(
-                self.model_time_limit, nameof(self.model_time_limit)
-            )
+            check_greater_than_zero_integer(self.model_time_limit, "model_time_limit")
 
     def _validate_algorithms(self):
         """ Validates algorithms parameter"""
-        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+        if isinstance(self.algorithms, str) and self.algorithms == "auto":
             return
 
         for algo in self.algorithms:
-            if algo not in list(AlgorithmsRegistry.registry[self.ml_task].keys()):
-                raise AutoMLException(
-                    f"The algorithm {algo} is not allowed to use for ML task: {self.ml_task}. Allowed algorithms: {list(AlgorithmsRegistry.registry[self.ml_task].keys())}"
+            if algo not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
+                raise ValueError(
+                    f"The algorithm {algo} is not allowed to use for ML task: {self._ml_task}. Allowed algorithms: {list(AlgorithmsRegistry.registry[self._ml_task].keys())}"
                 )
 
     def _validate_train_ensemble(self):
         """ Validates train_ensemble parameter"""
         # `train_ensemble` defaults to True, no further checking required
-        check_bool(self.train_ensemble, nameof(self.train_ensemble))
+        check_bool(self.train_ensemble, "train_ensemble")
 
     def _validate_stack_models(self):
         """ Validates stack_models parameter"""
@@ -1113,12 +1114,12 @@ class _AutoML(BaseEstimator, ABC):
         if isinstance(self.stack_models, str) and self.stack_models == "auto":
             return
 
-        check_bool(self.stack_models, nameof(self.stack_models))
+        check_bool(self.stack_models, "stack_models")
 
     def _validate_eval_metric(self):
         """ Validates eval_metric parameter"""
         # `stack_models` defaults to "auto". If not "auto", check if is valid bool
-        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+        if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
             return
 
         if (
@@ -1126,13 +1127,13 @@ class _AutoML(BaseEstimator, ABC):
             or self._get_ml_task() == MULTICLASS_CLASSIFICATION
         ) and self.eval_metric != "logloss":
             raise AutoMLException(
-                f"Metric {self.eval_metricself.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                     Use 'log_loss'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":
             raise AutoMLException(
-                f"Metric {self.eval_metricself.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                 Use 'rmse'"
             )
 
@@ -1147,7 +1148,7 @@ class _AutoML(BaseEstimator, ABC):
 
     def _validate_verbose(self):
         """ Validates verbose parameter"""
-        check_positive_integer(self.verbose, nameof(self.verbose))
+        check_positive_integer(self.verbose, "verbose")
 
     def _validate_explain_level(self):
         """ Validates explain_level parameter"""
@@ -1160,20 +1161,20 @@ class _AutoML(BaseEstimator, ABC):
             and self.explain_level in valid_explain_levels
         ):
             raise ValueError(
-                f"Expected `{nameof(self.explain_level)}` to be {' or '.join([str(x) for x in valid_explain_levels])}, got '{self.explain_level}'"
+                f"Expected 'explain_level' to be {' or '.join([str(x) for x in valid_explain_levels])}, got '{self.explain_level}'"
             )
 
     def _validate_golden_features(self):
         """ Validates golden_features parameter"""
         if isinstance(self.golden_features, str) and self.golden_features == "auto":
             return
-        check_bool(self.golden_features, nameof(self.golden_features))
+        check_bool(self.golden_features, "golden_features")
 
     def _validate_feature_selection(self):
         """ Validates feature_selection parameter"""
         if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
             return
-        check_bool(self.feature_selection, nameof(self.feature_selection))
+        check_bool(self.feature_selection, "feature_selection")
 
     def _validate_start_random_models(self):
         """ Validates start_random_models parameter"""
@@ -1182,9 +1183,7 @@ class _AutoML(BaseEstimator, ABC):
             and self.start_random_models == "auto"
         ):
             return
-        check_greater_than_zero_integer(
-            self.start_random_models, nameof(self.start_random_models)
-        )
+        check_greater_than_zero_integer(self.start_random_models, "start_random_models")
 
     def _validate_hill_climbing_steps(self):
         """ Validates hill_climbing_steps parameter"""
@@ -1193,9 +1192,7 @@ class _AutoML(BaseEstimator, ABC):
             and self.hill_climbing_steps == "auto"
         ):
             return
-        check_positive_integer(
-            self.hill_climbing_steps, nameof(self.hill_climbing_steps)
-        )
+        check_positive_integer(self.hill_climbing_steps, "hill_climbing_steps")
 
     def _validate_top_models_to_improve(self):
         """ Validates top_models_to_improve parameter"""
@@ -1204,13 +1201,11 @@ class _AutoML(BaseEstimator, ABC):
             and self.top_models_to_improve == "auto"
         ):
             return
-        check_positive_integer(
-            self.top_models_to_improve, nameof(self.top_models_to_improve)
-        )
+        check_positive_integer(self.top_models_to_improve, "top_models_to_improve")
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""
-        check_positive_integer(self.random_state, nameof(self.random_state))
+        check_positive_integer(self.random_state, "random_state")
 
     def to_json(self):
         if self._best_model is None:
@@ -1523,7 +1518,7 @@ class AutoML(_AutoML):
 
     def predict_proba(self, X):
         """
-        Computes class probabilities from AutoML best model. This method can only be used for classification ML task.
+        Computes class probabilities from AutoML best model. This method can only be used for classification tasks.
 
         Parameters
         ----------
@@ -1543,11 +1538,31 @@ class AutoML(_AutoML):
         """
         return self._predict_proba(X)
 
+    def predict_all(self, X):
+        """
+        Computes both class probabilities and class labels from AutoML best model. This method can only be used for classification tasks.
+
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Input values to make predictions on.
+
+        Returns
+        -------
+        predictions : pandas.Dataframe of shape (n_samples, n_classes + 1 )
+            Dataframe containing both class probabilities and class labels of the input samples
+
+        Raises
+        ------
+        AutoMLException
+            Model has not yet been fitted.
+
+        """
+        return self._predict_all(X)
+
     def score(self, X, y=None):
         """
-        Returns a goodness of fit measure (higher is better):
-            - For classification tasks: returns the mean accuracy on the given test data and labels.
-            - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
+        Calculates a goodness of `fit` for an AutoML instance.
 
         Parameters
         ----------
@@ -1557,7 +1572,11 @@ class AutoML(_AutoML):
         y : list or numpy.ndarray or pandas.DataFrame
             True labels for X.
 
-        Returns the mean accuracy in the case of a classification task.
-
+        Returns
+        -------
+        score : float
+            Returns a goodness of fit measure (higher is better):
+                - For classification tasks: returns the mean accuracy on the given test data and labels.
+                - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y)

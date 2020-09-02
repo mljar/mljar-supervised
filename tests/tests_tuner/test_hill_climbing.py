@@ -54,7 +54,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             },
             algorithms=["Random Foresrt"],
             ml_task="binary_classification",
-            validation={},
+            validation_strategy={},
             explain_level=2,
             data_info={"columns_info": [], "target_info": []},
             seed=12,

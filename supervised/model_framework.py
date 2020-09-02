@@ -36,7 +36,7 @@ class ModelFramework:
         logger.debug("ModelFramework.__init__")
         self.uid = str(uuid.uuid4())
 
-        for i in ["learner", "validation"]:  # mandatory parameters
+        for i in ["learner", "validation_strategy"]:  # mandatory parameters
             if i not in params:
                 msg = "Missing {0} parameter in ModelFramework params".format(i)
                 logger.error(msg)
@@ -48,7 +48,7 @@ class ModelFramework:
         self._name = params.get("name", "model")
         self.additional_params = params.get("additional")
         self.preprocessing_params = params.get("preprocessing")
-        self.validation_params = params.get("validation")
+        self.validation_params = params.get("validation_strategy")
         self.learner_params = params.get("learner")
 
         self._ml_task = params.get("ml_task")
