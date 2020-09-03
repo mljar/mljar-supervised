@@ -514,7 +514,10 @@ class _AutoML(BaseEstimator, ABC):
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
-        self._check_not_fitted()
+        if self._fit_level == "finished":
+            return print(
+                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
+            )
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
@@ -698,12 +701,6 @@ class _AutoML(BaseEstimator, ABC):
                 "This model has not been fitted yet. Please call `fit()` with some data first."
             )
 
-    def _check_not_fitted(self):
-        if self._fit_level == "finished":
-            raise AutoMLException(
-                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
-            )
-
     def _base_predict(self, X):
         self._check_is_fitted()
         self._validate_X_predict(X)
@@ -787,10 +784,10 @@ class _AutoML(BaseEstimator, ABC):
 
     def _predict_all(self, X):
         # Check is task type is correct
-        if self._ml_task == REGRESSION:
-            raise AutoMLException(
-                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
-            )
+        # if self._ml_task == REGRESSION:
+        #     raise AutoMLException(
+        #         f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+        #     )
 
         # Make and return predictions
         return self._base_predict(X)
