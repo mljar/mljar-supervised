@@ -691,8 +691,7 @@ class _AutoML(BaseEstimator, ABC):
 
     def _check_is_fitted(self):
         # First check if model can be loaded
-        if load:
-            self._check_can_load()
+        self._check_can_load()
         # Check if fitted
         if self._fit_level != "finished":
             raise AutoMLException(
