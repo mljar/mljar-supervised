@@ -1126,13 +1126,13 @@ class _AutoML(BaseEstimator, ABC):
             self._get_ml_task() == BINARY_CLASSIFICATION
             or self._get_ml_task() == MULTICLASS_CLASSIFICATION
         ) and self.eval_metric != "logloss":
-            raise AutoMLException(
+            raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                     Use 'log_loss'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":
-            raise AutoMLException(
+            raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                 Use 'rmse'"
             )
