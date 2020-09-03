@@ -137,6 +137,20 @@ class AutoMLTest(unittest.TestCase):
         # y_pred_default must be equal to y_pred_pipe
         self.assertTrue((y_pred_pipe == y_pred_default).all())
 
+    def test_predict_proba_in_regression(self):
+        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model.fit(boston.data, boston.target)
+        with self.assertRaises(AutoMLException) as context:
+            # Try to call predict_proba in regression task
+            model.predict_proba(boston.data)
+
+    def test_predict_all_in_regression(self):
+        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model.fit(boston.data, boston.target)
+        with self.assertRaises(AutoMLException) as context:
+            # Try to call predict_all in regression task
+            model.predict_all(boston.data)
+
     def test_iris_dataset(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)"""
         model = AutoML(explain_level=0, verbose=0, random_state=1)
@@ -162,7 +176,6 @@ class AutoMLTest(unittest.TestCase):
         model = AutoML(explain_level=0, verbose=0, random_state=1)
         # Assert than an Exception is raised
         with self.assertRaises(AutoMLException) as context:
-            model = AutoML(explain_level=0, verbose=0, random_state=1)
             # Try to score without passing 'y'
             score = model.fit(breast_cancer.data, breast_cancer.target).score(
                 breast_cancer.data
