@@ -93,6 +93,15 @@ class AutoMLIntegrationTest(unittest.TestCase):
         self.assertIsInstance(pred, np.ndarray)
         self.assertEqual(len(pred), X.shape[0])
 
+        del model
+
+        model = AutoML(
+            total_time_limit=10,
+            explain_level=0,
+            start_random_models=1,
+            algorithms=["Linear"],
+            verbose=0,
+        )
         # Second test - X and y as pandas dataframe
         X_pandas = pd.DataFrame(X)
         y_pandas = pd.DataFrame(y)
@@ -101,7 +110,16 @@ class AutoMLIntegrationTest(unittest.TestCase):
         self.assertIsInstance(pred_pandas, np.ndarray)
         self.assertEqual(len(pred_pandas), X.shape[0])
 
-        # Second test - X and y as lists
+        del model
+
+        model = AutoML(
+            total_time_limit=10,
+            explain_level=0,
+            start_random_models=1,
+            algorithms=["Linear"],
+            verbose=0,
+        )
+        # Third test - X and y as lists
         X_list = pd.DataFrame(X).values.tolist()
         y_list = pd.DataFrame(y).values.tolist()
         pred_list = model.fit(X_pandas, y_pandas).predict(X_pandas)
