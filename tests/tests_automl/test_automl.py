@@ -13,12 +13,12 @@ from sklearn.decomposition import PCA
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
 
+iris = datasets.load_iris()
+boston = datasets.load_boston()
+breast_cancer = datasets.load_breast_cancer()
+
 
 class AutoMLTest(unittest.TestCase):
-
-    iris = datasets.load_iris()
-    boston = datasets.load_boston()
-    breast_cancer = datasets.load_breast_cancer()
 
     automl_dir = "automl_testing"
 
@@ -186,28 +186,28 @@ class AutoMLTest(unittest.TestCase):
             "`fit()` method must return 'self'",
         )
 
-    def test_invalid_mode(self, mode):
+    def test_invalid_mode(self):
         model = AutoML(explain_level=0, verbose=0)
         param = {"mode": "invalid_mode"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_ml_task(self, ml_task):
+    def test_invalid_ml_task(self):
         model = AutoML(explain_level=0, verbose=0)
         param = {"ml_task": "invalid_task"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_tuning_mode(self, tuning_mode):
+    def test_invalid_tuning_mode(self):
         model = AutoML(explain_level=0, verbose=0)
         param = {"tuning_mode": "not_legal_tuning_mode"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_tuning_mode(self, results_path):
+    def test_invalid_tuning_mode(self):
         model = AutoML(explain_level=0, verbose=0)
         param = {"results_path": 2}
         model.set_params(**param)
