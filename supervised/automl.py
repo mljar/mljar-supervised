@@ -133,7 +133,10 @@ class _AutoML(BaseEstimator, ABC):
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
             self.n_features = self._data_info["n_features"]
-            self.n_classes = self._data_info["n_classes"]
+
+            if "n_classes" in self._data_info:
+                self.n_classes = self._data_info["n_classes"]
+
             self._fit_level = "finished"
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
@@ -411,8 +414,11 @@ class _AutoML(BaseEstimator, ABC):
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features,
-            "n_classes": self.n_classes,
         }
+        # Add n_classes if not regression
+        if self._ml_task != REGRESSION:
+            self._data_info["n_classes"] = self.n_classes
+
         if columns_and_target_info.get("num_class") is not None:
             self._data_info["num_class"] = columns_and_target_info["num_class"]
         data_info_path = os.path.join(self._results_path, "data_info.json")
@@ -508,6 +514,7 @@ class _AutoML(BaseEstimator, ABC):
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
+        self._check_not_fitted()
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
@@ -684,15 +691,22 @@ class _AutoML(BaseEstimator, ABC):
 
     def _check_is_fitted(self):
         # First check if model can be loaded
-        self._check_can_load()
+        if load:
+            self._check_can_load()
         # Check if fitted
         if self._fit_level != "finished":
             raise AutoMLException(
                 "This model has not been fitted yet. Please call `fit()` with some data first."
             )
 
+    def _check_not_fitted(self):
+        if self._fit_level == "finished":
+            raise AutoMLException(
+                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
+            )
+
     def _base_predict(self, X):
-        self._check_is_fitted()
+        self._check_is_fitted(load=True)
         self._validate_X_predict(X)
 
         X = self._build_dataframe(X)
@@ -1156,7 +1170,7 @@ class _AutoML(BaseEstimator, ABC):
             raise ValueError(
                 f"Expected 'validation_strategy' to be a dict, got '{type(self.validation_strategy)}'"
             )
-        if required_keys not in self.validation_strategy:
+        if not all(key in self.validation_strategy for key in required_keys):
             raise ValueError(f"Expected dict with keys: {' , '.join(required_keys)}")
 
     def _validate_verbose(self):

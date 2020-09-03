@@ -157,9 +157,9 @@ class MljarTuner:
 
             params = copy.deepcopy(m.params)
 
-            params["validation_strategy"]["X_path"] = params["validation_strategy"]["X_path"].replace(
-                "X.parquet", "X_stacked.parquet"
-            )
+            params["validation_strategy"]["X_path"] = params["validation_strategy"][
+                "X_path"
+            ].replace("X.parquet", "X_stacked.parquet")
 
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
