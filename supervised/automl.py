@@ -1152,11 +1152,12 @@ class _AutoML(BaseEstimator, ABC):
             "stratify",
             "random_seed",
         ]
-        data = json.load(self.validation_strategy)
-        if required_keys not in data.keys():
+        if type(self.validation_strategy) is not dict:
             raise ValueError(
-                f"Expected JSON string with keys: {' or '.join(required_keys)}"
+                f"Expected 'validation_strategy' to be a dict, got '{type(self.validation_strategy)}'"
             )
+        if required_keys not in self.validation_strategy:
+            raise ValueError(f"Expected dict with keys: {' , '.join(required_keys)}")
 
     def _validate_verbose(self):
         """ Validates verbose parameter"""
@@ -1328,10 +1329,9 @@ class AutoML(_AutoML):
             - `rmse` is used for regression taks.
         .. note:: Still not implemented, please left `None`
 
-    validation_strategy : JSON, optional,  default="auto"
-        The JSON with validation type. Right now only Cross-Validation is supported.
+    validation_strategy : dict, optional,  default="auto"
+        Dictionary with validation type. Right now only Cross-Validation is supported.
         Example::
-
         {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
 
     verbose : int, optional, default=1
