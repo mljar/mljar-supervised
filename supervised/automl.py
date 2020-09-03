@@ -706,7 +706,7 @@ class _AutoML(BaseEstimator, ABC):
             )
 
     def _base_predict(self, X):
-        self._check_is_fitted(load=True)
+        self._check_is_fitted()
         self._validate_X_predict(X)
 
         X = self._build_dataframe(X)
@@ -1164,7 +1164,6 @@ class _AutoML(BaseEstimator, ABC):
             "k_folds",
             "shuffle",
             "stratify",
-            "random_seed",
         ]
         if type(self.validation_strategy) is not dict:
             raise ValueError(
