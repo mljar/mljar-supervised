@@ -1144,7 +1144,19 @@ class _AutoML(BaseEstimator, ABC):
             and self.validation_strategy == "auto"
         ):
             return
-        # TODO: Verify if it build correct json and has params
+
+        required_keys = [
+            "validation_type",
+            "k_folds",
+            "shuffle",
+            "stratify",
+            "random_seed",
+        ]
+        data = json.load(self.validation_strategy)
+        if required_keys not in data.keys():
+            raise ValueError(
+                f"Expected JSON string with keys: {' or '.join(required_keys)}"
+            )
 
     def _validate_verbose(self):
         """ Validates verbose parameter"""
