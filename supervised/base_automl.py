@@ -507,9 +507,19 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
+        if self._fit_level == "finished":
+            return print(
+                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
+            )
+        # Validate input and build dataframes
+        X, y = self._build_dataframe(X, y)
 
-        # Set private attributes
+        self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
+
+        # Get attributes (__init__ params)
         self._mode = self._get_mode()
+        self._ml_task = self._get_ml_task()
         self._tuning_mode = self._get_tuning_mode()
         self._results_path = self._get_results_path()
         self._total_time_limit = self._get_total_time_limit()
@@ -517,6 +527,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._algorithms = self._get_algorithms()
         self._train_ensemble = self._get_train_ensemble()
         self._stack_models = self._get_stack_models()
+        self._eval_metric = self._get_eval_metric()
+        self._validation_strategy = self._get_validation_strategy()
         self._verbose = self._get_verbose()
         self._explain_level = self._get_explain_level()
         self._golden_features = self._get_golden_features()
@@ -540,11 +552,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
             self.n_features = X.shape[1]
             self.n_classes = len(np.unique(y[~pd.isnull(y)]))
-
-            # we need data to set below params
-            self._ml_task = self._get_ml_task()
-            self._eval_metric = self._get_eval_metric()
-            self._validation_strategy = self._get_validation_strategy()
 
             self.verbose_print(f"AutoML current directory: {self._results_path}")
             self.verbose_print(f"AutoML current task: {self._ml_task}")
