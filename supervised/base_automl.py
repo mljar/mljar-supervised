@@ -81,7 +81,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _check_can_load(self):
         """ Checks if AutoML can be loaded from a folder"""
-        if self.results_path is not None and hasattr(self, "_load", None) is not None:
+        load = getattr(self, "_load", None)
+        if self.results_path is not None and load is True:
             self.load(self.results_path)
             self._results_path = self.results_path
 
