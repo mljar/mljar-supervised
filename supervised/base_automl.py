@@ -81,10 +81,13 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _check_can_load(self):
         """ Checks if AutoML can be loaded from a folder"""
-        load = getattr(self, "_load", None)
-        if self.results_path is not None and load is True:
-            self.load(self.results_path)
-            self._results_path = self.results_path
+        if self.results_path is not None:
+            # Dir exists and can be loaded
+            if os.path.exists(self.results_path) and os.path.exists(
+                os.path.join(self.results_path, "params.json")
+            ):
+                self.load(self.results_path)
+                self._results_path = self.results_path
 
     def load(self, path):
         logger.info("Loading AutoML models ...")
@@ -849,8 +852,6 @@ class BaseAutoML(BaseEstimator, ABC):
         elif os.path.exists(self.results_path) and os.path.exists(
             os.path.join(self.results_path, "params.json")
         ):  # AutoML already loaded, return path
-            # set load attribute
-            self._load = True
             return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
