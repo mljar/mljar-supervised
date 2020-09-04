@@ -786,6 +786,12 @@ class BaseAutoML(BaseEstimator, ABC):
         return self._base_predict(X).drop(["label"], axis=1).to_numpy()
 
     def _predict_all(self, X):
+        # Check is task type is correct
+        if self._ml_task == REGRESSION:
+            raise AutoMLException(
+                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+            )
+
         # Make and return predictions
         return self._base_predict(X)
 
