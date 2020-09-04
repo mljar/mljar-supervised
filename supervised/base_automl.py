@@ -640,15 +640,8 @@ class BaseAutoML(BaseEstimator, ABC):
         return self
 
     def select_and_save_best(self):
-        max_loss = (
-            10e14  # TODO, there should be method in metric to return max (or min)
-        )
-        for i, m in enumerate(self._models):
-            if (
-                m.get_final_loss() < max_loss
-            ):  # TODO and here a metric to decide if it is an improvement
-                self._best_model = m
-                max_loss = m.get_final_loss()
+        # Select best model (lowest loss)
+        self._best_model = min(self._models, key=lambda x: x.get_final_loss())
 
         with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
             fout.write(f"{self._best_model.get_name()}")
