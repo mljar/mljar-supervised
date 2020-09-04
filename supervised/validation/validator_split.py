@@ -25,16 +25,16 @@ class SplitValidator(BaseValidator):
         log.debug("SplitValidator, train_ratio: {0}".format(self.train_ratio))
 
         self._results_path = self.params.get("results_path")
-        self._X_train_path = self.params.get("X_train_path")
-        self._y_train_path = self.params.get("y_train_path")
+        self._X_path = self.params.get("X_path")
+        self._y_path = self.params.get("y_path")
 
-        if self._X_train_path is None or self._y_train_path is None:
-            raise AutoMLException("No training data path set in SplitValidator params")
+        if self._X_path is None or self._y_path is None:
+            raise AutoMLException("No data path set in SplitValidator params")
 
     def get_split(self, k=0):
 
-        X = pd.read_parquet(self._X_train_path)
-        y = pd.read_parquet(self._y_train_path)
+        X = pd.read_parquet(self._X_path)
+        y = pd.read_parquet(self._y_path)
         y = y["target"]
 
         stratify = None

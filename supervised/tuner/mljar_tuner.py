@@ -27,7 +27,7 @@ class MljarTuner:
         tuner_params,
         algorithms,
         ml_task,
-        validation,
+        validation_strategy,
         explain_level,
         data_info,
         golden_features,
@@ -42,7 +42,7 @@ class MljarTuner:
         self._top_models_to_improve = tuner_params.get("top_models_to_improve", 3)
         self._algorithms = algorithms
         self._ml_task = ml_task
-        self._validation = validation
+        self._validation_strategy = validation_strategy
         self._explain_level = explain_level
         self._data_info = data_info
         self._golden_features = golden_features
@@ -81,7 +81,6 @@ class MljarTuner:
             all_steps += ["stack"]
             if self._train_ensemble:
                 all_steps += ["ensemble_stacked"]
-        print("All steps:", all_steps)
         return all_steps
 
     def get_model_name(self, model_type, models_cnt, special=""):
@@ -157,9 +156,10 @@ class MljarTuner:
                 continue
 
             params = copy.deepcopy(m.params)
-            params["validation"]["X_train_path"] = params["validation"][
-                "X_train_path"
-            ].replace("X_train.parquet", "X_train_stacked.parquet")
+
+            params["validation_strategy"]["X_path"] = params["validation_strategy"][
+                "X_path"
+            ].replace("X.parquet", "X_stacked.parquet")
 
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
@@ -531,7 +531,7 @@ class MljarTuner:
         model_params = {
             "additional": model_additional,
             "preprocessing": preprocessing_params,
-            "validation": self._validation,
+            "validation_strategy": self._validation_strategy,
             "learner": {
                 "model_type": model_info["class"].algorithm_short_name,
                 "ml_task": self._ml_task,

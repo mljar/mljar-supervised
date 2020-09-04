@@ -7,6 +7,12 @@ import numpy as np
 import pandas as pd
 import logging
 from tabulate import tabulate
+from abc import ABC
+from copy import deepcopy
+
+from sklearn.base import BaseEstimator
+from sklearn.utils.validation import check_array
+from sklearn.metrics import r2_score, accuracy_score
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -29,6 +35,11 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
 from supervised.tuner.time_controller import TimeController
+from supervised.utils.data_validation import (
+    check_positive_integer,
+    check_greater_than_zero_integer,
+    check_bool,
+)
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -37,356 +48,62 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class AutoML:
+class _AutoML(BaseEstimator, ABC):
     """
     Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
+    Warning: This class should not be used directly. Use derived classes
+    instead.
     """
 
-    def __init__(
-        self, results_path=None, total_time_limit=30 * 60, mode="Explain", **kwargs
+    def _get_tuner_params(
+        self, start_random_models, hill_climbing_steps, top_models_to_improve
     ):
-
-        """
-        Initialize the AutoML object. 
-        
-        :param results_path: The path with results. 
-        If left `None` then the name of directory will be generated, with template: AutoML_{number},
-        where the number can be from 1 to 1,000 - depends which direcory name will be available.
-
-        If the `results_path` will point to directory with AutoML results (`params.json` must be present), 
-        then all models will be loaded.
-        
-        :param total_time_limit: The time limit in seconds for AutoML training. 
-        It is not used when `model_time_limit` is not `None`.
-        
-        :params mode
-
-        ## Additional (optional parameters)
-
-        :param model_time_limit: The time limit for training a single model, in seconds. 
-        If `model_time_limit` is set, the `total_time_limit` is not respected. 
-        The single model can contain several learners.
-        The time limit for single learner is computed based on `model_time_limit`.
-
-        For example, in the case of 10-fold cross-validation, one model will have 10 learners. 
-        The `model_time_limit` is time for all 10 learners.
-
-        :param algorithms: The list of algorithms that will be used in the training. The algorithms can be:
-            [
-                "Baseline",
-                "Linear",
-                "Decision Tree",
-                "Random Forest",
-                "Extra Trees",
-                "LightGBM",
-                "Xgboost",
-                "CatBoost",
-                "Neural Network",
-                "Nearest Neighbors",
-            ]
-        
-        :param tuning_mode: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
-        
-        Each mode describe how many models will be checked:
-        
-        - `Normal` - about 5-10 models of each algorithm will be trained,
-        - `Sport` - about 10-15 models of each algorithm will be trained,
-        - `Insane` - about 15-20 models of each algorithm will be trained,
-        - `Perfect` - about 25-35 models of each algorithm will be trained.
-        
-        You can also set how many models will be trained with `set_advanced` method.
-        
-        :param train_ensemble: If true then at the end of models training the ensemble will be created. (Default is `True`)
-
-        :param stack_models: If true then stacked models will be created. Stack level is 1. (Default is `True`)
-        
-        :param optimize_metric: The metric to be optimized. (not implemented yet, please left `None`)
-        
-        :param validation: The JSON with validation type. Right now only Cross-Validation is supported. 
-        The example JSON parameters for validation:
-        ```
-        {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
-        ```
-        :param verbose: Not implemented yet.
-
-        :param ml_task: The machine learning task that will be solved. Can be: `"binary_classification", "multiclass_classification", "regression"`.
-        If left `None` AutoML will try to guess the task based on target values. 
-        If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
-        If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
-        In all other casses, the task is set to `"regression"`.
-        
-        :param explain_level: The level of explanations included to each model.
-        `explain_level = 0` means no explanations
-        `explain_level = 1` means produce importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients
-        `explain_level = 2` the same as for `1` plus SHAP explanations
-        
-        :param seed: The seed for random generator.
-
-        """
-        logger.debug("AutoML.__init__")
-
-        self._results_path = results_path
-        """
-        total_time_limit is the time for computing for all models
-        model_time_limit is the time for computing a single model
-        if model_time_limit is None then its value is computed from total_time_limit
-        if total_time_limit is set and model_time_limit is set, then total_time_limit constraint will be omitted
-        """
-        self._total_time_limit = total_time_limit
-
-        if mode not in ["Explain", "Perform", "Compete"]:
-            print("mode should be: Explain, Perform or Compete")
-            print("Setting mode=Explain")
-            mode = "Explain"
-
-        self._mode = mode
-
-        if self._mode == "Explain":
-            self._train_ensemble = True
-            self._stack_models = False
-            self._validation = {
-                "validation_type": "split",
-                "train_ratio": 0.75,
-                "shuffle": True,
-                "stratify": True,
-            }
-            self._algorithms = [
-                "Baseline",
-                "Linear",
-                "Decision Tree",
-                "Random Forest",
-                "Xgboost",
-                "Neural Network",
-            ]
-            self._explain_level = 2
-            self._start_random_models = 1
-            self._hill_climbing_steps = 0
-            self._top_models_to_improve = 0
-            self._golden_features = False
-            self._feature_selection = False
-        elif self._mode == "Perform":
-            self._train_ensemble = True
-            self._stack_models = False
-            self._validation = {
-                "validation_type": "kfold",
-                "k_folds": 5,
-                "shuffle": True,
-                "stratify": True,
-            }
-            self._algorithms = [
-                "Linear",
-                "Random Forest",
-                "LightGBM",
-                "Xgboost",
-                "CatBoost",
-                "Neural Network",
-            ]
-            self._explain_level = 1
-            self._start_random_models = 5
-            self._hill_climbing_steps = 2
-            self._top_models_to_improve = 2
-            self._golden_features = True
-            self._feature_selection = True
-        elif self._mode == "Compete":
-            self._train_ensemble = True
-            self._stack_models = True
-            self._validation = {
-                "validation_type": "kfold",
-                "k_folds": 10,
-                "shuffle": True,
-                "stratify": True,
-            }
-            self._algorithms = [
-                "Linear",
-                "Decision Tree",
-                "Random Forest",
-                "Extra Trees",
-                "LightGBM",
-                "Xgboost",
-                "CatBoost",
-                "Neural Network",
-                "Nearest Neighbors",
-            ]
-            self._explain_level = 0
-            self._start_random_models = 10
-            self._hill_climbing_steps = 2
-            self._top_models_to_improve = 3
-            self._golden_features = True
-            self._feature_selection = True
-
-        self._model_time_limit = None
-        if "model_time_limit" in kwargs:
-            self._model_time_limit = kwargs["model_time_limit"]
-
-        # algorithms are checked during the fit method call,
-        # we need to know the data to tell if allgorithm is proper
-        if "algorithms" in kwargs:
-            self._algorithms = kwargs["algorithms"]
-
-        if "validation" in kwargs:
-            self._validation = kwargs["validation"]
-
-        if "train_ensemble" in kwargs:
-            self._train_ensemble = kwargs["train_ensemble"]
-
-        if "stack_models" in kwargs:
-            self._stack_models = kwargs["stack_models"]
-
-        if "explain_level" in kwargs:
-            self._explain_level = kwargs["explain_level"]
-
-        self._ml_task = None
-        if "ml_task" in kwargs:
-            self._ml_task = kwargs["ml_task"]
-
-        self._user_set_optimize_metric = None
-        if "optimize_metric" in kwargs:
-            self._user_set_optimize_metric = kwargs["optimize_metric"]
-
-        if "tuning_mode" in kwargs:
-            self.set_tuning_mode(kwargs["tuning_mode"])
-
-        if "golden_features" in kwargs:
-            self._golden_features = kwargs["golden_features"]
-
-        if "feature_selection" in kwargs:
-            self._feature_selection = kwargs["feature_selection"]
-
-        self._verbose = True
-        if "verbose" is kwargs:
-            self._verbose = kwargs["verbose"]
-
-        self._seed = 1234
-        if "seed" in kwargs:
-            self._seed = kwargs["seed"]
-
-        self._tuner_params = {
-            "start_random_models": self._start_random_models,
-            "hill_climbing_steps": self._hill_climbing_steps,
-            "top_models_to_improve": self._top_models_to_improve,
+        return {
+            "start_random_models": start_random_models,
+            "hill_climbing_steps": hill_climbing_steps,
+            "top_models_to_improve": top_models_to_improve,
         }
-        self._models = []  # instances of iterative learner framework or ensemble
 
-        # it is instance of model framework or ensemble
+    def __init__(self):
+        logger.debug("AutoML.__init__")
+        self._ensure_attributes()
+
+    def _check_can_load(self):
+        """ Checks if AutoML can be loaded from a folder"""
+        if self.results_path is not None:
+            # Dir exists and can be loaded
+            if os.path.exists(self.results_path) and os.path.exists(
+                os.path.join(self.results_path, "params.json")
+            ):
+                self.load(self.results_path)
+                self._results_path = self.results_path
+
+    def _ensure_attributes(self):
+        self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
-
         self._threshold = None
         self._metrics_details = None
         self._max_metrics = None
         self._confusion_matrix = None
-
-        self._X_train_path, self._y_train_path = None, None
-        self._X_validation_path, self._y_validation_path = None, None
-
+        self._X_path, self._y_path = None, None
         self._data_info = None
         self._model_paths = []
         self._stacked_models = None
-
         self._fit_level = None
-
-        self._start_time = time.time()  # it will be updated in `fit` method
-
+        self._start_time = time.time()
         self._time_ctrl = None
-
-        if self._validation["validation_type"] != "kfold" and self._stack_models:
-            print(
-                "Models cannot be stacked. Please set validation to k-fold to stack models."
-            )
-            # stacking only available of k-fold validation
-            self._stack_models = False
-
         self._all_params = {}
+        self._n_features = None
 
-        # this should be last in the constrcutor
-        # in case there is a dir, it might load models
-        self._set_results_dir()
-
-    def set_tuning_mode(self, mode="Normal"):
-        if mode == "Sport":
-            self._start_random_models = 10
-            self._hill_climbing_steps = 2
-            self._top_models_to_improve = 3
-        elif mode == "Insane":
-            self._start_random_models = 15
-            self._hill_climbing_steps = 3
-            self._top_models_to_improve = 4
-        elif mode == "Perfect":
-            self._start_random_models = 25
-            self._hill_climbing_steps = 5
-            self._top_models_to_improve = 5
-        else:  # Normal
-            self._start_random_models = 5
-            self._hill_climbing_steps = 1
-            self._top_models_to_improve = 2
-        self._tuner_params = {
-            "start_random_models": self._start_random_models,
-            "hill_climbing_steps": self._hill_climbing_steps,
-            "top_models_to_improve": self._top_models_to_improve,
-        }
-
-    def set_advanced(
-        self, start_random_models=1, hill_climbing_steps=0, top_models_to_improve=0
-    ):
-        """
-        Advanced set of tuning parameters. 
-
-        :param start_random_models: Number of not-so-random models to check for each algorithm.
-        :param hill_climbing_steps: Number of hill climbing steps during tuning.
-        :param top_models_to_improve: Number of top models (of each algorithm) which will be considered for improving in hill climbing steps.
-        """
-        self._start_random_models = start_random_models
-        self._hill_climbing_steps = hill_climbing_steps
-        self._top_models_to_improve = top_models_to_improve
-        self._tuner_params = {
-            "start_random_models": self._start_random_models,
-            "hill_climbing_steps": self._hill_climbing_steps,
-            "top_models_to_improve": self._top_models_to_improve,
-        }
-
-    def _set_results_dir(self):
-        if self._results_path is None:
-            found = False
-            for i in range(1, 10001):
-                self._results_path = f"AutoML_{i}"
-                if not os.path.exists(self._results_path):
-                    found = True
-                    break
-            if not found:
-                raise AutoMLException("Cannot create directory for AutoML results")
-
-        if os.path.exists(self._results_path) and os.path.exists(
-            os.path.join(self._results_path, "params.json")
-        ):
-            print(f"Directory {self._results_path} already exists")
-            self.load()
-        elif self._results_path is not None:
-
-            if not os.path.exists(self._results_path):
-                print(f"Create directory {self._results_path}")
-                try:
-                    os.mkdir(self._results_path)
-                except Exception as e:
-                    raise AutoMLException(
-                        f"Cannot create directory {self._results_path}"
-                    )
-            elif os.path.exists(self._results_path) and len(
-                os.listdir(self._results_path)
-            ):
-                raise AutoMLException(
-                    f"Cannot set directory for AutoML. Directory {self._results_path} is not empty."
-                )
-        else:
-            raise AutoMLException("Cannot set directory for AutoML results")
-
-    def load(self):
+    def load(self, path):
         logger.info("Loading AutoML models ...")
         try:
-            params = json.load(open(os.path.join(self._results_path, "params.json")))
+            params = json.load(open(os.path.join(path, "params.json")))
 
             self._model_paths = params["saved"]
             self._ml_task = params["ml_task"]
-            self._optimize_metric = params["optimize_metric"]
+            self._eval_metric = params["eval_metric"]
             stacked_models = params.get("stacked")
 
             models_map = {}
@@ -408,13 +125,19 @@ class AutoML:
                     self._stacked_models += [models_map[stacked_model_name]]
 
             best_model_name = None
-            with open(os.path.join(self._results_path, "best_model.txt"), "r") as fin:
+            with open(os.path.join(path, "best_model.txt"), "r") as fin:
                 best_model_name = fin.read()
 
             self._best_model = models_map[best_model_name]
 
-            data_info_path = os.path.join(self._results_path, "data_info.json")
+            data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
+            self.n_features = self._data_info["n_features"]
+
+            if "n_classes" in self._data_info:
+                self.n_classes = self._data_info["n_classes"]
+
+            self._fit_level = "finished"
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
@@ -429,7 +152,7 @@ class AutoML:
         for m in self._models:
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
-            ldb["metric_type"] += [self._optimize_metric]
+            ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
         return pd.DataFrame(ldb)
@@ -444,7 +167,7 @@ class AutoML:
         self.verbose_print(
             "{} {} {} trained in {} seconds".format(
                 model.get_name(),
-                self._optimize_metric,
+                self._eval_metric,
                 np.round(model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
@@ -476,7 +199,7 @@ class AutoML:
 
         # prepare callbacks
         early_stop = EarlyStopping(
-            {"metric": {"name": self._optimize_metric}, "log_to_dir": model_path}
+            {"metric": {"name": self._eval_metric}, "log_to_dir": model_path}
         )
 
         learner_time_constraint = LearnerTimeConstraint(
@@ -484,7 +207,7 @@ class AutoML:
                 "learner_time_limit": self._time_ctrl.learner_time_limit(
                     params["learner"]["model_type"],
                     self._fit_level,
-                    self._validation.get("k_folds", 1.0),
+                    self._validation_strategy.get("k_folds", 1.0),
                 ),
                 "min_steps": params["additional"].get("min_steps"),
             }
@@ -519,7 +242,7 @@ class AutoML:
         return True
 
     def verbose_print(self, msg):
-        if self._verbose:
+        if self._verbose > 0:
             # self._progress_bar.write(msg)
             print(msg)
 
@@ -532,7 +255,7 @@ class AutoML:
             self.create_dir(ensemble_path)
 
             self.ensemble = Ensemble(
-                self._optimize_metric, self._ml_task, is_stacked=is_stacked
+                self._eval_metric, self._ml_task, is_stacked=is_stacked
             )
             oofs, target = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target)
@@ -574,7 +297,7 @@ class AutoML:
         X.index = org_index.copy()
         return X_stacked
 
-    def stack_models(self):
+    def _perform_model_stacking(self):
 
         if self._stacked_models is not None:
             return
@@ -612,22 +335,20 @@ class AutoML:
             if time_left < 60:
                 return
 
-        self.stack_models()
+        self._perform_model_stacking()
 
-        X_train_stacked_path = os.path.join(
-            self._results_path, "X_train_stacked.parquet"
-        )
-        if os.path.exists(X_train_stacked_path):
+        X_stacked_path = os.path.join(self._results_path, "X_stacked.parquet")
+        if os.path.exists(X_stacked_path):
             return
 
-        X = pd.read_parquet(self._X_train_path)
+        X = pd.read_parquet(self._X_path)
         org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
         new_columns = X_stacked.columns.tolist()
         added_columns = [c for c in new_columns if c not in org_columns]
 
         # save stacked train data
-        X_stacked.to_parquet(X_train_stacked_path, index=False)
+        X_stacked.to_parquet(X_stacked_path, index=False)
 
         """
         # resue old params
@@ -658,175 +379,53 @@ class AutoML:
                     scale = "scale_normal"
                 if scale is not None:
                     for col in added_columns:
-                        params["preprocessing"]["columns_preprocessing"][col] = [scale]
+                        params["preprocessing"]["columns_preprocessing"][col] = [
+                            scale]
 
             self.train_model(params)
         """
 
-    def _set_ml_task(self, y):
-        """ Set and validate the ML task.
-        
-        If ML task is not set, it trys to guess ML task based on count of unique values in the target. 
-        Then it performs validation.
-        """
-        # if not set, guess
-        if self._ml_task is None:
-            target_unique_cnt = len(np.unique(y[~pd.isnull(y)]))
-            if target_unique_cnt == 2:
-                self._ml_task = BINARY_CLASSIFICATION
-            elif target_unique_cnt <= 20:
-                self._ml_task = MULTICLASS_CLASSIFICATION
-            else:
-                self._ml_task = REGRESSION
-        # validation
-        if self._ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
-            raise Exception(
-                "Unknow Machine Learning task {}."
-                " Supported tasks are: {}".format(
-                    self._ml_task, AlgorithmsRegistry.get_supported_ml_tasks()
-                )
-            )
-        if self._ml_task == REGRESSION:
-            if "stratify" in self._validation:
-                del self._validation["stratify"]
-        logger.info("AutoML task to be solved: {}".format(self._ml_task))
-        print(f"AutoML task to be solved: { self._ml_task}")
+    def _save_data(self, X, y):
 
-    def _set_algorithms(self):
-        """ Set and validate available algorithms.
+        self._X_path = os.path.join(self._results_path, "X.parquet")
+        self._y_path = os.path.join(self._results_path, "y.parquet")
 
-        If algorithms are not set, all algorithms from registry are used.
-        Then perform vadlidation of algorithms.
-        """
-        if len(self._algorithms) == 0:
-            self._algorithms = list(AlgorithmsRegistry.registry[self._ml_task].keys())
+        X.to_parquet(self._X_path, index=False)
 
-        for a in self._algorithms:
-            if a not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
-                raise AutoMLException(
-                    "The algorithm {} is not allowed to use for ML task: {}. Allowed algorithms: {}".format(
-                        a,
-                        self._ml_task,
-                        list(AlgorithmsRegistry.registry[self._ml_task].keys()),
-                    )
-                )
-        logger.info("AutoML will use algorithms: {}".format(self._algorithms))
-        print(f"AutoML will use algorithms: {self._algorithms}")
+        # if self._ml_task == MULTICLASS_CLASSIFICATION:
+        #     y = y.astype(str)
 
-    def _set_metric(self):
-        """ Set and validate the metric to be optimized. """
-        if self._ml_task == BINARY_CLASSIFICATION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "logloss"
-            elif self._user_set_optimize_metric not in ["logloss", "auc"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self._ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-        elif self._ml_task == MULTICLASS_CLASSIFICATION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "logloss"
-            elif self._user_set_optimize_metric not in ["logloss"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self._ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-        elif self._ml_task == REGRESSION:
-            if self._user_set_optimize_metric is None:
-                self._optimize_metric = "rmse"
-            elif self._user_set_optimize_metric not in ["rmse"]:
-                raise AutoMLException(
-                    "Metric {} is not allowed in ML task: {}".format(
-                        self._user_set_optimize_metric, self._ml_task
-                    )
-                )
-            else:
-                self._optimize_metric = self._user_set_optimize_metric
-        logger.info(
-            "AutoML will optimize for metric: {0}".format(self._optimize_metric)
-        )
-        print(f"AutoML will optimize for metric: {self._optimize_metric}")
+        pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
-    def _check_imbalanced(self, y):
-        v = y.value_counts()
-        # at least 10 samples of each class
-        ii = v < 10
-        if np.sum(ii):
-            raise AutoMLException(
-                f"There need to be at least 10 samples of each class, for class {list(v[ii].index)} there is {v[ii].values} samples"
-            )
-        # at least 1% of all samples for each class
-        v = y.value_counts(normalize=True) * 100.0
-        ii = v < 1.0
-        if np.sum(ii):
-            raise AutoMLException(
-                f"There need to be at least 1% of samples of each class, for class {list(v[ii].index)} there is {v[ii].values} % of samples"
-            )
+        self._validation_strategy["X_path"] = self._X_path
+        self._validation_strategy["y_path"] = self._y_path
+        self._validation_strategy["results_path"] = self._results_path
 
-    def _initial_prep(self, X_train, y_train, X_validation=None, y_validation=None):
+        columns_and_target_info = DataInfo.compute(X, y, self._ml_task)
 
-        if not isinstance(X_train, pd.DataFrame):
-            X_train = pd.DataFrame(X_train)
-
-        if not isinstance(X_train.columns[0], str):
-            X_train.columns = [str(c) for c in X_train.columns]
-
-        X_train.reset_index(drop=True, inplace=True)
-
-        if isinstance(y_train, pd.DataFrame):
-            if "target" not in y_train.columns:
-                raise AutoMLException(
-                    "y_train should be Numpy array, Pandas Series or DataFrame with column 'target' "
-                )
-            else:
-                y_train = y_train["target"]
-        y_train = pd.Series(np.array(y_train), name="target")
-
-        X_train, y_train = ExcludeRowsMissingTarget.transform(
-            X_train, y_train, warn=True
-        )
-
-        return X_train, y_train, X_validation, y_validation
-
-    def _save_data(self, X_train, y_train, X_validation=None, y_validation=None):
-
-        self._X_train_path = os.path.join(self._results_path, "X_train.parquet")
-        self._y_train_path = os.path.join(self._results_path, "y_train.parquet")
-
-        X_train.to_parquet(self._X_train_path, index=False)
-
-        if self._ml_task == MULTICLASS_CLASSIFICATION:
-            y_train = y_train.astype(str)
-
-        pd.DataFrame({"target": y_train}).to_parquet(self._y_train_path, index=False)
-
-        self._validation["X_train_path"] = self._X_train_path
-        self._validation["y_train_path"] = self._y_train_path
-        self._validation["results_path"] = self._results_path
-
-        columns_and_target_info = DataInfo.compute(X_train, y_train, self._ml_task)
+        self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         self._data_info = {
-            "columns": X_train.columns.tolist(),
-            "rows": X_train.shape[0],
-            "cols": X_train.shape[1],
-            "target_is_numeric": pd.api.types.is_numeric_dtype(y_train),
+            "columns": X.columns.tolist(),
+            "rows": y.shape[0],
+            "cols": X.shape[1],
+            "target_is_numeric": pd.api.types.is_numeric_dtype(y),
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
+            "n_features": self.n_features,
         }
+        # Add n_classes if not regression
+        if self._ml_task != REGRESSION:
+            self._data_info["n_classes"] = self.n_classes
+
         if columns_and_target_info.get("num_class") is not None:
             self._data_info["num_class"] = columns_and_target_info["num_class"]
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4))
 
-        self._drop_data_variables(X_train)
+        self._drop_data_variables(X)
 
     def _drop_data_variables(self, X_train):
 
@@ -834,12 +433,12 @@ class AutoML:
 
     def _load_data_variables(self, X_train):
         if X_train.shape[1] == 0:
-            X = pd.read_parquet(self._X_train_path)
+            X = pd.read_parquet(self._X_path)
             for c in X.columns:
                 X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
 
-        os.remove(self._X_train_path)
-        os.remove(self._y_train_path)
+        os.remove(self._X_path)
+        os.remove(self._y_path)
 
     def save_progress(self, step=None, generated_params=None):
 
@@ -866,74 +465,126 @@ class AutoML:
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
 
-    def fit(self, X_train, y_train, X_validation=None, y_validation=None):
-        """
-        Fit AutoML
-        
-        :param X_train: Pandas DataFrame with training data.
-        :param y_train: Numpy Array with target training data.
-        
-        :param X_validation: Pandas DataFrame with validation data. (Not implemented yet)
-        :param y_validation: Numpy Array with target of validation data. (Not implemented yet)
-        """
+    def _validate_X_predict(self, X):
+        """Validate X whenever one tries to predict, apply, predict_proba"""
+        X = check_array(X, ensure_2d=False)
+        X = np.atleast_2d(X)
+        n_features = X.shape[1]
+        if self.n_features != n_features:
+            raise ValueError(
+                f"Number of features of the model must match the input. Model n_features is {self.n_features}%s and input n_features is {n_features} %s. Reshape your data."
+            )
+
+    # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
+    # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
+    def _build_dataframe(self, X, y=None):
+        # If Inputs are not pandas dataframes use scikit-learn validation for X array
+        if not isinstance(X, pd.DataFrame):
+            # Validate X as array
+            X = check_array(X, ensure_2d=False)
+            # Force X to be 2D
+            X = np.atleast_2d(X)
+            # Create Pandas dataframe from np.arrays, columns get names with the schema: feature_{index}
+            X = pd.DataFrame(
+                X, columns=["feature_" + str(i) for i in range(1, len(X[0]) + 1)]
+            )
+
+        # Enforce column names
+        # Enforce X_train columns to be string
+        X.columns = X.columns.astype(str)
+
+        X.reset_index(drop=True, inplace=True)
+
+        if y is None:
+            return X
+
+        # Check if y is np.ndarray, transform to pd.Series
+        if isinstance(y, np.ndarray):
+            y = check_array(y, ensure_2d=False)
+            y = pd.Series(np.array(y), name="target")
+        # if pd.DataFrame, slice first column
+        elif isinstance(y, pd.DataFrame):
+            y = np.array(y.iloc[:, 0])
+            y = check_array(y, ensure_2d=False)
+            y = pd.Series(np.array(y), name="target")
+
+        X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
+
+        return X, y
+
+    def _fit(self, X, y):
+        """Fits the AutoML model with data"""
+        if self._fit_level == "finished":
+            return print(
+                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
+            )
+        # Validate input and build dataframes
+        X, y = self._build_dataframe(X, y)
+
+        self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
+
+        # Get attributes (__init__ params)
+        self._mode = self._get_mode()
+        self._ml_task = self._get_ml_task()
+        self._tuning_mode = self._get_tuning_mode()
+        self._results_path = self._get_results_path()
+        self._total_time_limit = self._get_total_time_limit()
+        self._model_time_limit = self._get_model_time_limit()
+        self._algorithms = self._get_algorithms()
+        self._train_ensemble = self._get_train_ensemble()
+        self._stack_models = self._get_stack_models()
+        self._eval_metric = self._get_eval_metric()
+        self._validation_strategy = self._get_validation_strategy()
+        self._verbose = self._get_verbose()
+        self._explain_level = self._get_explain_level()
+        self._golden_features = self._get_golden_features()
+        self._feature_selection = self._get_feature_selection()
+        self._start_random_models = self._get_start_random_models()
+        self._hill_climbing_steps = self._get_hill_climbing_steps()
+        self._top_models_to_improve = self._get_top_models_to_improve()
+        self._random_state = self._get_random_state()
+
+        # Must pass copies otherwise, X and y get lost
+        self._save_data(deepcopy(X), deepcopy(y))
+
+        self.verbose_print(f"AutoML current directory: {self._results_path}")
+        self.verbose_print(f"AutoML current task: {self._ml_task}")
+        self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
+        self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
 
         try:
-
             self.load_progress()
-
-            if self._fit_level == "finished":
-                print("AutoML is trained. Skipping fit step ...")
-                return
-
-            # if self._best_model is not None:
-            #    print("Best model is already set, no need to run fit. Skipping ...")
-            #    return
 
             self._start_time = time.time()
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
 
-            if not isinstance(X_train, pd.DataFrame):
-                raise AutoMLException(
-                    "AutoML needs X_train matrix to be a Pandas DataFrame"
-                )
-
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
-                EDA.compute(X_train, y_train, os.path.join(self._results_path, "EDA"))
-
-            self._set_ml_task(y_train)
-
-            if X_train is not None:
-                X_train = X_train.copy(deep=False)
-
-            X_train, y_train, X_validation, y_validation = self._initial_prep(
-                X_train, y_train, X_validation, y_validation
-            )
-            self._save_data(X_train, y_train, X_validation, y_validation)
-            self._set_algorithms()
-            self._set_metric()
-
-            if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
-                self._check_imbalanced(y_train)
+                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             tuner = MljarTuner(
-                self._tuner_params,
+                self._get_tuner_params(
+                    self._start_random_models,
+                    self._hill_climbing_steps,
+                    self._top_models_to_improve,
+                ),
                 self._algorithms,
                 self._ml_task,
-                self._validation,
+                self._validation_strategy,
                 self._explain_level,
                 self._data_info,
                 self._golden_features,
                 self._feature_selection,
                 self._train_ensemble,
                 self._stack_models,
-                self._seed,
+                self._random_state,
             )
             self.tuner = tuner
 
             steps = tuner.steps()
-
+            self.verbose_print(f"AutoML steps: {steps}")
             if self._time_ctrl is None:
                 self._time_ctrl = TimeController(
                     self._start_time,
@@ -944,7 +595,10 @@ class AutoML:
                 )
 
             self._time_ctrl.log_time(
-                "prepare_data", "prepare_data", "prepare_data", time.time() - self._start_time
+                "prepare_data",
+                "prepare_data",
+                "prepare_data",
+                time.time() - self._start_time,
             )
 
             for step in steps:
@@ -966,15 +620,19 @@ class AutoML:
                 if generated_params is None:
                     continue
                 if generated_params:
-                    print("-" * 72)
-                    print(f"{step} with {len(generated_params)} models to train ...")
+                    self.verbose_print("-" * 72)
+                    self.verbose_print(
+                        f"{step} with {len(generated_params)} models to train ..."
+                    )
 
                 for params in generated_params:
                     if params.get("status", "") == "trained":
-                        print(f"Skipping {params['name']}, already trained.")
+                        self.verbose_print(
+                            f"Skipping {params['name']}, already trained."
+                        )
                         continue
                     if params.get("status", "") == "skipped":
-                        print(f"Skipped {params['name']}.")
+                        self.verbose_print(f"Skipped {params['name']}.")
                         continue
 
                     trained = False
@@ -991,13 +649,15 @@ class AutoML:
             self._fit_level = "finished"
             self.save_progress()
 
-            print(f"AutoML fit time: {time.time() - self._start_time}")
+            self.verbose_print(f"AutoML fit time: {time.time() - self._start_time}")
 
         except Exception as e:
             raise e
         finally:
-            if self._X_train_path is not None:
-                self._load_data_variables(X_train)
+            if self._X_path is not None:
+                self._load_data_variables(X)
+
+        return self
 
     def select_and_save_best(self):
         max_loss = 10e14
@@ -1012,7 +672,7 @@ class AutoML:
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
                 "ml_task": self._ml_task,
-                "optimize_metric": self._optimize_metric,
+                "eval_metric": self._eval_metric,
                 "saved": self._model_paths,
             }
             if self._stacked_models is not None:
@@ -1032,15 +692,20 @@ class AutoML:
             fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
             LeaderboardPlots.compute(ldb, self._results_path, fout)
 
-    def predict(self, X):
-        """
-        Computes predictions from AutoML best model.
+    def _check_is_fitted(self):
+        # First check if model can be loaded
+        self._check_can_load()
+        # Check if fitted
+        if self._fit_level != "finished":
+            raise AutoMLException(
+                "This model has not been fitted yet. Please call `fit()` with some data first."
+            )
 
-        :param X: The Pandas DataFrame with input data. The input data should have the same columns as data used for training, otherwise the `AutoMLException` will be raised.
-        """
-        if self._best_model is None:
-            return None
+    def _base_predict(self, X):
+        self._check_is_fitted()
+        self._validate_X_predict(X)
 
+        X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
 
@@ -1054,10 +719,10 @@ class AutoML:
 
         # is stacked model
         if self._best_model._is_stacked:
-            self.stack_models()
+            self._perform_model_stacking()
             X_stacked = self.get_stacked_data(X, mode="predict")
 
-            if self._best_model.get_type() == "Ensemble":
+            if self.best_model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
                 predictions = self._best_model.predict(X, X_stacked)
             else:
@@ -1076,7 +741,7 @@ class AutoML:
                 neg_label, pos_label = 0, 1
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                neg_label = int(neg_label)
+                neg_label = int()
                 pos_label = int(pos_label)
             # assume that it is binary classification
             predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
@@ -1087,10 +752,482 @@ class AutoML:
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                predictions["label"] = predictions["label"].astype(int)
+                predictions["label"] = predictions["label"].astype(np.int32)
             return predictions
+        # Regression
         else:
             return predictions
+
+    def _predict(self, X):
+
+        predictions = self._base_predict(X)
+        # Return predictions
+        # If classification task the result is in column 'label'
+        # If regression task the result is in column 'prediction'
+        return (
+            predictions["label"].to_numpy()
+            if self._ml_task != REGRESSION
+            else predictions["prediction"].to_numpy()
+        )
+
+    def _predict_proba(self, X):
+        # Check is task type is correct
+        if self._ml_task == REGRESSION:
+            raise AutoMLException(
+                f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+            )
+
+        # Make and return predictions
+        # If classification task the result is in column 'label'
+        # Need to drop `label` column.
+        return self._base_predict(X).drop(["label"], axis=1).to_numpy()
+
+    def _predict_all(self, X):
+        # Check is task type is correct
+        if self._ml_task == REGRESSION:
+            raise AutoMLException(
+                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+            )
+
+        # Make and return predictions
+        return self._base_predict(X)
+
+    def _score(self, X, y=None):
+        # y default must be None for scikit-learn compatibility
+
+        # Check if y is None
+        if y is None:
+            raise AutoMLException("y must be specified.")
+
+        predictions = self._predict(X)
+        return (
+            r2_score(y, predictions)
+            if self._ml_task == REGRESSION
+            else accuracy_score(y, predictions)
+        )
+
+    def _get_mode(self):
+        """ Gets the current mode"""
+        self._validate_mode()
+        return deepcopy(self.mode)
+
+    def _get_ml_task(self):
+        """ Gets the current ml_task. If "auto" it is determined"""
+        self._validate_ml_task()
+        if self.ml_task == "auto":
+            classes_number = self.n_classes
+            if classes_number == 2:
+                self._estimator_type = "classifier"  # for sk-learn api
+                return BINARY_CLASSIFICATION
+            elif classes_number <= 20:
+                self._estimator_type = "classifier"  # for sk-learn api
+                return MULTICLASS_CLASSIFICATION
+            else:
+                self._estimator_type = "regressor"  # for sk-learn api
+                return REGRESSION
+        else:
+            return deepcopy(self.ml_task)
+
+    def _get_tuning_mode(self):
+        self._validate_tuning_mode()
+        return deepcopy(self.tuning_mode)
+
+    def _get_results_path(self):
+        """ Gets the current results_path"""
+        self._validate_results_path()
+
+        path = self.results_path
+
+        if path is None:
+            for i in range(1, 10001):
+                name = f"AutoML_{i}"
+                if not os.path.exists(name):
+                    self.create_dir(name)
+                    return name
+            # If it got here, could not create, raise expection
+            raise AutoMLException("Cannot create directory for AutoML results")
+        elif os.path.exists(self.results_path) and os.path.exists(
+            os.path.join(self.results_path, "params.json")
+        ):  # AutoML already loaded, return path
+            return path
+        # Dir does not exist, create it
+        elif not os.path.exists(path):
+            self.create_dir(path)
+            return path
+        # Dir exists and is empty, use it
+        elif os.path.exists(path) and not len(os.listdir(path)):
+            return path
+        elif os.path.exists(path) and len(os.listdir(path)):
+            raise AutoMLException(
+                f"Cannot set directory for AutoML. Directory '{path}' is not empty."
+            )
+
+        raise AutoMLException("Cannot set directory for AutoML results")
+
+    def _get_total_time_limit(self):
+        """ Gets the current total_time_limit"""
+        self._validate_total_time_limit()
+        return deepcopy(self.total_time_limit)
+
+    def _get_model_time_limit(self):
+        """ Gets the current model_time_limit"""
+        self._validate_model_time_limit()
+        return deepcopy(self.model_time_limit)
+
+    def _get_algorithms(self):
+        """ Gets the current algorithms. If "auto" it is determined"""
+        self._validate_algorithms()
+        if self.algorithms == "auto":
+            if self._get_mode() == "Explain":
+                return [
+                    "Baseline",
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Xgboost",
+                    # "Neural Network"
+                ]
+            if self._get_mode() == "Perform":
+                return [
+                    "Linear",
+                    "Random Forest",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                ]
+            if self._get_mode() == "Compete":
+                return [
+                    "Linear",
+                    "Decision Tree",
+                    "Random Forest",
+                    "Extra Trees",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                    "Nearest Neighbors",
+                ]
+        else:
+            return deepcopy(self.algorithms)
+
+    def _get_train_ensemble(self):
+        """ Gets the current train_ensemble"""
+        self._validate_train_ensemble()
+        return deepcopy(self.train_ensemble)
+
+    def _get_stack_models(self):
+        """ Gets the current stack_models"""
+        self._validate_stack_models()
+        if self.stack_models == "auto":
+            return True if self.mode == "Compete" else False
+        else:
+            return deepcopy(self.stack_models)
+
+    def _get_eval_metric(self):
+        """ Gets the current eval_metric"""
+        self._validate_eval_metric()
+        if self.eval_metric == "auto":
+            if self._get_ml_task() == BINARY_CLASSIFICATION:
+                return "logloss"
+            elif self._get_ml_task() == MULTICLASS_CLASSIFICATION:
+                return "logloss"
+            elif self._get_ml_task() == REGRESSION:
+                return "rmse"
+        else:
+            return deepcopy(self.eval_metric)
+
+    def _get_validation_strategy(self):
+        """ Gets the current validation_strategy"""
+        strat = {}
+        self._validate_validation_strategy()
+        if self.validation_strategy == "auto":
+            if self._get_mode() == "Explain":
+                strat = {
+                    "validation_type": "split",
+                    "train_ratio": 0.75,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+            elif self._get_mode() == "Perform":
+                strat = {
+                    "validation_type": "kfold",
+                    "k_folds": 5,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+            elif self._get_mode() == "Compete":
+                strat = {
+                    "validation_type": "kfold",
+                    "k_folds": 10,
+                    "shuffle": True,
+                    "stratify": True,
+                }
+            if self._get_ml_task() == REGRESSION:
+                strat.pop("stratify")
+            return strat
+        else:
+            strat = deepcopy(self.validation_strategy)
+            strat.pop("stratify")
+            return strat
+
+    def _get_verbose(self):
+        """Gets the current verbose"""
+        self._validate_verbose()
+        return deepcopy(self.verbose)
+
+    def _get_explain_level(self):
+        """ Gets the current explain_level"""
+        self._validate_explain_level()
+        if self.explain_level == "auto":
+            if self._get_mode() == "Explain":
+                return 2
+            if self._get_mode() == "Perform":
+                return 1
+            if self._get_mode() == "Compete":
+                return 0
+        else:
+            return deepcopy(self.explain_level)
+
+    def _get_golden_features(self):
+        self._validate_golden_features()
+        if self.golden_features == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return True
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return deepcopy(self.golden_features)
+
+    def _get_feature_selection(self):
+        """ Gets the current feature_selection"""
+        self._validate_feature_selection()
+        if self.feature_selection == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return True
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return deepcopy(self.feature_selection)
+
+    def _get_start_random_models(self):
+        """ Gets the current start_random_models"""
+        self._validate_start_random_models()
+        if self.start_random_models == "auto":
+            if self._get_mode() == "Explain":
+                return 1
+            if self._get_mode() == "Perform":
+                return 5
+            if self._get_mode() == "Compete":
+                return 10
+        else:
+            return deepcopy(self.start_random_models)
+
+    def _get_hill_climbing_steps(self):
+        """ Gets the current hill_climbing_steps"""
+        self._validate_hill_climbing_steps()
+        if self.hill_climbing_steps == "auto":
+            if self._get_mode() == "Explain":
+                return 0
+            if self._get_mode() == "Perform":
+                return 2
+            if self._get_mode() == "Compete":
+                return 2
+        else:
+            return deepcopy(self.hill_climbing_steps)
+
+    def _get_top_models_to_improve(self):
+        """ Gets the current top_models_to_improve"""
+        self._validate_top_models_to_improve()
+        if self.top_models_to_improve == "auto":
+            if self._get_mode() == "Explain":
+                return 0
+            if self._get_mode() == "Perform":
+                return 2
+            if self._get_mode() == "Compete":
+                return 3
+        else:
+            return deepcopy(self.top_models_to_improve)
+
+    def _get_random_state(self):
+        """ Gets the current random_state"""
+        self._validate_random_state()
+        return deepcopy(self.random_state)
+
+    def _validate_mode(self):
+        """ Validates mode parameter"""
+        valid_modes = ["Explain", "Perform", "Compete"]
+        if self.mode not in valid_modes:
+            raise ValueError(
+                f"Expected 'mode' to be {' or '.join(valid_modes)}, got '{self.mode}'"
+            )
+
+    def _validate_ml_task(self):
+        """ Validates ml_task parameter"""
+        if isinstance(self.ml_task, str) and self.ml_task == "auto":
+            return
+
+        if self.ml_task not in AlgorithmsRegistry.get_supported_ml_tasks():
+            raise ValueError(
+                f"Expected 'ml_task' to be {' or '.join(AlgorithmsRegistry.get_supported_ml_tasks())}, got '{self.ml_task}''"
+            )
+
+    def _validate_tuning_mode(self):
+        """ Validates tuning_mode parameter"""
+        valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
+        if self.tuning_mode not in valid_tuning_modes:
+            raise ValueError(
+                f"Expected 'tuning_mode' to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}'"
+            )
+
+    def _validate_results_path(self):
+        """ Validates path parameter"""
+        if self.results_path is None or isinstance(self.results_path, str):
+            return
+
+        raise ValueError(
+            f"Expected 'results_path' to be of type string, got '{type(self.results_path)}''"
+        )
+
+    def _validate_total_time_limit(self):
+        """ Validates total_time_limit parameter"""
+        check_greater_than_zero_integer(self.total_time_limit, "total_time_limit")
+
+    def _validate_model_time_limit(self):
+        """ Validates model_time_limit parameter"""
+        if self.model_time_limit is not None:
+            check_greater_than_zero_integer(self.model_time_limit, "model_time_limit")
+
+    def _validate_algorithms(self):
+        """ Validates algorithms parameter"""
+        if isinstance(self.algorithms, str) and self.algorithms == "auto":
+            return
+
+        for algo in self.algorithms:
+            if algo not in list(AlgorithmsRegistry.registry[self._ml_task].keys()):
+                raise ValueError(
+                    f"The algorithm {algo} is not allowed to use for ML task: {self._ml_task}. Allowed algorithms: {list(AlgorithmsRegistry.registry[self._ml_task].keys())}"
+                )
+
+    def _validate_train_ensemble(self):
+        """ Validates train_ensemble parameter"""
+        # `train_ensemble` defaults to True, no further checking required
+        check_bool(self.train_ensemble, "train_ensemble")
+
+    def _validate_stack_models(self):
+        """ Validates stack_models parameter"""
+        # `stack_models` defaults to "auto". If "auto" return, else check if is valid bool
+        if isinstance(self.stack_models, str) and self.stack_models == "auto":
+            return
+
+        check_bool(self.stack_models, "stack_models")
+
+    def _validate_eval_metric(self):
+        """ Validates eval_metric parameter"""
+        # `stack_models` defaults to "auto". If not "auto", check if is valid bool
+        if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
+            return
+
+        if (
+            self._get_ml_task() == BINARY_CLASSIFICATION
+            or self._get_ml_task() == MULTICLASS_CLASSIFICATION
+        ) and self.eval_metric != "logloss":
+            raise ValueError(
+                f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use 'log_loss'"
+            )
+
+        elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":
+            raise ValueError(
+                f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                Use 'rmse'"
+            )
+
+    def _validate_validation_strategy(self):
+        """ Validates validation parameter"""
+        if (
+            isinstance(self.validation_strategy, str)
+            and self.validation_strategy == "auto"
+        ):
+            return
+
+        required_keys = [
+            "validation_type",
+            "k_folds",
+            "shuffle",
+            "stratify",
+        ]
+        if type(self.validation_strategy) is not dict:
+            raise ValueError(
+                f"Expected 'validation_strategy' to be a dict, got '{type(self.validation_strategy)}'"
+            )
+        if not all(key in self.validation_strategy for key in required_keys):
+            raise ValueError(f"Expected dict with keys: {' , '.join(required_keys)}")
+
+    def _validate_verbose(self):
+        """ Validates verbose parameter"""
+        check_positive_integer(self.verbose, "verbose")
+
+    def _validate_explain_level(self):
+        """ Validates explain_level parameter"""
+        if isinstance(self.explain_level, str) and self.explain_level == "auto":
+            return
+        valid_explain_levels = [0, 1, 2]
+        # Check if explain level is 0 or greater integer
+        if not (
+            isinstance(self.explain_level, int)
+            and self.explain_level in valid_explain_levels
+        ):
+            raise ValueError(
+                f"Expected 'explain_level' to be {' or '.join([str(x) for x in valid_explain_levels])}, got '{self.explain_level}'"
+            )
+
+    def _validate_golden_features(self):
+        """ Validates golden_features parameter"""
+        if isinstance(self.golden_features, str) and self.golden_features == "auto":
+            return
+        check_bool(self.golden_features, "golden_features")
+
+    def _validate_feature_selection(self):
+        """ Validates feature_selection parameter"""
+        if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
+            return
+        check_bool(self.feature_selection, "feature_selection")
+
+    def _validate_start_random_models(self):
+        """ Validates start_random_models parameter"""
+        if (
+            isinstance(self.start_random_models, str)
+            and self.start_random_models == "auto"
+        ):
+            return
+        check_greater_than_zero_integer(self.start_random_models, "start_random_models")
+
+    def _validate_hill_climbing_steps(self):
+        """ Validates hill_climbing_steps parameter"""
+        if (
+            isinstance(self.hill_climbing_steps, str)
+            and self.hill_climbing_steps == "auto"
+        ):
+            return
+        check_positive_integer(self.hill_climbing_steps, "hill_climbing_steps")
+
+    def _validate_top_models_to_improve(self):
+        """ Validates top_models_to_improve parameter"""
+        if (
+            isinstance(self.top_models_to_improve, str)
+            and self.top_models_to_improve == "auto"
+        ):
+            return
+        check_positive_integer(self.top_models_to_improve, "top_models_to_improve")
+
+    def _validate_random_state(self):
+        """ Validates random_state parameter"""
+        check_positive_integer(self.random_state, "random_state")
 
     def to_json(self):
         if self._best_model is None:
@@ -1113,3 +1250,354 @@ class AutoML:
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
+
+
+class AutoML(_AutoML):
+
+    """
+    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
+
+    Provides scikit-learn API compatibily
+
+    Parameters
+    ----------
+
+    mode : str {"Explain", "Perform", "Compete"}, optional, default="Explain"
+        Defines the goal and how intensive the AutoML search will be.
+        There are three available modes:
+        - `Explain` : To to be used when the user wants to explain and understand the data.
+            - Uses 75%/25% train/test split.
+            - Uses the following models: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `XGBoost`, `Artificial Neural Network`, and `Ensemble`.
+            - Has full explanations in reports: learning curves, importance plots, and SHAP plots.
+        - `Perform` : To be used when the user wants to train a model that will be used in real-life use cases.
+            - Uses 5-fold CV (Cross-Validation).
+            - Uses the following models: `Linear`, `Random Forest`, `LightGBM`, `XGBoost`, `CatBoost`, `Artificial Neural Network`, and `Ensemble`.
+            - Has learning curves and importance plots in reports.
+        - `Compete` : To be used for machine learning competitions (maximum performance).
+            - Uses 10-fold CV (Cross-Validation).
+            - Uses the following models: `Linear`, `DecisionTree`, `Random Forest`, `Extra Trees`, `XGBoost`, `CatBoost`, `Artificial Neural Network`,
+                `Artificial Neural Network`, `Nearest Neighbors`, `Ensemble`, and `Stacking`.
+            - It has only learning curves in the reports.
+
+    ml_task : str {"auto","binary_classification", "multiclass_classification", "regression"} , optional, default="auto"
+        If left `None` AutoML will try to guess the task based on target values.
+        If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
+        If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
+        In all other casses, the task is set to `"regression"`.
+
+    tuning_mode :  str {"Normal", "Sport", "Insane", "Perfect"}, optional, default="Normal"
+        The mode for tuning. The names are kept the same as `MLjar web application <https://mljar.com>`
+        Each mode describe how many models will be checked:
+        - `Normal` : about 5-10 models of each algorithm will be trained,
+        - `Sport` : about 10-15 models of each algorithm will be trained,
+        - `Insane` : about 15-20 models of each algorithm will be trained,
+        - `Perfect` : about 25-35 models of each algorithm will be trained.
+
+    results_path : str, optional, default=None
+        The path with results. If None, then the name of directory will be generated with the template: AutoML_{number},
+        where the number can be from 1 to 1,000 - depends which direcory name will be available.
+        If the `results_path` will point to directory with AutoML results (`params.json` must be present),
+        then all models will be loaded.
+
+    total_time_limit : int or None, optional, default=1800
+        The time limit in seconds for AutoML training. If None, then
+        `model_time_limit` is not used.
+
+    model_time_limit : int, optional, default=None
+        The time limit for training a single model, in seconds.
+        If `model_time_limit` is set, the `total_time_limit` is not respected.
+        The single model can contain several learners. The time limit for subsequent learners is computed based on `model_time_limit`.
+        For example, in the case of 10-fold cross-validation, one model will have 10 learners.
+        The `model_time_limit` is the time for all 10 learners.
+
+    algorithms : list of str, optional
+        The list of algorithms that will be used in the training. The algorithms can be:
+        [
+            "Baseline",
+            "Linear",
+            "Decision Tree",
+            "Random Forest",
+            "Extra Trees",
+            "LightGBM",
+            "Xgboost",
+            "CatBoost",
+            "Neural Network",
+            "Nearest Neighbors",
+        ]
+
+    train_ensemble : bool, optional, default=True
+        Whether an ensemble gets created at the end of the training.
+
+    stack_models : bool, optional, default=True
+        Whether a models stack gets created at the end of the training. Stack level is 1.
+
+    eval_metric : str, optional, default="auto"
+        The metric to be optimized.
+        If "auto", then:
+            - `logloss` is used for classifications taks.
+            - `rmse` is used for regression taks.
+        .. note:: Still not implemented, please left `None`
+
+    validation_strategy : dict, optional,  default="auto"
+        Dictionary with validation type. Right now only Cross-Validation is supported.
+        Example::
+        {"validation_type": "kfold", "k_folds": 5, "shuffle": True, "stratify": True, "random_seed": 123}
+
+    verbose : int, optional, default=1
+        Controls the verbosity when fitting and predicting.
+        .. note:: Still not implemented, please left `1`
+
+
+    explain_level : "auto" or int {0,1,2}, optional, default="auto"
+        The level of explanations included to each model:
+        - if `explain_level` is `0` no explanations are produced.
+        - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
+        - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
+        If left `auto` AutoML will produce explanations based on the selected `mode`.
+
+    golden_features : "auto" or bool, optional, default="auto"
+        Whether to use golden features
+        If left `auto` AutoML will use golden features based on the selected `mode`:
+            - If `mode` is "Explain", `golden_features` = False.
+            - If `mode` is "Perform", `golden_features` = True.
+            - If `mode` is "Compete", `golden_features` = True.
+
+    feature_selection : "auto" or bool, optional, default="auto"
+        Whether to do feature_selection
+         If left `auto` AutoML will do feature selection based on the selected `mode`:
+            - If `mode` is "Explain", `feature_selection` = False.
+            - If `mode` is "Perform", `feature_selection` = True.
+            - If `mode` is "Compete", `feature_selection` = True.
+
+    start_random_models : "auto" or int (> 0)
+        Number of starting random models to try.
+        If left `auto` AutoML will select it based on the selected `mode`:
+            - If `mode` is "Explain", `start_random_models` = 1.
+            - If `mode` is "Perform", `start_random_models` = 5.
+            - If `mode` is "Compete", `start_random_models` = 10.
+
+    hill_climbing_steps : "auto" or int (>= 0)
+        Number of steps to perform during hill climbing.
+        If left `auto` AutoML will select it based on the selected `mode`:
+            - If `mode` is "Explain", `hill_climbing_steps` = 0.
+            - If `mode` is "Perform", `hill_climbing_steps` = 2.
+            - If `mode` is "Compete", `hill_climbing_steps` = 2.
+
+    top_models_to_improve : "auto" or int (>= 0)
+        Number of best models to improve.
+        If left `auto` AutoML will select it based on the selected `mode`:
+            - If `mode` is "Explain", `top_models_to_improve` = 0.
+            - If `mode` is "Perform", `top_models_to_improve` = 2.
+            - If `mode` is "Compete", `top_models_to_improve` = 3.
+
+    random_state : int, default=None
+        Controls the randomness of the MLjar Tuner
+
+
+    Examples
+    --------
+    Binary Classification Example:
+    >>> import pandas as pd
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.metrics import roc_auc_score
+    >>> from supervised import AutoML
+    >>> df = pd.read_csv(
+    ...        "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
+    ...       skipinitialspace=True
+    ...    )
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ... df[df.columns[:-1]], df["income"], test_size=0.25
+    ... )
+    >>> automl = AutoML()
+    >>> automl.fit(X_train, y_train)
+    >>> y_pred_prob = automl.predict_proba(X_test)
+    >>> print(f"AUROC: {roc_auc_score(y_test, y_pred_prob):.2f}%")
+
+    Multi-Class Classification Example:
+    >>> import pandas as pd
+    >>> from sklearn.datasets import load_digits
+    >>> from sklearn.metrics import accuracy_score
+    >>> from sklearn.model_selection import train_test_split
+    >>> from supervised import AutoML
+    >>> digits = load_digits()
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...     digits.data, digits.target, stratify=digits.target, test_size=0.25,
+    ...     random_state=123
+    ... )
+    >>> automl = AutoML(mode="Perform")
+    >>> automl.fit(X_train, y_train)
+    >>> y_pred = automl.predict(X_test)
+    >>> print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}%")
+
+    Regression Example:
+    >>> import pandas as pd
+    >>> from sklearn.datasets import load_boston
+    >>> from sklearn.model_selection import train_test_split
+    >>> from sklearn.metrics import mean_squared_error
+    >>> from supervised import AutoML
+    >>> housing = load_boston()
+    >>> X_train, X_test, y_train, y_test = train_test_split(
+    ...       pd.DataFrame(housing.data, columns=housing.feature_names),
+    ...       housing.target,
+    ...       test_size=0.25,
+    ...       random_state=123,
+    ... )
+    >>> automl = AutoML(mode="Compete")
+    >>> automl.fit(X_train, y_train)
+    >>> print("Test R^2:", automl.score(X_test, y_test))
+
+    Scikit-learn Pipeline Integration Example:
+    >>> from imblearn.over_sampling import RandomOverSampler
+    >>> from sklearn.pipeline import make_pipeline
+    >>> from sklearn.datasets import make_classification
+    >>> from sklearn.model_selection import train_test_split
+    >>> from supervised import AutoML
+    >>> X, y = make_classification()
+    >>> X_train, X_test, y_train, y_test = train_test_split(X,y)
+    >>> pipeline = make_pipeline(RandomOverSampler(), AutoML())
+    >>> print(pipeline.fit(X_train, y_train).score(X_test, y_test))
+    """
+
+    def __init__(
+        self,
+        mode="Explain",
+        ml_task="auto",
+        tuning_mode="Normal",
+        results_path=None,
+        total_time_limit=30 * 60,
+        model_time_limit=None,
+        algorithms="auto",
+        train_ensemble=True,
+        stack_models="auto",
+        eval_metric="auto",
+        validation_strategy="auto",
+        verbose=1,
+        explain_level="auto",
+        golden_features="auto",
+        feature_selection="auto",
+        start_random_models="auto",
+        hill_climbing_steps="auto",
+        top_models_to_improve="auto",
+        random_state=1234,
+    ):
+        super(AutoML, self).__init__()
+        self.mode = mode
+        self.ml_task = ml_task
+        self.tuning_mode = tuning_mode
+        self.results_path = results_path
+        self.total_time_limit = total_time_limit
+        self.model_time_limit = model_time_limit
+        self.algorithms = algorithms
+        self.train_ensemble = train_ensemble
+        self.stack_models = stack_models
+        self.eval_metric = eval_metric
+        self.validation_strategy = validation_strategy
+        self.verbose = verbose
+        self.explain_level = explain_level
+        self.golden_features = golden_features
+        self.feature_selection = feature_selection
+        self.start_random_models = start_random_models
+        self.hill_climbing_steps = hill_climbing_steps
+        self.top_models_to_improve = top_models_to_improve
+        self.random_state = random_state
+
+    def fit(self, X, y):
+        """
+        Fit the AutoML model.
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Training data
+        y : list or numpy.ndarray or pandas.DataFrame
+            Training targets
+
+        Returns
+        -------
+        self : AutoML object
+        """
+        return self._fit(X, y)
+
+    def predict(self, X):
+        """
+        Computes predictions from AutoML best model.
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Input values to make predictions on.
+
+        Returns
+        -------
+        predictions : numpy.ndarray
+            One-dimensional array of class label for each object.
+
+        Raises
+        ------
+        AutoMLException
+            Model has not yet been fitted.
+        """
+        return self._predict(X)
+
+    def predict_proba(self, X):
+        """
+        Computes class probabilities from AutoML best model. This method can only be used for classification tasks.
+
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Input values to make predictions on.
+
+        Returns
+        -------
+        predictions : numpy.ndarray of shape (n_samples, n_classes)
+            Matrix of containing class probabilities of the input samples
+
+        Raises
+        ------
+        AutoMLException
+            Model has not yet been fitted.
+
+        """
+        return self._predict_proba(X)
+
+    def predict_all(self, X):
+        """
+        Computes both class probabilities and class labels from AutoML best model. This method can only be used for classification tasks.
+
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Input values to make predictions on.
+
+        Returns
+        -------
+        predictions : pandas.Dataframe of shape (n_samples, n_classes + 1 )
+            Dataframe containing both class probabilities and class labels of the input samples
+
+        Raises
+        ------
+        AutoMLException
+            Model has not yet been fitted.
+
+        """
+        return self._predict_all(X)
+
+    def score(self, X, y=None):
+        """
+        Calculates a goodness of `fit` for an AutoML instance.
+
+        Parameters
+        ----------
+        X : list or numpy.ndarray or pandas.DataFrame
+            Test values to make predictions on.
+
+        y : list or numpy.ndarray or pandas.DataFrame
+            True labels for X.
+
+        Returns
+        -------
+        score : float
+            Returns a goodness of fit measure (higher is better):
+                - For classification tasks: returns the mean accuracy on the given test data and labels.
+                - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
+        """
+        return self._score(X, y)

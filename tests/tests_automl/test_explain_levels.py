@@ -32,14 +32,14 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=10,
             algorithms=["Random Forest"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
                 "stratify": True,
             },
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_classification(
             n_samples=100,
@@ -101,15 +101,15 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Linear"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
                 "stratify": True,
             },
             explain_level=0,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
@@ -168,15 +168,15 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=1,
             algorithms=["Xgboost"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
                 "stratify": True,
             },
             explain_level=1,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
@@ -228,15 +228,15 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             total_time_limit=10,
             algorithms=["Decision Tree"],
             train_ensemble=False,
-            validation={
+            validation_strategy={
                 "validation_type": "kfold",
                 "k_folds": 2,
                 "shuffle": True,
                 "stratify": True,
             },
             explain_level=2,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_regression(
             n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0

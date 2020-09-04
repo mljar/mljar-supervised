@@ -28,7 +28,7 @@ automl = AutoML(
     # total_time_limit=100,
     # tuning_mode="Normal",
     # explain_level=0,
-    mode="Perform",
+    mode="Perform"
 )
 # automl.set_advanced(start_random_models=1)
 automl.fit(X, y)

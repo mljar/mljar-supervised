@@ -31,14 +31,15 @@ class AutoMLRestoreTest(unittest.TestCase):
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=3,
-            tuning_mode="Explain",
+            tuning_mode="Normal",
             algorithms=["Decision Tree"],
             explain_level=0,
             train_ensemble=False,
         )
         automl.fit(X, y)
 
-        iter_1_models_cnt = len(automl._models)
+        # Get number of starting models
+        n1 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
 
         progress = json.load(open(os.path.join(self.automl_dir, "progress.json"), "r"))
         progress["fit_level"] = "default_algorithms"
@@ -49,11 +50,12 @@ class AutoMLRestoreTest(unittest.TestCase):
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=3,
-            tuning_mode="Explain",
+            tuning_mode="Normal",
             algorithms=["Decision Tree", "Xgboost"],
             explain_level=0,
             train_ensemble=False,
         )
         automl.fit(X, y)
-
-        self.assertTrue(len(automl._models) > iter_1_models_cnt)
+        # Get number of models after second fit
+        n2 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
+        self.assertGreater(n2, n1)

@@ -20,8 +20,8 @@ class EnsembleSaveLoadTest(unittest.TestCase):
             explain_level=0,
             mode="Explain",
             train_ensemble=True,
+            start_random_models=1,
         )
-        a.set_advanced(start_random_models=1)
 
         X, y = datasets.make_classification(
             n_samples=100,
@@ -42,4 +42,4 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a2 = AutoML(results_path=self.automl_dir)
         p2 = a2.predict(X)
 
-        self.assertTrue((p["label"] == p2["label"]).all())
+        self.assertTrue((p == p2).all())

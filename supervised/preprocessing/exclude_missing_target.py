@@ -32,6 +32,7 @@ class ExcludeRowsMissingTarget(object):
 
     @staticmethod
     def transform(X=None, y=None, warn=False):
+        
         if y is None:
             return X, y
         y_missing = pd.isnull(y)
