@@ -81,13 +81,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _check_can_load(self):
         """ Checks if AutoML can be loaded from a folder"""
-        if self.results_path is not None:
-            # Dir exists and can be loaded
-            if os.path.exists(self.results_path) and os.path.exists(
-                os.path.join(self.results_path, "params.json")
-            ):
-                self.load(self.results_path)
-                self._results_path = self.results_path
+        if self.results_path is not None and hasattr(self, "_load", None) is not None:
+            self.load(self.results_path)
+            self._results_path = self.results_path
 
     def load(self, path):
         logger.info("Loading AutoML models ...")
@@ -562,9 +558,9 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
 
-            # # Automatic Exloratory Data Analysis
-            # if self._explain_level == 2:
-            #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+            # Automatic Exloratory Data Analysis
+            if self._explain_level == 2:
+                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
             self._save_data(X, y)
@@ -852,6 +848,8 @@ class BaseAutoML(BaseEstimator, ABC):
         elif os.path.exists(self.results_path) and os.path.exists(
             os.path.join(self.results_path, "params.json")
         ):  # AutoML already loaded, return path
+            # set load attribute
+            self._load = True
             return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
