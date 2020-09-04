@@ -56,7 +56,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
-        self._threshold = None # used only in classification
+        self._threshold = None  # used only in classification
         self._metrics_details = None
         self._max_metrics = None
         self._confusion_matrix = None
@@ -420,9 +420,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._drop_data_variables(X)
 
-    def _drop_data_variables(self, X_train):
+    def _drop_data_variables(self, X):
 
-        X_train.drop(X_train.columns, axis=1, inplace=True)
+        X.drop(X.columns, axis=1, inplace=True)
 
     def _load_data_variables(self, X_train):
         if X_train.shape[1] == 0:
@@ -460,9 +460,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_X_predict(self, X):
         """Validate X whenever one tries to predict, apply, predict_proba"""
-        print("_validate_X_predict")
-        #X = check_array(X, ensure_2d=False)
-        #X = np.atleast_2d(X)
+        # X = check_array(X, ensure_2d=False)
+        X = np.atleast_2d(X)
         n_features = X.shape[1]
         if self.n_features != n_features:
             raise ValueError(
@@ -508,7 +507,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
-        
 
         try:
 
@@ -530,22 +528,21 @@ class BaseAutoML(BaseEstimator, ABC):
             self._eval_metric = self._get_eval_metric()
             self._validation_strategy = self._get_validation_strategy()
 
-            # Must pass copies otherwise, X and y get lost
-            self._save_data(X, y)
-
             self.verbose_print(f"AutoML current directory: {self._results_path}")
             self.verbose_print(f"AutoML current task: {self._ml_task}")
             self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
             self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
 
-            
             self._start_time = time.time()
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
 
-            # Automatic Exloratory Data Analysis
-            if self._explain_level == 2:
-                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+            # # Automatic Exloratory Data Analysis
+            # if self._explain_level == 2:
+            #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+
+            # Save data
+            self._save_data(X, y)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -643,9 +640,13 @@ class BaseAutoML(BaseEstimator, ABC):
         return self
 
     def select_and_save_best(self):
-        max_loss = 10e14 # TODO, there should be method in metric to return max (or min)
+        max_loss = (
+            10e14  # TODO, there should be method in metric to return max (or min)
+        )
         for i, m in enumerate(self._models):
-            if m.get_final_loss() < max_loss: # TODO and here a metric to decide if it is an improvement
+            if (
+                m.get_final_loss() < max_loss
+            ):  # TODO and here a metric to decide if it is an improvement
                 self._best_model = m
                 max_loss = m.get_final_loss()
 
@@ -686,9 +687,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _base_predict(self, X):
         self._check_is_fitted()
-        #self._validate_X_predict(X)
+        self._validate_X_predict(X)
 
-        #X = self._build_dataframe(X)
+        X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
 
@@ -699,7 +700,6 @@ class BaseAutoML(BaseEstimator, ABC):
                     f"Missing column: {column} in input data. Cannot predict"
                 )
 
-        print("Go with", self._data_info["columns"])
         X = X[self._data_info["columns"]]
 
         # is stacked model
