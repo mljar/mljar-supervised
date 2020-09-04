@@ -48,6 +48,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+
 class AutoML(BaseAutoML):
 
     """
@@ -296,26 +297,6 @@ class AutoML(BaseAutoML):
         self.hill_climbing_steps = hill_climbing_steps
         self.top_models_to_improve = top_models_to_improve
         self.random_state = random_state
-
-        # Set private attributes 
-        self._mode = self._get_mode()
-        self._tuning_mode = self._get_tuning_mode()
-        self._results_path = self._get_results_path()
-        self._total_time_limit = self._get_total_time_limit()
-        self._model_time_limit = self._get_model_time_limit()
-        self._algorithms = self._get_algorithms()
-        self._train_ensemble = self._get_train_ensemble()
-        self._stack_models = self._get_stack_models()
-        self._verbose = self._get_verbose()
-        self._explain_level = self._get_explain_level()
-        self._golden_features = self._get_golden_features()
-        self._feature_selection = self._get_feature_selection()
-        self._start_random_models = self._get_start_random_models()
-        self._hill_climbing_steps = self._get_hill_climbing_steps()
-        self._top_models_to_improve = self._get_top_models_to_improve()
-        self._random_state = self._get_random_state()
-
-
 
     def fit(self, X, y):
         """
