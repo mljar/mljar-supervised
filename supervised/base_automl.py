@@ -56,7 +56,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
-        self._threshold = None # used only in classification
+        self._threshold = None  # used only in classification
         self._metrics_details = None
         self._max_metrics = None
         self._confusion_matrix = None
@@ -420,9 +420,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._drop_data_variables(X)
 
-    def _drop_data_variables(self, X_train):
+    def _drop_data_variables(self, X):
 
-        X_train.drop(X_train.columns, axis=1, inplace=True)
+        X.drop(X.columns, axis=1, inplace=True)
 
     def _load_data_variables(self, X_train):
         if X_train.shape[1] == 0:
@@ -460,9 +460,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_X_predict(self, X):
         """Validate X whenever one tries to predict, apply, predict_proba"""
-        print("_validate_X_predict")
-        #X = check_array(X, ensure_2d=False)
-        #X = np.atleast_2d(X)
+        # X = check_array(X, ensure_2d=False)
+        X = np.atleast_2d(X)
         n_features = X.shape[1]
         if self.n_features != n_features:
             raise ValueError(
@@ -508,7 +507,36 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
-        
+        if self._fit_level == "finished":
+            return print(
+                "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
+            )
+        # Validate input and build dataframes
+        X, y = self._build_dataframe(X, y)
+
+        self.n_features = X.shape[1]
+        self.n_classes = len(np.unique(y[~pd.isnull(y)]))
+
+        # Get attributes (__init__ params)
+        self._mode = self._get_mode()
+        self._ml_task = self._get_ml_task()
+        self._tuning_mode = self._get_tuning_mode()
+        self._results_path = self._get_results_path()
+        self._total_time_limit = self._get_total_time_limit()
+        self._model_time_limit = self._get_model_time_limit()
+        self._algorithms = self._get_algorithms()
+        self._train_ensemble = self._get_train_ensemble()
+        self._stack_models = self._get_stack_models()
+        self._eval_metric = self._get_eval_metric()
+        self._validation_strategy = self._get_validation_strategy()
+        self._verbose = self._get_verbose()
+        self._explain_level = self._get_explain_level()
+        self._golden_features = self._get_golden_features()
+        self._feature_selection = self._get_feature_selection()
+        self._start_random_models = self._get_start_random_models()
+        self._hill_climbing_steps = self._get_hill_climbing_steps()
+        self._top_models_to_improve = self._get_top_models_to_improve()
+        self._random_state = self._get_random_state()
 
         try:
 
@@ -525,20 +553,11 @@ class BaseAutoML(BaseEstimator, ABC):
             self.n_features = X.shape[1]
             self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
-            # we need data to set below params
-            self._ml_task = self._get_ml_task()
-            self._eval_metric = self._get_eval_metric()
-            self._validation_strategy = self._get_validation_strategy()
-
-            # Must pass copies otherwise, X and y get lost
-            self._save_data(X, y)
-
             self.verbose_print(f"AutoML current directory: {self._results_path}")
             self.verbose_print(f"AutoML current task: {self._ml_task}")
             self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
             self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
 
-            
             self._start_time = time.time()
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
@@ -546,6 +565,9 @@ class BaseAutoML(BaseEstimator, ABC):
             # Automatic Exloratory Data Analysis
             if self._explain_level == 2:
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+
+            # Save data
+            self._save_data(X, y)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -643,11 +665,8 @@ class BaseAutoML(BaseEstimator, ABC):
         return self
 
     def select_and_save_best(self):
-        max_loss = 10e14 # TODO, there should be method in metric to return max (or min)
-        for i, m in enumerate(self._models):
-            if m.get_final_loss() < max_loss: # TODO and here a metric to decide if it is an improvement
-                self._best_model = m
-                max_loss = m.get_final_loss()
+        # Select best model (lowest loss)
+        self._best_model = min(self._models, key=lambda x: x.get_final_loss())
 
         with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
             fout.write(f"{self._best_model.get_name()}")
@@ -686,9 +705,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _base_predict(self, X):
         self._check_is_fitted()
-        #self._validate_X_predict(X)
+        self._validate_X_predict(X)
 
-        #X = self._build_dataframe(X)
+        X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
 
@@ -699,7 +718,6 @@ class BaseAutoML(BaseEstimator, ABC):
                     f"Missing column: {column} in input data. Cannot predict"
                 )
 
-        print("Go with", self._data_info["columns"])
         X = X[self._data_info["columns"]]
 
         # is stacked model
@@ -768,6 +786,12 @@ class BaseAutoML(BaseEstimator, ABC):
         return self._base_predict(X).drop(["label"], axis=1).to_numpy()
 
     def _predict_all(self, X):
+        # Check is task type is correct
+        if self._ml_task == REGRESSION:
+            raise AutoMLException(
+                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
+            )
+
         # Make and return predictions
         return self._base_predict(X)
 

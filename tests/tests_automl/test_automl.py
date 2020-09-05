@@ -164,11 +164,38 @@ class AutoMLTest(unittest.TestCase):
         self.assertGreater(score, 0.5)
 
     def test_breast_cancer_dataset(self):
-        """ Tests AutoML in the boston dataset (Regression)"""
+        """ Tests AutoML in the breast cancer (binary classification)"""
         model = AutoML(explain_level=0, verbose=0, random_state=1)
         score = model.fit(breast_cancer.data, breast_cancer.target).score(
             breast_cancer.data, breast_cancer.target
         )
+        self.assertGreater(score, 0.5)
+
+    def test_titatic_dataset(self):
+        """ Tets AutoML in the titanic dataset (binary classification) with categorial features"""
+        automl = AutoML(algorithms=["Xgboost"], mode="Explain")
+
+        df = pd.read_csv("tests/data/Titanic/train.csv")
+
+        X = df[df.columns[2:]]
+        y = df["Survived"]
+
+        automl.fit(X, y)
+
+        test = pd.read_csv("tests/data/Titanic/test_with_Survived.csv")
+        test_cols = [
+            "Parch",
+            "Ticket",
+            "Fare",
+            "Pclass",
+            "Name",
+            "Sex",
+            "Age",
+            "SibSp",
+            "Cabin",
+            "Embarked",
+        ]
+        score = automl.score(test[test_cols], test["Survived"])
         self.assertGreater(score, 0.5)
 
     def test_score_without_y(self):
