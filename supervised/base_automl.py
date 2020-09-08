@@ -68,7 +68,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._start_time = time.time()
         self._time_ctrl = None
         self._all_params = {}
-        self._n_features = None
+        # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
+        self.n_features_in_ = None # for scikit-learn api
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -125,7 +126,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
-            self.n_features = self._data_info["n_features"]
+            self.n_features_in_ = self._data_info["n_features"]
 
             if "n_classes" in self._data_info:
                 self.n_classes = self._data_info["n_classes"]
@@ -398,7 +399,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         columns_and_target_info = DataInfo.compute(X, y, self._ml_task)
 
-        self.n_features = X.shape[1]
+        self.n_features_in_ = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         self._data_info = {
@@ -408,7 +409,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "target_is_numeric": target_is_numeric,
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
-            "n_features": self.n_features,
+            "n_features": self.n_features_in_,
         }
         # Add n_classes if not regression
         if self._ml_task != REGRESSION:
@@ -465,9 +466,9 @@ class BaseAutoML(BaseEstimator, ABC):
         # X = check_array(X, ensure_2d=False)
         X = np.atleast_2d(X)
         n_features = X.shape[1]
-        if self.n_features != n_features:
+        if self.n_features_in_ != n_features:
             raise ValueError(
-                f"Number of features of the model must match the input. Model n_features is {self.n_features}%s and input n_features is {n_features} %s. Reshape your data."
+                f"Number of features of the model must match the input. Model n_features is {self.n_features_in_}%s and input n_features is {n_features} %s. Reshape your data."
             )
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
@@ -517,7 +518,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
-        self.n_features = X.shape[1]
+        self.n_features_in_ = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         # Get attributes (__init__ params)
@@ -549,12 +550,6 @@ class BaseAutoML(BaseEstimator, ABC):
                     "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new 'fit()'."
                 )
                 return
-
-            # Validate input and build dataframes
-            X, y = self._build_dataframe(X, y)
-
-            self.n_features = X.shape[1]
-            self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
             self.verbose_print(f"The task is {self._ml_task} with evaluation metric {self._eval_metric}")

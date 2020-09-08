@@ -68,6 +68,7 @@ class Scale(object):
             "mean": list(self.scale.mean_),
             "var": list(self.scale.var_),
             "n_samples_seen": int(self.scale.n_samples_seen_),
+            "n_features_in": int(self.scale.n_features_in_),
             "columns": self.columns,
             "scale_method": self.scale_method,
         }
@@ -89,6 +90,7 @@ class Scale(object):
         if self.scale.var_ is not None:
             self.scale.var_ = np.array(self.scale.var_)
         self.scale.n_samples_seen_ = int(data_json.get("n_samples_seen"))
+        self.scale.n_features_in_ = int(data_json.get("n_features_in"))
         self.columns = data_json.get("columns", [])
         self.scale_method = data_json.get("scale_method")
         self.X_min_values = data_json.get("X_min_values")
