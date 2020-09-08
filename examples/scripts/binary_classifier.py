@@ -19,25 +19,9 @@ y = df["income"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
-    results_path="AutoML_38",
-    #algorithms=["Random Forest"],
-    total_time_limit=20,
-    #explain_level=0,
-    # validation={"validation_type": "split"},
-    #mode="Explain",
-    # validation={"validation_type": "split"}
-    #validation_starategy={
-    #    "validation_type": "kfold",
-    #    "k_folds": 2,
-    #    "shuffle": True,
-    #    "stratify": True,
-    #},
-    #golden_features=True,
-    #feature_selection=True
+    results_path="AutoML_7",
+    mode="Compete"
 )
-#automl.set_advanced(
-# #   start_random_models=20, hill_climbing_steps=10, top_models_to_improve=3
-#)
 automl.fit(X_train, y_train)
 
 predictions = automl.predict_all(X_test)

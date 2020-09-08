@@ -132,6 +132,28 @@ class AutoMLTargetsTest(unittest.TestCase):
         self.assertTrue(0 in u or 1 in u or 2 in u or 3 in u)
         self.assertTrue(len(u) <= 4)
 
+    def test_multi_class_0123_strings(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = np.random.randint(0, 4, self.rows * 4)
+        y = y.astype(str)
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+        pred = automl.predict(X)
+
+        u = np.unique(pred)
+
+        self.assertTrue("0" in u or "1" in u or "2" in u or "3" in u)
+        self.assertTrue(len(u) <= 4)
+
     def test_multi_class_abcd(self):
         X = np.random.rand(self.rows * 4, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])

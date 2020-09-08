@@ -385,8 +385,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
         X.to_parquet(self._X_path, index=False)
 
-        # if self._ml_task == MULTICLASS_CLASSIFICATION:
-        #     y = y.astype(str)
+        # let's check before any conversions
+        target_is_numeric = pd.api.types.is_numeric_dtype(y)
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            y = y.astype(str)
 
         pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
@@ -403,7 +405,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "columns": X.columns.tolist(),
             "rows": y.shape[0],
             "cols": X.shape[1],
-            "target_is_numeric": pd.api.types.is_numeric_dtype(y),
+            "target_is_numeric": target_is_numeric,
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features,
@@ -508,9 +510,10 @@ class BaseAutoML(BaseEstimator, ABC):
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
-            return print(
+            print(
                 "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
             )
+            return
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
@@ -553,11 +556,14 @@ class BaseAutoML(BaseEstimator, ABC):
             self.n_features = X.shape[1]
             self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
-            self.verbose_print(f"AutoML current directory: {self._results_path}")
-            self.verbose_print(f"AutoML current task: {self._ml_task}")
-            self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
-            self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
-
+            self.verbose_print(f"AutoML directory: {self._results_path}")
+            self.verbose_print(f"The task is {self._ml_task} with evaluation metric {self._eval_metric}")
+            self.verbose_print(f"AutoML will use algorithms: {self._algorithms}")
+            if self._stack_models:
+                self.verbose_print("AutoML will stack models")
+            if self._train_ensemble:
+                self.verbose_print("AutoML will ensemble availabe models")
+                
             self._start_time = time.time()
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
@@ -567,8 +573,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            self._save_data(X, y)
-
+            self._save_data(X.copy(deep=False), y)
+            
             tuner = MljarTuner(
                 self._get_tuner_params(
                     self._start_random_models,
@@ -625,9 +631,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 if generated_params is None:
                     continue
                 if generated_params:
-                    self.verbose_print("-" * 72)
+                    #self.verbose_print("*" * 55)
+                    model_str = "models" if len(generated_params) > 1 else "model" 
                     self.verbose_print(
-                        f"{step} with {len(generated_params)} models to train ..."
+                        f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
                     )
 
                 for params in generated_params:
@@ -654,7 +661,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._fit_level = "finished"
             self.save_progress()
 
-            self.verbose_print(f"AutoML fit time: {time.time() - self._start_time}")
+            self.verbose_print(f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds")
 
         except Exception as e:
             raise e
@@ -725,7 +732,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._perform_model_stacking()
             X_stacked = self.get_stacked_data(X, mode="predict")
 
-            if self.best_model.get_type() == "Ensemble":
+            if self._best_model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
                 predictions = self._best_model.predict(X, X_stacked)
             else:
@@ -888,7 +895,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Decision Tree",
                     "Random Forest",
                     "Xgboost",
-                    # "Neural Network"
+                    "Neural Network"
                 ]
             if self._get_mode() == "Perform":
                 return [

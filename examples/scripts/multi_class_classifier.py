@@ -6,6 +6,13 @@ import supervised
 
 import warnings
 
+from sklearn import datasets
+from sklearn.pipeline import make_pipeline
+from sklearn.decomposition import PCA
+
+from supervised import AutoML
+from supervised.exceptions import AutoMLException
+
 # warnings.filterwarnings('error')
 warnings.filterwarnings(
     "error", category=pd.core.common.SettingWithCopyWarning

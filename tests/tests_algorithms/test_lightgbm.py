@@ -88,13 +88,13 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
         lgb.save(filename)
         lgb2 = LightgbmAlgorithm({})
         self.assertTrue(lgb.uid != lgb2.uid)
         self.assertTrue(lgb2.model is None)
         lgb2.load(filename)
-        #Finished with the file, delete it
+        # Finished with the file, delete it
         os.remove(filename)
 
         y_predicted = lgb2.predict(self.X)

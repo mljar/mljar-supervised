@@ -147,6 +147,9 @@ class AdditionalMetrics:
 
         # Print the confusion matrix
         predictions = predictions["label"]
+        if not pd.api.types.is_string_dtype(predictions):
+            predictions = predictions.astype(str)
+
         if not pd.api.types.is_string_dtype(target):
             target = target.astype(str)
 

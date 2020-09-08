@@ -93,12 +93,12 @@ class LinearAlgorithmTest(unittest.TestCase):
         y_predicted = model.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
 
         model.save(filename)
         model2 = LinearAlgorithm({"ml_task": "binary_classification"})
         model2.load(filename)
-        #Finished with the file, delete it
+        # Finished with the file, delete it
         os.remove(filename)
 
         y_predicted = model2.predict(self.X)

@@ -25,22 +25,11 @@ df = pd.read_csv("tests/data/Titanic/train.csv")
 X = df[df.columns[2:]]
 y = df["Survived"]
 
-for col in df.columns:
-    print(col, df[col].dtype)
-
-automl = AutoML(
-    results_path="AutoML_39",
-    # algorithms=["Xgboost"],
-    # model_time_limit=20,
-    # train_ensemble=True,
-    mode="Explain"
-)
-# automl.set_advanced(start_random_models=3)
+automl = AutoML(mode="Perform", explain_level=2, total_time_limit=10*60)
 automl.fit(X, y)
+pred = automl.predict(X)
 
-pred = automl.predict_all(X)
-
-print("Train accuracy", accuracy_score(y, pred["label"]))
+print("Train accuracy", accuracy_score(y, pred)) #["label"]))
 
 test = pd.read_csv("tests/data/Titanic/test_with_Survived.csv")
 test_cols = [
