@@ -79,7 +79,7 @@ class EDA:
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
                         X[col],
-                        order=X[col].value_counts().iloc[:10].index,
+                        order=X[col].value_counts().iloc[:11].index,
                         color=BLUE,
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
@@ -101,7 +101,7 @@ class EDA:
 
                 elif PreprocessingUtils.get_type(X[col]) in ("text"):
 
-                    plt.figure(figsize=(10, 10), dpi=70)
+                    plt.figure(figsize=(11, 11), dpi=70)
                     word_string = " ".join(X[col].str.lower())
                     wordcloud = WordCloud(
                         width=500,
@@ -162,3 +162,56 @@ class EDA:
             fout.close()
         except Exception as e:
             logger.error(f"There was an issue when running EDA. {str(e)}")
+
+    @staticmethod
+    def extensive_eda(X,y):
+
+        
+
+        if PreprocessingUtils.get_type(y) in ("categorical","discrete"):
+            print("here")
+            for col in X.columns:
+
+                if PreprocessingUtils.get_type(X[col])=="continous":
+
+                    plt.figure(figsize=(5,5))
+                    for i in np.unique(y):
+                        sns.kdeplot(X.iloc[np.where(y==i)[0]][col],label=f'class {i}',shade=True)
+                    plt.legend()
+                    plt.gca().set_title(f"Distribution of {col} for each class",fontsize = 11, weight = 'bold', alpha = .75)
+                    #plt.savefig(f'{col}_target.png')
+
+
+                elif PreprocessingUtils.get_type(X[col]) in ("categorical","discrete"):
+
+                    plt.figure(figsize=(5,5))
+                    sns.countplot(x=X[col], hue=y)
+                    plt.gca().set_title(f"Count plot of each {col}",fontsize = 11, weight = 'bold', alpha = .75)
+                    #plt.savefig(f'{col}_target.png')
+
+                    
+
+        elif PreprocessingUtils.get_type(y)=="continues":
+
+
+            for col in X.columns:
+
+                if PreprocessingUtils.get_type(X[col])=="continues":
+
+                    plt.figure(figsize=(5,5))
+                    plt.scatter(X[col].values,y)
+                    plt.gca().set_title(f"Scatter plot of {col} vs target",fontsize = 11, weight = 'bold', alpha = .75)
+                    #plt.savefig(f'{col}_target.png')
+
+
+                elif PreprocessingUtils.get_type(X[col]) in ("categorical","discrete"):
+
+                    plt.figure(figsize=(5,5))
+                    for i in np.unique(X[col]):
+                        sns.kdeplot(y[X[X[col]==i].index],shade=True,label=f'{col}_{i}')
+                    plt.gca().set_title(f"Distribution of target for each {col}",fontsize = 11, weight = 'bold', alpha = .75)
+                    plt.legend()
+                    #plt.savefig(f'{col}_target.png')
+
+
+
