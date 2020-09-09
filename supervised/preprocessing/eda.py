@@ -164,9 +164,10 @@ class EDA:
         # Check for empty dataframes in params
         if not isinstance(X, pd.DataFrame):
             raise ValueError("X should be a dataframe")
-        if y.empty:
-            raise ValueError("y is empty")
+        if X.shape[0] != len(y):
+            raise ValueError("X and y should have same number of samples")
 
+        plt.style.use("ggplot")
         try:
 
             if PreprocessingUtils.get_type(y) in ("categorical", "discrete"):
@@ -213,6 +214,8 @@ class EDA:
 
                         plt.figure(figsize=(5, 5))
                         plt.scatter(X[col].values, y)
+                        plt.gca().set_xlabel(f"{col}")
+                        plt.gca().set_ylabel("target")
                         plt.gca().set_title(
                             f"Scatter plot of {col} vs target",
                             fontsize=11,
@@ -249,6 +252,18 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
+
+            cols = [
+                col
+                for col in X.columns
+                if PreprocessingUtils.get_type(X[col]) == "continous"
+            ][:14]
+            X["target"] = y
+            plt.figure(figsize=(10, 10))
+            sns.heatmap(X[cols + ["target"]].corr())
+            plt.gca().set_title(
+                "Heatmap", fontsize=11, weight="bold", alpha=0.75,
+            )
 
         except Exception as e:
             logger.error(f"There was an issue when running EDA. {str(e)}")
