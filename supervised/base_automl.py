@@ -468,7 +468,7 @@ class BaseAutoML(BaseEstimator, ABC):
         n_features = X.shape[1]
         if self.n_features_in_ != n_features:
             raise ValueError(
-                f"Number of features of the model must match the input. Model n_features is {self.n_features_in_}%s and input n_features is {n_features} %s. Reshape your data."
+                f"Number of features of the model must match the input. Model n_features_in_ is {self.n_features_in_} and input n_features is {n_features}. Reshape your data."
             )
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
@@ -712,8 +712,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _base_predict(self, X):
         self._check_is_fitted()
-        self._validate_X_predict(X)
-
+        
         X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
@@ -726,6 +725,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 )
 
         X = X[self._data_info["columns"]]
+        self._validate_X_predict(X)
 
         # is stacked model
         if self._best_model._is_stacked:
