@@ -25,7 +25,7 @@ df = pd.read_csv("tests/data/Titanic/train.csv")
 X = df[df.columns[2:]]
 y = df["Survived"]
 
-automl = AutoML(mode="Perform", explain_level=2, total_time_limit=10*60)
+automl = AutoML(mode="Perform", explain_level=2, total_time_limit=1*6, feature_selection=True)
 automl.fit(X, y)
 pred = automl.predict(X)
 

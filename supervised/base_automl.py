@@ -623,15 +623,20 @@ class BaseAutoML(BaseEstimator, ABC):
                         step, self._models, self._results_path, self._stacked_models
                     )
 
-                if generated_params is None:
+                if generated_params is None or not generated_params:
+                    self.verbose_print(f"Skip {step} because no parameters were generated.")
                     continue
                 if generated_params:
-                    #self.verbose_print("*" * 55)
-                    model_str = "models" if len(generated_params) > 1 else "model" 
-                    self.verbose_print(
-                        f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
-                    )
-
+                    if "learner" in generated_params[0] and not self._time_ctrl.enough_time(
+                        generated_params[0]["learner"]["model_type"], self._fit_level
+                    ):
+                        self.verbose_print(f"Skip {step} because of the time limit.")
+                    else:
+                        model_str = "models" if len(generated_params) > 1 else "model" 
+                        self.verbose_print(
+                            f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
+                        )
+                
                 for params in generated_params:
                     if params.get("status", "") == "trained":
                         self.verbose_print(
