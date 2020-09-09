@@ -161,6 +161,7 @@ class GoldenFeaturesTransformer(object):
                 ]
             )
             self._new_columns += [new_col]
+            print(f"Add Golden Feature: {new_col}")
 
         self.save(self._result_file)
 
