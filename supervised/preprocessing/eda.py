@@ -196,14 +196,16 @@ class EDA:
                         "discrete",
                     ):
 
-                        plt.figure(figsize=(5, 5))
-                        sns.countplot(x=X[col], hue=y)
-                        plt.gca().set_title(
-                            f"Count plot of each {col}",
-                            fontsize=11,
-                            weight="bold",
-                            alpha=0.75,
-                        )
+                        if np.nunique(X[col]) <= 7:
+
+                            plt.figure(figsize=(5, 5))
+                            sns.countplot(x=X[col], hue=y)
+                            plt.gca().set_title(
+                                f"Count plot of each {col}",
+                                fontsize=11,
+                                weight="bold",
+                                alpha=0.75,
+                            )
 
             elif PreprocessingUtils.get_type(y) == "continous":
 
@@ -227,19 +229,22 @@ class EDA:
                         "categorical",
                         "discrete",
                     ):
+                        if X[col].nunique() <= 7:
 
-                        plt.figure(figsize=(5, 5))
-                        for i in np.unique(X[col]):
-                            sns.kdeplot(
-                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                            plt.figure(figsize=(5, 5))
+                            for i in X[col].unique():
+                                sns.kdeplot(
+                                    y[X[X[col] == i].index],
+                                    shade=True,
+                                    label=f"{col}_{i}",
+                                )
+                            plt.gca().set_title(
+                                f"Distribution of target for each {col}",
+                                fontsize=11,
+                                weight="bold",
+                                alpha=0.75,
                             )
-                        plt.gca().set_title(
-                            f"Distribution of target for each {col}",
-                            fontsize=11,
-                            weight="bold",
-                            alpha=0.75,
-                        )
-                        plt.legend()
+                            plt.legend()
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
