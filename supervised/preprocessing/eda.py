@@ -161,77 +161,94 @@ class EDA:
     @staticmethod
     def extensive_eda(X, y):
 
-        if PreprocessingUtils.get_type(y) in ("categorical", "discrete"):
-            print("here")
-            for col in X.columns:
+        # Check for empty dataframes in params
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("X should be a dataframe")
+        if y.empty:
+            raise ValueError("y is empty")
 
-                if PreprocessingUtils.get_type(X[col]) == "continous":
+        try:
 
-                    plt.figure(figsize=(5, 5))
-                    for i in np.unique(y):
-                        sns.kdeplot(
-                            X.iloc[np.where(y == i)[0]][col],
-                            label=f"class {i}",
-                            shade=True,
+            if PreprocessingUtils.get_type(y) in ("categorical", "discrete"):
+
+                for col in X.columns:
+
+                    if PreprocessingUtils.get_type(X[col]) == "continous":
+
+                        plt.figure(figsize=(5, 5))
+                        for i in np.unique(y):
+                            sns.kdeplot(
+                                X.iloc[np.where(y == i)[0]][col],
+                                label=f"class {i}",
+                                shade=True,
+                            )
+                        plt.legend()
+                        plt.gca().set_title(
+                            f"Distribution of {col} for each class",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
                         )
-                    plt.legend()
-                    plt.gca().set_title(
-                        f"Distribution of {col} for each class",
-                        fontsize=11,
-                        weight="bold",
-                        alpha=0.75,
-                    )
 
-                elif PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
+                    elif PreprocessingUtils.get_type(X[col]) in (
+                        "categorical",
+                        "discrete",
+                    ):
 
-                    plt.figure(figsize=(5, 5))
-                    sns.countplot(x=X[col], hue=y)
-                    plt.gca().set_title(
-                        f"Count plot of each {col}",
-                        fontsize=11,
-                        weight="bold",
-                        alpha=0.75,
-                    )
-
-        elif PreprocessingUtils.get_type(y) == "continous":
-
-            print("here")
-            for col in X.columns:
-
-                if PreprocessingUtils.get_type(X[col]) == "continous":
-
-                    plt.figure(figsize=(5, 5))
-                    plt.scatter(X[col].values, y)
-                    plt.gca().set_title(
-                        f"Scatter plot of {col} vs target",
-                        fontsize=11,
-                        weight="bold",
-                        alpha=0.75,
-                    )
-
-                elif PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
-
-                    plt.figure(figsize=(5, 5))
-                    for i in np.unique(X[col]):
-                        sns.kdeplot(
-                            y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                        plt.figure(figsize=(5, 5))
+                        sns.countplot(x=X[col], hue=y)
+                        plt.gca().set_title(
+                            f"Count plot of each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
                         )
-                    plt.gca().set_title(
-                        f"Distribution of target for each {col}",
-                        fontsize=11,
-                        weight="bold",
-                        alpha=0.75,
-                    )
-                    plt.legend()
 
-                elif PreprocessingUtils.get_type(X[col]) == "datetime":
+            elif PreprocessingUtils.get_type(y) == "continous":
 
-                    plt.figure(figsize=(5, 5))
-                    plt.plot(X[col], y)
-                    plt.gca().set_xticklabels(X[col].dt.date, rotation="45")
-                    plt.gca().set_title(
-                        f"Distribution of target over time",
-                        fontsize=11,
-                        weight="bold",
-                        alpha=0.75,
-                    )
+                print("here")
+                for col in X.columns:
+
+                    if PreprocessingUtils.get_type(X[col]) == "continous":
+
+                        plt.figure(figsize=(5, 5))
+                        plt.scatter(X[col].values, y)
+                        plt.gca().set_title(
+                            f"Scatter plot of {col} vs target",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+
+                    elif PreprocessingUtils.get_type(X[col]) in (
+                        "categorical",
+                        "discrete",
+                    ):
+
+                        plt.figure(figsize=(5, 5))
+                        for i in np.unique(X[col]):
+                            sns.kdeplot(
+                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                            )
+                        plt.gca().set_title(
+                            f"Distribution of target for each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.legend()
+
+                    elif PreprocessingUtils.get_type(X[col]) == "datetime":
+
+                        plt.figure(figsize=(5, 5))
+                        plt.plot(X[col], y)
+                        plt.gca().set_xticklabels(X[col].dt.date, rotation="45")
+                        plt.gca().set_title(
+                            f"Distribution of target over time",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+
+        except Exception as e:
+            logger.error(f"There was an issue when running EDA. {str(e)}")
