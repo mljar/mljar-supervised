@@ -9,8 +9,6 @@ install:
   - pip install -U -r requirements.txt
   - pip install -U -r requirements_dev.txt
   - python setup.py install
-  - pip install pytest-cov
-  - pip install coveralls
 script: 
   - pytest tests --cov=supervised/
 after_success:
