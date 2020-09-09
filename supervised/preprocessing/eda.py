@@ -71,16 +71,11 @@ class EDA:
             for col in X.columns:
                 inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-                if PreprocessingUtils.get_type(X[col]) in (
-                    "categorical",
-                    "discrete",
-                ):
+                if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete",):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        X[col],
-                        order=X[col].value_counts().iloc[:10].index,
-                        color=BLUE,
+                        X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE,
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")
@@ -164,59 +159,79 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def extensive_eda(X,y):
+    def extensive_eda(X, y):
 
-        
-
-        if PreprocessingUtils.get_type(y) in ("categorical","discrete"):
+        if PreprocessingUtils.get_type(y) in ("categorical", "discrete"):
             print("here")
             for col in X.columns:
 
-                if PreprocessingUtils.get_type(X[col])=="continous":
+                if PreprocessingUtils.get_type(X[col]) == "continous":
 
-                    plt.figure(figsize=(5,5))
+                    plt.figure(figsize=(5, 5))
                     for i in np.unique(y):
-                        sns.kdeplot(X.iloc[np.where(y==i)[0]][col],label=f'class {i}',shade=True)
+                        sns.kdeplot(
+                            X.iloc[np.where(y == i)[0]][col],
+                            label=f"class {i}",
+                            shade=True,
+                        )
                     plt.legend()
-                    plt.gca().set_title(f"Distribution of {col} for each class",fontsize = 11, weight = 'bold', alpha = .75)
+                    plt.gca().set_title(
+                        f"Distribution of {col} for each class",
+                        fontsize=11,
+                        weight="bold",
+                        alpha=0.75,
+                    )
 
+                elif PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
 
-                elif PreprocessingUtils.get_type(X[col]) in ("categorical","discrete"):
-
-                    plt.figure(figsize=(5,5))
+                    plt.figure(figsize=(5, 5))
                     sns.countplot(x=X[col], hue=y)
-                    plt.gca().set_title(f"Count plot of each {col}",fontsize = 11, weight = 'bold', alpha = .75)
+                    plt.gca().set_title(
+                        f"Count plot of each {col}",
+                        fontsize=11,
+                        weight="bold",
+                        alpha=0.75,
+                    )
 
-                    
+        elif PreprocessingUtils.get_type(y) == "continous":
 
-        elif PreprocessingUtils.get_type(y)=="continous":
-
-            print('here')
+            print("here")
             for col in X.columns:
 
-                if PreprocessingUtils.get_type(X[col])=="continous":
+                if PreprocessingUtils.get_type(X[col]) == "continous":
 
-                    plt.figure(figsize=(5,5))
-                    plt.scatter(X[col].values,y)
-                    plt.gca().set_title(f"Scatter plot of {col} vs target",fontsize = 11, weight = 'bold', alpha = .75)
+                    plt.figure(figsize=(5, 5))
+                    plt.scatter(X[col].values, y)
+                    plt.gca().set_title(
+                        f"Scatter plot of {col} vs target",
+                        fontsize=11,
+                        weight="bold",
+                        alpha=0.75,
+                    )
 
+                elif PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
 
-                elif PreprocessingUtils.get_type(X[col]) in ("categorical","discrete"):
-
-                    plt.figure(figsize=(5,5))
+                    plt.figure(figsize=(5, 5))
                     for i in np.unique(X[col]):
-                        sns.kdeplot(y[X[X[col]==i].index],shade=True,label=f'{col}_{i}')
-                    plt.gca().set_title(f"Distribution of target for each {col}",fontsize = 11, weight = 'bold', alpha = .75)
+                        sns.kdeplot(
+                            y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                        )
+                    plt.gca().set_title(
+                        f"Distribution of target for each {col}",
+                        fontsize=11,
+                        weight="bold",
+                        alpha=0.75,
+                    )
                     plt.legend()
-        
-                elif PreprocessingUtils.get_type(X[col])=="datetime":
 
-                    plt.figure(figsize=(5,5))
-                    plt.plot(X[col],y)
-                    plt.gca().set_xticklabels(X[col].dt.date,rotation='45')  
-                    plt.gca().set_title(f"Distribution of target over time",fontsize = 11, weight = 'bold', alpha = .75)
+                elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
-                                      
-
-
-
+                    plt.figure(figsize=(5, 5))
+                    plt.plot(X[col], y)
+                    plt.gca().set_xticklabels(X[col].dt.date, rotation="45")
+                    plt.gca().set_title(
+                        f"Distribution of target over time",
+                        fontsize=11,
+                        weight="bold",
+                        alpha=0.75,
+                    )
