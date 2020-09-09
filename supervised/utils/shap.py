@@ -80,8 +80,8 @@ class PlotSHAP:
             sample = y_validation.index.tolist()
             np.random.shuffle(sample)
             sample = sample[:SAMPLES_LIMIT]
-            X_vald = X_validation.iloc[sample]
-            y_vald = y_validation.iloc[sample]
+            X_vald = X_validation.loc[sample]
+            y_vald = y_validation.loc[sample]
         else:
             X_vald = X_validation
             y_vald = y_validation
@@ -181,77 +181,77 @@ class PlotSHAP:
     ):
         if not PlotSHAP.is_available(algorithm, X_train, y_train, ml_task):
             return
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                explainer = PlotSHAP.get_explainer(algorithm, X_train)
-                X_vald, y_vald = PlotSHAP.get_sample(X_validation, y_validation)
-                shap_values = explainer.shap_values(X_vald)
+        #try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            explainer = PlotSHAP.get_explainer(algorithm, X_train)
+            X_vald, y_vald = PlotSHAP.get_sample(X_validation, y_validation)
+            shap_values = explainer.shap_values(X_vald)
 
-            # fix problem with 1 or 2 dimensions for binary classification
-            expected_value = explainer.expected_value
-            if ml_task == BINARY_CLASSIFICATION and isinstance(shap_values, list):
-                shap_values = shap_values[1]
-                expected_value = explainer.expected_value[1]
+        # fix problem with 1 or 2 dimensions for binary classification
+        expected_value = explainer.expected_value
+        if ml_task == BINARY_CLASSIFICATION and isinstance(shap_values, list):
+            shap_values = shap_values[1]
+            expected_value = explainer.expected_value[1]
 
-            # Summary SHAP plot
-            PlotSHAP.summary(
-                shap_values, X_vald, model_file_path, learner_name, class_names
-            )
-            # Dependence SHAP plots
-            if ml_task == MULTICLASS_CLASSIFICATION:
-                for t in np.unique(y_vald):
-                    PlotSHAP.dependence(
-                        shap_values[t],
-                        X_vald,
-                        model_file_path,
-                        learner_name,
-                        f"_class_{class_names[t]}",
-                    )
-            else:
-                PlotSHAP.dependence(shap_values, X_vald, model_file_path, learner_name)
-
-            # Decision SHAP plots
-            df_preds = PlotSHAP.get_predictions(algorithm, X_vald, y_vald, ml_task)
-
-            if ml_task == REGRESSION:
-                PlotSHAP.decisions_regression(
-                    df_preds,
-                    shap_values,
-                    expected_value,
+        # Summary SHAP plot
+        PlotSHAP.summary(
+            shap_values, X_vald, model_file_path, learner_name, class_names
+        )
+        # Dependence SHAP plots
+        if ml_task == MULTICLASS_CLASSIFICATION:
+            for t in np.unique(y_vald):
+                PlotSHAP.dependence(
+                    shap_values[t],
                     X_vald,
-                    y_vald,
                     model_file_path,
                     learner_name,
+                    f"_class_{class_names[t]}",
                 )
-            elif ml_task == BINARY_CLASSIFICATION:
-                PlotSHAP.decisions_binary(
-                    df_preds,
-                    shap_values,
-                    expected_value,
-                    X_vald,
-                    y_vald,
-                    model_file_path,
-                    learner_name,
-                )
-            else:
-                PlotSHAP.decisions_multiclass(
-                    df_preds,
-                    shap_values,
-                    expected_value,
-                    X_vald,
-                    y_vald,
-                    model_file_path,
-                    learner_name,
-                    class_names,
-                )
-        except Exception as e:
-            print(
-                f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+        else:
+            PlotSHAP.dependence(shap_values, X_vald, model_file_path, learner_name)
+
+        # Decision SHAP plots
+        df_preds = PlotSHAP.get_predictions(algorithm, X_vald, y_vald, ml_task)
+
+        if ml_task == REGRESSION:
+            PlotSHAP.decisions_regression(
+                df_preds,
+                shap_values,
+                expected_value,
+                X_vald,
+                y_vald,
+                model_file_path,
+                learner_name,
             )
-            logger.info(
-                f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+        elif ml_task == BINARY_CLASSIFICATION:
+            PlotSHAP.decisions_binary(
+                df_preds,
+                shap_values,
+                expected_value,
+                X_vald,
+                y_vald,
+                model_file_path,
+                learner_name,
             )
+        else:
+            PlotSHAP.decisions_multiclass(
+                df_preds,
+                shap_values,
+                expected_value,
+                X_vald,
+                y_vald,
+                model_file_path,
+                learner_name,
+                class_names,
+            )
+        #except Exception as e:
+        #    print(
+        #        f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+        #    )
+        #    logger.info(
+        #        f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+        #    )
 
     @staticmethod
     def decisions_regression(

@@ -506,6 +506,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
 
+        X.reset_index(drop=True, inplace=True)
+        y.reset_index(drop=True, inplace=True)
+
         return X, y
 
     def _fit(self, X, y):
