@@ -10,6 +10,7 @@ from wordcloud import STOPWORDS
 from collections import defaultdict
 
 from supervised.utils.config import LOG_LEVEL
+from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ logger.setLevel(LOG_LEVEL)
 
 # color used in the plots
 BLUE = "#007cf2"
+COLS = 14
 
 
 class EDA:
@@ -159,13 +161,21 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def extensive_eda(X, y):
+    def extensive_eda(X, y,save_path):
 
+        X = X.copy(deep=True)
         # Check for empty dataframes in params
         if not isinstance(X, pd.DataFrame):
             raise ValueError("X should be a dataframe")
         if X.shape[0] != len(y):
             raise ValueError("X and y should have same number of samples")
+
+        if save_path:
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+        else:
+            raise ValueError("provide a valid path to save plots") 
+
 
         plt.style.use("ggplot")
         try:
@@ -190,6 +200,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
+                        plt.savefig(os.path.join(save_path,f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -206,10 +217,10 @@ class EDA:
                                 weight="bold",
                                 alpha=0.75,
                             )
+                            plt.savefig(os.path.join(save_path,f"{col}_target"))
+
 
             elif PreprocessingUtils.get_type(y) == "continous":
-
-                print("here")
                 for col in X.columns:
 
                     if PreprocessingUtils.get_type(X[col]) == "continous":
@@ -224,6 +235,8 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
+
+                        plt.savefig(os.path.join(save_path,f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -246,6 +259,9 @@ class EDA:
                             )
                             plt.legend()
 
+                            plt.savefig(os.path.join(save_path,f"{col}_target"))
+
+
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
                         plt.figure(figsize=(5, 5))
@@ -257,12 +273,14 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
+                        plt.savefig(os.path.join(save_path,f"{col}_target"))
+
 
             cols = [
                 col
                 for col in X.columns
                 if PreprocessingUtils.get_type(X[col]) == "continous"
-            ][:14]
+            ][:COLS]
             X["target"] = y
             plt.figure(figsize=(10, 10))
             sns.heatmap(X[cols + ["target"]].corr())
@@ -270,5 +288,8 @@ class EDA:
                 "Heatmap", fontsize=11, weight="bold", alpha=0.75,
             )
 
+            plt.savefig(os.path.join(save_path,"heatmap"))
+
+
         except Exception as e:
-            logger.error(f"There was an issue when running EDA. {str(e)}")
+            AutoMLException(e)
