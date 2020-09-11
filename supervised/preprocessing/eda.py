@@ -161,7 +161,7 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def extensive_eda(X, y,save_path):
+    def extensive_eda(X, y, save_path):
 
         X = X.copy(deep=True)
         # Check for empty dataframes in params
@@ -174,8 +174,7 @@ class EDA:
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
         else:
-            raise ValueError("provide a valid path to save plots") 
-
+            raise ValueError("provide a valid path to save plots")
 
         plt.style.use("ggplot")
         try:
@@ -200,7 +199,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(os.path.join(save_path,f"{col}_target"))
+                        plt.savefig(os.path.join(save_path, f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -217,8 +216,7 @@ class EDA:
                                 weight="bold",
                                 alpha=0.75,
                             )
-                            plt.savefig(os.path.join(save_path,f"{col}_target"))
-
+                            plt.savefig(os.path.join(save_path, f"{col}_target"))
 
             elif PreprocessingUtils.get_type(y) == "continous":
                 for col in X.columns:
@@ -236,7 +234,7 @@ class EDA:
                             alpha=0.75,
                         )
 
-                        plt.savefig(os.path.join(save_path,f"{col}_target"))
+                        plt.savefig(os.path.join(save_path, f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -259,8 +257,7 @@ class EDA:
                             )
                             plt.legend()
 
-                            plt.savefig(os.path.join(save_path,f"{col}_target"))
-
+                            plt.savefig(os.path.join(save_path, f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
@@ -273,8 +270,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(os.path.join(save_path,f"{col}_target"))
-
+                        plt.savefig(os.path.join(save_path, f"{col}_target"))
 
             cols = [
                 col
@@ -288,8 +284,7 @@ class EDA:
                 "Heatmap", fontsize=11, weight="bold", alpha=0.75,
             )
 
-            plt.savefig(os.path.join(save_path,"heatmap"))
-
+            plt.savefig(os.path.join(save_path, "heatmap"))
 
         except Exception as e:
             AutoMLException(e)
