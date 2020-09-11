@@ -26,7 +26,7 @@ y = df["class"]
 
 automl = AutoML(
     # results_path="AutoML_41",
-    #algorithms=["Random Forest"],
+    # algorithms=["Random Forest"],
     # algorithms=["Neural Network"],
     #    "Linear",
     #    "Xgboost",
@@ -35,7 +35,7 @@ automl = AutoML(
     # total_time_limit=100,
     # tuning_mode="Normal",
     # explain_level=0,
-    #mode="Perform"
+    # mode="Perform"
 )
 # automl.set_advanced(start_random_models=1)
 automl.fit(X, y)

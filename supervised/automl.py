@@ -24,7 +24,6 @@ class AutoML(BaseAutoML):
         total_time_limit=60 * 60,
         mode="Explain",
         ml_task="auto",
-        tuning_mode="Normal",
         model_time_limit=None,
         algorithms="auto",
         train_ensemble=True,
@@ -74,17 +73,6 @@ class AutoML(BaseAutoML):
                 - If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
                 - If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
                 - In all other casses, the task is set to `"regression"`.
-
-            tuning_mode (str):  Can be {"Normal", "Sport", "Insane", "Perfect"}.
-                
-                The mode for tuning. The names are kept the same as in [MLJAR web application](https://mljar.com).
-                
-                Each mode describe how many models will be checked:
-                
-                - `Normal` : about 5-10 models of each algorithm will be trained,
-                - `Sport` : about 10-15 models of each algorithm will be trained,
-                - `Insane` : about 15-20 models of each algorithm will be trained,
-                - `Perfect` : about 25-35 models of each algorithm will be trained.
 
             model_time_limit (int): The time limit for training a single model, in seconds.
                 If `model_time_limit` is set, the `total_time_limit` is not respected.
@@ -257,7 +245,6 @@ class AutoML(BaseAutoML):
         # Set user arguments
         self.mode = mode
         self.ml_task = ml_task
-        self.tuning_mode = tuning_mode
         self.results_path = results_path
         self.total_time_limit = total_time_limit
         self.model_time_limit = model_time_limit

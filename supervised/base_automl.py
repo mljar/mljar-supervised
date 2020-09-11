@@ -527,7 +527,6 @@ class BaseAutoML(BaseEstimator, ABC):
         # Get attributes (__init__ params)
         self._mode = self._get_mode()
         self._ml_task = self._get_ml_task()
-        self._tuning_mode = self._get_tuning_mode()
         self._results_path = self._get_results_path()
         self._total_time_limit = self._get_total_time_limit()
         self._model_time_limit = self._get_model_time_limit()
@@ -841,10 +840,6 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.ml_task)
 
-    def _get_tuning_mode(self):
-        self._validate_tuning_mode()
-        return deepcopy(self.tuning_mode)
-
     def _get_results_path(self):
         """ Gets the current results_path"""
         self._validate_results_path()
@@ -977,11 +972,15 @@ class BaseAutoML(BaseEstimator, ABC):
                     "stratify": True,
                 }
             if self._get_ml_task() == REGRESSION:
-                strat.pop("stratify")
+                if "stratify" in strat: 
+                    # it's better to always check
+                    # before delete (trust me)
+                    del strat["stratify"] 
             return strat
         else:
             strat = deepcopy(self.validation_strategy)
-            strat.pop("stratify")
+            if "stratify" in strat:
+                del strat["stratify"]
             return strat
 
     def _get_verbose(self):
@@ -1089,14 +1088,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 f"Expected 'ml_task' to be {' or '.join(AlgorithmsRegistry.get_supported_ml_tasks())}, got '{self.ml_task}''"
             )
 
-    def _validate_tuning_mode(self):
-        """ Validates tuning_mode parameter"""
-        valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
-        if self.tuning_mode not in valid_tuning_modes:
-            raise ValueError(
-                f"Expected 'tuning_mode' to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}'"
-            )
-
     def _validate_results_path(self):
         """ Validates path parameter"""
         if self.results_path is None or isinstance(self.results_path, str):
@@ -1168,12 +1159,10 @@ class BaseAutoML(BaseEstimator, ABC):
         ):
             return
 
-        required_keys = [
-            "validation_type",
-            "k_folds",
-            "shuffle",
-            "stratify",
-        ]
+        # only validation_type is mandatory
+        # other parameters of validations 
+        # have defaults set in their constructors
+        required_keys = ["validation_type"]
         if type(self.validation_strategy) is not dict:
             raise ValueError(
                 f"Expected 'validation_strategy' to be a dict, got '{type(self.validation_strategy)}'"
