@@ -260,14 +260,7 @@ class AutoMLTest(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_tuning_mode(self):
-        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
-        param = {"tuning_mode": "not_legal_tuning_mode"}
-        model.set_params(**param)
-        with self.assertRaises(ValueError) as context:
-            model.fit(iris.data, iris.target)
-
-    def test_invalid_tuning_mode(self):
+    def test_invalid_results_path(self):
         model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"results_path": 2}
         model.set_params(**param)

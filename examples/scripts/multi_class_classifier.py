@@ -33,7 +33,6 @@ automl = AutoML(
     #    "Random Forest"
     # ],
     # total_time_limit=100,
-    # tuning_mode="Normal",
     # explain_level=0,
     # mode="Perform"
 )

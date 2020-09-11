@@ -18,7 +18,6 @@ Automated Machine Learning for supervised tasks (binary classification, multicla
             total_time_limit=60 * 60, 
             model_time_limit=None, 
             algorithms=["Random Forest", "Xgboost"], 
-            tuning_mode="Sport", 
             train_ensemble=True, 
             optimize_metric=None, 
             validation={"validation_type": "kfold", "k_folds": 5, "shuffle": True}, 
@@ -46,17 +45,6 @@ Single model can contain several learners, for example in the case of 10-fold cr
 Based on `model_time_limit` the time limit for single learner is computed.
 
 - `algorithms`: The list of algorithms that will be used in the training.
-
-- `tuning_mode`: The mode for tuning. It can be: `Normal`, `Sport`, `Insane`, `Perfect`. The names are kept the same as in https://mljar.com application.
-
-    Each mode describe how many models will be checked:
-
-    - `Normal` - about 5-10 models of each algorithm will be trained,
-    - `Sport` - about 10-15 models of each algorithm will be trained,
-    - `Insane` - about 15-20 models of each algorithm will be trained,
-    - `Perfect` - about 25-35 models of each algorithm will be trained.
-
-You can also set how many models will be trained with `set_advanced` method.
 
 - `train_ensemble`: If true then at the end of models training the ensemble will be created.
 
