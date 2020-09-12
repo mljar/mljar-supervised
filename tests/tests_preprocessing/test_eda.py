@@ -162,7 +162,6 @@ class EDATest(unittest.TestCase):
         X.columns = [x.replace("*", "_").replace("/", "_") for x in X.columns]
 
         for col in X.columns:
-            print(col)
 
             produced = True
             if "_target".join((col, ".png")) not in result_files:
