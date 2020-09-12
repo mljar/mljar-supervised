@@ -1,10 +1,12 @@
 import os
+import re
 import logging
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import warnings
 from wordcloud import WordCloud
 from wordcloud import STOPWORDS
 from collections import defaultdict
@@ -162,9 +164,9 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def extensive_eda(X, y, save_path):
+    def extensive_eda(df, y, save_path):
 
-        X = X.copy(deep=True)
+        X = df.copy(deep=True)
         # Check for empty dataframes in params
         if not isinstance(X, pd.DataFrame):
             raise ValueError("X should be a dataframe")
@@ -173,12 +175,12 @@ class EDA:
 
         if X.shape[1] > MAXCOL:
             X = X.iloc[:, :MAXCOL]
-            logger.error(
+            warnings.warn(
                 f"AutoML EDA column limit exceeded! running for first {MAXCOL} columns"
             )
 
-        ## replace * and / symbol for filenames
-        X.columns = [x.replace("*", "_").replace("/", "_") for x in X.columns]
+        ## replace forbidden file characters with '_'  symbol
+        X.columns = [re.sub(r'[\\/*?:"<>|]', "_", x) for x in X.columns]
 
         if save_path:
             if not os.path.exists(save_path):

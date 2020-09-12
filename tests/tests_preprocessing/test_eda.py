@@ -1,4 +1,5 @@
 import os
+import re
 import unittest
 import tempfile
 import json
@@ -168,8 +169,8 @@ class EDATest(unittest.TestCase):
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
-        ## replace * and / symbol for filenames
-        X.columns = [x.replace("*", "_").replace("/", "_") for x in X.columns]
+        ## replace  symbol for filenames
+        X.columns = [re.sub(r'[\\/*?:"<>|]', "_", x) for x in X.columns]
 
         for col in X.columns:
 
