@@ -95,6 +95,11 @@ class EDATest(unittest.TestCase):
             produced = False
         self.assertTrue(produced)
 
+        produced = True
+        if "Extensive_EDA.md" not in result_files:
+            produced = False
+        self.assertTrue(produced)
+
         self.tearDown()
 
     def test_extensive_eda_missing(self):
@@ -144,6 +149,11 @@ class EDATest(unittest.TestCase):
             produced = False
         self.assertTrue(produced)
 
+        produced = True
+        if "Extensive_EDA.md" not in result_files:
+            produced = False
+        self.assertTrue(produced)
+
         self.tearDown()
 
     def test_symbol_feature(self):
@@ -167,6 +177,11 @@ class EDATest(unittest.TestCase):
             if "_target".join((col, ".png")) not in result_files:
                 produced = False
                 break
+        self.assertTrue(produced)
+
+        produced = True
+        if "Extensive_EDA.md" not in result_files:
+            produced = False
         self.assertTrue(produced)
 
         self.tearDown()
