@@ -90,6 +90,11 @@ class EDATest(unittest.TestCase):
                 break
         self.assertTrue(produced)
 
+        produced = True
+        if "heatmap.png" not in result_files:
+            produced = False
+        self.assertTrue(produced)
+
         self.tearDown()
 
     def test_extensive_eda_missing(self):
@@ -127,6 +132,37 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         for col in X.columns:
+
+            produced = True
+            if "_target".join((col, ".png")) not in result_files:
+                produced = False
+                break
+        self.assertTrue(produced)
+
+        produced = True
+        if "heatmap.png" not in result_files:
+            produced = False
+        self.assertTrue(produced)
+
+        self.tearDown()
+
+    def test_symbol_feature(self):
+
+        X, y = datasets.make_regression(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        X.rename({"f_0": "ff*", "f_1": "fg/"}, axis=1, inplace=True)
+        y = pd.Series(y, name="class")
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        ## replace * and / symbol for filenames
+        X.columns = [x.replace("*", "_").replace("/", "_") for x in X.columns]
+
+        for col in X.columns:
+            print(col)
 
             produced = True
             if "_target".join((col, ".png")) not in result_files:
