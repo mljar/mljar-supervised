@@ -174,7 +174,7 @@ class EDA:
         if X.shape[1] > MAXCOL:
             X = X.iloc[:, :MAXCOL]
             logger.error(
-                f"More than limited number of columns present in dataframe, taking first {MAXCOL} columns"
+                f"AutoML EDA column limit exceeded! running for first {MAXCOL} columns"
             )
 
         ## replace * and / symbol for filenames
