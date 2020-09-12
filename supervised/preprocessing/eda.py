@@ -19,6 +19,7 @@ logger.setLevel(LOG_LEVEL)
 # color used in the plots
 BLUE = "#007cf2"
 COLS = 14
+MAXCOL = 25
 
 
 class EDA:
@@ -170,6 +171,11 @@ class EDA:
         if X.shape[0] != len(y):
             raise ValueError("X and y should have same number of samples")
 
+        if X.shape[0]>MAXCOL:
+            X = X.iloc[:,:MAXCOL]
+            logger.error(f"More than limited number of columns present in dataframe, taking first {MAXCOL} columns")
+
+
         if save_path:
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
@@ -277,14 +283,30 @@ class EDA:
                 for col in X.columns
                 if PreprocessingUtils.get_type(X[col]) == "continous"
             ][:COLS]
-            X["target"] = y
-            plt.figure(figsize=(10, 10))
-            sns.heatmap(X[cols + ["target"]].corr())
-            plt.gca().set_title(
-                "Heatmap", fontsize=11, weight="bold", alpha=0.75,
-            )
+            if len(cols)>0 :
+                X["target"] = y
+                plt.figure(figsize=(10, 10))
+                sns.heatmap(X[cols + ["target"]].corr())
+                plt.gca().set_title(
+                    "Heatmap", fontsize=11, weight="bold", alpha=0.75,
+                )
 
             plt.savefig(os.path.join(save_path, "heatmap"))
+
+            with open(os.path.join(save_path, "Extensive_EDA.md"), "w") as fout:
+
+                    for col in X.columns[:-1]:
+
+                        fout.write(f'## Bivariate analysis of {col} feature with target\n')
+                        fout.write(f'\n![]({col}_target.png)\n')
+                        fout.write('\n')
+                        fout.write("------------------------------------------------------\n")
+
+                    if len(cols)>0:
+                        fout.write("## Heatmap\n")
+                        fout.write('![](heatmap.png)\n')
+                        fout.write('\n')
+                        fout.write("------------------------------------------------------\n")
 
         except Exception as e:
             AutoMLException(e)
