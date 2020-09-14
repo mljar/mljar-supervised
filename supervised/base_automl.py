@@ -553,6 +553,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new 'fit()'."
                 )
                 return
+            self._check_can_load()
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
             self.verbose_print(
