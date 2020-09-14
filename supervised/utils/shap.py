@@ -181,7 +181,7 @@ class PlotSHAP:
     ):
         if not PlotSHAP.is_available(algorithm, X_train, y_train, ml_task):
             return
-        #try:
+        # try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             explainer = PlotSHAP.get_explainer(algorithm, X_train)
@@ -245,7 +245,7 @@ class PlotSHAP:
                 learner_name,
                 class_names,
             )
-        #except Exception as e:
+        # except Exception as e:
         #    print(
         #        f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
         #    )

@@ -69,7 +69,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._time_ctrl = None
         self._all_params = {}
         # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
-        self.n_features_in_ = None # for scikit-learn api
+        self.n_features_in_ = None  # for scikit-learn api
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -554,13 +554,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 return
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
-            self.verbose_print(f"The task is {self._ml_task} with evaluation metric {self._eval_metric}")
+            self.verbose_print(
+                f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
+            )
             self.verbose_print(f"AutoML will use algorithms: {self._algorithms}")
             if self._stack_models:
                 self.verbose_print("AutoML will stack models")
             if self._train_ensemble:
                 self.verbose_print("AutoML will ensemble availabe models")
-                
+
             self._start_time = time.time()
             if self._time_ctrl is not None:
                 self._start_time -= self._time_ctrl.already_spend()
@@ -571,7 +573,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             # Save data
             self._save_data(X.copy(deep=False), y)
-            
+
             tuner = MljarTuner(
                 self._get_tuner_params(
                     self._start_random_models,
@@ -626,44 +628,51 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
 
                 if generated_params is None or not generated_params:
-                    self.verbose_print(f"Skip {step} because no parameters were generated.")
+                    self.verbose_print(
+                        f"Skip {step} because no parameters were generated."
+                    )
                     continue
                 if generated_params:
-                    if "learner" in generated_params[0] and not self._time_ctrl.enough_time(
+                    if "learner" in generated_params[
+                        0
+                    ] and not self._time_ctrl.enough_time(
                         generated_params[0]["learner"]["model_type"], self._fit_level
                     ):
                         self.verbose_print(f"Skip {step} because of the time limit.")
                     else:
-                        model_str = "models" if len(generated_params) > 1 else "model" 
+                        model_str = "models" if len(generated_params) > 1 else "model"
                         self.verbose_print(
                             f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
                         )
-                
+
                 for params in generated_params:
-                    if params.get("status", "") == "trained":
-                        self.verbose_print(
-                            f"Skipping {params['name']}, already trained."
-                        )
-                        continue
-                    if params.get("status", "") == "skipped":
-                        self.verbose_print(f"Skipped {params['name']}.")
+                    if params.get("status", "") in ["trained", "skipped", "error"]:
+                        self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
 
-                    trained = False
-                    if "ensemble" in step:
-                        trained = self.ensemble_step(is_stacked=params["is_stacked"])
-                    else:
-                        trained = self.train_model(params)
+                    try:
+                        trained = False
+                        if "ensemble" in step:
+                            trained = self.ensemble_step(
+                                is_stacked=params["is_stacked"]
+                            )
+                        else:
+                            trained = self.train_model(params)
+                        params["status"] = "trained" if trained else "skipped"
+                        params["final_loss"] = self._models[-1].get_final_loss()
+                        params["train_time"] = self._models[-1].get_train_time()
+                    except Exception as e:
+                        self._update_errors_report(params.get("name"), str(e))
+                        params["status"] = "error"
 
-                    params["status"] = "trained" if trained else "skipped"
-                    params["final_loss"] = self._models[-1].get_final_loss()
-                    params["train_time"] = self._models[-1].get_train_time()
                     self.save_progress(step, generated_params)
 
             self._fit_level = "finished"
             self.save_progress()
 
-            self.verbose_print(f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds")
+            self.verbose_print(
+                f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
+            )
 
         except Exception as e:
             raise e
@@ -672,6 +681,20 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._load_data_variables(X)
 
         return self
+
+    def _update_errors_report(self, model_name, error_msg):
+        """Append error message to errors.md file. """
+        errors_filename = os.path.join(self._get_results_path(), "errors.md")
+        with open(errors_filename, "a") as fout:
+            self.verbose_print(f"There was an error during {model_name} training.")
+            self.verbose_print(f"Please check {errors_filename} for details.")
+            fout.write(f"## Error for {model_name}\n\n")
+            fout.write(error_msg)
+            link = "https://github.com/mljar/mljar-supervised/issues/new"
+            fout.write(
+                f"\n\nPlease set a GitHub issue with above error message at: {link}"
+            )
+            fout.write("\n\n")
 
     def select_and_save_best(self):
         # Select best model (lowest loss)
@@ -714,7 +737,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _base_predict(self, X):
         self._check_is_fitted()
-        
+
         X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
             X.columns = [str(c) for c in X.columns]
@@ -893,7 +916,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Decision Tree",
                     "Random Forest",
                     "Xgboost",
-                    "Neural Network"
+                    "Neural Network",
                 ]
             if self._get_mode() == "Perform":
                 return [
@@ -972,10 +995,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     "stratify": True,
                 }
             if self._get_ml_task() == REGRESSION:
-                if "stratify" in strat: 
+                if "stratify" in strat:
                     # it's better to always check
                     # before delete (trust me)
-                    del strat["stratify"] 
+                    del strat["stratify"]
             return strat
         else:
             strat = deepcopy(self.validation_strategy)
@@ -1160,7 +1183,7 @@ class BaseAutoML(BaseEstimator, ABC):
             return
 
         # only validation_type is mandatory
-        # other parameters of validations 
+        # other parameters of validations
         # have defaults set in their constructors
         required_keys = ["validation_type"]
         if type(self.validation_strategy) is not dict:

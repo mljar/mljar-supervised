@@ -454,7 +454,7 @@ class MljarTuner:
 
         fname = os.path.join(results_path, "drop_features.json")
         if not os.path.exists(fname):
-            #print("The file with features to drop is missing")
+            # print("The file with features to drop is missing")
             return None
 
         drop_features = json.load(open(fname, "r"))

@@ -58,7 +58,7 @@ class XgbAlgorithm(BaseAlgorithm):
             "min_child_weight": self.params.get("min_child_weight", 1),
             "subsample": self.params.get("subsample", 0.8),
             "colsample_bytree": self.params.get("colsample_bytree", 0.8),
-            #"silent": self.params.get("silent", 1),
+            # "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
         }
 

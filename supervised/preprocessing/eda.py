@@ -71,16 +71,11 @@ class EDA:
             for col in X.columns:
                 inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-                if PreprocessingUtils.get_type(X[col]) in (
-                    "categorical",
-                    "discrete",
-                ):
+                if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        X[col],
-                        order=X[col].value_counts().iloc[:10].index,
-                        color=BLUE,
+                        X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")
