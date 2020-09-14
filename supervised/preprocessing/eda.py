@@ -164,14 +164,13 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def extensive_eda(df, y, save_path):
+    def extensive_eda(X, y, save_path):
 
-        X = df.copy(deep=True)
         # Check for empty dataframes in params
         if not isinstance(X, pd.DataFrame):
             raise ValueError("X should be a dataframe")
         if X.shape[0] != len(y):
-            raise ValueError("X and y should have same number of samples")
+            raise ValueError("X and y should have the same number of samples")
 
         if X.shape[1] > MAXCOL:
             X = X.iloc[:, :MAXCOL]
@@ -179,14 +178,11 @@ class EDA:
                 f"AutoML EDA column limit exceeded! running for first {MAXCOL} columns"
             )
 
-        ## replace forbidden file characters with '_'  symbol
-        X.columns = [re.sub(r'[\\/*?:"<>|]', "_", x) for x in X.columns]
-
         if save_path:
             if not os.path.exists(save_path):
                 os.mkdir(save_path)
         else:
-            raise ValueError("provide a valid path to save plots")
+            raise ValueError("Please provide a valid path to save the Extensive EDA")
 
         plt.style.use("ggplot")
         try:
@@ -211,24 +207,38 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        plt.savefig(
+                            os.path.join(
+                                save_path,
+                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
+                            )
+                        )
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
                         "discrete",
                     ):
 
-                        if np.nunique(X[col]) <= 7:
+                        if X[col].nunique() > 7:
+                            warnings.warn("Considering 7 the most frequent values")
 
-                            plt.figure(figsize=(5, 5))
-                            sns.countplot(x=X[col], hue=y)
-                            plt.gca().set_title(
-                                f"Count plot of each {col}",
-                                fontsize=11,
-                                weight="bold",
-                                alpha=0.75,
+                        values = X[col].value_counts().index[:7]
+                        plt.figure(figsize=(5, 5))
+                        sns.countplot(
+                            x=X[X[col].isin(values)][col], hue=y[X[col].isin(values)]
+                        )
+                        plt.gca().set_title(
+                            f"Count plot of each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.savefig(
+                            os.path.join(
+                                save_path,
+                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
                             )
-                            plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        )
 
             elif PreprocessingUtils.get_type(y) == "continous":
                 for col in X.columns:
@@ -246,30 +256,34 @@ class EDA:
                             alpha=0.75,
                         )
 
-                        plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        plt.savefig(
+                            os.path.join(
+                                save_path,
+                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
+                            )
+                        )
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
                         "discrete",
                     ):
-                        if X[col].nunique() <= 7:
+                        if X[col].nunique() > 7:
+                            warnings.warn("Considering 7 the most frequent values")
 
-                            plt.figure(figsize=(5, 5))
-                            for i in X[col].unique():
-                                sns.kdeplot(
-                                    y[X[X[col] == i].index],
-                                    shade=True,
-                                    label=f"{col}_{i}",
-                                )
-                            plt.gca().set_title(
-                                f"Distribution of target for each {col}",
-                                fontsize=11,
-                                weight="bold",
-                                alpha=0.75,
+                        plt.figure(figsize=(5, 5))
+                        for i in X[col].value_counts().index[:7]:
+                            sns.kdeplot(
+                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}",
                             )
-                            plt.legend()
+                        plt.gca().set_title(
+                            f"Distribution of target for each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.legend()
 
-                            plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        plt.savefig(os.path.join(save_path, f"{col}_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
@@ -282,17 +296,25 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        plt.savefig(
+                            os.path.join(
+                                save_path,
+                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
+                            )
+                        )
 
             cols = [
                 col
                 for col in X.columns
                 if PreprocessingUtils.get_type(X[col]) == "continous"
             ][:COLS]
+
             if len(cols) > 0:
-                X["target"] = y
+                df = pd.DataFrame()
+                df = X[cols]
+                df["target"] = y
                 plt.figure(figsize=(10, 10))
-                sns.heatmap(X[cols + ["target"]].corr())
+                sns.heatmap(df.corr())
                 plt.gca().set_title(
                     "Heatmap", fontsize=11, weight="bold", alpha=0.75,
                 )
@@ -301,10 +323,14 @@ class EDA:
 
             with open(os.path.join(save_path, "Extensive_EDA.md"), "w") as fout:
 
-                for col in X.columns[:-1]:
+                for col in X.columns:
 
                     fout.write(f"## Bivariate analysis of {col} feature with target\n")
-                    fout.write(f"\n![]({col}_target.png)\n")
+                    fout.write(
+                        "\n![]({}_target.png)\n".format(
+                            re.sub(r'[\\/*?:"<>|]', "_", col)
+                        )
+                    )
                     fout.write("\n")
                     fout.write(
                         "------------------------------------------------------\n"
