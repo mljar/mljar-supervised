@@ -53,6 +53,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
+        self._results_path = None
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
@@ -865,6 +866,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _get_results_path(self):
         """ Gets the current results_path"""
+        # if we already have the results path set, please return it
+        if self._results_path is not None:
+            return self._results_path
+        
         self._validate_results_path()
 
         path = self.results_path
@@ -874,19 +879,23 @@ class BaseAutoML(BaseEstimator, ABC):
                 name = f"AutoML_{i}"
                 if not os.path.exists(name):
                     self.create_dir(name)
+                    self._results_path = name
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
         elif os.path.exists(self.results_path) and os.path.exists(
             os.path.join(self.results_path, "params.json")
         ):  # AutoML already loaded, return path
+            self._results_path = path
             return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
             self.create_dir(path)
+            self._results_path = path
             return path
         # Dir exists and is empty, use it
         elif os.path.exists(path) and not len(os.listdir(path)):
+            self._results_path = path
             return path
         elif os.path.exists(path) and len(os.listdir(path)):
             raise AutoMLException(

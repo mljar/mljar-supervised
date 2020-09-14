@@ -37,3 +37,20 @@ class AutoMLInitTest(unittest.TestCase):
 
         automl.fit(X, y)
         self.assertGreater(len(automl._models), 4)
+
+
+    def test_get_results_path(self):
+        automl = AutoML(
+            algorithms=["Baseline"],
+            total_time_limit = 1
+        )
+        first_path = automl._get_results_path()
+        self.assertEqual(first_path, automl._get_results_path())
+        shutil.rmtree(first_path, ignore_errors=True)
+
+        automl = AutoML(
+            algorithms=["Baseline"],
+            total_time_limit = 1,
+            results_path=self.automl_dir
+        )
+        self.assertEqual(self.automl_dir, automl._get_results_path())

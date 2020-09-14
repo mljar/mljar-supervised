@@ -37,7 +37,7 @@ class EDATest(unittest.TestCase):
 
         for col in X.columns:
             self.assertTrue(f"{col}.png" in result_files)
-        self.assertTrue("target.png" not in result_files)
+        self.assertTrue("target.png" in result_files)
         self.assertTrue("README.md" in result_files)
 
     def test_column_name_to_filename(self):
