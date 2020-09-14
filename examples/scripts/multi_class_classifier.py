@@ -22,7 +22,7 @@ df = pd.read_csv("tests/data/iris_missing_values_missing_target.csv")
 X = df[["feature_1", "feature_2", "feature_3", "feature_4"]]
 y = df["class"]
 
-automl = AutoML() 
+automl = AutoML()
 
 automl.fit(X, y)
 

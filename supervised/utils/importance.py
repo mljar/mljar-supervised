@@ -48,43 +48,30 @@ class PermutationImportance:
         else:
             scoring = "neg_mean_squared_error"
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            importance = permutation_importance(
-                model,
-                X_validation,
-                y_validation,
-                scoring=scoring,
-                n_jobs=-1,  # all cores
-                random_state=12,
-                n_repeats=5,  # default
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                importance = permutation_importance(
+                    model,
+                    X_validation,
+                    y_validation,
+                    scoring=scoring,
+                    n_jobs=-1,  # all cores
+                    random_state=12,
+                    n_repeats=5,  # default
+                )
+
+            sorted_idx = importance["importances_mean"].argsort()
+
+            # save detailed importance
+            df_imp = pd.DataFrame(
+                {
+                    "feature": X_validation.columns[sorted_idx],
+                    "mean_importance": importance["importances_mean"][sorted_idx],
+                }
             )
-
-        sorted_idx = importance["importances_mean"].argsort()
-
-        # save detailed importance
-        df_imp = pd.DataFrame(
-            {
-                "feature": X_validation.columns[sorted_idx],
-                "mean_importance": importance["importances_mean"][sorted_idx],
-            }
-        )
-        df_imp.to_csv(
-            os.path.join(model_file_path, f"{learner_name}_importance.csv"), index=False
-        )
-
-        """
-        # Do not plot. We will plot aggregate of all importances.
-        # limit number of column in the plot
-        if len(sorted_idx) > 50:
-            sorted_idx = sorted_idx[-50:]
-        plt.figure(figsize=(10, 7))
-        plt.barh(
-            X_validation.columns[sorted_idx], importance["importances_mean"][sorted_idx]
-        )
-        plt.xlabel("Mean of feature importance")
-        plt.tight_layout(pad=2.0)
-        plot_path = os.path.join(model_file_path, f"{learner_name}_importance.png")
-        plt.savefig(plot_path)
-        plt.close("all")
-        """
+            df_imp.to_csv(
+                os.path.join(model_file_path, f"{learner_name}_importance.csv"), index=False
+            )
+        except Exception as e:
+            print("Problem during computing permutation importance. Skipping ...")
