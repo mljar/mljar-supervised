@@ -869,7 +869,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # if we already have the results path set, please return it
         if self._results_path is not None:
             return self._results_path
-        
+
         self._validate_results_path()
 
         path = self.results_path
