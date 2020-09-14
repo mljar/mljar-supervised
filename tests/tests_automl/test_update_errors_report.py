@@ -22,7 +22,7 @@ class AutoMLUpdateErrorsReportTest(unittest.TestCase):
         X = np.random.uniform(size=(30, 2))
         y = np.random.randint(0, 2, size=(30,))
 
-        automl = AutoML(results_path=self.automl_dir)        
+        automl = AutoML(results_path=self.automl_dir)
         automl._update_errors_report("model_1", "bad error")
 
         errors_filename = os.path.join(self.automl_dir, "errors.md")
