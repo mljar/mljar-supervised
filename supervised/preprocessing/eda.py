@@ -164,6 +164,13 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
+    def get_full_path(eda_path, column):
+
+        return os.path.join(
+            eda_path, "{}_target".format(re.sub(r'[\\/*?:"<>|\s]', "_", column))
+        )
+
+    @staticmethod
     def extensive_eda(X, y, save_path):
 
         # Check for empty dataframes in params
@@ -207,12 +214,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(
-                            os.path.join(
-                                save_path,
-                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
-                            )
-                        )
+                        plt.savefig(EDA.get_full_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -233,12 +235,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(
-                            os.path.join(
-                                save_path,
-                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
-                            )
-                        )
+                        plt.savefig(EDA.get_full_path(save_path, col))
 
             elif PreprocessingUtils.get_type(y) == "continous":
                 for col in X.columns:
@@ -256,12 +253,7 @@ class EDA:
                             alpha=0.75,
                         )
 
-                        plt.savefig(
-                            os.path.join(
-                                save_path,
-                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
-                            )
-                        )
+                        plt.savefig(EDA.get_full_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -283,7 +275,7 @@ class EDA:
                         )
                         plt.legend()
 
-                        plt.savefig(os.path.join(save_path, f"{col}_target"))
+                        plt.savefig(EDA.get_full_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
@@ -296,12 +288,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(
-                            os.path.join(
-                                save_path,
-                                "{}_target".format(re.sub(r'[\\/*?:"<>|]', "_", col)),
-                            )
-                        )
+                        plt.savefig(EDA.get_full_path(save_path, col))
 
             cols = [
                 col
@@ -310,11 +297,9 @@ class EDA:
             ][:COLS]
 
             if len(cols) > 0:
-                df = pd.DataFrame()
-                df = X[cols]
-                df["target"] = y
+
                 plt.figure(figsize=(10, 10))
-                sns.heatmap(df.corr())
+                sns.heatmap(X[cols].corr())
                 plt.gca().set_title(
                     "Heatmap", fontsize=11, weight="bold", alpha=0.75,
                 )
@@ -328,7 +313,7 @@ class EDA:
                     fout.write(f"## Bivariate analysis of {col} feature with target\n")
                     fout.write(
                         "\n![]({}_target.png)\n".format(
-                            re.sub(r'[\\/*?:"<>|]', "_", col)
+                            re.sub(r'[\\/*?:"<>|\s]', "_", col)
                         )
                     )
                     fout.write("\n")
