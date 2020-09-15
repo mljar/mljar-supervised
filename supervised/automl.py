@@ -32,7 +32,7 @@ class AutoML(BaseAutoML):
         validation_strategy="auto",
         explain_level="auto",
         golden_features="auto",
-        feature_selection="auto",
+        features_selection="auto",
         start_random_models="auto",
         hill_climbing_steps="auto",
         top_models_to_improve="auto",
