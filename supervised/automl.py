@@ -315,16 +315,18 @@ class AutoML(BaseAutoML):
 
     def predict_all(self, X):
         """
-        Computes both class probabilities and class labels from AutoML best model. 
-        This method can only be used for classification tasks.
+        Computes both class probabilities and class labels for classification tasks.
+        Computes predictions for regression tasks.
 
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            pandas.Dataframe of shape (n_samples, n_classes + 1 ):
-                Dataframe containing both class probabilities and class labels of the input samples
+            pandas.Dataframe:
+                Dataframe (n_samples, n_classes + 1) containing both class probabilities and class 
+                labels of the input samples for classification tasks.
+                Dataframe with predictions for regression tasks. 
 
         Raises:
             AutoMLException: Model has not yet been fitted.

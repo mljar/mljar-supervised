@@ -150,15 +150,6 @@ class AutoMLTest(unittest.TestCase):
             # Try to call predict_proba in regression task
             model.predict_proba(boston.data)
 
-    def test_predict_all_in_regression(self):
-        model = AutoML(
-            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
-        )
-        model.fit(boston.data, boston.target)
-        with self.assertRaises(AutoMLException) as context:
-            # Try to call predict_all in regression task
-            model.predict_all(boston.data)
-
     def test_iris_dataset(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)"""
         model = AutoML(

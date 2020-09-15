@@ -56,4 +56,6 @@ class AutoMLRestoreTest(unittest.TestCase):
         automl.fit(X, y)
         # Get number of models after second fit
         n2 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
-        self.assertGreater(n2, n1)
+        # number of models should be equal
+        # user cannot overwrite parameters
+        self.assertEqual(n2, n1)

@@ -53,7 +53,24 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
+        self._mode = None
+        self._ml_task = None
         self._results_path = None
+        self._total_time_limit = None
+        self._model_time_limit = None
+        self._algorithms = []
+        self._train_ensemble = False
+        self._stack_models = False
+        self._eval_metric = None
+        self._validation_strategy = None
+        self._verbose = None
+        self._explain_level = None
+        self._golden_features = None
+        self._feature_selection = None
+        self._start_random_models = None
+        self._hill_climbing_steps = None
+        self._top_models_to_improve = None
+        self._random_state = 1234        
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
@@ -97,8 +114,24 @@ class BaseAutoML(BaseEstimator, ABC):
             params = json.load(open(os.path.join(path, "params.json")))
 
             self._model_paths = params["saved"]
-            self._ml_task = params["ml_task"]
-            self._eval_metric = params["eval_metric"]
+            self._mode = params.get("mode", self._mode)
+            self._ml_task = params.get("ml_task", self._ml_task)
+            self._results_path = params.get("results_path", self._results_path)
+            self._total_time_limit = params.get("total_time_limit", self._total_time_limit)
+            self._model_time_limit = params.get("model_time_limit", self._model_time_limit)
+            self._algorithms = params.get("algorithms", self._algorithms)
+            self._train_ensemble = params.get("train_ensemble", self._train_ensemble)
+            self._stack_models = params.get("stack_models", self._stack_models)
+            self._eval_metric = params.get("eval_metric", self._eval_metric)
+            self._validation_strategy = params.get("validation_strategy", self._validation_strategy)
+            self._verbose = params.get("verbose", self._verbose)
+            self._explain_level = params.get("explain_level", self._explain_level)
+            self._golden_features = params.get("golden_features", self._golden_features)
+            self._feature_selection = params.get("feature_selectiom", self._feature_selection)
+            self._start_random_models = params.get("start_random_models", self._start_random_models)
+            self._hill_climbing_steps = params.get("hill_climbing_steps", self._hill_climbing_steps)
+            self._top_models_to_improve = params.get("top_models_to_improve", self._top_models_to_improve)
+            self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
             models_map = {}
@@ -707,8 +740,24 @@ class BaseAutoML(BaseEstimator, ABC):
 
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
+                "mode": self._mode,
                 "ml_task": self._ml_task,
+                "results_path": self._results_path,
+                "total_time_limit": self._total_time_limit,
+                "model_time_limit": self._model_time_limit,
+                "algorithms": self._algorithms,
+                "train_ensemble": self._train_ensemble,
+                "stack_models": self._stack_models,
                 "eval_metric": self._eval_metric,
+                "validation_strategy": self._validation_strategy,
+                "verbose": self._verbose,
+                "explain_level": self._explain_level,
+                "golden_features": self._golden_features,
+                "feature_selection": self._feature_selection,
+                "start_random_models": self._start_random_models,
+                "hill_climbing_steps": self._hill_climbing_steps,
+                "top_models_to_improve": self._top_models_to_improve,
+                "random_state": self._random_state,
                 "saved": self._model_paths,
             }
             if self._stacked_models is not None:
@@ -820,12 +869,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return self._base_predict(X).drop(["label"], axis=1).to_numpy()
 
     def _predict_all(self, X):
-        # Check is task type is correct
-        if self._ml_task == REGRESSION:
-            raise AutoMLException(
-                f"Method `predict_all()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
-            )
-
         # Make and return predictions
         return self._base_predict(X)
 
