@@ -8,7 +8,7 @@
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/automl_pic.png" width="78%" />
+  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/supervised.png" width="100%" />
 </p>
 
 ## Table of Contents
