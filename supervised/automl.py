@@ -136,12 +136,12 @@ class AutoML(BaseAutoML):
                 - If `mode` is "Perform", `golden_features` = True.
                 - If `mode` is "Compete", `golden_features` = True.
 
-            feature_selection (boolean): Whether to do feature_selection
+            features_selection (boolean): Whether to do features_selection
                 If left `auto` AutoML will do feature selection based on the selected `mode`:
                 
-                - If `mode` is "Explain", `feature_selection` = False.
-                - If `mode` is "Perform", `feature_selection` = True.
-                - If `mode` is "Compete", `feature_selection` = True.
+                - If `mode` is "Explain", `features_selection` = False.
+                - If `mode` is "Perform", `features_selection` = True.
+                - If `mode` is "Compete", `features_selection` = True.
 
             start_random_models (int): Number of starting random models to try.
                 If left `auto` AutoML will select it based on the selected `mode`:
@@ -256,7 +256,7 @@ class AutoML(BaseAutoML):
         self.verbose = verbose
         self.explain_level = explain_level
         self.golden_features = golden_features
-        self.feature_selection = feature_selection
+        self.features_selection = features_selection
         self.start_random_models = start_random_models
         self.hill_climbing_steps = hill_climbing_steps
         self.top_models_to_improve = top_models_to_improve
