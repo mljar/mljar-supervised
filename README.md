@@ -6,10 +6,17 @@
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
 
 
-
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/supervised.png" width="100%" />
 </p>
+
+---
+
+**Documentation**: <a href="https://supervised.mljar.com/" target="_blank">https://supervised.mljar.com/</a>
+
+**Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
+
+---
 
 ## Table of Contents
 
