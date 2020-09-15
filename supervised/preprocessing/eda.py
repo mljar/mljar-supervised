@@ -93,13 +93,11 @@ class EDA:
             for col in X.columns:
                 inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-
                 if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
                         X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
-
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")
@@ -171,13 +169,6 @@ class EDA:
             logger.error(f"There was an issue when running EDA. {str(e)}")
 
     @staticmethod
-    def get_full_path(eda_path, column):
-
-        return os.path.join(
-            eda_path, "{}_target".format(re.sub(r'[\\/*?:"<>|\s]', "_", column))
-        )
-
-    @staticmethod
     def extensive_eda(X, y, save_path):
 
         # Check for empty dataframes in params
@@ -221,7 +212,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.get_full_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -242,7 +233,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.get_full_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col))
 
             elif PreprocessingUtils.get_type(y) == "continous":
                 for col in X.columns:
@@ -260,7 +251,7 @@ class EDA:
                             alpha=0.75,
                         )
 
-                        plt.savefig(EDA.get_full_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -282,7 +273,7 @@ class EDA:
                         )
                         plt.legend()
 
-                        plt.savefig(EDA.get_full_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col))
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
@@ -295,7 +286,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.get_full_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col))
 
             cols = [
                 col
@@ -318,11 +309,7 @@ class EDA:
                 for col in X.columns:
 
                     fout.write(f"## Bivariate analysis of {col} feature with target\n")
-                    fout.write(
-                        "\n![]({}_target.png)\n".format(
-                            re.sub(r'[\\/*?:"<>|\s]', "_", col)
-                        )
-                    )
+                    fout.write("\n![]({})\n".format(EDA.plot_fname(col)))
                     fout.write("\n")
                     fout.write(
                         "------------------------------------------------------\n"
