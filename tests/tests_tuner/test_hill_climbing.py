@@ -59,7 +59,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             data_info={"columns_info": [], "target_info": []},
             seed=12,
             golden_features=False,
-            feature_selection=False,
+            features_selection=False,
             train_ensemble=False,
             stack_models=False,
         )
