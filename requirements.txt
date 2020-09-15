@@ -1,10 +1,11 @@
 tensorflow==2.2.0
 numpy>=1.19.0
+pandas==1.1.2
 scipy==1.4.1
-scikit-learn==0.22.2
-xgboost==1.0.2
-lightgbm==2.3.1
-catboost==0.23.1
+scikit-learn==0.23.2
+xgboost==1.2.0
+lightgbm==3.0.0
+catboost==0.24.1
 h5py==2.10.0
 Keras==2.3.1
 joblib==0.14.1
@@ -13,7 +14,7 @@ fastparquet==0.3.3
 pyarrow==0.16.0
 tabulate==0.8.7
 matplotlib>=3.2.2
-dtreeviz==0.8.2
-shap==0.35.0
+dtreeviz==1.0
+shap==0.36.0
 seaborn==0.10.1
 wordcloud==1.7.0

@@ -223,7 +223,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
 
 nn_params = {
     "dense_layers": [2],
-    "dense_1_size": [16, 32, 64, 128],
+    "dense_1_size": [16, 32, 64],
     "dense_2_size": [4, 8, 16, 32],
     "dropout": [0, 0.1, 0.25],
     "learning_rate": [0.01, 0.05, 0.08, 0.1],

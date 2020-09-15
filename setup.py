@@ -10,7 +10,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="mljar-supervised",
-    version="0.6.1",
+    version="0.7.2",
     description="Automates Machine Learning Pipeline with Feature Engineering and Hyper-Parameters Tuning",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -24,6 +24,7 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
     keywords=[
         "automl",
@@ -33,5 +34,8 @@ setup(
         "xgboost",
         "lightgbm",
         "catboost",
+        "mljar",
+        "data science",
+        "feature engineering"
     ],
 )

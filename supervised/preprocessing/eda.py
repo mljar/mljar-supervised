@@ -23,8 +23,35 @@ BLUE = "#007cf2"
 COLS = 14
 MAXCOL = 25
 
+import string
+import base64
+
 
 class EDA:
+    """ Creates plots for Automated Exploratory Data Analysis. """
+
+    @staticmethod
+    def prepare(column):
+        """ Prepare the column to be used as file name. """
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        valid_chars = frozenset(valid_chars)
+        col = "".join(c for c in column if c in valid_chars)
+        if not len(col):
+            col = base64.urlsafe_b64encode(column.encode("utf-8"))
+            col = col.decode("utf-8")
+        return col.replace(" ", "_")
+
+    @staticmethod
+    def plot_fname(column):
+        """ Returns file name for the plot based on the column name. """
+        return EDA.prepare(column) + ".png"
+
+    @staticmethod
+    def plot_path(eda_path, column):
+        """ Returns full path for the plot based on the column name. """
+        fname = os.path.join(eda_path, EDA.plot_fname(column))
+        return fname
+
     @staticmethod
     def compute(X, y, eda_path):
 
@@ -47,47 +74,36 @@ class EDA:
 
             if isinstance(y, pd.Series):
 
+                plt.figure(figsize=(5, 5))
                 if PreprocessingUtils.get_type(y) in ("categorical"):
-
-                    plt.figure(figsize=(5, 5))
                     sns.countplot(y, color=BLUE)
-                    plt.title("Target class distribution")
-                    plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path, "target.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
-
                 else:
-
-                    plt.figure(figsize=(5, 5))
                     sns.distplot(y, color=BLUE)
-                    plt.title("Target class distribution")
-                    plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path, "target.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
+                plt.title("Target class distribution")
+                plt.tight_layout(pad=2.0)
+                plt.savefig(EDA.plot_path(eda_path, "target"))
+                plt.close("all")
 
                 inform["missing"].append(pd.isnull(y).sum() / y.shape[0])
                 inform["unique"].append(y.nunique())
                 inform["feature_type"].append(PreprocessingUtils.get_type(y))
-                inform["plot"].append("![](target.png)")
+                inform["plot"].append(f"![]({EDA.plot_fname('target')})")
                 inform["feature"].append("target")
                 inform["desc"].append(y.describe().to_dict())
             for col in X.columns:
                 inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-                if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete",):
+
+                if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE,
+                        X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
+
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")
                     plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path, f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
 
                 elif PreprocessingUtils.get_type(X[col]) in ("continous"):
 
@@ -95,9 +111,6 @@ class EDA:
                     sns.distplot(X[col], color=BLUE)
                     plt.title(f"{col} value distribution")
                     plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path, f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
 
                 elif PreprocessingUtils.get_type(X[col]) in ("text"):
 
@@ -114,22 +127,19 @@ class EDA:
 
                     plt.imshow(wordcloud, aspect="auto", interpolation="nearest")
                     plt.axis("off")
-                    plot_path = os.path.join(eda_path, f"{col}.png")
-                    plt.savefig(plot_path)
 
                 elif PreprocessingUtils.get_type(X[col]) in ("datetime"):
 
                     plt.figure(figsize=(5, 5))
                     pd.to_datetime(X[col]).plot(grid="True", color=BLUE)
                     plt.tight_layout(pad=2.0)
-                    plot_path = os.path.join(eda_path, f"{col}.png")
-                    plt.savefig(plot_path)
-                    plt.close("all")
+
+                plt.savefig(EDA.plot_path(eda_path, col))
+                plt.close("all")
 
                 inform["missing"].append(pd.isnull(X[col]).sum() * 100 / X.shape[0])
-
                 inform["unique"].append(int(X[col].nunique()))
-                inform["plot"].append(f"![]({col}.png)")
+                inform["plot"].append(f"![]({EDA.plot_fname(col)})")
                 inform["feature"].append(str(col))
                 inform["desc"].append(X[col].describe().to_dict())
 
@@ -145,14 +155,11 @@ class EDA:
                     fout.write(f"- **Unique** : {row['unique']}\n")
 
                     for key in row["desc"].keys():
-
                         if key in ("25%", "50%", "75%"):
-
                             fout.write(
                                 f"- **{key.capitalize()}th Percentile** : {row['desc'][key]}\n"
                             )
                         else:
-
                             fout.write(
                                 f"- **{key.capitalize()}** :{row['desc'][key]}\n"
                             )

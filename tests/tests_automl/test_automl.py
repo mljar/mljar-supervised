@@ -103,7 +103,9 @@ class AutoMLTest(unittest.TestCase):
         Initial params must be equal to the ones returned by `get_params()`.
         """
         # Create model
-        model = AutoML(hill_climbing_steps=3, start_random_models=1)
+        model = AutoML(
+            hill_climbing_steps=3, start_random_models=1, results_path=self.automl_dir
+        )
         # Get params before fit
         params_before_fit = model.get_params()
         # Generate data
@@ -124,7 +126,9 @@ class AutoMLTest(unittest.TestCase):
         # apply PCA to X
         new_X = PCA(random_state=0).fit_transform(X)
         # Create default model
-        default_model = AutoML(algorithms=["Linear"], random_state=0)
+        default_model = AutoML(
+            algorithms=["Linear"], random_state=0, results_path=self.automl_dir
+        )
         # Fit default model with transformed X and y, and predict transformed X
         y_pred_default = default_model.fit(new_X, y).predict(new_X)
 
@@ -138,14 +142,18 @@ class AutoMLTest(unittest.TestCase):
         self.assertTrue((y_pred_pipe == y_pred_default).all())
 
     def test_predict_proba_in_regression(self):
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         model.fit(boston.data, boston.target)
         with self.assertRaises(AutoMLException) as context:
             # Try to call predict_proba in regression task
             model.predict_proba(boston.data)
 
     def test_predict_all_in_regression(self):
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         model.fit(boston.data, boston.target)
         with self.assertRaises(AutoMLException) as context:
             # Try to call predict_all in regression task
@@ -153,19 +161,25 @@ class AutoMLTest(unittest.TestCase):
 
     def test_iris_dataset(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)"""
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         score = model.fit(iris.data, iris.target).score(iris.data, iris.target)
         self.assertGreater(score, 0.5)
 
     def test_boston_dataset(self):
         """ Tests AutoML in the boston dataset (Regression)"""
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         score = model.fit(boston.data, boston.target).score(boston.data, boston.target)
         self.assertGreater(score, 0.5)
 
     def test_breast_cancer_dataset(self):
         """ Tests AutoML in the breast cancer (binary classification)"""
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         score = model.fit(breast_cancer.data, breast_cancer.target).score(
             breast_cancer.data, breast_cancer.target
         )
@@ -173,7 +187,9 @@ class AutoMLTest(unittest.TestCase):
 
     def test_titatic_dataset(self):
         """ Tets AutoML in the titanic dataset (binary classification) with categorial features"""
-        automl = AutoML(algorithms=["Xgboost"], mode="Explain")
+        automl = AutoML(
+            algorithms=["Xgboost"], mode="Explain", results_path=self.automl_dir
+        )
 
         df = pd.read_csv("tests/data/Titanic/train.csv")
 
@@ -200,7 +216,9 @@ class AutoMLTest(unittest.TestCase):
 
     def test_score_without_y(self):
         """Tests the use of `score()` without passing y. Should raise AutoMLException"""
-        model = AutoML(explain_level=0, verbose=0, random_state=1)
+        model = AutoML(
+            explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
+        )
         # Assert than an Exception is raised
         with self.assertRaises(AutoMLException) as context:
             # Try to score without passing 'y'
@@ -214,6 +232,7 @@ class AutoMLTest(unittest.TestCase):
         """Tests the use of AutoML without passing any args. Should work without any arguments"""
         # Create model with no arguments
         model = AutoML()
+        model.results_path = self.automl_dir
         # Assert than an Exception is raised
         score = model.fit(iris.data, iris.target).score(iris.data, iris.target)
         self.assertGreater(score, 0.5)
@@ -221,90 +240,84 @@ class AutoMLTest(unittest.TestCase):
     def test_fit_returns_self(self):
         """Tests if the `fit()` method returns `self`. This allows to quickly implement one-liners with AutoML"""
         model = AutoML()
+        model.results_path = self.automl_dir
         self.assertTrue(
             isinstance(model.fit(iris.data, iris.target), AutoML),
             "`fit()` method must return 'self'",
         )
 
     def test_invalid_mode(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"mode": "invalid_mode"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_ml_task(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"ml_task": "invalid_task"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_tuning_mode(self):
-        model = AutoML(explain_level=0, verbose=0)
-        param = {"tuning_mode": "not_legal_tuning_mode"}
-        model.set_params(**param)
-        with self.assertRaises(ValueError) as context:
-            model.fit(iris.data, iris.target)
-
-    def test_invalid_tuning_mode(self):
-        model = AutoML(explain_level=0, verbose=0)
+    def test_invalid_results_path(self):
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"results_path": 2}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_total_time_limit(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"total_time_limit": -1}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_model_time_limit(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"model_time_limit": -1}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
-    def test_invalid_model_time_limit(self):
-        model = AutoML(explain_level=0, verbose=0)
+    def test_invalid_algorithm_name(self):
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"algorithms": ["Baseline", "Neural Netrk"]}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_train_ensemble(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"train_ensemble": "not bool"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_stack_models(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"stack_models": "not bool"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_eval_metric(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"eval_metric": "not_real_metric"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_validation_strategy(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"validation_strategy": "test"}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:
             model.fit(iris.data, iris.target)
 
     def test_invalid_verbose(self):
-        model = AutoML(explain_level=0, verbose=0)
+        model = AutoML(explain_level=0, verbose=0, results_path=self.automl_dir)
         param = {"verbose": -1}
         model.set_params(**param)
         with self.assertRaises(ValueError) as context:

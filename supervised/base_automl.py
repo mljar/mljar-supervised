@@ -53,6 +53,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
+        self._results_path = None
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
@@ -68,7 +69,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._start_time = time.time()
         self._time_ctrl = None
         self._all_params = {}
-        self._n_features = None
+        # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
+        self.n_features_in_ = None  # for scikit-learn api
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -125,7 +127,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
-            self.n_features = self._data_info["n_features"]
+            self.n_features_in_ = self._data_info["n_features"]
 
             if "n_classes" in self._data_info:
                 self.n_classes = self._data_info["n_classes"]
@@ -385,8 +387,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
         X.to_parquet(self._X_path, index=False)
 
-        # if self._ml_task == MULTICLASS_CLASSIFICATION:
-        #     y = y.astype(str)
+        # let's check before any conversions
+        target_is_numeric = pd.api.types.is_numeric_dtype(y)
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            y = y.astype(str)
 
         pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
@@ -396,17 +400,17 @@ class BaseAutoML(BaseEstimator, ABC):
 
         columns_and_target_info = DataInfo.compute(X, y, self._ml_task)
 
-        self.n_features = X.shape[1]
+        self.n_features_in_ = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         self._data_info = {
             "columns": X.columns.tolist(),
             "rows": y.shape[0],
             "cols": X.shape[1],
-            "target_is_numeric": pd.api.types.is_numeric_dtype(y),
+            "target_is_numeric": target_is_numeric,
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
-            "n_features": self.n_features,
+            "n_features": self.n_features_in_,
         }
         # Add n_classes if not regression
         if self._ml_task != REGRESSION:
@@ -463,9 +467,9 @@ class BaseAutoML(BaseEstimator, ABC):
         # X = check_array(X, ensure_2d=False)
         X = np.atleast_2d(X)
         n_features = X.shape[1]
-        if self.n_features != n_features:
+        if self.n_features_in_ != n_features:
             raise ValueError(
-                f"Number of features of the model must match the input. Model n_features is {self.n_features}%s and input n_features is {n_features} %s. Reshape your data."
+                f"Number of features of the model must match the input. Model n_features_in_ is {self.n_features_in_} and input n_features is {n_features}. Reshape your data."
             )
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
@@ -503,24 +507,27 @@ class BaseAutoML(BaseEstimator, ABC):
 
         X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
 
+        X.reset_index(drop=True, inplace=True)
+        y.reset_index(drop=True, inplace=True)
+
         return X, y
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
-            return print(
+            print(
                 "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new a 'fit()'."
             )
+            return
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
-        self.n_features = X.shape[1]
+        self.n_features_in_ = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
         # Get attributes (__init__ params)
         self._mode = self._get_mode()
         self._ml_task = self._get_ml_task()
-        self._tuning_mode = self._get_tuning_mode()
         self._results_path = self._get_results_path()
         self._total_time_limit = self._get_total_time_limit()
         self._model_time_limit = self._get_model_time_limit()
@@ -546,17 +553,17 @@ class BaseAutoML(BaseEstimator, ABC):
                     "This model has already been fitted. You can use predict methods or select a new 'results_path' for a new 'fit()'."
                 )
                 return
+            self._check_can_load()
 
-            # Validate input and build dataframes
-            X, y = self._build_dataframe(X, y)
-
-            self.n_features = X.shape[1]
-            self.n_classes = len(np.unique(y[~pd.isnull(y)]))
-
-            self.verbose_print(f"AutoML current directory: {self._results_path}")
-            self.verbose_print(f"AutoML current task: {self._ml_task}")
-            self.verbose_print(f"AutoML will use algorithms : {self._algorithms}")
-            self.verbose_print(f"AutoML will optimize for metric : {self._eval_metric}")
+            self.verbose_print(f"AutoML directory: {self._results_path}")
+            self.verbose_print(
+                f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
+            )
+            self.verbose_print(f"AutoML will use algorithms: {self._algorithms}")
+            if self._stack_models:
+                self.verbose_print("AutoML will stack models")
+            if self._train_ensemble:
+                self.verbose_print("AutoML will ensemble availabe models")
 
             self._start_time = time.time()
             if self._time_ctrl is not None:
@@ -567,7 +574,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            self._save_data(X, y)
+            self._save_data(X.copy(deep=False), y)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -622,39 +629,52 @@ class BaseAutoML(BaseEstimator, ABC):
                         step, self._models, self._results_path, self._stacked_models
                     )
 
-                if generated_params is None:
+                if generated_params is None or not generated_params:
+                    self.verbose_print(
+                        f"Skip {step} because no parameters were generated."
+                    )
                     continue
                 if generated_params:
-                    self.verbose_print("-" * 72)
-                    self.verbose_print(
-                        f"{step} with {len(generated_params)} models to train ..."
-                    )
+                    if "learner" in generated_params[
+                        0
+                    ] and not self._time_ctrl.enough_time(
+                        generated_params[0]["learner"]["model_type"], self._fit_level
+                    ):
+                        self.verbose_print(f"Skip {step} because of the time limit.")
+                    else:
+                        model_str = "models" if len(generated_params) > 1 else "model"
+                        self.verbose_print(
+                            f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
+                        )
 
                 for params in generated_params:
-                    if params.get("status", "") == "trained":
-                        self.verbose_print(
-                            f"Skipping {params['name']}, already trained."
-                        )
-                        continue
-                    if params.get("status", "") == "skipped":
-                        self.verbose_print(f"Skipped {params['name']}.")
+                    if params.get("status", "") in ["trained", "skipped", "error"]:
+                        self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
 
-                    trained = False
-                    if "ensemble" in step:
-                        trained = self.ensemble_step(is_stacked=params["is_stacked"])
-                    else:
-                        trained = self.train_model(params)
+                    try:
+                        trained = False
+                        if "ensemble" in step:
+                            trained = self.ensemble_step(
+                                is_stacked=params["is_stacked"]
+                            )
+                        else:
+                            trained = self.train_model(params)
+                        params["status"] = "trained" if trained else "skipped"
+                        params["final_loss"] = self._models[-1].get_final_loss()
+                        params["train_time"] = self._models[-1].get_train_time()
+                    except Exception as e:
+                        self._update_errors_report(params.get("name"), str(e))
+                        params["status"] = "error"
 
-                    params["status"] = "trained" if trained else "skipped"
-                    params["final_loss"] = self._models[-1].get_final_loss()
-                    params["train_time"] = self._models[-1].get_train_time()
                     self.save_progress(step, generated_params)
 
             self._fit_level = "finished"
             self.save_progress()
 
-            self.verbose_print(f"AutoML fit time: {time.time() - self._start_time}")
+            self.verbose_print(
+                f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
+            )
 
         except Exception as e:
             raise e
@@ -663,6 +683,20 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._load_data_variables(X)
 
         return self
+
+    def _update_errors_report(self, model_name, error_msg):
+        """Append error message to errors.md file. """
+        errors_filename = os.path.join(self._get_results_path(), "errors.md")
+        with open(errors_filename, "a") as fout:
+            self.verbose_print(f"There was an error during {model_name} training.")
+            self.verbose_print(f"Please check {errors_filename} for details.")
+            fout.write(f"## Error for {model_name}\n\n")
+            fout.write(error_msg)
+            link = "https://github.com/mljar/mljar-supervised/issues/new"
+            fout.write(
+                f"\n\nPlease set a GitHub issue with above error message at: {link}"
+            )
+            fout.write("\n\n")
 
     def select_and_save_best(self):
         # Select best model (lowest loss)
@@ -705,7 +739,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _base_predict(self, X):
         self._check_is_fitted()
-        self._validate_X_predict(X)
 
         X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
@@ -719,13 +752,14 @@ class BaseAutoML(BaseEstimator, ABC):
                 )
 
         X = X[self._data_info["columns"]]
+        self._validate_X_predict(X)
 
         # is stacked model
         if self._best_model._is_stacked:
             self._perform_model_stacking()
             X_stacked = self.get_stacked_data(X, mode="predict")
 
-            if self.best_model.get_type() == "Ensemble":
+            if self._best_model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
                 predictions = self._best_model.predict(X, X_stacked)
             else:
@@ -831,12 +865,12 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.ml_task)
 
-    def _get_tuning_mode(self):
-        self._validate_tuning_mode()
-        return deepcopy(self.tuning_mode)
-
     def _get_results_path(self):
         """ Gets the current results_path"""
+        # if we already have the results path set, please return it
+        if self._results_path is not None:
+            return self._results_path
+
         self._validate_results_path()
 
         path = self.results_path
@@ -846,19 +880,23 @@ class BaseAutoML(BaseEstimator, ABC):
                 name = f"AutoML_{i}"
                 if not os.path.exists(name):
                     self.create_dir(name)
+                    self._results_path = name
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
         elif os.path.exists(self.results_path) and os.path.exists(
             os.path.join(self.results_path, "params.json")
         ):  # AutoML already loaded, return path
+            self._results_path = path
             return path
         # Dir does not exist, create it
         elif not os.path.exists(path):
             self.create_dir(path)
+            self._results_path = path
             return path
         # Dir exists and is empty, use it
         elif os.path.exists(path) and not len(os.listdir(path)):
+            self._results_path = path
             return path
         elif os.path.exists(path) and len(os.listdir(path)):
             raise AutoMLException(
@@ -888,7 +926,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Decision Tree",
                     "Random Forest",
                     "Xgboost",
-                    # "Neural Network"
+                    "Neural Network",
                 ]
             if self._get_mode() == "Perform":
                 return [
@@ -967,11 +1005,15 @@ class BaseAutoML(BaseEstimator, ABC):
                     "stratify": True,
                 }
             if self._get_ml_task() == REGRESSION:
-                strat.pop("stratify")
+                if "stratify" in strat:
+                    # it's better to always check
+                    # before delete (trust me)
+                    del strat["stratify"]
             return strat
         else:
             strat = deepcopy(self.validation_strategy)
-            strat.pop("stratify")
+            if "stratify" in strat:
+                del strat["stratify"]
             return strat
 
     def _get_verbose(self):
@@ -1079,14 +1121,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 f"Expected 'ml_task' to be {' or '.join(AlgorithmsRegistry.get_supported_ml_tasks())}, got '{self.ml_task}''"
             )
 
-    def _validate_tuning_mode(self):
-        """ Validates tuning_mode parameter"""
-        valid_tuning_modes = ["Normal", "Sport", "Insane", "Perfect"]
-        if self.tuning_mode not in valid_tuning_modes:
-            raise ValueError(
-                f"Expected 'tuning_mode' to be {' or '.join(valid_tuning_modes)}, got '{self.tuning_mode}'"
-            )
-
     def _validate_results_path(self):
         """ Validates path parameter"""
         if self.results_path is None or isinstance(self.results_path, str):
@@ -1158,12 +1192,10 @@ class BaseAutoML(BaseEstimator, ABC):
         ):
             return
 
-        required_keys = [
-            "validation_type",
-            "k_folds",
-            "shuffle",
-            "stratify",
-        ]
+        # only validation_type is mandatory
+        # other parameters of validations
+        # have defaults set in their constructors
+        required_keys = ["validation_type"]
         if type(self.validation_strategy) is not dict:
             raise ValueError(
                 f"Expected 'validation_strategy' to be a dict, got '{type(self.validation_strategy)}'"

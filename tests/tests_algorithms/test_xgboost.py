@@ -69,14 +69,14 @@ class XgboostAlgorithmTest(unittest.TestCase):
         y_predicted = xgb.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
 
         xgb.save(filename)
 
         xgb2 = XgbAlgorithm(params)
         self.assertTrue(xgb2.model is None)
         xgb2.load(filename)
-        #Finished with the file, delete it
+        # Finished with the file, delete it
         os.remove(filename)
 
         y_predicted = xgb2.predict(self.X)

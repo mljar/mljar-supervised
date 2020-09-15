@@ -126,15 +126,14 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-    
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
 
         cat.save(filename)
         cat2 = CatBoostAlgorithm(self.params)
         self.assertTrue(cat.uid != cat2.uid)
         self.assertTrue(cat2.model is not None)
         cat2.load(filename)
-        #Finished with the file, delete it
+        # Finished with the file, delete it
         os.remove(filename)
 
         y_predicted = cat2.predict(self.X)

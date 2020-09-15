@@ -2,6 +2,7 @@ import copy
 import pandas as pd
 import numpy as np
 import warnings
+import logging
 
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
@@ -20,9 +21,8 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-
-import logging
 from supervised.utils.config import LOG_LEVEL
+from supervised.exceptions import AutoMLException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -251,6 +251,10 @@ class Preprocessing(object):
         if self._drop_features:
             available_cols = X_train.columns.tolist()
             drop_cols = [c for c in self._drop_features if c in available_cols]
+            if len(drop_cols) == X_train.shape[1]:
+                raise AutoMLException(
+                    "All features are droppped! Your data looks like random data."
+                )
             if drop_cols:
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols

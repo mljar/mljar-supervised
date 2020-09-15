@@ -48,7 +48,7 @@ class DecisionTreeTest(unittest.TestCase):
         y_predicted = dt.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
 
         dt.save(filename)
         dt2 = DecisionTreeRegressorAlgorithm({"ml_task": "regression"})
@@ -57,8 +57,6 @@ class DecisionTreeTest(unittest.TestCase):
         y_predicted = dt2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
-        
-        #Finished with temp file, delete it
+
+        # Finished with temp file, delete it
         os.remove(filename)
-
-

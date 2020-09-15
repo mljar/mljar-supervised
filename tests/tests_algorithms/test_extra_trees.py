@@ -103,12 +103,12 @@ class ExtraTreesAlgorithmTest(unittest.TestCase):
         y_predicted = rf.predict(self.X)
         loss = metric(self.y, y_predicted)
 
-        filename = os.path.join(tempfile.gettempdir(),os.urandom(12).hex())
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
 
         rf.save(filename)
         rf2 = ExtraTreesAlgorithm({"ml_task": "binary_classification"})
         rf2.load(filename)
-        #Finished with the file, delete it
+        # Finished with the file, delete it
         os.remove(filename)
 
         y_predicted = rf2.predict(self.X)
