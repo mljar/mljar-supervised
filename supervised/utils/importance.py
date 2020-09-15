@@ -71,7 +71,8 @@ class PermutationImportance:
                 }
             )
             df_imp.to_csv(
-                os.path.join(model_file_path, f"{learner_name}_importance.csv"), index=False
+                os.path.join(model_file_path, f"{learner_name}_importance.csv"),
+                index=False,
             )
         except Exception as e:
             print("Problem during computing permutation importance. Skipping ...")

@@ -13,6 +13,7 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
+from supervised.exceptions import AutoMLException
 
 
 def get_binary_score(X_train, y_train, X_test, y_test):
@@ -54,6 +55,7 @@ def get_score(item):
         diff_score = scorer(x_train, y_train, x_test, y_test)
     except Exception as e:
         diff_score = None
+        print(str(e))
 
     try:
         a, b = (
@@ -78,6 +80,7 @@ def get_score(item):
         x_test = np.divide(a, b, out=np.zeros_like(a), where=b != 0).reshape(-1, 1)
         ratio_2_score = scorer(x_train, y_train, x_test, y_test)
     except Exception as e:
+        print(str(e))
         ratio_2_score = None
 
     return (diff_score, ratio_1_score, ratio_2_score)
@@ -96,6 +99,8 @@ class GoldenFeaturesTransformer(object):
         else:
             self._scorer = get_regression_score
 
+        self._error = None
+
         if results_path is not None:
             self._result_file = os.path.join(results_path, "golden_features.json")
             self.try_load()
@@ -103,6 +108,16 @@ class GoldenFeaturesTransformer(object):
     def fit(self, X, y):
         if self._new_features:
             return
+        if self._error is not None and self._error:
+            raise AutoMLException(
+                "Golden Features not created due to error (please check errors.md)."
+            )
+            return
+        if X.shape[1] == 0:
+            self._error = f"Golden Features not created. No continous features. Input data shape: {X.shape}, {y.shape}"
+            self.save(self._result_file)
+            raise AutoMLException("Golden Features not created. No continous features.")
+
         start_time = time.time()
         combinations = itertools.combinations(X.columns, r=2)
         items = [i for i in combinations]
@@ -132,7 +147,9 @@ class GoldenFeaturesTransformer(object):
         #    scores += [get_score(item)]
 
         if not scores:
-            return
+            self._error = f"Golden Features not created. Empty scores. Input data shape: {X.shape}, {y.shape}"
+            self.save(self._result_file)
+            raise AutoMLException("Golden Features not created. Empty scores.")
 
         result = []
         for i in range(len(items)):
@@ -189,6 +206,8 @@ class GoldenFeaturesTransformer(object):
             "result_file": self._result_file,
             "ml_task": self._ml_task,
         }
+        if self._error is not None and self._error:
+            data_json["error"] = self._error
         return data_json
 
     def from_json(self, data_json):
@@ -196,6 +215,7 @@ class GoldenFeaturesTransformer(object):
         self._new_columns = json.loads(data_json.get("new_columns", []))
         self._result_file = data_json.get("result_file")
         self._ml_task = data_json.get("ml_task")
+        self._error = data_json.get("error")
 
     def save(self, destination_file):
         with open(destination_file, "w") as fout:
