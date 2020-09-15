@@ -140,32 +140,34 @@ class PlotSHAP:
 
     @staticmethod
     def dependence(shap_values, X_vald, model_file_path, learner_name, file_postfix=""):
-        fig = plt.figure(figsize=(14, 7))
-        plots_cnt = np.min([9, X_vald.shape[1]])
-        cols_cnt = 3
-        rows_cnt = 3
-        if plots_cnt < 4:
-            rows_cnt = 1
-        elif plots_cnt < 7:
-            rows_cnt = 2
-        for i in range(plots_cnt):
-            ax = fig.add_subplot(rows_cnt, cols_cnt, i + 1)
-            shap.dependence_plot(
-                f"rank({i})",
-                shap_values,
-                X_vald,
-                show=False,
-                title=f"Importance #{i+1}",
-                ax=ax,
-            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            fig = plt.figure(figsize=(14, 7))
+            plots_cnt = np.min([9, X_vald.shape[1]])
+            cols_cnt = 3
+            rows_cnt = 3
+            if plots_cnt < 4:
+                rows_cnt = 1
+            elif plots_cnt < 7:
+                rows_cnt = 2
+            for i in range(plots_cnt):
+                ax = fig.add_subplot(rows_cnt, cols_cnt, i + 1)
+                shap.dependence_plot(
+                    f"rank({i})",
+                    shap_values,
+                    X_vald,
+                    show=False,
+                    title=f"Importance #{i+1}",
+                    ax=ax,
+                )
 
-        fig.tight_layout(pad=2.0)
-        fig.savefig(
-            os.path.join(
-                model_file_path, f"{learner_name}_shap_dependence{file_postfix}.png"
+            fig.tight_layout(pad=2.0)
+            fig.savefig(
+                os.path.join(
+                    model_file_path, f"{learner_name}_shap_dependence{file_postfix}.png"
+                )
             )
-        )
-        plt.close("all")
+            plt.close("all")
 
     @staticmethod
     def compute(
