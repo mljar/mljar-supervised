@@ -532,9 +532,13 @@ class Preprocessing(object):
         if self._drop_features:
             preprocessing_params["drop_features"] = self._drop_features
 
+        preprocessing_params["params"] = self._params
+
         return preprocessing_params
 
     def from_json(self, data_json):
+
+        self._params = data_json.get("params", self._params)
 
         if "remove_columns" in data_json:
             self._remove_columns = data_json.get("remove_columns", [])

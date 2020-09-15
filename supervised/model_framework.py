@@ -260,7 +260,6 @@ class ModelFramework:
             # preprocessing goes here
             X_data, _ = self.preprocessings[ind].transform(X.copy(), None)
             y_p = learner.predict(X_data)
-
             y_p = self.preprocessings[ind].inverse_scale_target(y_p)
 
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
