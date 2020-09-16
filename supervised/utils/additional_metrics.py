@@ -123,7 +123,7 @@ class AdditionalMetrics:
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
             "confusion_matrix": conf_matrix,
-            "threshold": float(max_metrics["f1"]["threshold"]),
+            "threshold": float(max_metrics["accuracy"]["threshold"]),
         }
 
     @staticmethod
