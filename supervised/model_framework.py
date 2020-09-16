@@ -249,6 +249,11 @@ class ModelFramework:
     def get_name(self):
         return self._name
 
+    def is_valid(self):
+        """ is_valid is used in Ensemble to check if it has more than 1 model in it.
+            If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model """
+        return True
+
     def predict(self, X):
         logger.debug("ModelFramework.predict")
 

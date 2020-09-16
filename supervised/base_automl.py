@@ -70,7 +70,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._start_random_models = None
         self._hill_climbing_steps = None
         self._top_models_to_improve = None
-        self._random_state = 1234        
+        self._random_state = 1234
         self._models = []  # instances of iterative learner framework or ensemble
         self._best_model = None
         self._verbose = True
@@ -117,20 +117,34 @@ class BaseAutoML(BaseEstimator, ABC):
             self._mode = params.get("mode", self._mode)
             self._ml_task = params.get("ml_task", self._ml_task)
             self._results_path = params.get("results_path", self._results_path)
-            self._total_time_limit = params.get("total_time_limit", self._total_time_limit)
-            self._model_time_limit = params.get("model_time_limit", self._model_time_limit)
+            self._total_time_limit = params.get(
+                "total_time_limit", self._total_time_limit
+            )
+            self._model_time_limit = params.get(
+                "model_time_limit", self._model_time_limit
+            )
             self._algorithms = params.get("algorithms", self._algorithms)
             self._train_ensemble = params.get("train_ensemble", self._train_ensemble)
             self._stack_models = params.get("stack_models", self._stack_models)
             self._eval_metric = params.get("eval_metric", self._eval_metric)
-            self._validation_strategy = params.get("validation_strategy", self._validation_strategy)
+            self._validation_strategy = params.get(
+                "validation_strategy", self._validation_strategy
+            )
             self._verbose = params.get("verbose", self._verbose)
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
-            self._features_selection = params.get("features_selectiom", self._features_selection)
-            self._start_random_models = params.get("start_random_models", self._start_random_models)
-            self._hill_climbing_steps = params.get("hill_climbing_steps", self._hill_climbing_steps)
-            self._top_models_to_improve = params.get("top_models_to_improve", self._top_models_to_improve)
+            self._features_selection = params.get(
+                "features_selectiom", self._features_selection
+            )
+            self._start_random_models = params.get(
+                "start_random_models", self._start_random_models
+            )
+            self._hill_climbing_steps = params.get(
+                "hill_climbing_steps", self._hill_climbing_steps
+            )
+            self._top_models_to_improve = params.get(
+                "top_models_to_improve", self._top_models_to_improve
+            )
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -727,8 +741,10 @@ class BaseAutoML(BaseEstimator, ABC):
             fout.write("\n\n")
 
     def select_and_save_best(self):
-        # Select best model (lowest loss)
-        self._best_model = min(self._models, key=lambda x: x.get_final_loss())
+        # Select best model based on the lowest loss
+        self._best_model = min(
+            [m for m in self._models if m.is_valid()], key=lambda x: x.get_final_loss()
+        )
 
         with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
             fout.write(f"{self._best_model.get_name()}")
@@ -1267,7 +1283,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_features_selection(self):
         """ Validates features_selection parameter"""
-        if isinstance(self.features_selection, str) and self.features_selection == "auto":
+        if (
+            isinstance(self.features_selection, str)
+            and self.features_selection == "auto"
+        ):
             return
         check_bool(self.features_selection, "features_selection")
 

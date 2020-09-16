@@ -250,7 +250,7 @@ class PlotSHAP:
             print(
                 f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
             )
-        
+
     @staticmethod
     def decisions_regression(
         df_preds,

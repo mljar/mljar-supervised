@@ -60,6 +60,9 @@ class Ensemble:
     def get_final_loss(self):
         return self.best_loss
 
+    def is_valid(self):
+        return len(self.selected_models) > 1
+
     def get_type(self):
         prefix = ""  # "Stacked" if self._is_stacked else ""
         return prefix + self.algorithm_short_name
