@@ -66,7 +66,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = None
         self._explain_level = None
         self._golden_features = None
-        self._feature_selection = None
+        self._features_selection = None
         self._start_random_models = None
         self._hill_climbing_steps = None
         self._top_models_to_improve = None
@@ -127,7 +127,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._verbose = params.get("verbose", self._verbose)
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
-            self._feature_selection = params.get("feature_selectiom", self._feature_selection)
+            self._features_selection = params.get("features_selectiom", self._features_selection)
             self._start_random_models = params.get("start_random_models", self._start_random_models)
             self._hill_climbing_steps = params.get("hill_climbing_steps", self._hill_climbing_steps)
             self._top_models_to_improve = params.get("top_models_to_improve", self._top_models_to_improve)
@@ -748,7 +748,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "verbose": self._verbose,
                 "explain_level": self._explain_level,
                 "golden_features": self._golden_features,
-                "feature_selection": self._feature_selection,
+                "features_selection": self._features_selection,
                 "start_random_models": self._start_random_models,
                 "hill_climbing_steps": self._hill_climbing_steps,
                 "top_models_to_improve": self._top_models_to_improve,
