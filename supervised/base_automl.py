@@ -385,18 +385,14 @@ class BaseAutoML(BaseEstimator, ABC):
             # use only Xgboost, LightGBM and CatBoost as stacked models
             if m.get_type() not in ["Xgboost", "LightGBM", "CatBoost"]:
                 continue
-
             params = copy.deepcopy(m.params)
             params["validation"]["X_train_path"] = X_train_stacked_path
-
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
             # print(params)
-
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
                 del params["learner"]["model_architecture_json"]
-
             if self._ml_task == REGRESSION:
                 # scale added predictions in regression if the target was scaled (in the case of NN)
                 target_preprocessing = params["preprocessing"]["target_preprocessing"]
@@ -409,7 +405,6 @@ class BaseAutoML(BaseEstimator, ABC):
                     for col in added_columns:
                         params["preprocessing"]["columns_preprocessing"][col] = [
                             scale]
-
             self.train_model(params)
         """
 
@@ -572,7 +567,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = self._get_verbose()
         self._explain_level = self._get_explain_level()
         self._golden_features = self._get_golden_features()
-        self._feature_selection = self._get_feature_selection()
+        self._features_selection = self._get_features_selection()
         self._start_random_models = self._get_start_random_models()
         self._hill_climbing_steps = self._get_hill_climbing_steps()
         self._top_models_to_improve = self._get_top_models_to_improve()
@@ -621,7 +616,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._explain_level,
                 self._data_info,
                 self._golden_features,
-                self._feature_selection,
+                self._features_selection,
                 self._train_ensemble,
                 self._stack_models,
                 self._random_state,
@@ -1089,10 +1084,10 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.golden_features)
 
-    def _get_feature_selection(self):
-        """ Gets the current feature_selection"""
-        self._validate_feature_selection()
-        if self.feature_selection == "auto":
+    def _get_features_selection(self):
+        """ Gets the current features_selection"""
+        self._validate_features_selection()
+        if self.features_selection == "auto":
             if self._get_mode() == "Explain":
                 return False
             if self._get_mode() == "Perform":
@@ -1100,7 +1095,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
         else:
-            return deepcopy(self.feature_selection)
+            return deepcopy(self.features_selection)
 
     def _get_start_random_models(self):
         """ Gets the current start_random_models"""
@@ -1270,11 +1265,11 @@ class BaseAutoML(BaseEstimator, ABC):
             return
         check_bool(self.golden_features, "golden_features")
 
-    def _validate_feature_selection(self):
-        """ Validates feature_selection parameter"""
-        if isinstance(self.feature_selection, str) and self.feature_selection == "auto":
+    def _validate_features_selection(self):
+        """ Validates features_selection parameter"""
+        if isinstance(self.features_selection, str) and self.features_selection == "auto":
             return
-        check_bool(self.feature_selection, "feature_selection")
+        check_bool(self.features_selection, "features_selection")
 
     def _validate_start_random_models(self):
         """ Validates start_random_models parameter"""

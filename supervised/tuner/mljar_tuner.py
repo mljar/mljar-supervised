@@ -31,7 +31,7 @@ class MljarTuner:
         explain_level,
         data_info,
         golden_features,
-        feature_selection,
+        features_selection,
         train_ensemble,
         stack_models,
         seed,
@@ -46,7 +46,7 @@ class MljarTuner:
         self._explain_level = explain_level
         self._data_info = data_info
         self._golden_features = golden_features
-        self._feature_selection = feature_selection
+        self._features_selection = features_selection
         self._train_ensemble = train_ensemble
         self._stack_models = stack_models
         self._seed = seed
@@ -60,7 +60,7 @@ class MljarTuner:
             "default_algorithms",
             # "not_so_random",
             # "golden_features",
-            # "feature_selection",
+            # "features_selection",
             # "hill_climbing",
             # "ensemble",
             # "stack",
@@ -70,7 +70,7 @@ class MljarTuner:
             all_steps += ["not_so_random"]
         if self._golden_features:
             all_steps += ["golden_features"]
-        if self._feature_selection:
+        if self._features_selection:
             all_steps += ["insert_random_feature"]
             all_steps += ["features_selection"]
         for i in range(self._hill_climbing_steps):
@@ -100,7 +100,7 @@ class MljarTuner:
         elif step == "insert_random_feature":
             return self.get_params_to_insert_random_feature(models)
         elif step == "features_selection":
-            return self.get_feature_selection_params(models, results_path)
+            return self.get_features_selection_params(models, results_path)
         elif "hill_climbing" in step:
             return self.get_hill_climbing_params(models)
         elif step == "ensemble":
@@ -450,7 +450,7 @@ class MljarTuner:
             return [params]
         return None
 
-    def get_feature_selection_params(self, current_models, results_path):
+    def get_features_selection_params(self, current_models, results_path):
 
         fname = os.path.join(results_path, "drop_features.json")
         if not os.path.exists(fname):
