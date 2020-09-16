@@ -50,6 +50,10 @@ class EDATest(unittest.TestCase):
 
     def test_extensive_eda(self):
 
+        """
+        Test for extensive_eda feature
+        """
+
         X, y = datasets.make_regression(n_samples=100, n_features=5)
 
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
@@ -97,6 +101,9 @@ class EDATest(unittest.TestCase):
         self.tearDown()
 
     def test_extensive_eda_missing(self):
+        """
+        Test for dataframe with missing values
+        """
 
         X, y = datasets.make_regression(n_samples=100, n_features=5)
 
@@ -151,6 +158,9 @@ class EDATest(unittest.TestCase):
         self.tearDown()
 
     def test_symbol_feature(self):
+        """
+        Test for columns with forbidden filenames
+        """
 
         X, y = datasets.make_regression(n_samples=100, n_features=5)
 
@@ -163,12 +173,12 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         ## replace  symbol for filenames
-        X.columns = [re.sub(r'[\\/*?:"<>|]', "_", x) for x in X.columns]
+        X.columns = [EDA.plot_fname(x) for x in X.columns]
 
         for col in X.columns:
 
             produced = True
-            if "_target".join((col, ".png")) not in result_files:
+            if col not in result_files:
                 produced = False
                 break
         self.assertTrue(produced)
@@ -212,4 +222,3 @@ class EDATest(unittest.TestCase):
             fname = EDA.plot_path(self.automl_dir, col)
             with open(fname, "w") as fout:
                 fout.write("ok")
-                
