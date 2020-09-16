@@ -172,7 +172,6 @@ class EDATest(unittest.TestCase):
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
-        ## replace  symbol for filenames
         X.columns = [EDA.plot_fname(x) for x in X.columns]
 
         for col in X.columns:
