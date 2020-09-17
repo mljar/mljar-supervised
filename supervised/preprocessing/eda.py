@@ -212,7 +212,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.plot_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -233,7 +233,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.plot_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
 
             elif PreprocessingUtils.get_type(y) == "continous":
                 for col in X.columns:
@@ -251,7 +251,7 @@ class EDA:
                             alpha=0.75,
                         )
 
-                        plt.savefig(EDA.plot_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) in (
                         "categorical",
@@ -273,7 +273,7 @@ class EDA:
                         )
                         plt.legend()
 
-                        plt.savefig(EDA.plot_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
 
                     elif PreprocessingUtils.get_type(X[col]) == "datetime":
 
@@ -286,7 +286,7 @@ class EDA:
                             weight="bold",
                             alpha=0.75,
                         )
-                        plt.savefig(EDA.plot_path(save_path, col))
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
 
             cols = [
                 col
@@ -309,7 +309,7 @@ class EDA:
                 for col in X.columns:
 
                     fout.write(f"## Bivariate analysis of {col} feature with target\n")
-                    fout.write("\n![]({})\n".format(EDA.plot_fname(col)))
+                    fout.write("\n![]({})\n".format(EDA.plot_fname(col + "_target")))
                     fout.write("\n")
                     fout.write(
                         "------------------------------------------------------\n"
