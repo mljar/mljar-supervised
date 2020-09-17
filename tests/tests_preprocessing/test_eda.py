@@ -1,4 +1,5 @@
 import os
+import re
 import unittest
 import tempfile
 import json
@@ -45,6 +46,107 @@ class EDATest(unittest.TestCase):
         col = "feature_1"
         self.assertEqual(EDA.prepare(col), col)
 
+        self.tearDown()
+
+    def test_extensive_eda(self):
+
+        """
+        Test for extensive_eda feature
+        """
+
+        X, y = datasets.make_regression(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        y = pd.Series(y, name="class")
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        for col in X.columns:
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
+
+        X, y = datasets.make_classification(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        y = pd.Series(y, name="class")
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        for col in X.columns:
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
+
+        self.tearDown()
+
+    def test_extensive_eda_missing(self):
+        """
+        Test for dataframe with missing values
+        """
+
+        X, y = datasets.make_regression(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        y = pd.Series(y, name="class")
+
+        ##add some nan values
+        X.loc[np.random.randint(0, 100, 20), "f_0"] = np.nan
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        for col in X.columns:
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
+
+        X, y = datasets.make_regression(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        y = pd.Series(y, name="class")
+
+        ##add some nan values
+        X.loc[np.random.randint(0, 100, 20), "f_0"] = np.nan
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        for col in X.columns:
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
+
+        self.tearDown()
+
+    def test_symbol_feature(self):
+        """
+        Test for columns with forbidden filenames
+        """
+
+        X, y = datasets.make_regression(n_samples=100, n_features=5)
+
+        X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
+        X.rename({"f_0": "ff*", "f_1": "fg/"}, axis=1, inplace=True)
+        y = pd.Series(y, name="class")
+
+        results_path = "EDA"
+        EDA.extensive_eda(X, y, results_path)
+        result_files = os.listdir(results_path)
+
+        for col in X.columns:
+            self.assertTrue(EDA.plot_fname(f"{col}_target") in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
+
+        self.tearDown()
+
     def test_naughty_column_name_to_filename(self):
         """ Test with naughty strings.
             String from https://github.com/minimaxir/big-list-of-naughty-strings """
@@ -77,3 +179,5 @@ class EDATest(unittest.TestCase):
             fname = EDA.plot_path(self.automl_dir, col)
             with open(fname, "w") as fout:
                 fout.write("ok")
+
+        self.tearDown()

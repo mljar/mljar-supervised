@@ -1,15 +1,18 @@
 import os
+import re
 import logging
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import warnings
 from wordcloud import WordCloud
 from wordcloud import STOPWORDS
 from collections import defaultdict
 
 from supervised.utils.config import LOG_LEVEL
+from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 logger = logging.getLogger(__name__)
@@ -17,6 +20,8 @@ logger.setLevel(LOG_LEVEL)
 
 # color used in the plots
 BLUE = "#007cf2"
+COLS = 14
+MAXCOL = 25
 
 import string
 import base64
@@ -162,3 +167,161 @@ class EDA:
             fout.close()
         except Exception as e:
             logger.error(f"There was an issue when running EDA. {str(e)}")
+
+    @staticmethod
+    def extensive_eda(X, y, save_path):
+
+        # Check for empty dataframes in params
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("X should be a dataframe")
+        if X.shape[0] != len(y):
+            raise ValueError("X and y should have the same number of samples")
+
+        if X.shape[1] > MAXCOL:
+            X = X.iloc[:, :MAXCOL]
+            warnings.warn(
+                f"AutoML EDA column limit exceeded! running for first {MAXCOL} columns"
+            )
+
+        if save_path:
+            if not os.path.exists(save_path):
+                os.mkdir(save_path)
+        else:
+            raise ValueError("Please provide a valid path to save the Extensive EDA")
+
+        plt.style.use("ggplot")
+        try:
+
+            if PreprocessingUtils.get_type(y) in ("categorical", "discrete"):
+
+                for col in X.columns:
+
+                    if PreprocessingUtils.get_type(X[col]) == "continous":
+
+                        plt.figure(figsize=(5, 5))
+                        for i in np.unique(y):
+                            sns.kdeplot(
+                                X.iloc[np.where(y == i)[0]][col],
+                                label=f"class {i}",
+                                shade=True,
+                            )
+                        plt.legend()
+                        plt.gca().set_title(
+                            f"Distribution of {col} for each class",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
+
+                    elif PreprocessingUtils.get_type(X[col]) in (
+                        "categorical",
+                        "discrete",
+                    ):
+
+                        if X[col].nunique() > 7:
+                            warnings.warn("Considering 7 the most frequent values")
+
+                        values = X[col].value_counts().index[:7]
+                        plt.figure(figsize=(5, 5))
+                        sns.countplot(
+                            x=X[X[col].isin(values)][col], hue=y[X[col].isin(values)]
+                        )
+                        plt.gca().set_title(
+                            f"Count plot of each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
+
+            elif PreprocessingUtils.get_type(y) == "continous":
+                for col in X.columns:
+
+                    if PreprocessingUtils.get_type(X[col]) == "continous":
+
+                        plt.figure(figsize=(5, 5))
+                        plt.scatter(X[col].values, y)
+                        plt.gca().set_xlabel(f"{col}")
+                        plt.gca().set_ylabel("target")
+                        plt.gca().set_title(
+                            f"Scatter plot of {col} vs target",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
+
+                    elif PreprocessingUtils.get_type(X[col]) in (
+                        "categorical",
+                        "discrete",
+                    ):
+                        if X[col].nunique() > 7:
+                            warnings.warn("Considering 7 the most frequent values")
+
+                        plt.figure(figsize=(5, 5))
+                        for i in X[col].value_counts().index[:7]:
+                            sns.kdeplot(
+                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}",
+                            )
+                        plt.gca().set_title(
+                            f"Distribution of target for each {col}",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.legend()
+
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
+
+                    elif PreprocessingUtils.get_type(X[col]) == "datetime":
+
+                        plt.figure(figsize=(5, 5))
+                        plt.plot(X[col], y)
+                        plt.gca().set_xticklabels(X[col].dt.date, rotation="45")
+                        plt.gca().set_title(
+                            f"Distribution of target over time",
+                            fontsize=11,
+                            weight="bold",
+                            alpha=0.75,
+                        )
+                        plt.savefig(EDA.plot_path(save_path, col + "_target"))
+
+            cols = [
+                col
+                for col in X.columns
+                if PreprocessingUtils.get_type(X[col]) == "continous"
+            ][:COLS]
+
+            if len(cols) > 0:
+
+                plt.figure(figsize=(10, 10))
+                sns.heatmap(X[cols].corr())
+                plt.gca().set_title(
+                    "Heatmap", fontsize=11, weight="bold", alpha=0.75,
+                )
+
+            plt.savefig(os.path.join(save_path, "heatmap"))
+
+            with open(os.path.join(save_path, "Extensive_EDA.md"), "w") as fout:
+
+                for col in X.columns:
+
+                    fout.write(f"## Bivariate analysis of {col} feature with target\n")
+                    fout.write("\n![]({})\n".format(EDA.plot_fname(col + "_target")))
+                    fout.write("\n")
+                    fout.write(
+                        "------------------------------------------------------\n"
+                    )
+
+                if len(cols) > 0:
+                    fout.write("## Heatmap\n")
+                    fout.write("![](heatmap.png)\n")
+                    fout.write("\n")
+                    fout.write(
+                        "------------------------------------------------------\n"
+                    )
+
+        except Exception as e:
+            AutoMLException(e)
