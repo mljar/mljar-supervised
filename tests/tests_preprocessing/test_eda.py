@@ -64,12 +64,9 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         for col in X.columns:
-
-            produced = True
-            if "_target".join((col, ".png")) not in result_files:
-                produced = False
-                break
-        self.assertTrue(produced)
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
 
         X, y = datasets.make_classification(n_samples=100, n_features=5)
 
@@ -81,22 +78,9 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         for col in X.columns:
-
-            produced = True
-            if "_target".join((col, ".png")) not in result_files:
-                produced = False
-                break
-        self.assertTrue(produced)
-
-        produced = True
-        if "heatmap.png" not in result_files:
-            produced = False
-        self.assertTrue(produced)
-
-        produced = True
-        if "Extensive_EDA.md" not in result_files:
-            produced = False
-        self.assertTrue(produced)
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
 
         self.tearDown()
 
@@ -118,12 +102,9 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         for col in X.columns:
-
-            produced = True
-            if "_target".join((col, ".png")) not in result_files:
-                produced = False
-                break
-        self.assertTrue(produced)
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
 
         X, y = datasets.make_regression(n_samples=100, n_features=5)
 
@@ -138,22 +119,9 @@ class EDATest(unittest.TestCase):
         result_files = os.listdir(results_path)
 
         for col in X.columns:
-
-            produced = True
-            if "_target".join((col, ".png")) not in result_files:
-                produced = False
-                break
-        self.assertTrue(produced)
-
-        produced = True
-        if "heatmap.png" not in result_files:
-            produced = False
-        self.assertTrue(produced)
-
-        produced = True
-        if "Extensive_EDA.md" not in result_files:
-            produced = False
-        self.assertTrue(produced)
+            self.assertTrue(f"{col}_target.png" in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
 
         self.tearDown()
 
@@ -172,20 +140,10 @@ class EDATest(unittest.TestCase):
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
-        X.columns = [EDA.plot_fname(x) for x in X.columns]
-
         for col in X.columns:
-
-            produced = True
-            if col not in result_files:
-                produced = False
-                break
-        self.assertTrue(produced)
-
-        produced = True
-        if "Extensive_EDA.md" not in result_files:
-            produced = False
-        self.assertTrue(produced)
+            self.assertTrue(EDA.plot_fname(f"{col}_target") in result_files)
+        self.assertTrue("heatmap.png" in result_files)
+        self.assertTrue("Extensive_EDA.md" in result_files)
 
         self.tearDown()
 
@@ -221,3 +179,5 @@ class EDATest(unittest.TestCase):
             fname = EDA.plot_path(self.automl_dir, col)
             with open(fname, "w") as fout:
                 fout.write("ok")
+
+        self.tearDown()
