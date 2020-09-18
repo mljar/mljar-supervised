@@ -93,7 +93,7 @@ class EDA:
             for col in X.columns:
                 inform["feature_type"].append(PreprocessingUtils.get_type(X[col]))
 
-                if PreprocessingUtils.get_type(X[col]) in ("categorical", "discrete"):
+                if PreprocessingUtils.get_type(X[col]) in ("categorical"):
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
@@ -103,7 +103,7 @@ class EDA:
                     plt.title(f"{col} class distribution")
                     plt.tight_layout(pad=2.0)
 
-                elif PreprocessingUtils.get_type(X[col]) in ("continous"):
+                elif PreprocessingUtils.get_type(X[col]) in ("continous","discrete"):
 
                     plt.figure(figsize=(5, 5))
                     sns.distplot(X[col], color=BLUE)
@@ -162,7 +162,7 @@ class EDA:
                                 f"- **{key.capitalize()}** :{row['desc'][key]}\n"
                             )
 
-                    fout.write(f"- {row['plot']}\n")
+                    fout.write(f"\n{row['plot']}\n")
 
             fout.close()
         except Exception as e:
