@@ -262,3 +262,25 @@ class AutoMLTargetsTest(unittest.TestCase):
 
         self.assertIsInstance(pred, np.ndarray)
         self.assertEqual(len(pred), X.shape[0])
+
+
+    def test_predict_on_empty_dataframe(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = pd.Series(np.random.rand(self.rows), name="target")
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+        
+        with self.assertRaises(AutoMLException) as context:
+            pred = automl.predict(pd.DataFrame())
+
+        with self.assertRaises(AutoMLException) as context:
+            pred = automl.predict(np.empty(shape=(0, 3)))
