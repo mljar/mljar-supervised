@@ -250,16 +250,4 @@ class GoldenFeaturesTransformer(object):
                 X, y, train_size=train_size, shuffle=shuffle, stratify=stratify
             )
 
-        """
-        middle, stop = 2500, 5000
-        if X.shape[0] < 5000:
-            stop = X.shape[0]
-            middle = int(stop / 2)
-
-        X_train = X[:middle]
-        X_test = X[middle:stop]
-        y_train = y[:middle]
-        y_test = y[middle:stop]
-        """
-
         return X_train, X_test, y_train, y_test
