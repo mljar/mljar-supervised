@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.6"
+  - "3.8"
 before_install:
   - sudo apt-get update
   - sudo apt-get -y install graphviz 
