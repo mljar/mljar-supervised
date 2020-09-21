@@ -120,7 +120,6 @@ class PreprocessingTest(unittest.TestCase):
         params_json = ps.to_json()
         self.assertEqual(len(params_json), 1)  # should store params only
         self.assertTrue("params" in params_json)
-        
 
     def test_run_fill_median_convert_integer(self):
         # training data

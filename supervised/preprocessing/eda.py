@@ -263,7 +263,7 @@ class EDA:
                         plt.figure(figsize=(5, 5))
                         for i in X[col].value_counts().index[:7]:
                             sns.kdeplot(
-                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}",
+                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
                             )
                         plt.gca().set_title(
                             f"Distribution of target for each {col}",
@@ -298,9 +298,7 @@ class EDA:
 
                 plt.figure(figsize=(10, 10))
                 sns.heatmap(X[cols].corr())
-                plt.gca().set_title(
-                    "Heatmap", fontsize=11, weight="bold", alpha=0.75,
-                )
+                plt.gca().set_title("Heatmap", fontsize=11, weight="bold", alpha=0.75)
 
             plt.savefig(os.path.join(save_path, "heatmap"))
 
