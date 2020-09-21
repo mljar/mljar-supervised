@@ -849,7 +849,10 @@ class BaseAutoML(BaseEstimator, ABC):
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                predictions["label"] = predictions["label"].astype(np.int32)
+                try:
+                    predictions["label"] = predictions["label"].astype(np.int32)
+                except Exception as e:
+                    predictions["label"] = predictions["label"].astype(np.float)
             return predictions
         # Regression
         else:
