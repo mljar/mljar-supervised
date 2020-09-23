@@ -103,7 +103,7 @@ class EDA:
                     plt.title(f"{col} class distribution")
                     plt.tight_layout(pad=2.0)
 
-                elif PreprocessingUtils.get_type(X[col]) in ("continous","discrete"):
+                elif PreprocessingUtils.get_type(X[col]) in ("continous", "discrete"):
 
                     plt.figure(figsize=(5, 5))
                     sns.distplot(X[col], color=BLUE)
