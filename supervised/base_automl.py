@@ -517,6 +517,8 @@ class BaseAutoML(BaseEstimator, ABC):
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
     # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
     def _build_dataframe(self, X, y=None):
+        if X is None or X.shape[0] == 0:
+            raise AutoMLException("Empty input dataset")
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
         if not isinstance(X, pd.DataFrame):
             # Validate X as array
@@ -527,7 +529,6 @@ class BaseAutoML(BaseEstimator, ABC):
             X = pd.DataFrame(
                 X, columns=["feature_" + str(i) for i in range(1, len(X[0]) + 1)]
             )
-
         # Enforce column names
         # Enforce X_train columns to be string
         X.columns = X.columns.astype(str)
@@ -849,7 +850,10 @@ class BaseAutoML(BaseEstimator, ABC):
         elif self._ml_task == MULTICLASS_CLASSIFICATION:
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                predictions["label"] = predictions["label"].astype(np.int32)
+                try:
+                    predictions["label"] = predictions["label"].astype(np.int32)
+                except Exception as e:
+                    predictions["label"] = predictions["label"].astype(np.float)
             return predictions
         # Regression
         else:

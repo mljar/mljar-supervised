@@ -6,6 +6,7 @@ import json
 import time
 import itertools
 from multiprocessing import Pool
+from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.metrics import log_loss, mean_squared_error
 from supervised.algorithms.registry import (
@@ -125,15 +126,7 @@ class GoldenFeaturesTransformer(object):
             si = np.random.choice(len(items), 250000, replace=False)
             items = [items[i] for i in si]
 
-        middle, stop = 2500, 5000
-        if X.shape[0] < 5000:
-            stop = X.shape[0]
-            middle = int(stop / 2)
-
-        X_train = X[:middle]
-        X_test = X[middle:stop]
-        y_train = y[:middle]
-        y_test = y[middle:stop]
+        X_train, X_test, y_train, y_test = self._subsample(X, y)
 
         for i in range(len(items)):
             items[i] += (X_train, y_train, X_test, y_test, self._scorer)
@@ -224,3 +217,37 @@ class GoldenFeaturesTransformer(object):
     def try_load(self):
         if os.path.exists(self._result_file):
             self.from_json(json.load(open(self._result_file, "r")))
+
+    def _subsample(self, X, y):
+
+        MAX_SIZE = 5000
+        TRAIN_SIZE = 2500
+
+        shuffle = True
+        stratify = None
+
+        if X.shape[0] > 5000:
+            if self._ml_task != REGRESSION:
+                stratify = y
+            X_train, _, y_train, _ = train_test_split(
+                X, y, train_size=MAX_SIZE, shuffle=shuffle, stratify=stratify
+            )
+            if self._ml_task != REGRESSION:
+                stratify = y_train
+
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_train,
+                y_train,
+                train_size=TRAIN_SIZE,
+                shuffle=shuffle,
+                stratify=stratify,
+            )
+        else:
+            if self._ml_task != REGRESSION:
+                stratify = y
+            train_size = X.shape[0] // 2
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, train_size=train_size, shuffle=shuffle, stratify=stratify
+            )
+
+        return X_train, X_test, y_train, y_test

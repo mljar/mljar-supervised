@@ -111,6 +111,28 @@ class AutoMLTargetsTest(unittest.TestCase):
         self.assertTrue("a" in u or "B" in u)
         self.assertTrue(len(u) <= 2)
 
+    def test_multi_class_0123_floats(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = np.random.randint(0, 4, self.rows * 4)
+        y = y.astype(float)
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+        pred = automl.predict(X)
+
+        u = np.unique(pred)
+
+        self.assertTrue(0.0 in u or 1.0 in u or 2.0 in u or 3.0 in u)
+        self.assertTrue(len(u) <= 4)
+
     def test_multi_class_0123(self):
         X = np.random.rand(self.rows * 4, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -240,3 +262,24 @@ class AutoMLTargetsTest(unittest.TestCase):
 
         self.assertIsInstance(pred, np.ndarray)
         self.assertEqual(len(pred), X.shape[0])
+
+    def test_predict_on_empty_dataframe(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = pd.Series(np.random.rand(self.rows), name="target")
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+
+        with self.assertRaises(AutoMLException) as context:
+            pred = automl.predict(pd.DataFrame())
+
+        with self.assertRaises(AutoMLException) as context:
+            pred = automl.predict(np.empty(shape=(0, 3)))

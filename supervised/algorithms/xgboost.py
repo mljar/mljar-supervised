@@ -170,7 +170,7 @@ class XgbAlgorithm(BaseAlgorithm):
 xgb_bin_class_params = {
     "objective": ["binary:logistic"],
     "eval_metric": ["logloss"],
-    "eta": [0.01, 0.025, 0.05, 0.075, 0.1, 0.15],
+    "eta": [0.05, 0.075, 0.1, 0.15],
     "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     "subsample": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
