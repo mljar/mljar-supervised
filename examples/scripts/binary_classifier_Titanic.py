@@ -32,7 +32,7 @@ X = train[train.columns[2:]]
 y = train["Survived"]
 
 #automl = AutoML(mode="Compete") # default mode is Explain
-automl = AutoML(algorithms=["Decision Tree"]) # default mode is Explain
+automl = AutoML() # default mode is Explain
 
 automl.fit(X, y)
 

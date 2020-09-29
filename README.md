@@ -1,4 +1,4 @@
-# `mljar-supervised` Automated Machine Learning
+# Automated Machine Learning
 
 [![Build Status](https://travis-ci.org/mljar/mljar-supervised.svg?branch=master)](https://travis-ci.org/mljar/mljar-supervised)
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
@@ -16,6 +16,8 @@
 
 **Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
 
+**Community chat**: <a href="https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/" target="_blank">Slack channel</a>
+
 ---
 
 ## Table of Contents
@@ -31,7 +33,7 @@
  - [License](https://github.com/mljar/mljar-supervised#license-necktie)
  - [MLJAR](https://github.com/mljar/mljar-supervised#mljar-heart)
 
-## Automated Machine Learning :rocket: :computer: :bulb: 
+## Automated Machine Learning :rocket: 
 
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
@@ -46,32 +48,25 @@ It has three built-in modes of work:
  - `Perform` for building ML pipelines to use in production,
  - `Compete` mode that trains highly-tuned ML models with ensembling and stacking, with a purpose to use in ML competitions.
 
-Of course, you can further customize the details of each mode to meet requirements.
+Of course, you can further customize the details of each `mode` to meet the requirements.
 
-It integrates many popular frameworks:
+## What's good in it? :boom:
 
- - pandas
- - scikit-learn
- - xgboost
- - lightGBM
- - CatBoost
- - Tensorflow
- - Keras
-
-## What's good in it? :eyes: :cake: :boom:
-
-- `mljar-supervised` creates markdown reports from AutoML training full of ML details and charts. 
-- It can compute the `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
-- This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
-- The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It is using a many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
 - It can do features preprocessing, like: missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing (You won't believe how often it is needed!). For example, converting categorical target into numeric.
 - It can tune hyper-parameters with `not-so-random-search` algorithm (random-search over defined set of values) and hill climbing to fine-tune final models.
+- It can compute the `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
+- This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
+- The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It can compute Ensemble based on greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
 - It can stack models to build level 2 ensemble (available in `Compete` mode or after setting `stack_models` parameter).
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
+- `mljar-supervised` creates markdown reports from AutoML training full of ML details and charts. 
+- There is [Golden Features](https://supervised.mljar.com/features/golden_features/) algorithm available and [Features Selection](https://supervised.mljar.com/features/features_selection/) that can work with any ML algorithm.
 
-## Available Modes :school: :books:
+## Available Modes :books:
+
+In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes are presented in the table .
 
 ### Explain 
 
@@ -218,9 +213,9 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
-# Documentation
+# Documentation :books:
 
-For details please check [AutoML API Docs](docs/api.md).
+For details please check [mljar-supervised docs](https://supervised.mljar.com).
 
 If you need help: submit the issue or join our [Slack channel](https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/).
 
@@ -275,7 +270,7 @@ pip install -r requirements.txt
 pip install -r requirements_dev.txt
 ```
 
-Running in docker:
+Running in the docker:
 ```
 FROM python:3.7-slim-buster
 RUN apt-get update && apt-get -y update
@@ -287,7 +282,7 @@ CMD ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--al
 
 # Contributing
 
-To get started take a look at our [Contribution Guide](docs/contributing.md) for information about our process and where you can fit in!
+To get started take a look at our [Contribution Guide](https://supervised.mljar.com/contributing/) for information about our process and where you can fit in!
 
 ### Contributors
 <a href="https://github.com/mljar/mljar-supervised/graphs/contributors">
