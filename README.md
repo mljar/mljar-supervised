@@ -177,7 +177,7 @@ automl = AutoML(mode="Perform")
 automl.fit(X_train, y_train)
 
 # compute the accuracy on test data
-predictions = automl.predict(X_test)
+predictions = automl.predict_all(X_test)
 print(predictions.head())
 print("Test accuracy:", accuracy_score(y_test, predictions["label"].astype(int)))
 ```
