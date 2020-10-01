@@ -33,7 +33,7 @@ import os
 import json
 import keras
 
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.models import model_from_json
@@ -55,6 +55,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
+from sklearn.model_selection import train_test_split
 
 class NeuralNetworkAlgorithm(BaseAlgorithm):
 
@@ -98,11 +99,11 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
                     input_dim=input_dim,
                 )
             )
-            if (
-                self.learner_params.get("dropout") is not None
-                and self.learner_params.get("dropout") > 0
-            ):
-                self.model.add(Dropout(rate=self.learner_params.get("dropout")))
+            #if (
+            #    self.learner_params.get("dropout") is not None
+            #    and self.learner_params.get("dropout") > 0
+            #):
+            #    self.model.add(Dropout(rate=self.learner_params.get("dropout")))
 
         if self.ml_task == MULTICLASS_CLASSIFICATION:
             self.model.add(Dense(self.params["num_class"], activation="softmax"))
@@ -114,6 +115,7 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         self.compile_model()
 
     def compile_model(self):
+        '''
         sgd_opt = SGD(
             lr=self.learner_params.get("learning_rate"),
             momentum=self.learner_params.get("momentum"),
@@ -121,13 +123,17 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
             nesterov=True,
             clipnorm=1.0,
         )
+        '''
+        opt = Adam(
+            learning_rate=self.learner_params.get("learning_rate")
+        )
 
         if self.ml_task == MULTICLASS_CLASSIFICATION:
-            self.model.compile(optimizer=sgd_opt, loss="categorical_crossentropy")
+            self.model.compile(optimizer=opt, loss="categorical_crossentropy")
         elif self.ml_task == BINARY_CLASSIFICATION:
-            self.model.compile(optimizer=sgd_opt, loss="binary_crossentropy")
+            self.model.compile(optimizer=opt, loss="binary_crossentropy")
         else:
-            self.model.compile(optimizer=sgd_opt, loss="mean_squared_error")
+            self.model.compile(optimizer=opt, loss="mean_squared_error")
 
     def update(self, update_params):
         pass
@@ -137,33 +143,45 @@ class NeuralNetworkAlgorithm(BaseAlgorithm):
         if self.model is None:
             self.create_model(input_dim=X.shape[1])
 
-        batch_size = 1024
-        if X.shape[0] < batch_size * 5:
-            batch_size = 32
+        #batch_size = 1024
+        #if X.shape[0] < batch_size * 5:
+        #    batch_size = 32
+        batch_size = min(200, X.shape[0])
+        self.rounds = 500
 
-        self.model.fit(X, y, batch_size=batch_size, epochs=self.rounds, verbose=False)
-
-        """
+        #self.model.fit(X, y, batch_size=batch_size, epochs=self.rounds, verbose=False)
+        
+        
+        model_fname = "best_model4.h5"
+        stratify = None
+        if self.ml_task != "regression":
+            stratify = y
+            model_fname = "best_model3.h5"
+        
         # Experimental ...
-        es = EarlyStopping(monitor="val_loss", mode="min", verbose=1, patience=50)
+        es = EarlyStopping(monitor="val_loss", mode="min", verbose=0, patience=10)
         mc = ModelCheckpoint(
-            "best_model.h5",
+            model_fname,
             monitor="val_loss",
             mode="min",
             verbose=0,
             save_best_only=True,
         )
+
+        X_train, X_vald, y_train, y_vald = train_test_split(
+            X, y, test_size=0.1, shuffle=True, stratify=stratify
+        )
         self.model.fit(
-            X,
-            y,
-            validation_data=(X_validation, y_validation),
-            batch_size=4096,
-            epochs=1000,
+            X_train,
+            y_train,
+            validation_data=(X_vald, y_vald),
+            batch_size=batch_size,
+            epochs=500,
             verbose=False,
             callbacks=[es, mc],
         )
-        self.model = load_model("best_model.h5")
-        """
+        self.model = load_model(model_fname)
+        
 
     def predict(self, X):
         self.reload()
@@ -225,27 +243,27 @@ nn_params = {
     "dense_layers": [2],
     "dense_1_size": [16, 32, 64],
     "dense_2_size": [4, 8, 16, 32],
-    "dropout": [0, 0.1, 0.25],
+    #"dropout": [0, 0.1, 0.25],
     "learning_rate": [0.01, 0.05, 0.08, 0.1],
-    "momentum": [0.85, 0.9, 0.95],
-    "decay": [0.0001, 0.001, 0.01],
+    #"momentum": [0.85, 0.9, 0.95],
+    #"decay": [0.0001, 0.001, 0.01],
 }
 
 default_nn_params = {
     "dense_layers": 2,
     "dense_1_size": 32,
     "dense_2_size": 16,
-    "dropout": 0,
+    #"dropout": 0,
     "learning_rate": 0.05,
-    "momentum": 0.9,
-    "decay": 0.001,
+    #"momentum": 0.9,
+    #"decay": 0.001,
 }
 
 additional = {
-    "one_step": 10,
-    "train_cant_improve_limit": 5,
-    "max_steps": 500,
-    "min_steps": 5,
+    #"one_step": 10,
+    #"train_cant_improve_limit": 5,
+    #"max_steps": 500,
+    #"min_steps": 5,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

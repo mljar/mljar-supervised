@@ -70,3 +70,4 @@ import supervised.algorithms.catboost
 import supervised.algorithms.linear
 import supervised.algorithms.nn
 import supervised.algorithms.knn
+import supervised.algorithms.mlp

@@ -7,7 +7,7 @@ x_cols = [c for c in df.columns if c != "MEDV"]
 X = df[x_cols]
 y = df["MEDV"]
 
-automl = AutoML(mode="Compete")
+automl = AutoML()
 automl.fit(X, y)
 
 df["predictions"] = automl.predict(X)
