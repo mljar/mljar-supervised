@@ -155,6 +155,7 @@ class EarlyStopping(Callback):
             "Extra Trees",
             "LightGBM",
             "CatBoost",
+            "Neural Network",
         ]:
 
             with open(

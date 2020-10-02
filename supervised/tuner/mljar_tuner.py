@@ -244,7 +244,7 @@ class MljarTuner:
             "CatBoost",
             "Neural Network",
             "Nearest Neighbors",
-            "MLP"
+            "MLP",
         ]:
             if model_type not in self._algorithms:
                 continue
@@ -284,7 +284,7 @@ class MljarTuner:
             "Extra Trees",
             "Neural Network",
             "Nearest Neighbors",
-            "MLP"
+            "MLP",
         ]:
             if model_type not in self._algorithms:
                 continue

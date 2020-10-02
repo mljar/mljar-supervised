@@ -9,11 +9,11 @@ from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from sklearn import preprocessing
 
-from supervised.algorithms.nn import NeuralNetworkAlgorithm
+from supervised.algorithms.nn import MLPAlgorithm, MLPRegressorAlgorithm
 from supervised.utils.metric import Metric
 
 
-class NeuralNetworkAlgorithmTest(unittest.TestCase):
+class MLPAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_classification(
@@ -25,54 +25,40 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
             n_clusters_per_class=3,
             n_repeated=0,
             shuffle=False,
-            random_state=0,
+            random_state=1,
         )
 
         cls.params = {
-            "dense_layers": 2,
             "dense_1_size": 8,
             "dense_2_size": 4,
-            "dropout": 0,
             "learning_rate": 0.01,
-            "momentum": 0.9,
-            "decay": 0.001,
             "ml_task": "binary_classification",
         }
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        nn = NeuralNetworkAlgorithm(self.params)
-        loss_prev = None
-        for _ in range(3):
-            nn.fit(self.X, self.y)
-            y_predicted = nn.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.000001 < loss_prev)
-            loss_prev = loss
-
+        nn = MLPAlgorithm(self.params)
+        nn.fit(self.X, self.y)
+        y_predicted = nn.predict_proba(self.X)
+        loss = metric(self.y, y_predicted)
+        self.assertLess(loss, 2)
+        
     def test_copy(self):
         # train model #1
         metric = Metric({"name": "logloss"})
-        nn = NeuralNetworkAlgorithm(self.params)
+        nn = MLPAlgorithm(self.params)
         nn.fit(self.X, self.y)
         y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
         # create model #2
-        nn2 = NeuralNetworkAlgorithm(self.params)
-        # model #2 is not initialized in constructor
-        self.assertTrue(nn2.model is None)
+        nn2 = MLPAlgorithm(self.params)
         # do a copy and use it for predictions
         nn2 = nn.copy()
         self.assertEqual(type(nn), type(nn2))
         y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
-        # fit model #1, there should be improvement in loss
-        nn.fit(self.X, self.y)
-        y_predicted = nn.predict(self.X)
-        loss3 = metric(self.y, y_predicted)
-        self.assertTrue(loss3 < loss)
+        
         # the loss of model #2 should not change
         y_predicted = nn2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
@@ -80,7 +66,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        nn = NeuralNetworkAlgorithm(self.params)
+        nn = MLPAlgorithm(self.params)
         nn.fit(self.X, self.y)
         y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
@@ -89,7 +75,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
 
         nn.save(filename)
         json_desc = nn.get_params()
-        nn2 = NeuralNetworkAlgorithm(json_desc["params"])
+        nn2 = MLPAlgorithm(json_desc["params"])
         nn2.load(filename)
         # Finished with the file, delete it
         os.remove(filename)
@@ -99,7 +85,7 @@ class NeuralNetworkAlgorithmTest(unittest.TestCase):
         assert_almost_equal(loss, loss2)
 
 
-class RegressionNeuralNetworkAlgorithmTest(unittest.TestCase):
+class MLPRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
@@ -121,15 +107,11 @@ class RegressionNeuralNetworkAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "mse"})
-        nn = NeuralNetworkAlgorithm(self.params)
-        loss_prev = None
-        for _ in range(3):
-            nn.fit(self.X, self.y)
-            y_predicted = nn.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.000001 < loss_prev)
-            loss_prev = loss
+        nn = MLPRegressorAlgorithm(self.params)
+        nn.fit(self.X, self.y)
+        y_predicted = nn.predict(self.X)
+        loss = metric(self.y, y_predicted)
+        self.assertLess(loss, 1)
 
 
 class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
@@ -165,12 +147,8 @@ class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
 
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
-        nn = NeuralNetworkAlgorithm(self.params)
-        loss_prev = None
-        for _ in range(3):
-            nn.fit(self.X, self.y)
-            y_predicted = nn.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.000001 < loss_prev)
-            loss_prev = loss
+        nn = MLPAlgorithm(self.params)
+        nn.fit(self.X, self.y)
+        y_predicted = nn.predict(self.X)
+        loss = metric(self.y, y_predicted)
+        self.assertLess(loss, 2)
