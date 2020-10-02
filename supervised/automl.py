@@ -122,7 +122,7 @@ class AutoML(BaseAutoML):
                         "random_seed": 123
                     }
 
-                    Train/test example
+                    Train/test example:
                     {
                         "validation_type": "split",
                         "train_ratio": 0.75,
