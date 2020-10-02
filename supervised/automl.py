@@ -109,16 +109,25 @@ class AutoML(BaseAutoML):
                 Note: 
                     Still not implemented, please left `None`
 
-            validation_strategy (dict): Dictionary with validation type. Right now only Cross-Validation is supported.
+            validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
                 
                 Example:
                     
+                    Cross-validation exmaple:
                     {
                         "validation_type": "kfold", 
                         "k_folds": 5, 
                         "shuffle": True, 
                         "stratify": True, 
                         "random_seed": 123
+                    }
+
+                    Train/test example
+                    {
+                        "validation_type": "split",
+                        "train_ratio": 0.75,
+                        "shuffle": True,
+                        "stratify": True
                     }
 
             explain_level (int): The level of explanations included to each model:
