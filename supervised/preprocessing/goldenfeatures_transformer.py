@@ -194,8 +194,8 @@ class GoldenFeaturesTransformer(object):
 
     def to_json(self):
         data_json = {
-            "new_features": json.dumps(self._new_features, indent=4),
-            "new_columns": json.dumps(self._new_columns, indent=4),
+            "new_features": self._new_features,
+            "new_columns": self._new_columns,
             "result_file": self._result_file,
             "ml_task": self._ml_task,
         }
@@ -204,8 +204,8 @@ class GoldenFeaturesTransformer(object):
         return data_json
 
     def from_json(self, data_json):
-        self._new_features = json.loads(data_json.get("new_features", []))
-        self._new_columns = json.loads(data_json.get("new_columns", []))
+        self._new_features = data_json.get("new_features", [])
+        self._new_columns = data_json.get("new_columns", [])
         self._result_file = data_json.get("result_file")
         self._ml_task = data_json.get("ml_task")
         self._error = data_json.get("error")
