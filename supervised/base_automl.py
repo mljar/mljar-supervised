@@ -197,7 +197,18 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
-        return pd.DataFrame(ldb)
+
+        minimize_direction = self._eval_metric in [
+            "logloss",
+            "rmse",
+            "mae",
+            "ce",
+            "mse",
+        ]
+        ldb = pd.DataFrame(ldb)
+        ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
+
+        return ldb
 
     def keep_model(self, model, model_path):
         if model is None:

@@ -73,3 +73,6 @@ class Metric(object):
         if self.minimize_direction:
             return np.Inf
         return -np.Inf
+
+    def get_minimize_direction(self):
+        return self.minimize_direction
