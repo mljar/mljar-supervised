@@ -376,6 +376,10 @@ class BaseAutoML(BaseEstimator, ABC):
             # we need at least 60 seconds to do anything
             if time_left < 60:
                 return
+        # too many classes and models
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            if self.n_classes * len(self._models) > 1000:
+                return
 
         self._perform_model_stacking()
 
