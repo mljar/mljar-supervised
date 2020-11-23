@@ -706,6 +706,12 @@ class BaseAutoML(BaseEstimator, ABC):
 
                 if step == "stack":
                     self.prepare_for_stacking()
+                if "hill_climbing" in step or step in ["ensemble", "stack"]:
+                    if len(self._models) == 0:
+                        raise AutoMLException(
+                            "No models produced. \nPlease check your data or"
+                            " submit a Github issue at https://github.com/mljar/mljar-supervised/issues/new."
+                        )
 
                 generated_params = []
                 if step in self._all_params:
