@@ -997,7 +997,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 ]
             if self._get_mode() == "Compete":
                 return [
-                    "Linear",
                     "Decision Tree",
                     "Random Forest",
                     "Extra Trees",

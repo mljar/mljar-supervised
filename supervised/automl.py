@@ -55,16 +55,16 @@ class AutoML(BaseAutoML):
 
                 - `Explain` : To to be used when the user wants to explain and understand the data.
                     - Uses 75%/25% train/test split.
-                    - Uses the following models: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `XGBoost`, `Artificial Neural Network`, and `Ensemble`.
+                    - Uses the following models: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `XGBoost`, `Neural Network`, and `Ensemble`.
                     - Has full explanations in reports: learning curves, importance plots, and SHAP plots.
                 - `Perform` : To be used when the user wants to train a model that will be used in real-life use cases.
                     - Uses 5-fold CV (Cross-Validation).
-                    - Uses the following models: `Linear`, `Random Forest`, `LightGBM`, `XGBoost`, `CatBoost`, `Artificial Neural Network`, and `Ensemble`.
+                    - Uses the following models: `Linear`, `Random Forest`, `LightGBM`, `XGBoost`, `CatBoost`, `Neural Network`, and `Ensemble`.
                     - Has learning curves and importance plots in reports.
                 - `Compete` : To be used for machine learning competitions (maximum performance).
                     - Uses 10-fold CV (Cross-Validation).
-                    - Uses the following models: `Linear`, `DecisionTree`, `Random Forest`, `Extra Trees`, `XGBoost`, `CatBoost`, `Artificial Neural Network`,
-                        `Artificial Neural Network`, `Nearest Neighbors`, `Ensemble`, and `Stacking`.
+                    - Uses the following models: `Decision Tree`, `Random Forest`, `Extra Trees`, `XGBoost`, `CatBoost`, `Neural Network`,
+                        `Nearest Neighbors`, `Ensemble`, and `Stacking`.
                     - It has only learning curves in the reports.
 
             ml_task (str): Can be {"auto", "binary_classification", "multiclass_classification", "regression"}.
