@@ -34,6 +34,7 @@ from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.preprocessing.eda import EDA
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.tuner.time_controller import TimeController
 from supervised.utils.data_validation import (
     check_positive_integer,
@@ -578,7 +579,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
         # Check if y is np.ndarray, transform to pd.Series
         if isinstance(y, np.ndarray):
-            y = check_array(y, ensure_2d=False)
+            y = check_array(
+                y,
+                ensure_2d=False,
+                dtype="str" if PreprocessingUtils.is_categorical(y) else "numeric",
+            )
             y = pd.Series(np.array(y), name="target")
         # if pd.DataFrame, slice first column
         elif isinstance(y, pd.DataFrame):

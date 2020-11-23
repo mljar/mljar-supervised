@@ -199,6 +199,49 @@ class AutoMLTargetsTest(unittest.TestCase):
         self.assertTrue(np.intersect1d(u, ["a", "B", "CC", "d"]).shape[0] > 0)
         self.assertTrue(len(u) <= 4)
 
+    def test_multi_class_abcd_np_array(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = np.random.permutation([None, "B", "CC", "d"] * self.rows)
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+        pred = automl.predict(X)
+
+        u = np.unique(pred)
+
+        self.assertTrue(np.intersect1d(u, ["a", "B", "CC", "d"]).shape[0] > 0)
+        self.assertTrue(len(u) <= 4)
+
+    def test_multi_class_abcd_mixed_int(self):
+        X = np.random.rand(self.rows * 4, 3)
+        X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
+        y = pd.Series(
+            np.random.permutation([1, "B", "CC", "d"] * self.rows), name="target"
+        )
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            algorithms=["Xgboost"],
+            train_ensemble=False,
+            explain_level=0,
+            start_random_models=1,
+        )
+        automl.fit(X, y)
+        pred = automl.predict(X)
+        u = np.unique(pred)
+
+        self.assertTrue(np.intersect1d(u, ["a", "B", "CC", "d"]).shape[0] > 0)
+        self.assertTrue(len(u) <= 4)
+
     def test_multi_class_abcd_missing_target(self):
         X = np.random.rand(self.rows * 4, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -206,6 +249,7 @@ class AutoMLTargetsTest(unittest.TestCase):
             np.random.permutation(["a", "B", "CC", "d"] * self.rows), name="target"
         )
 
+        y.iloc[0] = None
         y.iloc[1] = None
         automl = AutoML(
             results_path=self.automl_dir,
