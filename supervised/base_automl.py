@@ -888,7 +888,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 neg_label, pos_label = 0, 1
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
-                neg_label = int()
+                neg_label = int(neg_label)
                 pos_label = int(pos_label)
             # assume that it is binary classification
             predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold

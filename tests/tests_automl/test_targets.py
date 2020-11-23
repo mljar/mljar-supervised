@@ -61,7 +61,9 @@ class AutoMLTargetsTest(unittest.TestCase):
         pred = automl.predict(X)
 
         u = np.unique(pred)
+
         self.assertTrue(-1 in u or 1 in u)
+        self.assertTrue(0 not in u)
         self.assertTrue(len(u) <= 2)
 
     def test_bin_class_AB(self):
