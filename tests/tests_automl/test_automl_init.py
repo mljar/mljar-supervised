@@ -36,7 +36,7 @@ class AutoMLInitTest(unittest.TestCase):
         )
 
         automl.fit(X, y)
-        self.assertGreater(len(automl._models), 4)
+        self.assertGreater(len(automl._models), 3)
 
     def test_get_results_path(self):
         automl = AutoML(algorithms=["Baseline"], total_time_limit=1)

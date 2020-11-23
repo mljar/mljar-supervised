@@ -427,22 +427,58 @@ class BaseAutoML(BaseEstimator, ABC):
         """
 
     def _save_data(self, X, y):
+        # save information about original data
+        self._save_data_info(X, y)
 
+        # handle drastic imbalance
+        # assure at least 20 samples of each class
+        # for binary and multiclass classification
+        self._handle_drastic_imbalance(X, y)
+
+        # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.parquet")
         self._y_path = os.path.join(self._results_path, "y.parquet")
 
         X.to_parquet(self._X_path, index=False)
 
-        # let's check before any conversions
-        target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
         pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
 
+        # set paths in validation parameters
         self._validation_strategy["X_path"] = self._X_path
         self._validation_strategy["y_path"] = self._y_path
         self._validation_strategy["results_path"] = self._results_path
+
+        self._drop_data_variables(X)
+
+    def _handle_drastic_imbalance(self, X, y):
+        if self._ml_task == REGRESSION:
+            return
+        classes, cnts = np.unique(y, return_counts=True)
+        min_samples_per_class = 20
+        if self._validation_strategy is not None:
+            min_samples_per_class = self._validation_strategy.get(
+                "k_folds", min_samples_per_class
+            )
+        for i in range(len(classes)):
+            if cnts[i] < min_samples_per_class:
+                append_samples = min_samples_per_class - cnts[i]
+                new_X = (
+                    X[y == classes[i]]
+                    .sample(n=append_samples, replace=True, random_state=1)
+                    .reset_index(drop=True)
+                )
+                for j in range(new_X.shape[0]):
+                    X.loc[X.shape[0]] = new_X.loc[j]
+                    y.loc[y.shape[0]] = classes[i]
+
+    def _save_data_info(self, X, y):
+
+        target_is_numeric = pd.api.types.is_numeric_dtype(y)
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            y = y.astype(str)
 
         columns_and_target_info = DataInfo.compute(X, y, self._ml_task)
 
@@ -467,8 +503,6 @@ class BaseAutoML(BaseEstimator, ABC):
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4))
-
-        self._drop_data_variables(X)
 
     def _drop_data_variables(self, X):
 
