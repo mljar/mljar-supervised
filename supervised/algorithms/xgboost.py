@@ -72,8 +72,16 @@ class XgbAlgorithm(BaseAlgorithm):
         logger.debug("XgbLearner __init__")
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        dtrain = xgb.DMatrix(X, label=y, missing=np.NaN)
-        dvalidation = xgb.DMatrix(X_validation, label=y_validation, missing=np.NaN)
+        dtrain = xgb.DMatrix(
+            X.to_numpy() if isinstance(X, pd.DataFrame) else X, label=y, missing=np.NaN
+        )
+        dvalidation = xgb.DMatrix(
+            X_validation.to_numpy()
+            if isinstance(X_validation, pd.DataFrame)
+            else X_validation,
+            label=y_validation,
+            missing=np.NaN,
+        )
         evals_result = {}
 
         evals = []
@@ -124,7 +132,9 @@ class XgbAlgorithm(BaseAlgorithm):
         if self.model is None:
             raise XgbAlgorithmException("Xgboost model is None")
 
-        dtrain = xgb.DMatrix(X, missing=np.NaN)
+        dtrain = xgb.DMatrix(
+            X.to_numpy() if isinstance(X, pd.DataFrame) else X, missing=np.NaN
+        )
         a = self.model.predict(dtrain, ntree_limit=self.best_ntree_limit)
         return a
 

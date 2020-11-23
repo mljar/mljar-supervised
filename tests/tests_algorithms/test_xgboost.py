@@ -82,3 +82,21 @@ class XgboostAlgorithmTest(unittest.TestCase):
         y_predicted = xgb2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+    def test_restricted_characters_in_feature_name(self):
+        df = pd.DataFrame(
+            {
+                "y": np.random.randint(0, 2, size=100),
+                "[test1]": np.random.uniform(0, 1, size=100),
+                "test2 < 1": np.random.uniform(0, 1, size=100),
+            }
+        )
+
+        y = df.iloc[:, 0]
+        X = df.iloc[:, 1:]
+
+        metric = Metric({"name": "logloss"})
+        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        xgb = XgbAlgorithm(params)
+        xgb.fit(X, y)
+        xgb.predict(X)

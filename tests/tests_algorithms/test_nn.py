@@ -42,7 +42,7 @@ class MLPAlgorithmTest(unittest.TestCase):
         y_predicted = nn.predict_proba(self.X)
         loss = metric(self.y, y_predicted)
         self.assertLess(loss, 2)
-        
+
     def test_copy(self):
         # train model #1
         metric = Metric({"name": "logloss"})
@@ -58,7 +58,7 @@ class MLPAlgorithmTest(unittest.TestCase):
         y_predicted = nn2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
-        
+
         # the loss of model #2 should not change
         y_predicted = nn2.predict(self.X)
         loss4 = metric(self.y, y_predicted)
@@ -111,7 +111,7 @@ class MLPRegressorAlgorithmTest(unittest.TestCase):
         nn.fit(self.X, self.y)
         y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
-        self.assertLess(loss, 1)
+        self.assertLess(loss, 2)
 
 
 class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):

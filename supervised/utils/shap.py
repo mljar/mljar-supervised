@@ -26,7 +26,7 @@ class PlotSHAP:
 
         # https://github.com/mljar/mljar-supervised/issues/112 disable for NN
         # https://github.com/mljar/mljar-supervised/issues/114 disable for CatBoost
-        if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]: 
+        if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]:
             return False
         if (
             algorithm.algorithm_short_name == "Xgboost"
@@ -67,9 +67,8 @@ class PlotSHAP:
             explainer = shap.TreeExplainer(algorithm.model)
         elif algorithm.algorithm_short_name in ["Linear"]:
             explainer = shap.LinearExplainer(algorithm.model, X_train)
-        #elif algorithm.algorithm_short_name in ["Neural Network"]:
+        # elif algorithm.algorithm_short_name in ["Neural Network"]:
         #    explainer = shap.KernelExplainer(algorithm.model.predict, X_train)  # slow
-        
 
         return explainer
 
