@@ -112,12 +112,22 @@ class PreprocessingUtils(object):
 
     @staticmethod
     def get_min(x):
-        return np.amin(np.nanmin(x))
+        v = np.amin(np.nanmin(x))
+        if pd.isnull(v):
+            return 0
+        return float(v)
 
     @staticmethod
     def get_mean(x):
-        return np.nanmean(x)
+        v = np.nanmean(x)
+        if pd.isnull(v):
+            return 0
+        return float(v)
 
     @staticmethod
     def get_median(x):
-        return np.nanmedian(x)
+        v = np.nanmedian(x)
+        if pd.isnull(v):
+            return 0
+        return float(v)
+        
