@@ -237,14 +237,13 @@ class MljarTuner:
 
         generated_params = []
         for model_type in [
-            "Random Forest",
-            "Extra Trees",
             "Xgboost",
             "LightGBM",
             "CatBoost",
             "Neural Network",
-            "Nearest Neighbors",
-            "MLP",
+            "Random Forest",
+            "Extra Trees",
+            "Nearest Neighbors"
         ]:
             if model_type not in self._algorithms:
                 continue
