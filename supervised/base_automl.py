@@ -598,6 +598,28 @@ class BaseAutoML(BaseEstimator, ABC):
 
         return X, y
 
+    def _apply_constraints(self):
+
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            if self.n_features_in_ * self.n_classes > 1000:
+
+                if self.algorithms == "auto":
+                    for a in ["Xgboost", "CatBoost"]:
+                        if a in self._algorithms:
+                            self._algorithms.remove(a)
+                if self.validation_strategy == "auto":
+                    self._validation_strategy = {
+                        "validation_type": "split",
+                        "train_ratio": 0.9,
+                        "shuffle": True,
+                        "stratify": True,
+                    }
+            if self.n_features_in_ * self.n_classes > 10000:
+                if self.algorithms == "auto":
+                    for a in ["Random Forest", "Extra Trees"]:
+                        if a in self._algorithms:
+                            self._algorithms.remove(a)
+
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
@@ -630,6 +652,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._hill_climbing_steps = self._get_hill_climbing_steps()
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._random_state = self._get_random_state()
+
+        self._apply_constraints()
 
         try:
 
@@ -1118,8 +1142,9 @@ class BaseAutoML(BaseEstimator, ABC):
             return strat
         else:
             strat = deepcopy(self.validation_strategy)
-            if "stratify" in strat:
-                del strat["stratify"]
+            if self._get_ml_task() == REGRESSION:
+                if "stratify" in strat:
+                    del strat["stratify"]
             return strat
 
     def _get_verbose(self):

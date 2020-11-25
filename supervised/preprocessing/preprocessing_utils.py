@@ -130,4 +130,3 @@ class PreprocessingUtils(object):
         if pd.isnull(v):
             return 0
         return float(v)
-        
