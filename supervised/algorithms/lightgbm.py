@@ -190,7 +190,7 @@ classification_multi_default_params = {
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
-lgbr_params["metric"] = ["l2"]
+lgbr_params["metric"] = ["rmse"]
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
@@ -221,7 +221,7 @@ regression_required_preprocessing = [
 
 regression_default_params = {
     "objective": "regression",
-    "metric": "l2",
+    "metric": "rmse",
     "num_leaves": 15,
     "learning_rate": 0.1,
     "feature_fraction": 0.9,
