@@ -1,13 +1,33 @@
+import copy
+import logging
 import numpy as np
+from decimal import Decimal
 from sklearn import preprocessing as sk_preproc
+
+from supervised.utils.config import LOG_LEVEL
+
+logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)
 
 
 class LabelEncoder(object):
-    def __init__(self):
+    def __init__(self, try_to_fit_numeric=False):
         self.lbl = sk_preproc.LabelEncoder()
+        self._try_to_fit_numeric = try_to_fit_numeric
 
     def fit(self, x):
         self.lbl.fit(list(x.values))
+        if self._try_to_fit_numeric:
+            logger.debug("Try to fit numeric in LabelEncoder")
+            classes = copy.deepcopy(self.lbl.classes_)
+            try:
+                arr = [Decimal(c) for c in classes]
+                arr = sorted(arr)
+                self.lbl.classes_ = np.array([str(i) for i in arr])
+            except Exception as e:
+                logger.error(
+                    "Eception during try to fit numeric in LabelEncoder, " + str(e)
+                )
 
     def transform(self, x):
         try:

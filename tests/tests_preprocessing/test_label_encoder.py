@@ -107,6 +107,24 @@ class LabelEncoderTest(unittest.TestCase):
         self.assertEqual(y[1], 0)
         self.assertEqual(y[2], 1)
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_fit_on_numeric_categories(self):
+        # categories are as strings
+        # but they represent numbers
+        # we force encoder to sort them by numeric values
+        # it is needed for computing predictions for many classes
+        
+        # training data
+        d = {"col1": ["1", "10", "2"]}
+        df = pd.DataFrame(data=d)
+        le = LabelEncoder(try_to_fit_numeric=True)
+        # check first column
+        le.fit(df["col1"])
+        data_json = le.to_json()
+        # values from column should be in data json
+        self.assertTrue("1" in data_json)
+        self.assertTrue("10" in data_json)
+        self.assertTrue("2" in data_json)
+        # there is alphabetical order for values
+        self.assertEqual(0, data_json["1"])
+        self.assertEqual(1, data_json["2"])
+        self.assertEqual(2, data_json["10"])

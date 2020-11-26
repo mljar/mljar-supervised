@@ -81,7 +81,7 @@ class Preprocessing(object):
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
-                self._categorical_y = LabelEncoder()
+                self._categorical_y = LabelEncoder(try_to_fit_numeric=True)
                 self._categorical_y.fit(y_train)
                 y_train = pd.Series(self._categorical_y.transform(y_train))
 
@@ -441,7 +441,6 @@ class Preprocessing(object):
                 )
             else:
                 # multiclass classification
-
                 if "unique_values" not in self._categorical_y.to_json():
                     labels = dict(
                         (v, k) for k, v in self._categorical_y.to_json().items()
@@ -453,6 +452,7 @@ class Preprocessing(object):
                             self._categorical_y.to_json()["unique_values"]
                         )
                     }
+
                 d = {}
                 cols = []
                 for i in range(y.shape[1]):
