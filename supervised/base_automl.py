@@ -1300,13 +1300,21 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
             return
 
-        if (
-            self._get_ml_task() == BINARY_CLASSIFICATION
-            or self._get_ml_task() == MULTICLASS_CLASSIFICATION
+        if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
+            "logloss",
+            "auc",
+        ]:
+            raise ValueError(
+                f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use 'logloss'"
+            )
+
+        elif (
+            self._get_ml_task() == MULTICLASS_CLASSIFICATION
         ) and self.eval_metric != "logloss":
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'log_loss'"
+                    Use 'logloss'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":

@@ -30,6 +30,11 @@ def rmse(y_true, y_predicted):
     return np.sqrt(val) if val > 0 else -np.Inf
 
 
+def negative_auc(y_true, y_predicted):
+    val = roc_auc_score(y_true, y_predicted)
+    return -1.0 * val
+
+
 class Metric(object):
     def __init__(self, params):
         if params is None:
@@ -38,11 +43,18 @@ class Metric(object):
         self.name = self.params.get("name")
         if self.name is None:
             raise MetricException("Metric name not defined")
-        self.minimize_direction = self.name in ["logloss", "rmse", "mae", "ce", "mse"]
+        self.minimize_direction = self.name in [
+            "logloss",
+            "rmse",
+            "mae",
+            "ce",
+            "mse",
+            "auc",
+        ]
         if self.name == "logloss":
             self.metric = logloss
         elif self.name == "auc":
-            self.metric = roc_auc_score
+            self.metric = negative_auc
         elif self.name == "acc":
             self.metric = accuracy_score
         elif self.name == "rmse":

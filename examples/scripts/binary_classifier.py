@@ -20,11 +20,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 automl = AutoML(
     algorithms=["LightGBM"],
-    mode="Perform",
+    mode="Compete",
     explain_level=0,
-    train_ensemble=False,
+    train_ensemble=True,
     golden_features=False,
     features_selection=False,
+    eval_metric="auc"
 )
 automl.fit(X_train, y_train)
 

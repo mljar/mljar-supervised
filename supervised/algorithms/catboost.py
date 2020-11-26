@@ -159,7 +159,7 @@ classification_params = {
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
     "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
     "min_data_in_leaf": [1, 5, 10, 15, 20, 30, 50],
-    "loss_function": ["Logloss"]
+    "loss_function": ["Logloss"],
 }
 
 classification_default_params = {
@@ -167,8 +167,8 @@ classification_default_params = {
     "depth": 6,
     "rsm": 0.9,
     "subsample": 1.0,
-    "min_data_in_leaf": 15,    
-    "loss_function": "Logloss"
+    "min_data_in_leaf": 15,
+    "loss_function": "Logloss",
 }
 
 additional = {
@@ -226,7 +226,7 @@ regression_default_params = {
     "rsm": 0.9,
     "subsample": 1.0,
     "min_data_in_leaf": 15,
-    "loss_function": "RMSE"
+    "loss_function": "RMSE",
 }
 
 AlgorithmsRegistry.add(
