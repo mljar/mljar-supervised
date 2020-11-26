@@ -38,10 +38,12 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         Algo = CatBoostClassifier
         loss_function = "Logloss"
-        if self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
-            loss_function = "MultiClass"
+        if self.params["ml_task"] == BINARY_CLASSIFICATION:
+            loss_function = self.params.get("loss_function", "Logloss")
+        elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
+            loss_function = self.params.get("loss_function", "MultiClass")
         elif self.params["ml_task"] == REGRESSION:
-            loss_function = "RMSE"  # self.params.get("loss_function", "RMSE")
+            loss_function = self.params.get("loss_function", "RMSE")
             Algo = CatBoostRegressor
 
         self.learner_params = {
@@ -157,6 +159,7 @@ classification_params = {
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
     "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
     "min_data_in_leaf": [1, 5, 10, 15, 20, 30, 50],
+    "loss_function": ["Logloss"]
 }
 
 classification_default_params = {
@@ -164,7 +167,8 @@ classification_default_params = {
     "depth": 6,
     "rsm": 0.9,
     "subsample": 1.0,
-    "min_data_in_leaf": 15,
+    "min_data_in_leaf": 15,    
+    "loss_function": "Logloss"
 }
 
 additional = {
@@ -190,16 +194,23 @@ AlgorithmsRegistry.add(
     classification_default_params,
 )
 
+multiclass_classification_params = copy.deepcopy(classification_params)
+multiclass_classification_params["loss_function"] = ["MultiClass"]
+
+multiclass_classification_default_params = copy.deepcopy(classification_default_params)
+multiclass_classification_default_params["loss_function"] = "MultiClass"
+
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
     CatBoostAlgorithm,
-    classification_params,
+    multiclass_classification_params,
     required_preprocessing,
     additional,
-    classification_default_params,
+    multiclass_classification_default_params,
 )
 
 regression_params = copy.deepcopy(classification_params)
+regression_params["loss_function"] = ["RMSE"]
 
 regression_required_preprocessing = [
     "missing_values_inputation",
@@ -215,6 +226,7 @@ regression_default_params = {
     "rsm": 0.9,
     "subsample": 1.0,
     "min_data_in_leaf": 15,
+    "loss_function": "RMSE"
 }
 
 AlgorithmsRegistry.add(

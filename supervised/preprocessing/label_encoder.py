@@ -26,9 +26,7 @@ class LabelEncoder(object):
                     list(sorted_arr.values()), dtype=self.lbl.classes_.dtype
                 )
             except Exception as e:
-                logger.error(
-                    "Eception during try to fit numeric in LabelEncoder, " + str(e)
-                )
+                pass
 
     def transform(self, x):
         try:

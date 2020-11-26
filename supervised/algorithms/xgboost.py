@@ -179,7 +179,7 @@ class XgbAlgorithm(BaseAlgorithm):
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {
     "objective": ["binary:logistic"],
-    "eval_metric": ["logloss"],
+    "eval_metric": ["logloss", "auc"],
     "eta": [0.05, 0.075, 0.1, 0.15],
     "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
