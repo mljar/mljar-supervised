@@ -16,14 +16,15 @@ class LabelEncoder(object):
         self._try_to_fit_numeric = try_to_fit_numeric
 
     def fit(self, x):
-        self.lbl.fit(list(x.values))
+        self.lbl.fit(x)  # list(x.values))
         if self._try_to_fit_numeric:
             logger.debug("Try to fit numeric in LabelEncoder")
-            classes = copy.deepcopy(self.lbl.classes_)
             try:
-                arr = [Decimal(c) for c in classes]
-                arr = sorted(arr)
-                self.lbl.classes_ = np.array([str(i) for i in arr])
+                arr = {Decimal(c): c for c in self.lbl.classes_}
+                sorted_arr = dict(sorted(arr.items()))
+                self.lbl.classes_ = np.array(
+                    list(sorted_arr.values()), dtype=self.lbl.classes_.dtype
+                )
             except Exception as e:
                 logger.error(
                     "Eception during try to fit numeric in LabelEncoder, " + str(e)
@@ -31,16 +32,16 @@ class LabelEncoder(object):
 
     def transform(self, x):
         try:
-            return self.lbl.transform(list(x.values))
+            return self.lbl.transform(x)  # list(x.values))
         except ValueError as ve:
             # rescue
-            classes = np.unique(list(x.values))
+            classes = np.unique(x)  # list(x.values))
             diff = np.setdiff1d(classes, self.lbl.classes_)
             self.lbl.classes_ = np.concatenate((self.lbl.classes_, diff))
-            return self.lbl.transform(list(x.values))
+            return self.lbl.transform(x)  # list(x.values))
 
     def inverse_transform(self, x):
-        return self.lbl.inverse_transform(list(x.values))
+        return self.lbl.inverse_transform(x)  # (list(x.values))
 
     def to_json(self):
         data_json = {}
@@ -49,7 +50,7 @@ class LabelEncoder(object):
         return data_json
 
     def from_json(self, data_json):
-        keys = np.unique(list(data_json.keys()))
+        keys = np.array(list(data_json.keys()))
         if len(keys) == 2 and "False" in keys and "True" in keys:
             keys = [False, True]
         self.lbl.classes_ = keys

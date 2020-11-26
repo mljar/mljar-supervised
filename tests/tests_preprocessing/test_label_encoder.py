@@ -112,7 +112,7 @@ class LabelEncoderTest(unittest.TestCase):
         # but they represent numbers
         # we force encoder to sort them by numeric values
         # it is needed for computing predictions for many classes
-        
+
         # training data
         d = {"col1": ["1", "10", "2"]}
         df = pd.DataFrame(data=d)
@@ -120,11 +120,29 @@ class LabelEncoderTest(unittest.TestCase):
         # check first column
         le.fit(df["col1"])
         data_json = le.to_json()
+        print(data_json)
         # values from column should be in data json
         self.assertTrue("1" in data_json)
         self.assertTrue("10" in data_json)
         self.assertTrue("2" in data_json)
-        # there is alphabetical order for values
+        # there is numeric order for values
         self.assertEqual(0, data_json["1"])
         self.assertEqual(1, data_json["2"])
         self.assertEqual(2, data_json["10"])
+        p = le.transform(df["col1"])
+        p2 = le.transform(np.array(df["col1"].values))
+        self.assertEqual(p[0], 0)
+        self.assertEqual(p[1], 2)
+        self.assertEqual(p[2], 1)
+
+        self.assertEqual(p[0], p2[0])
+        self.assertEqual(p[1], p2[1])
+        self.assertEqual(p[2], p2[2])
+
+        new_le = LabelEncoder()
+        new_le.from_json(json.loads(json.dumps(le.to_json(), indent=4)))
+        p2 = new_le.transform(df["col1"])
+
+        self.assertEqual(p[0], p2[0])
+        self.assertEqual(p[1], p2[1])
+        self.assertEqual(p[2], p2[2])
