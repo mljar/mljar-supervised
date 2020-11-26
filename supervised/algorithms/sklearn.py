@@ -144,5 +144,5 @@ def predict_function(estimator, X):
 class SklearnTreesEnsembleRegressorAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def __init__(self, params):
         super(SklearnTreesEnsembleRegressorAlgorithm, self).__init__(params)
-        self.log_metric = Metric({"name": "mse"})
+        self.log_metric = Metric({"name": "rmse"})
         self.predict_function = predict_function
