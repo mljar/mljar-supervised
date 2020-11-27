@@ -1351,7 +1351,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     Use 'logloss'"
             )
 
-        elif self._get_ml_task() == REGRESSION and self.eval_metric != "rmse":
+        elif self._get_ml_task() == REGRESSION and self.eval_metric not in ["rmse", "mse", "mae"]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                 Use 'rmse'"
