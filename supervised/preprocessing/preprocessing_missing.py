@@ -44,9 +44,12 @@ class PreprocessingMissingValues(object):
                     PreprocessingMissingValues.MISSING_VALUE
                 )  # add new categorical value
             return PreprocessingUtils.get_most_frequent(x)
-
+        # datetime
         if PreprocessingUtils.get_type(x) == PreprocessingUtils.DATETIME:
             return PreprocessingUtils.get_most_frequent(x)
+        # text
+        if PreprocessingUtils.get_type(x) == PreprocessingUtils.TEXT:
+            return PreprocessingMissingValues.MISSING_VALUE
 
         # numerical type
         if self._na_fill_method == PreprocessingMissingValues.FILL_NA_MIN:
