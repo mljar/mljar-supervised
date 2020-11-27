@@ -6,6 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 import logging
+import traceback
 from tabulate import tabulate
 from abc import ABC
 from copy import deepcopy
@@ -613,7 +614,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._validation_strategy = {
                         "validation_type": "split",
                         "train_ratio": 0.9,
-                        "shuffle": True
+                        "shuffle": True,
                     }
                     if self._get_ml_task() != REGRESSION:
                         self._validation_strategy["stratify"] = True
@@ -811,7 +812,9 @@ class BaseAutoML(BaseEstimator, ABC):
                         params["final_loss"] = self._models[-1].get_final_loss()
                         params["train_time"] = self._models[-1].get_train_time()
                     except Exception as e:
-                        self._update_errors_report(params.get("name"), str(e))
+                        self._update_errors_report(
+                            params.get("name"), str(e) + "\n" + traceback.format_exc()
+                        )
                         params["status"] = "error"
 
                     self.save_progress(step, generated_params)
