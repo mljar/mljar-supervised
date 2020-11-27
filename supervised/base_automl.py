@@ -600,6 +600,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _apply_constraints(self):
 
+        # remove algorithms in the case of multiclass
+        # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             if self.n_features_in_ * self.n_classes > 1000:
 
@@ -611,14 +613,42 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._validation_strategy = {
                         "validation_type": "split",
                         "train_ratio": 0.9,
-                        "shuffle": True,
-                        "stratify": True,
+                        "shuffle": True
                     }
+                    if self._get_ml_task() != REGRESSION:
+                        self._validation_strategy["stratify"] = True
+
             if self.n_features_in_ * self.n_classes > 10000:
                 if self.algorithms == "auto":
                     for a in ["Random Forest", "Extra Trees"]:
                         if a in self._algorithms:
                             self._algorithms.remove(a)
+
+        # Change the validation type based on number of cells in the data
+        # cells = rows * cols
+        if (
+            self._get_mode() == "Compete"
+            and self.validation_strategy == "auto"
+            and self._validation_strategy["validation_type"]
+            != "split"  # split is the fastest validation type, no need to change
+        ):
+            cells = self.n_rows_in_ * self.n_features_in_
+            if cells > 100e6:
+                self._validation_strategy = {
+                    "validation_type": "split",
+                    "train_ratio": 0.9,
+                    "shuffle": True,
+                }
+                if self._get_ml_task() != REGRESSION:
+                    self._validation_strategy["stratify"] = True
+            elif cells > 50e6:
+                self._validation_strategy = {
+                    "validation_type": "kfold",
+                    "k_folds": 5,
+                    "shuffle": True,
+                }
+                if self._get_ml_task() != REGRESSION:
+                    self._validation_strategy["stratify"] = True
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
@@ -630,6 +660,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # Validate input and build dataframes
         X, y = self._build_dataframe(X, y)
 
+        self.n_rows_in_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
         self.n_classes = len(np.unique(y[~pd.isnull(y)]))
 
