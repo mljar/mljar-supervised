@@ -86,9 +86,9 @@ class MljarTuner:
 
         models_cnt = len(models)
         if step == "adjust_validation":
-            return self.adjust_validation_params()
+            return self.adjust_validation_params(models_cnt)
         elif step == "simple_algorithms":
-            return self.simple_algorithms_params()
+            return self.simple_algorithms_params(models_cnt)
         elif step == "default_algorithms":
             return self.default_params(models_cnt)
         elif step == "not_so_random":
@@ -186,8 +186,7 @@ class MljarTuner:
             generated_params += [params]
         return generated_params
 
-    def adjust_validation_params(self):
-        models_cnt = 0
+    def adjust_validation_params(self, models_cnt):
         generated_params = []
         for model_type in ["Decision Tree"]:
             models_to_check = 1
@@ -209,8 +208,7 @@ class MljarTuner:
                 models_cnt += 1
         return generated_params
 
-    def simple_algorithms_params(self):
-        models_cnt = 0
+    def simple_algorithms_params(self, models_cnt):
         generated_params = []
         for model_type in ["Baseline", "Decision Tree", "Linear"]:
             if model_type not in self._algorithms:
