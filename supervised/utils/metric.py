@@ -45,7 +45,7 @@ class Metric(object):
             raise MetricException("Metric name not defined")
         self.minimize_direction = self.name in [
             "logloss",
-            "auc", # negative auc
+            "auc",  # negative auc
             "rmse",
             "mae",
             "mse",

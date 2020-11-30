@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 import traceback
+import shutil
 from tabulate import tabulate
 from abc import ABC
 from copy import deepcopy
@@ -461,8 +462,8 @@ class BaseAutoML(BaseEstimator, ABC):
         classes, cnts = np.unique(y, return_counts=True)
         min_samples_per_class = 20
         if self._validation_strategy is not None:
-            min_samples_per_class = self._validation_strategy.get(
-                "k_folds", min_samples_per_class
+            min_samples_per_class = max(
+                min_samples_per_class, self._validation_strategy.get("k_folds", 0)
             )
         for i in range(len(classes)):
             if cnts[i] < min_samples_per_class:
@@ -625,31 +626,62 @@ class BaseAutoML(BaseEstimator, ABC):
                         if a in self._algorithms:
                             self._algorithms.remove(a)
 
-        # Change the validation type based on number of cells in the data
-        # cells = rows * cols
+        # Adjust the validation type based on speed of Decision Tree learning
         if (
             self._get_mode() == "Compete"
+            and self._total_time_limit is not None
             and self.validation_strategy == "auto"
             and self._validation_strategy["validation_type"]
             != "split"  # split is the fastest validation type, no need to change
         ):
-            cells = self.n_rows_in_ * self.n_features_in_
-            if cells > 100e6:
-                self._validation_strategy = {
-                    "validation_type": "split",
-                    "train_ratio": 0.9,
-                    "shuffle": True,
-                }
-                if self._get_ml_task() != REGRESSION:
-                    self._validation_strategy["stratify"] = True
-            elif cells > 50e6:
-                self._validation_strategy = {
-                    "validation_type": "kfold",
-                    "k_folds": 5,
-                    "shuffle": True,
-                }
-                if self._get_ml_task() != REGRESSION:
-                    self._validation_strategy["stratify"] = True
+            # the validation will be adjusted after first Decision Tree learning on
+            # train/test split (1-fold)
+            self._adjust_validation = True
+            self._validation_strategy = self._fastest_validation()
+            
+
+    def _fastest_validation(self):
+        strategy = {"validation_type": "split", "train_ratio": 0.9, "shuffle": True}
+        if self._get_ml_task() != REGRESSION:
+            strategy["stratify"] = True
+        return strategy
+
+    def _set_adjusted_validation(self):
+        if self._validation_strategy["validation_type"] != "split":
+            return
+        train_time = self._models[-1].get_train_time()
+        # the time of Decision Tree training multiply by 5.0
+        # to get the rough estimation how much time is needed for 
+        # other algorithms
+        one_fold_time = train_time * 5.0 
+        # it will be good to train at least 10 models
+        min_model_cnt = 10.0
+        # the number of folds we can afford during the training
+        folds_cnt = np.round(self._total_time_limit / one_fold_time / min_model_cnt)
+        
+        # adjust the validation if possible
+        if folds_cnt >= 5.0:
+            self.verbose_print(f"Adjust validation. Remove: {self._model_paths[0]}")
+            k_folds = 5
+            if folds_cnt >= 15:
+                k_folds = 10
+            self._validation_strategy["validation_type"] = "kfold"
+            del self._validation_strategy["train_ratio"]
+            self._validation_strategy["k_folds"] = k_folds
+            self.tuner._validation_strategy = self._validation_strategy
+            shutil.rmtree(self._model_paths[0], ignore_errors=True)
+            del self._models[0]
+            del self._model_paths[0]
+            del self.tuner._unique_params_keys[0]
+            self._adjust_validation = False
+            cv = []
+            if self._validation_strategy.get("shuffle", False):
+                cv += ["Shuffle"]
+            if self._validation_strategy.get("stratify", False):
+                cv += ["Stratify"]
+                
+            self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
+            
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
@@ -685,6 +717,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._random_state = self._get_random_state()
 
+        self._adjust_validation = False
         self._apply_constraints()
 
         try:
@@ -733,6 +766,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._features_selection,
                 self._train_ensemble,
                 self._stack_models,
+                self._adjust_validation,
                 self._random_state,
             )
             self.tuner = tuner
@@ -811,6 +845,10 @@ class BaseAutoML(BaseEstimator, ABC):
                         params["status"] = "trained" if trained else "skipped"
                         params["final_loss"] = self._models[-1].get_final_loss()
                         params["train_time"] = self._models[-1].get_train_time()
+
+                        if self._adjust_validation and len(self._models) == 1:
+                            self._set_adjusted_validation()
+
                     except Exception as e:
                         self._update_errors_report(
                             params.get("name"), str(e) + "\n" + traceback.format_exc()
@@ -1351,7 +1389,11 @@ class BaseAutoML(BaseEstimator, ABC):
                     Use 'logloss'"
             )
 
-        elif self._get_ml_task() == REGRESSION and self.eval_metric not in ["rmse", "mse", "mae"]:
+        elif self._get_ml_task() == REGRESSION and self.eval_metric not in [
+            "rmse",
+            "mse",
+            "mae",
+        ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                 Use 'rmse'"

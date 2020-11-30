@@ -34,6 +34,7 @@ class MljarTuner:
         features_selection,
         train_ensemble,
         stack_models,
+        adjust_validation,
         seed,
     ):
         logger.debug("MljarTuner.__init__")
@@ -49,23 +50,18 @@ class MljarTuner:
         self._features_selection = features_selection
         self._train_ensemble = train_ensemble
         self._stack_models = stack_models
+        self._adjust_validation = adjust_validation
         self._seed = seed
 
         self._unique_params_keys = []
 
     def steps(self):
 
-        all_steps = [
-            "simple_algorithms",
-            "default_algorithms",
-            # "not_so_random",
-            # "golden_features",
-            # "features_selection",
-            # "hill_climbing",
-            # "ensemble",
-            # "stack",
-            # "ensemble_stack",
-        ]
+        all_steps = []
+        if self._adjust_validation:
+            all_steps += ["adjust_validation"]
+
+        all_steps += ["simple_algorithms", "default_algorithms"]
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
         if self._golden_features:
@@ -89,7 +85,9 @@ class MljarTuner:
     def generate_params(self, step, models, results_path, stacked_models):
 
         models_cnt = len(models)
-        if step == "simple_algorithms":
+        if step == "adjust_validation":
+            return self.adjust_validation_params()
+        elif step == "simple_algorithms":
             return self.simple_algorithms_params()
         elif step == "default_algorithms":
             return self.default_params(models_cnt)
@@ -186,6 +184,29 @@ class MljarTuner:
                         params["preprocessing"]["columns_preprocessing"][col] = [scale]
 
             generated_params += [params]
+        return generated_params
+
+    def adjust_validation_params(self):
+        models_cnt = 0
+        generated_params = []
+        for model_type in ["Decision Tree"]:
+            models_to_check = 1
+
+            logger.info(f"Generate parameters for {model_type} (#{models_cnt + 1})")
+            params = self._get_model_params(model_type, seed=1)
+            if params is None:
+                continue
+
+            params["name"] = self.get_model_name(model_type, models_cnt + 1)
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
+
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key not in self._unique_params_keys:
+                generated_params += [params]
+                self._unique_params_keys += [unique_params_key]
+                models_cnt += 1
         return generated_params
 
     def simple_algorithms_params(self):
