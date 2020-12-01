@@ -331,9 +331,7 @@ class MljarTuner:
 
     def get_not_so_random_params(self, models_cnt):
 
-        generated_params = []
-
-        for model_type in [
+        model_types = [
             "Xgboost",
             "LightGBM",
             "CatBoost",
@@ -341,8 +339,11 @@ class MljarTuner:
             "Extra Trees",
             "Neural Network",
             "Nearest Neighbors",
-            "MLP",
-        ]:
+        ]
+
+        generated_params = {m: [] for m in model_types}
+
+        for model_type in model_types:
             if model_type not in self._algorithms:
                 continue
 
@@ -365,13 +366,31 @@ class MljarTuner:
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
-                    generated_params += [params]
+                    generated_params[model_type] += [params]
                     self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
 
-        # shuffle params - switch off
-        # np.random.shuffle(generated_params)
-        return generated_params
+        return_params = []
+        for i in range(100):
+            total = 0
+            for m in ["Xgboost", "LightGBM", "CatBoost"]:
+                if generated_params[m]:
+                    return_params += [generated_params[m].pop(0)]
+                total += len(generated_params[m])
+            if total == 0:
+                break
+
+        rest_params = []
+        for m in [
+            "Random Forest",
+            "Extra Trees",
+            "Neural Network",
+            "Nearest Neighbors",
+        ]:
+            rest_params += generated_params[m]
+        return_params += np.random.shuffle(rest_params)
+
+        return return_params
 
     def get_hill_climbing_params(self, current_models):
 

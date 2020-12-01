@@ -678,8 +678,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 cv += ["Shuffle"]
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
-
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
+        else:
+            # cant stack models for train/test split
+            self._stack_models = False
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
