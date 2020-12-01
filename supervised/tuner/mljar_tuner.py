@@ -92,7 +92,7 @@ class MljarTuner:
         all_steps += ["simple_algorithms", "default_algorithms"]
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
-        
+
         categorical_strategies = self._apply_categorical_strategies()
         if PreprocessingTuner.CATEGORICALS_ALL_INT in categorical_strategies:
             all_steps += ["all_ints_encoding"]
@@ -499,13 +499,16 @@ class MljarTuner:
                             new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
                         elif strategy == PreprocessingTuner.CATEGORICALS_LOO:
                             new_preproc += [PreprocessingCategorical.CONVERT_LOO]
-                    
+
                     cols_preprocessing[col] = new_preproc
 
                 params["preprocessing"]["columns_preprocessing"] = cols_preprocessing
                 # if there is already a name of categorical strategy in the name
                 # please remove it to avoid confusion (I hope!)
-                for st in [PreprocessingTuner.CATEGORICALS_LOO, PreprocessingTuner.CATEGORICALS_ALL_INT]:
+                for st in [
+                    PreprocessingTuner.CATEGORICALS_LOO,
+                    PreprocessingTuner.CATEGORICALS_ALL_INT,
+                ]:
                     params["name"] = params["name"].replace(st, "")
                 params["name"] += f"_{strategy}"
                 params["status"] = "initialized"

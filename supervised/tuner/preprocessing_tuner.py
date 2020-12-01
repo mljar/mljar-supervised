@@ -58,7 +58,7 @@ class PreprocessingTuner:
                 in required_preprocessing  # the algorithm needs converted categoricals
                 and "categorical" in preprocessing_needed  # the feature is categorical
             ):
-                
+
                 if (
                     categorical_strategy
                     == PreprocessingTuner.CATEGORICALS_MIX_INT_ONE_HOT
