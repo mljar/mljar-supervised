@@ -521,6 +521,8 @@ class BaseAutoML(BaseEstimator, ABC):
         os.remove(self._y_path)
 
     def save_progress(self, step=None, generated_params=None):
+        if step == "adjust_validation":
+            return
 
         if step is not None and generated_params is not None:
             self._all_params[step] = generated_params

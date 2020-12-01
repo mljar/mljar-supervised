@@ -9,14 +9,14 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 class CategoricalIntegersTest(unittest.TestCase):
     def test_selector(self):
 
-        d = {"col1": ["a", "a", "c"], "col2": ["a", "b", "c"]}
+        d = {"col1": [f"{i}" for i in range(31)], "col2": ["a"]*31}
         df = pd.DataFrame(data=d)
 
         self.assertEqual(
             EncodingSelector.get(df, None, "col1"),
-            PreprocessingCategorical.CONVERT_INTEGER,
+            PreprocessingCategorical.MANY_CATEGORIES,
         )
         self.assertEqual(
             EncodingSelector.get(df, None, "col2"),
-            PreprocessingCategorical.CONVERT_ONE_HOT,
+            PreprocessingCategorical.FEW_CATEGORIES,
         )
