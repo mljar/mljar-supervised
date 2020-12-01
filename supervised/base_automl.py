@@ -198,14 +198,8 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
 
-        minimize_direction = self._eval_metric in [
-            "logloss",
-            "rmse",
-            "mae",
-            "ce",
-            "mse",
-        ]
         ldb = pd.DataFrame(ldb)
+        minimize_direction = m.get_metric().get_minimize_direction()
         ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
 
         return ldb
