@@ -388,7 +388,9 @@ class MljarTuner:
             "Nearest Neighbors",
         ]:
             rest_params += generated_params[m]
-        return_params += np.random.shuffle(rest_params)
+        if rest_params:
+            np.random.shuffle(rest_params)
+            return_params += rest_params
 
         return return_params
 
