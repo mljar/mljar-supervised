@@ -204,6 +204,9 @@ class ModelFramework:
         return early_stopping.metric.name
 
     def get_metric(self):
+        early_stopping = self.callbacks.get("early_stopping")
+        if early_stopping:
+            return early_stopping.metric
         return Metric({'name': self.get_metric_name()})
 
     def get_out_of_folds(self):

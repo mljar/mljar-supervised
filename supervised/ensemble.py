@@ -74,7 +74,7 @@ class Ensemble:
         return self.metric.name
 
     def get_metric(self):
-        return Metric({'name': self.get_metric_name()})
+        return self.metric
 
     def get_out_of_folds(self):
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
