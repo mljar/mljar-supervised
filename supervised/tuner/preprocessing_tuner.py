@@ -18,8 +18,17 @@ class PreprocessingTuner:
         This class prepare configuration for data preprocessing
     """
 
+    CATEGORICALS_MIX_INT_ONE_HOT = "categorical_mix_integers_and_one_hot"
+    CATEGORICALS_ALL_INT = "categoricals_all_integers"
+    CATEGORICALS_LOO = "categoricals_loo"
+
     @staticmethod
-    def get(required_preprocessing, data_info, machinelearning_task):
+    def get(
+        required_preprocessing,
+        data_info,
+        machinelearning_task,
+        categorical_strategy=CATEGORICALS_MIX_INT_ONE_HOT,
+    ):
 
         columns_preprocessing = {}
         columns_info = data_info["columns_info"]
@@ -49,11 +58,38 @@ class PreprocessingTuner:
                 in required_preprocessing  # the algorithm needs converted categoricals
                 and "categorical" in preprocessing_needed  # the feature is categorical
             ):
+                
+                if (
+                    categorical_strategy
+                    == PreprocessingTuner.CATEGORICALS_MIX_INT_ONE_HOT
+                ):
+                    if PreprocessingCategorical.MANY_CATEGORIES in preprocessing_needed:
+                        preprocessing_to_apply += [
+                            PreprocessingCategorical.CONVERT_INTEGER
+                        ]
+                        convert_to_integer_will_be_applied = True  # maybe scale needed
+                    else:
+                        preprocessing_to_apply += [
+                            PreprocessingCategorical.CONVERT_ONE_HOT
+                        ]
+
+                elif categorical_strategy == PreprocessingTuner.CATEGORICALS_LOO:
+                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_LOO]
+                    convert_to_integer_will_be_applied = True  # maybe scale needed
+                else:  # all integers
+                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
+                    convert_to_integer_will_be_applied = True  # maybe scale needed
+
+                """
                 if PreprocessingCategorical.CONVERT_ONE_HOT in preprocessing_needed:
                     preprocessing_to_apply += [PreprocessingCategorical.CONVERT_ONE_HOT]
+                elif PreprocessingCategorical.CONVERT_LOO in preprocessing_needed:
+                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_LOO]
+                    convert_to_integer_will_be_applied = True  # maybe scale needed
                 else:
                     preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
                     convert_to_integer_will_be_applied = True  # maybe scale needed
+                """
 
             if (
                 "datetime_transform" in required_preprocessing

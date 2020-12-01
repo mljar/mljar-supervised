@@ -181,6 +181,7 @@ class Preprocessing(object):
         for convert_method in [
             PreprocessingCategorical.CONVERT_INTEGER,
             PreprocessingCategorical.CONVERT_ONE_HOT,
+            PreprocessingCategorical.CONVERT_LOO,
         ]:
             cols_to_process = list(
                 filter(
@@ -189,7 +190,7 @@ class Preprocessing(object):
                 )
             )
             convert = PreprocessingCategorical(cols_to_process, convert_method)
-            convert.fit(X_train)
+            convert.fit(X_train, y_train)
             X_train = convert.transform(X_train)
             self._categorical += [convert]
 

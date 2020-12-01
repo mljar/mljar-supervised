@@ -638,7 +638,6 @@ class BaseAutoML(BaseEstimator, ABC):
             # train/test split (1-fold)
             self._adjust_validation = True
             self._validation_strategy = self._fastest_validation()
-            
 
     def _fastest_validation(self):
         strategy = {"validation_type": "split", "train_ratio": 0.9, "shuffle": True}
@@ -651,14 +650,14 @@ class BaseAutoML(BaseEstimator, ABC):
             return
         train_time = self._models[-1].get_train_time()
         # the time of Decision Tree training multiply by 5.0
-        # to get the rough estimation how much time is needed for 
+        # to get the rough estimation how much time is needed for
         # other algorithms
-        one_fold_time = train_time * 5.0 
+        one_fold_time = train_time * 5.0
         # it will be good to train at least 10 models
         min_model_cnt = 10.0
         # the number of folds we can afford during the training
         folds_cnt = np.round(self._total_time_limit / one_fold_time / min_model_cnt)
-        
+
         # adjust the validation if possible
         if folds_cnt >= 5.0:
             self.verbose_print(f"Adjust validation. Remove: {self._model_paths[0]}")
@@ -679,9 +678,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 cv += ["Shuffle"]
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
-                
+
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
-            
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""

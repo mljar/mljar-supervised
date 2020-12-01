@@ -6,6 +6,7 @@ import pandas as pd
 
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.algorithms.registry import AlgorithmsRegistry
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.algorithms.registry import (
@@ -55,6 +56,33 @@ class MljarTuner:
 
         self._unique_params_keys = []
 
+    def _apply_categorical_strategies(self):
+        if self._data_info is None:
+            return []
+        if self._data_info.get("columns_info") is None:
+            return []
+
+        strategies = []
+        for k, v in self._data_info["columns_info"].items():
+            if (
+                "categorical" in v
+                and PreprocessingTuner.CATEGORICALS_LOO not in strategies
+            ):
+                strategies += [PreprocessingTuner.CATEGORICALS_LOO]
+
+            if (
+                PreprocessingCategorical.FEW_CATEGORIES in v
+                and PreprocessingTuner.CATEGORICALS_ALL_INT not in strategies
+            ):
+                strategies += [PreprocessingTuner.CATEGORICALS_ALL_INT]
+
+            if len(strategies) == 2:
+                # cant add more
+                # stop
+                break
+
+        return strategies
+
     def steps(self):
 
         all_steps = []
@@ -64,6 +92,13 @@ class MljarTuner:
         all_steps += ["simple_algorithms", "default_algorithms"]
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
+        
+        categorical_strategies = self._apply_categorical_strategies()
+        if PreprocessingTuner.CATEGORICALS_ALL_INT in categorical_strategies:
+            all_steps += ["all_ints_encoding"]
+        if PreprocessingTuner.CATEGORICALS_LOO in categorical_strategies:
+            all_steps += ["loo_encoding"]
+
         if self._golden_features:
             all_steps += ["golden_features"]
         if self._features_selection:
@@ -93,6 +128,10 @@ class MljarTuner:
             return self.default_params(models_cnt)
         elif step == "not_so_random":
             return self.get_not_so_random_params(models_cnt)
+        elif step == "all_ints_encoding":
+            return self.get_all_int_categorical_strategy(models)
+        elif step == "loo_encoding":
+            return self.get_loo_categorical_strategy(models)
         elif step == "golden_features":
             return self.get_golden_features_params(models, results_path)
         elif step == "insert_random_feature":
@@ -398,6 +437,86 @@ class MljarTuner:
                         if unique_params_key not in self._unique_params_keys:
                             self._unique_params_keys += [unique_params_key]
                             generated_params += [all_params]
+        return generated_params
+
+    def get_all_int_categorical_strategy(self, current_models):
+        return self.get_categorical_strategy(
+            current_models, PreprocessingTuner.CATEGORICALS_ALL_INT
+        )
+
+    def get_loo_categorical_strategy(self, current_models):
+        return self.get_categorical_strategy(
+            current_models, PreprocessingTuner.CATEGORICALS_LOO
+        )
+
+    def get_categorical_strategy(self, current_models, strategy):
+
+        # get models orderer by loss
+        # TODO: refactor this callbacks.callbacks[0]
+        scores = [m.get_final_loss() for m in current_models]
+        model_types = [m.get_type() for m in current_models]
+        df_models = pd.DataFrame(
+            {"model": current_models, "score": scores, "model_type": model_types}
+        )
+        # do group by for debug reason
+        df_models = df_models.groupby("model_type").apply(
+            lambda x: x.sort_values("score")
+        )
+        unique_model_types = np.unique(df_models.model_type)
+
+        generated_params = []
+        for m_type in unique_model_types:
+            # try to add categorical strategy only for below algorithms
+            if m_type not in [
+                "Xgboost",
+                "LightGBM",
+                "Neural Network",
+                # "Random Forest",
+                # "Extra Trees",
+            ]:
+                continue
+            models = df_models[df_models.model_type == m_type]["model"]
+
+            for i in range(min(1, len(models))):
+                m = models[i]
+
+                params = copy.deepcopy(m.params)
+                cols_preprocessing = params["preprocessing"]["columns_preprocessing"]
+
+                for col, preproc in params["preprocessing"][
+                    "columns_preprocessing"
+                ].items():
+                    new_preproc = []
+                    convert_categorical = False
+                    for p in preproc:
+                        if "categorical" not in p:
+                            new_preproc += [p]
+                        else:
+                            convert_categorical = True
+
+                    if convert_categorical:
+                        if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
+                            new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
+                        elif strategy == PreprocessingTuner.CATEGORICALS_LOO:
+                            new_preproc += [PreprocessingCategorical.CONVERT_LOO]
+                    
+                    cols_preprocessing[col] = new_preproc
+
+                params["preprocessing"]["columns_preprocessing"] = cols_preprocessing
+                # if there is already a name of categorical strategy in the name
+                # please remove it to avoid confusion (I hope!)
+                for st in [PreprocessingTuner.CATEGORICALS_LOO, PreprocessingTuner.CATEGORICALS_ALL_INT]:
+                    params["name"] = params["name"].replace(st, "")
+                params["name"] += f"_{strategy}"
+                params["status"] = "initialized"
+                params["final_loss"] = None
+                params["train_time"] = None
+                if "model_architecture_json" in params["learner"]:
+                    del params["learner"]["model_architecture_json"]
+                unique_params_key = MljarTuner.get_params_key(params)
+                if unique_params_key not in self._unique_params_keys:
+                    self._unique_params_keys += [unique_params_key]
+                    generated_params += [params]
         return generated_params
 
     def get_golden_features_params(self, current_models, results_path):
