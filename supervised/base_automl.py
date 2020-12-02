@@ -169,11 +169,14 @@ class BaseAutoML(BaseEstimator, ABC):
                 for stacked_model_name in stacked_models:
                     self._stacked_models += [models_map[stacked_model_name]]
 
-            best_model_name = None
-            with open(os.path.join(path, "best_model.txt"), "r") as fin:
-                best_model_name = fin.read()
-
-            self._best_model = models_map[best_model_name]
+            best_model_fname = os.path.join(path, "best_model.txt")
+            if os.path.exists(best_model_fname):
+                best_model_name = None
+                with open(best_model_fname, "r") as fin:
+                    best_model_name = fin.read()
+                self._best_model = models_map[best_model_name]
+            else:
+                self._best_model = None
 
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
@@ -521,9 +524,6 @@ class BaseAutoML(BaseEstimator, ABC):
         os.remove(self._y_path)
 
     def save_progress(self, step=None, generated_params=None):
-        if step == "adjust_validation":
-            return
-
         if step is not None and generated_params is not None:
             self._all_params[step] = generated_params
 
@@ -532,6 +532,7 @@ class BaseAutoML(BaseEstimator, ABC):
         state["fit_level"] = self._fit_level
         state["time_controller"] = self._time_ctrl.to_json()
         state["all_params"] = self._all_params
+        state["adjust_validation"] = self._adjust_validation
 
         fname = os.path.join(self._results_path, "progress.json")
         with open(fname, "w") as fout:
@@ -546,6 +547,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._fit_level = state.get("fit_level", self._fit_level)
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
+        self._adjust_validation = state.get("adjust_validation", False)
 
     def _validate_X_predict(self, X):
         """Validate X whenever one tries to predict, apply, predict_proba"""
@@ -680,6 +682,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 cv += ["Shuffle"]
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
+            self.select_and_save_best() # save validation strategy
+            os.remove(os.path.join(self._results_path, "best_model.txt")) # remove the file
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
         else:
             # cant stack models for train/test split
@@ -890,12 +894,14 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def select_and_save_best(self):
         # Select best model based on the lowest loss
-        self._best_model = min(
-            [m for m in self._models if m.is_valid()], key=lambda x: x.get_final_loss()
-        )
-
-        with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
-            fout.write(f"{self._best_model.get_name()}")
+        if self._models:
+            self._best_model = min(
+                [m for m in self._models if m.is_valid()], key=lambda x: x.get_final_loss()
+            )
+            with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
+                fout.write(f"{self._best_model.get_name()}")
+        else:
+            self._best_model = None
 
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
@@ -923,18 +929,19 @@ class BaseAutoML(BaseEstimator, ABC):
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4))
 
-        ldb = self.get_leaderboard()
-        ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
+        if self._models:
+            ldb = self.get_leaderboard()
+            ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
-        # save report
-        ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
-        ldb.insert(loc=0, column="Best model", value="")
-        ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
+            # save report
+            ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
+            ldb.insert(loc=0, column="Best model", value="")
+            ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
 
-        with open(os.path.join(self._results_path, "README.md"), "w") as fout:
-            fout.write(f"# AutoML Leaderboard\n\n")
-            fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-            LeaderboardPlots.compute(ldb, self._results_path, fout)
+            with open(os.path.join(self._results_path, "README.md"), "w") as fout:
+                fout.write(f"# AutoML Leaderboard\n\n")
+                fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+                LeaderboardPlots.compute(ldb, self._results_path, fout)
 
     def _check_is_fitted(self):
         # First check if model can be loaded
