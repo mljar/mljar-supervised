@@ -111,7 +111,7 @@ class GoldenFeaturesTransformer(object):
             return
         if self._error is not None and self._error:
             raise AutoMLException(
-                "Golden Features not created due to error (please check errors.md)."
+                "Golden Features not created due to error (please check errors.md). " + self._error
             )
             return
         if X.shape[1] == 0:
