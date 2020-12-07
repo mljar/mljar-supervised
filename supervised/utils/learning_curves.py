@@ -5,6 +5,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.common import learner_name_to_fold_repeat
 
 logger.setLevel(LOG_LEVEL)
 
@@ -19,10 +20,10 @@ class LearningCurves:
     output_file_name = "learning_curves.png"
 
     @staticmethod
-    def single_iteration(validation_splits, model_path):
-        for l in range(validation_splits):
+    def single_iteration(learner_names, model_path):
+        for ln in learner_names:
             df = pd.read_csv(
-                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                os.path.join(model_path, f"{ln}_training.log"),
                 names=["iteration", "train", "test"],
             )
             if df.shape[0] > 1:
@@ -30,33 +31,39 @@ class LearningCurves:
         return True
 
     @staticmethod
-    def plot(validation_splits, metric_name, model_path, trees_in_iteration=None):
+    def plot(learner_names, metric_name, model_path, trees_in_iteration=None):
         colors = MY_COLORS
-        if validation_splits > len(colors):
-            repeat_colors = int(np.ceil(validation_splits / len(colors)))
+        if len(learner_names) > len(colors):
+            repeat_colors = int(np.ceil(len(learner_names) / len(colors)))
             colors = colors * repeat_colors
 
-        if LearningCurves.single_iteration(validation_splits, model_path):
+        if LearningCurves.single_iteration(learner_names, model_path):
             LearningCurves.plot_single_iter(
-                validation_splits, metric_name, model_path, colors
+                learner_names, metric_name, model_path, colors
             )
         else:
             LearningCurves.plot_iterations(
-                validation_splits, metric_name, model_path, colors, trees_in_iteration
+                learner_names, metric_name, model_path, colors, trees_in_iteration
             )
 
     @staticmethod
-    def plot_single_iter(validation_splits, metric_name, model_path, colors):
+    def plot_single_iter(learner_names, metric_name, model_path, colors):
         plt.figure(figsize=(10, 7))
-        for l in range(validation_splits):
+        for ln in learner_names:
             df = pd.read_csv(
-                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                os.path.join(model_path, f"{ln}_training.log"),
                 names=["iteration", "train", "test"],
             )
+
+            fold, repeat = learner_name_to_fold_repeat(ln)
+            repeat_str = f" Reapeat {repeat+1}," if repeat is not None else ""
             plt.bar(
-                f"Fold {l+1}, train", df.train[0], color="white", edgecolor=colors[l]
+                f"Fold {fold+1},{repeat_str} train",
+                df.train[0],
+                color="white",
+                edgecolor=colors[fold],
             )
-            plt.bar(f"Fold {l+1}, test", df.test[0], color=colors[l])
+            plt.bar(f"Fold {fold+1},{repeat_str} test", df.test[0], color=colors[fold])
 
         plt.ylabel(metric_name)
         plt.xticks(rotation=90)
@@ -67,32 +74,38 @@ class LearningCurves:
 
     @staticmethod
     def plot_iterations(
-        validation_splits, metric_name, model_path, colors, trees_in_iteration=None
+        learner_names, metric_name, model_path, colors, trees_in_iteration=None
     ):
         plt.figure(figsize=(10, 7))
-        for l in range(validation_splits):
+        for ln in learner_names:
             df = pd.read_csv(
-                os.path.join(model_path, f"learner_{l+1}_training.log"),
+                os.path.join(model_path, f"{ln}_training.log"),
                 names=["iteration", "train", "test"],
             )
+
+            fold, repeat = learner_name_to_fold_repeat(ln)
+            repeat_str = f" Reapeat {repeat+1}," if repeat is not None else ""
             # if trees_in_iteration is not None:
             #    df.iteration = df.iteration * trees_in_iteration
             plt.plot(
                 df.iteration,
                 df.train,
                 "--",
-                color=colors[l],
-                label=f"Fold {l+1}, train",
+                color=colors[fold],
+                label=f"Fold {fold+1},{repeat_str} train",
             )
             any_none = np.sum(pd.isnull(df.test))
             if any_none == 0:
                 plt.plot(
-                    df.iteration, df.test, color=colors[l], label=f"Fold {l+1}, test"
+                    df.iteration,
+                    df.test,
+                    color=colors[fold],
+                    label=f"Fold {fold+1},{repeat_str} test",
                 )
 
             best_iter = df.test.argmin()
             if best_iter is not None and best_iter != -1:
-                plt.axvline(best_iter, color=colors[l], alpha=0.3)
+                plt.axvline(best_iter, color=colors[fold], alpha=0.3)
 
         if trees_in_iteration is not None:
             plt.xlabel("#Trees")

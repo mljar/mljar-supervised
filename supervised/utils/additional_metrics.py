@@ -33,6 +33,7 @@ from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
 from supervised.utils.learning_curves import LearningCurves
+from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
 from tabulate import tabulate
 
 
@@ -205,20 +206,21 @@ class AdditionalMetrics:
     @staticmethod
     def save(additional_metrics, ml_task, model_desc, model_path):
         try:
+            fold_cnt, repeat_cnt = get_fold_repeat_cnt(model_path)
             if ml_task == BINARY_CLASSIFICATION:
                 AdditionalMetrics.save_binary_classification(
-                    additional_metrics, model_desc, model_path
+                    additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 AdditionalMetrics.save_multiclass_classification(
-                    additional_metrics, model_desc, model_path
+                    additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
                 )
             elif ml_task == REGRESSION:
                 AdditionalMetrics.save_regression(
-                    additional_metrics, model_desc, model_path
+                    additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
                 )
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Exception while saving additional metrics. {str(e)}\nContinuing ..."
             )
 
@@ -228,7 +230,9 @@ class AdditionalMetrics:
         fout.write(f"![Learning curves]({LearningCurves.output_file_name})")
 
     @staticmethod
-    def save_binary_classification(additional_metrics, model_desc, model_path):
+    def save_binary_classification(
+        additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
+    ):
         max_metrics = additional_metrics["max_metrics"].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
@@ -242,14 +246,20 @@ class AdditionalMetrics:
                 )
             )
             AdditionalMetrics.add_learning_curves(fout)
-            AdditionalMetrics.add_tree_viz(fout, model_path)
-            AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_permutation_importance(fout, model_path)
-            AdditionalMetrics.add_shap_importance(fout, model_path)
-            AdditionalMetrics.add_shap_binary(fout, model_path)
+            AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_permutation_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_binary(fout, model_path, fold_cnt, repeat_cnt)
 
     @staticmethod
-    def save_multiclass_classification(additional_metrics, model_desc, model_path):
+    def save_multiclass_classification(
+        additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
+    ):
         max_metrics = additional_metrics["max_metrics"].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
 
@@ -260,14 +270,22 @@ class AdditionalMetrics:
                 "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
             )
             AdditionalMetrics.add_learning_curves(fout)
-            AdditionalMetrics.add_tree_viz(fout, model_path)
-            AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_permutation_importance(fout, model_path)
-            AdditionalMetrics.add_shap_importance(fout, model_path)
-            AdditionalMetrics.add_shap_multiclass(fout, model_path)
+            AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_permutation_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_multiclass(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
 
     @staticmethod
-    def save_regression(additional_metrics, model_desc, model_path):
+    def save_regression(
+        additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
+    ):
         max_metrics = additional_metrics["max_metrics"]
         with open(os.path.join(model_path, "README.md"), "w") as fout:
             fout.write(model_desc)
@@ -277,14 +295,20 @@ class AdditionalMetrics:
                 )
             )
             AdditionalMetrics.add_learning_curves(fout)
-            AdditionalMetrics.add_tree_viz(fout, model_path)
-            AdditionalMetrics.add_linear_coefs(fout, model_path)
-            AdditionalMetrics.add_permutation_importance(fout, model_path)
-            AdditionalMetrics.add_shap_importance(fout, model_path)
-            AdditionalMetrics.add_shap_regression(fout, model_path)
+            AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
+            AdditionalMetrics.add_permutation_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_regression(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
 
     @staticmethod
-    def add_linear_coefs(fout, model_path):
+    def add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt):
 
         coef_files = [f for f in os.listdir(model_path) if "_coefs.csv" in f]
         if not len(coef_files):
@@ -298,21 +322,30 @@ class AdditionalMetrics:
 
         if multiclass:
             fout.write("\n\n## Coefficients\n")
-            for l in range(len(coef_files)):
-                fout.write(f"\n### Coefficients learner #{l+1}\n")
-                df = pd.read_csv(
-                    os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0
-                )
-                fout.write(df.to_markdown() + "\n")
+
+            for repeat in range(repeat_cnt):
+                repeat_str = f", repeat #{repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_coefs.csv"
+                    if fname in coef_files:
+                        fout.write(
+                            f"\n### Coefficients learner #{fold+1}{repeat_str}\n"
+                        )
+                        df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
+                        fout.write(df.to_markdown() + "\n")
 
         else:
             df_all = []
-            for l in range(len(coef_files)):
-                df = pd.read_csv(
-                    os.path.join(model_path, f"learner_{l+1}_coefs.csv"), index_col=0
-                )
-                df.columns = [f"Learner_{l+1}"]
-                df_all += [df]
+            for repeat in range(repeat_cnt):
+                repeat_str = f"_Repeat_{repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_coefs.csv"
+                    if fname in coef_files:
+                        df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
+                        df.columns = [f"Learner_{fold+1}{repeat_str}"]
+                        df_all += [df]
 
             df = pd.concat(df_all, axis=1)
             df["m"] = df.mean(axis=1)
@@ -324,18 +357,22 @@ class AdditionalMetrics:
             fout.write(df.to_markdown() + "\n")
 
     @staticmethod
-    def add_tree_viz(fout, model_path):
+    def add_tree_viz(fout, model_path, fold_cnt, repeat_cnt):
 
         tree_viz = [f for f in os.listdir(model_path) if "_tree.svg" in f]
         if len(tree_viz):
             fout.write("\n\n## Tree visualizations\n")
-            for l in range(len(tree_viz)):
-                fout.write(f"\n### Tree #{l+1}\n")
-                f_path = f"learner_{l+1}_tree.svg"
-                fout.write(f"![Tree {l+1}]({f_path})")
+            for repeat in range(repeat_cnt):
+                repeat_str = f", Repeat #{repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_tree.svg"
+                    if fname in tree_viz:
+                        fout.write(f"\n### Tree #{fold+1}{repeat_str}\n")
+                        fout.write(f"![Tree {fold+1}{repeat_str}]({fname})")
 
     @staticmethod
-    def add_permutation_importance(fout, model_path):
+    def add_permutation_importance(fout, model_path, fold_cnt, repeat_cnt):
         # permutation importance
         imp_data = [
             f
@@ -346,11 +383,15 @@ class AdditionalMetrics:
             return
 
         df_all = []
-        for l in range(len(imp_data)):
-            f_path = os.path.join(model_path, f"learner_{l+1}_importance.csv")
-            df = pd.read_csv(f_path, index_col=0)
-            df.columns = [f"Learner {l+1}"]
-            df_all += [df]
+        for repeat in range(repeat_cnt):
+            repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+            for fold in range(fold_cnt):
+                learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                fname = learner_name + "_importance.csv"
+                if fname in imp_data:
+                    df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
+                    df.columns = [f"Learner {fold+1}{repeat_str}"]
+                    df_all += [df]
 
         df = pd.concat(df_all, axis=1)
 
@@ -413,7 +454,7 @@ class AdditionalMetrics:
             df.to_csv(fname, index=False)
 
     @staticmethod
-    def add_shap_importance(fout, model_path):
+    def add_shap_importance(fout, model_path, fold_cnt, repeat_cnt):
         try:
             # SHAP Importance
             imp_data = [
@@ -421,12 +462,17 @@ class AdditionalMetrics:
             ]
             if not len(imp_data):
                 return
+
             df_all = []
-            for l in range(len(imp_data)):
-                f_path = os.path.join(model_path, f"learner_{l+1}_shap_importance.csv")
-                df = pd.read_csv(f_path, index_col=0)
-                df.columns = [f"Learner {l+1}"]
-                df_all += [df]
+            for repeat in range(repeat_cnt):
+                repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_shap_importance.csv"
+                    if fname in imp_data:
+                        df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
+                        df.columns = [f"Learner {fold+1}{repeat_str}"]
+                        df_all += [df]
 
             df = pd.concat(df_all, axis=1)
 
@@ -448,12 +494,12 @@ class AdditionalMetrics:
             fout.write("\n\n## SHAP Importance\n")
             fout.write(f"![SHAP Importance](shap_importance.png)")
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Exception while saving SHAP importance. {str(e)}\nContinuing ..."
             )
 
     @staticmethod
-    def add_shap_binary(fout, model_path):
+    def add_shap_binary(fout, model_path, fold_cnt, repeat_cnt):
         try:
             # Dependence SHAP
             dep_plots = [
@@ -462,12 +508,17 @@ class AdditionalMetrics:
             if not len(dep_plots):
                 return
 
-            learners_cnt = len(dep_plots)
             fout.write("\n\n## SHAP Dependence plots\n")
-            for l in range(learners_cnt):
-                fout.write(f"\n### Dependence (Fold #{l+1})\n")
-                f_path = f"learner_{l+1}_shap_dependence.png"
-                fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+            for repeat in range(repeat_cnt):
+                repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_shap_dependence.png"
+                    if fname in dep_plots:
+                        fout.write(f"\n### Dependence (Fold {fold+1}{repeat_str})\n")
+                        fout.write(
+                            f"![SHAP Dependence from Fold {fold+1}{repeat_str}]({fname})"
+                        )
 
             # SHAP Decisions
             dec_plots = [
@@ -481,21 +532,31 @@ class AdditionalMetrics:
             fout.write("\n\n## SHAP Decision plots\n")
             for target in [0, 1]:
                 for decision_type in ["worst", "best"]:
-                    for l in range(learners_cnt):
-                        fout.write(
-                            f"\n### Top-10 {decision_type.capitalize()} decisions for class {target} (Fold #{l+1})\n"
-                        )
-                        f_path = f"learner_{l+1}_shap_class_{target}_{decision_type}_decisions.png"
-                        fout.write(
-                            f"![SHAP {decision_type} decisions class {target} from fold {l+1}]({f_path})"
-                        )
+                    for repeat in range(repeat_cnt):
+                        repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                        for fold in range(fold_cnt):
+                            learner_name = construct_learner_name(
+                                fold, repeat, repeat_cnt
+                            )
+                            fname = (
+                                learner_name
+                                + f"_shap_class_{target}_{decision_type}_decisions.png"
+                            )
+                            if fname in dec_plots:
+                                fout.write(
+                                    f"\n### Top-10 {decision_type.capitalize()} decisions for class {target} (Fold {fold+1}{repeat_str})\n"
+                                )
+                                fout.write(
+                                    f"![SHAP {decision_type} decisions class {target} from Fold {fold+1}{repeat_str}]({fname})"
+                                )
+
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Exception while saving SHAP explanations. {str(e)}\nContinuing ..."
             )
 
     @staticmethod
-    def add_shap_regression(fout, model_path):
+    def add_shap_regression(fout, model_path, fold_cnt, repeat_cnt):
         try:
             # Dependence SHAP
             dep_plots = [
@@ -504,12 +565,17 @@ class AdditionalMetrics:
             if not len(dep_plots):
                 return
 
-            learners_cnt = len(dep_plots)
             fout.write("\n\n## SHAP Dependence plots\n")
-            for l in range(learners_cnt):
-                fout.write(f"\n### Dependence (Fold #{l+1})\n")
-                f_path = f"learner_{l+1}_shap_dependence.png"
-                fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+            for repeat in range(repeat_cnt):
+                repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    fname = learner_name + "_shap_dependence.png"
+                    if fname in dep_plots:
+                        fout.write(f"\n### Dependence (Fold {fold+1}{repeat_str})\n")
+                        fout.write(
+                            f"![SHAP Dependence from Fold {fold+1}{repeat_str}]({fname})"
+                        )
 
             # SHAP Decisions
             dec_plots = [f for f in os.listdir(model_path) if "decisions.png" in f]
@@ -518,46 +584,59 @@ class AdditionalMetrics:
 
             fout.write("\n\n## SHAP Decision plots\n")
             for decision_type in ["worst", "best"]:
-                for l in range(learners_cnt):
-                    fout.write(
-                        f"\n### Top-10 {decision_type.capitalize()} decisions (Fold #{l+1})\n"
-                    )
-                    f_path = f"learner_{l+1}_shap_{decision_type}_decisions.png"
-                    fout.write(
-                        f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})"
-                    )
+                for repeat in range(repeat_cnt):
+                    repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                    for fold in range(fold_cnt):
+                        learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                        fname = learner_name + f"_shap_{decision_type}_decisions.png"
+                        if fname in dec_plots:
+                            fout.write(
+                                f"\n### Top-10 {decision_type.capitalize()} decisions (Fold {fold+1}{repeat_str})\n"
+                            )
+                            fout.write(
+                                f"![SHAP {decision_type} decisions from fold {fold+1}{repeat_str}]({fname})"
+                            )
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Exception while saving SHAP explanations. {str(e)}\nContinuing ..."
             )
 
     @staticmethod
-    def add_shap_multiclass(fout, model_path):
+    def add_shap_multiclass(fout, model_path, fold_cnt, repeat_cnt):
         try:
             # Dependence SHAP
             dep_plots = [f for f in os.listdir(model_path) if "_shap_dependence" in f]
             if not len(dep_plots):
                 return
 
-            # get number of learners
-            learners_cnt = []
-            for l in dep_plots:
-                a = l.split("_")
-                learners_cnt += [int(a[1])]
-            learners_cnt = len(np.unique(learners_cnt))
             # get number of classes
+            start_ind = 0
+            for i, a in enumerate(dep_plots[0].split("_")):
+                if a == "class":
+                    start_ind = i + 1
+                    break
+
             classes = []
             for l in dep_plots:
                 a = l.split("_")
-                classes += ["".join(a[5:])[:-4]]
+                classes += ["".join(a[start_ind:])[:-4]]
             classes = np.unique(classes)
 
             fout.write("\n\n## SHAP Dependence plots\n")
-            for l in range(learners_cnt):
-                for t in classes:
-                    fout.write(f"\n### Dependence {t} (Fold #{l+1})\n")
-                    f_path = f"learner_{l+1}_shap_dependence_class_{t}.png"
-                    fout.write(f"![SHAP Dependence from fold {l+1}]({f_path})")
+
+            for repeat in range(repeat_cnt):
+                repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                for fold in range(fold_cnt):
+                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
+                    for t in classes:
+                        fname = learner_name + f"_shap_dependence_class_{t}.png"
+                        if fname in dep_plots:
+                            fout.write(
+                                f"\n### Dependence {t} (Fold {fold+1}{repeat_str})\n"
+                            )
+                            fout.write(
+                                f"![SHAP Dependence from fold {fold+1}{repeat_str}]({fname})"
+                            )
 
             # SHAP Decisions
             dec_plots = [
@@ -571,15 +650,24 @@ class AdditionalMetrics:
             fout.write("\n\n## SHAP Decision plots\n")
             for decision_type in ["worst", "best"]:
                 for sample in [0, 1, 2, 3]:
-                    for l in range(learners_cnt):
-                        fout.write(
-                            f"\n### {decision_type.capitalize()} decisions for selected sample #{sample+1} (Fold #{l+1})\n"
-                        )
-                        f_path = f"learner_{l+1}_sample_{sample}_{decision_type}_decisions.png"
-                        fout.write(
-                            f"![SHAP {decision_type} decisions from fold {l+1}]({f_path})"
-                        )
+                    for repeat in range(repeat_cnt):
+                        repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
+                        for fold in range(fold_cnt):
+                            learner_name = construct_learner_name(
+                                fold, repeat, repeat_cnt
+                            )
+                            fname = (
+                                learner_name
+                                + f"_sample_{sample}_{decision_type}_decisions.png"
+                            )
+                            if fname in dec_plots:
+                                fout.write(
+                                    f"\n### {decision_type.capitalize()} decisions for selected sample {sample+1} (Fold {fold+1}{repeat_str})\n"
+                                )
+                                fout.write(
+                                    f"![SHAP {decision_type} decisions from Fold {fold+1}{repeat_str}]({fname})"
+                                )
         except Exception as e:
-            logger.info(
+            logger.error(
                 f"Exception while saving SHAP explanations. {str(e)}\nContinuing ..."
             )

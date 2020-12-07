@@ -24,22 +24,35 @@ class KFoldValidator(BaseValidator):
         self.shuffle = self.params.get("shuffle", True)
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1906)
+        self.repeats = self.params.get("repeat", 1)
 
-        if self.stratify:
-            if self.shuffle:
-                self.skf = StratifiedKFold(
-                    n_splits=self.k_folds,
-                    shuffle=self.shuffle,
-                    random_state=self.random_seed if self.shuffle else None,
-                )
+        self.skf = []
+        for r in range(self.repeats):
+            if self.stratify:
+                if self.shuffle:
+                    self.skf += [
+                        StratifiedKFold(
+                            n_splits=self.k_folds,
+                            shuffle=self.shuffle,
+                            random_state=self.random_seed + r,
+                        )
+                    ]
+                else:
+                    self.skf += [
+                        StratifiedKFold(
+                            n_splits=self.k_folds,
+                            shuffle=self.shuffle,
+                            random_state=self.random_seed + r,
+                        )
+                    ]
             else:
-                self.skf = StratifiedKFold(n_splits=self.k_folds, shuffle=self.shuffle)
-        else:
-            self.skf = KFold(
-                n_splits=self.k_folds,
-                shuffle=self.shuffle,
-                random_state=self.random_seed if self.shuffle else None,
-            )
+                self.skf += [
+                    KFold(
+                        n_splits=self.k_folds,
+                        shuffle=self.shuffle,
+                        random_state=self.random_seed + r,
+                    )
+                ]
 
         self._results_path = self.params.get("results_path")
         self._X_path = self.params.get("X_path")
@@ -62,21 +75,24 @@ class KFoldValidator(BaseValidator):
                 # see https://github.com/scikit-learn/scikit-learn/issues/16980
                 y = y.astype(str)
 
-            for fold_cnt, (train_index, validation_index) in enumerate(
-                self.skf.split(X, y)
-            ):
+            for repeat_cnt, skf in enumerate(self.skf):
+                for fold_cnt, (train_index, validation_index) in enumerate(
+                    skf.split(X, y)
+                ):
+                    repeat_str = f"_repeat_{repeat_cnt}" if len(self.skf) > 1 else ""
+                    train_index_file = os.path.join(
+                        self._results_path,
+                        "folds",
+                        f"fold_{fold_cnt}{repeat_str}_train_indices.npy",
+                    )
+                    validation_index_file = os.path.join(
+                        self._results_path,
+                        "folds",
+                        f"fold_{fold_cnt}{repeat_str}_validation_indices.npy",
+                    )
 
-                train_index_file = os.path.join(
-                    self._results_path, "folds", f"fold_{fold_cnt}_train_indices.npy"
-                )
-                validation_index_file = os.path.join(
-                    self._results_path,
-                    "folds",
-                    f"fold_{fold_cnt}_validation_indices.npy",
-                )
-
-                np.save(train_index_file, train_index)
-                np.save(validation_index_file, validation_index)
+                    np.save(train_index_file, train_index)
+                    np.save(validation_index_file, validation_index)
 
             del X
             del y
@@ -85,13 +101,15 @@ class KFoldValidator(BaseValidator):
         else:
             log.debug("Folds split already done, reuse it")
 
-    def get_split(self, k):
+    def get_split(self, k, repeat=0):
+
+        repeat_str = f"_repeat_{repeat}" if self.repeats > 1 else ""
 
         train_index_file = os.path.join(
-            self._results_path, "folds", f"fold_{k}_train_indices.npy"
+            self._results_path, "folds", f"fold_{k}{repeat_str}_train_indices.npy"
         )
         validation_index_file = os.path.join(
-            self._results_path, "folds", f"fold_{k}_validation_indices.npy"
+            self._results_path, "folds", f"fold_{k}{repeat_str}_validation_indices.npy"
         )
 
         train_index = np.load(train_index_file)
@@ -108,3 +126,6 @@ class KFoldValidator(BaseValidator):
 
     def get_n_splits(self):
         return self.k_folds
+
+    def get_repeats(self):
+        return self.repeats

@@ -57,6 +57,21 @@ class EarlyStopping(Callback):
         logger.debug("early stopping on framework train end")
         self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
         self.best_y_oof.sort_index(inplace=True)
+        # check for duplicates in index -> repeats of validation
+        if np.sum(self.best_y_oof.index.duplicated()):
+            # we need to aggregate predictions from multiple repeats
+            target_cols = [c for c in self.best_y_oof.columns if "prediction" not in c]
+            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
+
+            aggs = {}
+            for t in target_cols:
+                aggs[t] = "first"
+            for p in prediction_cols:
+                aggs[p] = "mean"
+            # aggregate predictions from repeats
+            self.best_y_oof = self.best_y_oof.groupby(
+                target_cols + prediction_cols, level=0
+            ).agg(aggs)
 
         if "prediction" in self.best_y_oof:
             self.final_loss = self.metric(
@@ -68,6 +83,7 @@ class EarlyStopping(Callback):
                 self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
             )
 
+        
     def on_iteration_end(self, logs, predictions):
         train_loss = 0
         if predictions.get("y_train_predicted") is not None:
@@ -159,10 +175,7 @@ class EarlyStopping(Callback):
         ]:
 
             with open(
-                os.path.join(
-                    self.log_to_dir, f"learner_{len(self.learners)}_training.log"
-                ),
-                "a",
+                os.path.join(self.log_to_dir, f"{self.learner.name}_training.log"), "a"
             ) as fout:
                 iteration = len(self.loss_values[self.learner.uid]["iters"])
                 fout.write(f"{iteration},{train_loss},{validation_loss}\n")

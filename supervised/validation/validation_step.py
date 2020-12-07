@@ -32,11 +32,14 @@ class ValidationStep:
             raise ValidationStepException(msg)
         """
 
-    def get_split(self, k):
-        return self.validator.get_split(k)
+    def get_split(self, k, repeat=0):
+        return self.validator.get_split(k, repeat)
 
     def split(self):
         return self.validator.split()
 
     def get_n_splits(self):
         return self.validator.get_n_splits()
+
+    def get_repeats(self):
+        return self.validator.get_repeats()

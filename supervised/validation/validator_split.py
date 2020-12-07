@@ -22,6 +22,7 @@ class SplitValidator(BaseValidator):
         self.shuffle = self.params.get("shuffle", True)
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1234)
+        self.repeats = self.params.get("repeat", 1)
         log.debug("SplitValidator, train_ratio: {0}".format(self.train_ratio))
 
         self._results_path = self.params.get("results_path")
@@ -31,7 +32,7 @@ class SplitValidator(BaseValidator):
         if self._X_path is None or self._y_path is None:
             raise AutoMLException("No data path set in SplitValidator params")
 
-    def get_split(self, k=0):
+    def get_split(self, k=0, repeat=0):
 
         X = pd.read_parquet(self._X_path)
         y = pd.read_parquet(self._y_path)
@@ -50,12 +51,15 @@ class SplitValidator(BaseValidator):
             test_size=1.0 - self.train_ratio,
             shuffle=self.shuffle,
             stratify=stratify,
-            random_state=self.random_seed,
+            random_state=self.random_seed + repeat,
         )
         return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
 
     def get_n_splits(self):
         return 1
+
+    def get_repeats(self):
+        return self.repeats
 
 
 """

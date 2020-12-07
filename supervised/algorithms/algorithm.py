@@ -2,6 +2,7 @@ import uuid
 import numpy as np
 from supervised.utils.importance import PermutationImportance
 from supervised.utils.shap import PlotSHAP
+from supervised.utils.common import construct_learner_name
 
 
 class BaseAlgorithm:
@@ -21,6 +22,10 @@ class BaseAlgorithm:
         self.uid = params.get("uid", str(uuid.uuid4()))
         self.ml_task = params.get("ml_task")
         self.model_file_path = None
+        self.name = "amazing_learner"
+
+    def set_learner_name(self, fold, repeat, repeats):
+        self.name = construct_learner_name(fold, repeat, repeats)
 
     def reload(self):
         if self.model is None and self.model_file_path is not None:

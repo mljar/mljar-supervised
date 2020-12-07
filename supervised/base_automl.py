@@ -682,8 +682,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 cv += ["Shuffle"]
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
-            self.select_and_save_best() # save validation strategy
-            os.remove(os.path.join(self._results_path, "best_model.txt")) # remove the file
+            self.select_and_save_best()  # save validation strategy
+            os.remove(
+                os.path.join(self._results_path, "best_model.txt")
+            )  # remove the file
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
         else:
             # cant stack models for train/test split
@@ -896,7 +898,8 @@ class BaseAutoML(BaseEstimator, ABC):
         # Select best model based on the lowest loss
         if self._models:
             self._best_model = min(
-                [m for m in self._models if m.is_valid()], key=lambda x: x.get_final_loss()
+                [m for m in self._models if m.is_valid()],
+                key=lambda x: x.get_final_loss(),
             )
             with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
                 fout.write(f"{self._best_model.get_name()}")
@@ -936,7 +939,9 @@ class BaseAutoML(BaseEstimator, ABC):
             # save report
             ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
             ldb.insert(loc=0, column="Best model", value="")
-            ldb.loc[ldb.name == self._best_model.get_name(), "Best model"] = "**the best**"
+            ldb.loc[
+                ldb.name == self._best_model.get_name(), "Best model"
+            ] = "**the best**"
 
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")

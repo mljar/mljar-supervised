@@ -12,3 +12,6 @@ class BaseValidator(object):
 
     def get_n_splits(self):
         pass
+
+    def get_repeats(self):
+        return 1

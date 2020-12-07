@@ -108,84 +108,89 @@ class ModelFramework:
 
         self.validation = ValidationStep(self.validation_params)
 
-        for k_fold in range(self.validation.get_n_splits()):
-            train_data, validation_data = self.validation.get_split(k_fold)
-            logger.debug(
-                "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
-                    train_data["X"].shape,
-                    train_data["y"].shape,
-                    validation_data["X"].shape,
-                    validation_data["y"].shape,
-                )
-            )
-
-            # the proprocessing is done at every validation step
-            self.preprocessings += [Preprocessing(self.preprocessing_params)]
-
-            X_train, y_train = self.preprocessings[-1].fit_and_transform(
-                train_data["X"], train_data["y"]
-            )
-            X_validation, y_validation = self.preprocessings[-1].transform(
-                validation_data["X"], validation_data["y"]
-            )
-
-            self.learner_params["explain_level"] = self._explain_level
-            self.learners += [
-                AlgorithmFactory.get_algorithm(copy.deepcopy(self.learner_params))
-            ]
-            learner = self.learners[-1]
-
-            self.callbacks.add_and_set_learner(learner)
-            self.callbacks.on_learner_train_start()
-
-            log_to_file = os.path.join(model_path, f"learner_{k_fold+1}_training.log")
-
-            for i in range(learner.max_iters):
-
-                self.callbacks.on_iteration_start()
-
-                learner.fit(X_train, y_train, X_validation, y_validation, log_to_file)
-
-                self.callbacks.on_iteration_end(
-                    {"iter_cnt": i},
-                    self.predictions(
-                        learner,
-                        self.preprocessings[-1],
-                        X_train,
-                        y_train,
-                        X_validation,
-                        y_validation,
-                    ),
+        repeats = self.validation.get_repeats()
+        for repeat in range(repeats):
+            for k_fold in range(self.validation.get_n_splits()):
+                train_data, validation_data = self.validation.get_split(k_fold, repeat)
+                logger.debug(
+                    "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
+                        train_data["X"].shape,
+                        train_data["y"].shape,
+                        validation_data["X"].shape,
+                        validation_data["y"].shape,
+                    )
                 )
 
-                if learner.stop_training:
-                    break
-                learner.update({"step": i})
+                # the proprocessing is done at every validation step
+                self.preprocessings += [Preprocessing(self.preprocessing_params)]
 
-            # end of learner iters loop
-            self.callbacks.on_learner_train_end()
+                X_train, y_train = self.preprocessings[-1].fit_and_transform(
+                    train_data["X"], train_data["y"]
+                )
+                X_validation, y_validation = self.preprocessings[-1].transform(
+                    validation_data["X"], validation_data["y"]
+                )
 
-            learner.interpret(
-                X_train,
-                y_train,
-                X_validation,
-                y_validation,
-                model_file_path=model_path,
-                learner_name=f"learner_{k_fold+1}",
-                class_names=self.preprocessings[-1].get_target_class_names(),
-                metric_name=self.get_metric_name(),
-                ml_task=self._ml_task,
-                explain_level=self._explain_level,
-            )
+                self.learner_params["explain_level"] = self._explain_level
+                self.learners += [
+                    AlgorithmFactory.get_algorithm(copy.deepcopy(self.learner_params))
+                ]
+                learner = self.learners[-1]
+                learner.set_learner_name(k_fold, repeat, repeats)
 
-            # save learner and free the memory
-            p = os.path.join(
-                model_path, f"learner_{k_fold+1}.{learner.file_extension()}"
-            )
-            learner.save(p)
-            del learner.model
-            learner.model = None
-            # end of learner training
+                self.callbacks.add_and_set_learner(learner)
+                self.callbacks.on_learner_train_start()
+
+                log_to_file = os.path.join(model_path, f"{learner.name}_training.log")
+
+                for i in range(learner.max_iters):
+
+                    self.callbacks.on_iteration_start()
+
+                    learner.fit(
+                        X_train, y_train, X_validation, y_validation, log_to_file
+                    )
+
+                    self.callbacks.on_iteration_end(
+                        {"iter_cnt": i},
+                        self.predictions(
+                            learner,
+                            self.preprocessings[-1],
+                            X_train,
+                            y_train,
+                            X_validation,
+                            y_validation,
+                        ),
+                    )
+
+                    if learner.stop_training:
+                        break
+                    learner.update({"step": i})
+
+                # end of learner iters loop
+                self.callbacks.on_learner_train_end()
+
+                learner.interpret(
+                    X_train,
+                    y_train,
+                    X_validation,
+                    y_validation,
+                    model_file_path=model_path,
+                    learner_name=learner.name,
+                    class_names=self.preprocessings[-1].get_target_class_names(),
+                    metric_name=self.get_metric_name(),
+                    ml_task=self._ml_task,
+                    explain_level=self._explain_level,
+                )
+
+                # save learner and free the memory
+                p = os.path.join(
+                    model_path, f"{learner.name}.{learner.file_extension()}"
+                )
+                learner.save(p)
+                del learner.model
+                learner.model = None
+                # end of learner training
 
         # end of validation loop
         self.callbacks.on_framework_train_end()
@@ -318,7 +323,7 @@ class ModelFramework:
 
         saved = []
         for i, l in enumerate(self.learners):
-            p = os.path.join(model_path, f"learner_{i+1}.{l.file_extension()}")
+            p = os.path.join(model_path, f"{l.name}.{l.file_extension()}")
             # l.save(p)
             saved += [p]
 
@@ -343,7 +348,7 @@ class ModelFramework:
             fout.write(json.dumps(desc, indent=4))
 
         LearningCurves.plot(
-            self.validation.get_n_splits(),
+            [l.name for l in self.learners],
             self.get_metric_name(),
             model_path,
             trees_in_iteration=self.additional_params.get("trees_in_step"),
