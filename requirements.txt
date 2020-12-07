@@ -7,7 +7,7 @@ lightgbm==3.0.0
 catboost==0.24.1
 joblib==0.14.1
 cloudpickle==1.3.0
-fastparquet==0.3.3
+fastparquet==0.4.1
 pyarrow==0.17.0
 tabulate==0.8.7
 matplotlib>=3.2.2
