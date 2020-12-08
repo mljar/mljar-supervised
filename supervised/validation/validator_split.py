@@ -23,7 +23,7 @@ class SplitValidator(BaseValidator):
         self.shuffle = self.params.get("shuffle", True)
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1234)
-        self.repeats = self.params.get("repeat", 1)
+        self.repeats = self.params.get("repeats", 1)
         
         if not self.shuffle and self.repeats > 1:
             warnings.warn("Disable repeats in validation because shuffle is disabled")

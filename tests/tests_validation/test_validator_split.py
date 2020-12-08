@@ -160,7 +160,7 @@ class SplitValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "repeat": 3
+            "repeats": 3
         }
         vl = SplitValidator(params)
 
@@ -209,7 +209,7 @@ class SplitValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "repeat": 3
+            "repeats": 3
         }
         vl = SplitValidator(params)
 

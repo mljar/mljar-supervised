@@ -154,7 +154,7 @@ class KFoldValidatorTest(unittest.TestCase):
             "shuffle": True,
             "stratify": False,
             "k_folds": 2,
-            "repeat": 10,
+            "repeats": 10,
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
@@ -163,7 +163,7 @@ class KFoldValidatorTest(unittest.TestCase):
         vl = KFoldValidator(params)
 
         self.assertEqual(params["k_folds"], vl.get_n_splits())
-        self.assertEqual(params["repeat"], vl.get_repeats())
+        self.assertEqual(params["repeats"], vl.get_repeats())
         
         for repeat in range(vl.get_repeats()):
             for k_fold in range(vl.get_n_splits()):
@@ -199,7 +199,7 @@ class KFoldValidatorTest(unittest.TestCase):
             "shuffle": False,
             "stratify": False,
             "k_folds": 2,
-            "repeat": 10,
+            "repeats": 10,
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,

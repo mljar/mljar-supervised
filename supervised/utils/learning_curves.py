@@ -112,7 +112,12 @@ class LearningCurves:
         else:
             plt.xlabel("#Iteration")
         plt.ylabel(metric_name)
-        plt.legend(loc="best")
+
+        # limit number of learners in the legend
+        # too many will raise warnings
+        if len(learner_names) <= 15:
+            plt.legend(loc="best")
+        
         plt.tight_layout(pad=2.0)
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)
