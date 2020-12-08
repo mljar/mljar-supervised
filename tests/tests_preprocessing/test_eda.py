@@ -59,7 +59,7 @@ class EDATest(unittest.TestCase):
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
         y = pd.Series(y, name="class")
 
-        results_path = "EDA"
+        results_path = self.automl_dir
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
@@ -73,7 +73,7 @@ class EDATest(unittest.TestCase):
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
         y = pd.Series(y, name="class")
 
-        results_path = "EDA"
+        results_path = self.automl_dir
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
@@ -97,7 +97,7 @@ class EDATest(unittest.TestCase):
         ##add some nan values
         X.loc[np.random.randint(0, 100, 20), "f_0"] = np.nan
 
-        results_path = "EDA"
+        results_path = self.automl_dir
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
@@ -114,7 +114,7 @@ class EDATest(unittest.TestCase):
         ##add some nan values
         X.loc[np.random.randint(0, 100, 20), "f_0"] = np.nan
 
-        results_path = "EDA"
+        results_path = self.automl_dir
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
@@ -136,7 +136,7 @@ class EDATest(unittest.TestCase):
         X.rename({"f_0": "ff*", "f_1": "fg/"}, axis=1, inplace=True)
         y = pd.Series(y, name="class")
 
-        results_path = "EDA"
+        results_path = self.automl_dir
         EDA.extensive_eda(X, y, results_path)
         result_files = os.listdir(results_path)
 
