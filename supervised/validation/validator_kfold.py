@@ -3,6 +3,7 @@ import gc
 import logging
 import numpy as np
 import pandas as pd
+import warnings
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +26,11 @@ class KFoldValidator(BaseValidator):
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1906)
         self.repeats = self.params.get("repeat", 1)
+        
+        if not self.shuffle and self.repeats > 1:
+            warnings.warn("Disable repeats in validation because shuffle is disabled")
+            self.repeats = 1
+
 
         self.skf = []
         

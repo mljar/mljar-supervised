@@ -151,20 +151,20 @@ class KFoldValidatorTest(unittest.TestCase):
         data["y"].to_parquet(y_path, index=False)
 
         params = {
-            "shuffle": False,
+            "shuffle": True,
             "stratify": False,
             "k_folds": 2,
-            "repeat": 3,
+            "repeat": 10,
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
+            "random_seed": 1
         }
         vl = KFoldValidator(params)
 
         self.assertEqual(params["k_folds"], vl.get_n_splits())
         self.assertEqual(params["repeat"], vl.get_repeats())
         
-        # for train, validation in vl.split():
         for repeat in range(vl.get_repeats()):
             for k_fold in range(vl.get_n_splits()):
                 train, validation = vl.get_split(k_fold, repeat)
@@ -176,3 +176,37 @@ class KFoldValidatorTest(unittest.TestCase):
                 self.assertEqual(y_train.shape[0], 2)
                 self.assertEqual(X_validation.shape[0], 2)
                 self.assertEqual(y_validation.shape[0], 2)
+
+
+
+
+    def test_disable_repeats_when_disabled_shuffle(self):
+
+        data = {
+            "X": pd.DataFrame(
+                np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), columns=["a", "b"]
+            ),
+            "y": pd.DataFrame(np.array([0, 0, 1, 1]), columns=["target"]),
+        }
+
+        X_path = os.path.join(self._results_path, "X.parquet")
+        y_path = os.path.join(self._results_path, "y.parquet")
+
+        data["X"].to_parquet(X_path, index=False)
+        data["y"].to_parquet(y_path, index=False)
+
+        params = {
+            "shuffle": False,
+            "stratify": False,
+            "k_folds": 2,
+            "repeat": 10,
+            "results_path": self._results_path,
+            "X_path": X_path,
+            "y_path": y_path,
+            "random_seed": 1
+        }
+        vl = KFoldValidator(params)
+
+        self.assertEqual(params["k_folds"], vl.get_n_splits())
+        self.assertEqual(1, vl.get_repeats())
+        

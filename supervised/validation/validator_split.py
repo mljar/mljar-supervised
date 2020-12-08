@@ -3,6 +3,7 @@ import gc
 import logging
 import numpy as np
 import pandas as pd
+import warnings
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +24,10 @@ class SplitValidator(BaseValidator):
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1234)
         self.repeats = self.params.get("repeat", 1)
-        log.debug("SplitValidator, train_ratio: {0}".format(self.train_ratio))
+        
+        if not self.shuffle and self.repeats > 1:
+            warnings.warn("Disable repeats in validation because shuffle is disabled")
+            self.repeats = 1
 
         self._results_path = self.params.get("results_path")
         self._X_path = self.params.get("X_path")
