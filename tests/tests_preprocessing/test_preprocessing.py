@@ -72,7 +72,7 @@ class PreprocessingTest(unittest.TestCase):
         y_train = df.loc[:, "y"]
 
         ps = Preprocessing()
-        X_train, y_train = ps.fit_and_transform(X_train, y_train)
+        X_train, y_train, _ = ps.fit_and_transform(X_train, y_train)
         self.assertEqual(3, X_train.shape[0])
         self.assertEqual(3, y_train.shape[0])
 
@@ -112,7 +112,7 @@ class PreprocessingTest(unittest.TestCase):
 
         ps = Preprocessing(preprocessing_params)
 
-        X_train, y_train = ps.fit_and_transform(X_train, y_train)
+        X_train, y_train, _ = ps.fit_and_transform(X_train, y_train)
 
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
@@ -156,7 +156,7 @@ class PreprocessingTest(unittest.TestCase):
         }
 
         ps = Preprocessing(preprocessing_params)
-        X_train, y_train = ps.fit_and_transform(X_train, y_train)
+        X_train, y_train, _ = ps.fit_and_transform(X_train, y_train)
 
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
@@ -229,8 +229,8 @@ class PreprocessingTest(unittest.TestCase):
 
         ps = Preprocessing(preprocessing_params)
 
-        X_train, y_train = ps.fit_and_transform(X_train, y_train)
-        X_test, y_test = ps.transform(X_test, y_test)
+        X_train, y_train, _ = ps.fit_and_transform(X_train, y_train)
+        X_test, y_test, _ = ps.transform(X_test, y_test)
 
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in X_train.columns)
@@ -254,7 +254,7 @@ class PreprocessingTest(unittest.TestCase):
         }
 
         ps = Preprocessing(preprocessing_params)
-        _, y_train = ps.fit_and_transform(None, y_train)
+        _, y_train, _ = ps.fit_and_transform(None, y_train)
 
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(0, y_train[0])
@@ -278,8 +278,8 @@ class PreprocessingTest(unittest.TestCase):
 
         ps = Preprocessing(preprocessing_params)
 
-        _, y_train = ps.fit_and_transform(None, y_train)
-        _, y_test = ps.transform(None, y_test)
+        _, y_train, _ = ps.fit_and_transform(None, y_train)
+        _, y_test, _ = ps.transform(None, y_test)
 
         self.assertEqual(4, y_train.shape[0])
         self.assertEqual(2, y_test.shape[0])
@@ -317,7 +317,7 @@ class PreprocessingTest(unittest.TestCase):
         }
 
         ps = Preprocessing(preprocessing_params)
-        _, _ = ps.fit_and_transform(X_train, y_train)
+        _, _, _ = ps.fit_and_transform(X_train, y_train)
 
         ps2 = Preprocessing()
         ps2.from_json(ps.to_json())
@@ -334,7 +334,7 @@ class PreprocessingTest(unittest.TestCase):
         X_test = df_test.loc[:, ["col1", "col2", "col3", "col4"]]
         y_test = df_test.loc[:, "y"]
 
-        X_test, y_test = ps2.transform(X_test, y_test)
+        X_test, y_test, _ = ps2.transform(X_test, y_test)
 
         self.assertEqual(2, y_test.shape[0])
         self.assertEqual(2, np.sum(y_test))
@@ -357,11 +357,11 @@ class PreprocessingTest(unittest.TestCase):
         preprocessing_params = {"columns_preprocessing": {"col1": ["remove_column"]}}
 
         ps = Preprocessing(preprocessing_params)
-        X_train1, _ = ps.fit_and_transform(X_train, y_train)
+        X_train1, _, _ = ps.fit_and_transform(X_train, y_train)
 
         self.assertTrue("col1" not in X_train1.columns)
         self.assertEqual(3, len(X_train1.columns))
-        X_train2, _ = ps.transform(X_train, y_train)
+        X_train2, _, _ = ps.transform(X_train, y_train)
         self.assertTrue("col1" not in X_train2.columns)
         self.assertEqual(3, len(X_train2.columns))
         for col in ["col2", "col3", "col4"]:
@@ -371,7 +371,7 @@ class PreprocessingTest(unittest.TestCase):
         ps2 = Preprocessing()
         ps2.from_json(params_json)
 
-        X_train3, _ = ps2.transform(X_train, y_train)
+        X_train3, _, _ = ps2.transform(X_train, y_train)
         self.assertTrue("col1" not in X_train3.columns)
         self.assertEqual(3, len(X_train3.columns))
         for col in ["col2", "col3", "col4"]:

@@ -28,3 +28,6 @@ class MetricTest(unittest.TestCase):
         y_predicted = np.array([0, 0, 1, 1])
         score_2 = m(y_true, y_predicted)
         self.assertTrue(m.improvement(score_1, score_2))
+
+    def test_sample_weight(self):
+        self.assertTrue(False)

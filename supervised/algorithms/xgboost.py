@@ -71,9 +71,21 @@ class XgbAlgorithm(BaseAlgorithm):
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
         dtrain = xgb.DMatrix(
-            X.to_numpy() if isinstance(X, pd.DataFrame) else X, label=y, missing=np.NaN
+            X.to_numpy() if isinstance(X, pd.DataFrame) else X,
+            label=y,
+            missing=np.NaN,
+            weight=sample_weight,
         )
         dvalidation = xgb.DMatrix(
             X_validation.to_numpy()
@@ -81,6 +93,7 @@ class XgbAlgorithm(BaseAlgorithm):
             else X_validation,
             label=y_validation,
             missing=np.NaN,
+            weight=sample_weight_validation,
         )
         evals_result = {}
 

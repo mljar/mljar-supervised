@@ -28,7 +28,16 @@ class NNFit(SklearnAlgorithm):
     def file_extension(self):
         return "neural_network"
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
         self.model.fit(X, y)
 
         if log_to_file is not None:

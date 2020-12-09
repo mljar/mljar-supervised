@@ -83,17 +83,19 @@ class EarlyStopping(Callback):
                 self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
             )
 
-        
     def on_iteration_end(self, logs, predictions):
         train_loss = 0
         if predictions.get("y_train_predicted") is not None:
             train_loss = self.metric(
-                predictions.get("y_train_true"), predictions.get("y_train_predicted")
+                predictions.get("y_train_true"),
+                predictions.get("y_train_predicted"),
+                predictions.get("sample_weight"),
             )
 
         validation_loss = self.metric(
             predictions.get("y_validation_true"),
             predictions.get("y_validation_predicted"),
+            predictions.get("sample_weight_validation"),
         )
         self.loss_values[self.learner.uid]["train"] += [train_loss]
         self.loss_values[self.learner.uid]["validation"] += [validation_loss]

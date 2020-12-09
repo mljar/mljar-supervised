@@ -23,7 +23,30 @@ logger.setLevel(LOG_LEVEL)
 from dtreeviz.trees import dtreeviz
 
 
-class KNeighborsAlgorithm(SklearnAlgorithm):
+class KNNFit(SklearnAlgorithm):
+    def file_extension(self):
+        return "k_neighbors"
+
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
+        if X.shape[0] > 1000:
+            X1, _, y1, _ = train_test_split(
+                X, y, train_size=1000, stratify=y, random_state=1234
+            )
+            self.model.fit(X1, y1)
+        else:
+            self.model.fit(X, y)
+
+
+class KNeighborsAlgorithm(KNNFit):
 
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
@@ -40,20 +63,8 @@ class KNeighborsAlgorithm(SklearnAlgorithm):
             n_jobs=-1,
         )
 
-    def file_extension(self):
-        return "k_neighbors"
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        if X.shape[0] > 1000:
-            X1, _, y1, _ = train_test_split(
-                X, y, train_size=1000, stratify=y, random_state=1234
-            )
-            self.model.fit(X1, y1)
-        else:
-            self.model.fit(X, y)
-
-
-class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
+class KNeighborsRegressorAlgorithm(KNNFit):
 
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
@@ -69,16 +80,6 @@ class KNeighborsRegressorAlgorithm(SklearnAlgorithm):
             algorithm="ball_tree",
             n_jobs=-1,
         )
-
-    def file_extension(self):
-        return "k_neighbors"
-
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        if X.shape[0] > 1000:
-            X1, _, y1, _ = train_test_split(X, y, train_size=1000, random_state=1234)
-            self.model.fit(X1, y1)
-        else:
-            self.model.fit(X, y)
 
 
 knn_params = {"n_neighbors": [3, 5, 7], "weights": ["uniform", "distance"]}

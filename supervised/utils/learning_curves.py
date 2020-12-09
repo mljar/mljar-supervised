@@ -117,7 +117,7 @@ class LearningCurves:
         # too many will raise warnings
         if len(learner_names) <= 15:
             plt.legend(loc="best")
-        
+
         plt.tight_layout(pad=2.0)
         plot_path = os.path.join(model_path, LearningCurves.output_file_name)
         plt.savefig(plot_path)

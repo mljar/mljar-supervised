@@ -58,9 +58,18 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
 
-        lgb_train = lgb.Dataset(X, y)
+        lgb_train = lgb.Dataset(X, y, weight=sample_weight)
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
                 self.learner_params,
@@ -73,7 +82,12 @@ class LightgbmAlgorithm(BaseAlgorithm):
             valid_names = None
             esr = None
             if X_validation is not None and y_validation is not None:
-                valid_sets = [lgb_train, lgb.Dataset(X_validation, y_validation)]
+                valid_sets = [
+                    lgb_train,
+                    lgb.Dataset(
+                        X_validation, y_validation, weight=sample_weight_validation
+                    ),
+                ]
                 valid_names = ["train", "validation"]
                 esr = self.early_stopping_rounds
             evals_result = {}

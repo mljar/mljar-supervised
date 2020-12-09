@@ -43,6 +43,12 @@ class Metric(object):
         self.name = self.params.get("name")
         if self.name is None:
             raise MetricException("Metric name not defined")
+
+        self.is_weighted = False
+        if "weighted_" in self.name:
+            self.is_weighted = True
+            self.name = self.name[9:]
+
         self.minimize_direction = self.name in [
             "logloss",
             "auc",  # negative auc
@@ -65,8 +71,9 @@ class Metric(object):
         else:
             raise MetricException(f"Unknown metric '{self.name}'")
 
-    def __call__(self, y_true, y_predicted):
-
+    def __call__(self, y_true, y_predicted, sample_weight=None):
+        if self.is_weighted and sample_weight is not None:
+            return self.metric(y_true, y_predicted, sample_weight=sample_weight)
         return self.metric(y_true, y_predicted)
 
     def improvement(self, previous, current):

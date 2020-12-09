@@ -30,7 +30,6 @@ from supervised.model_framework import ModelFramework
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.tuner.data_info import DataInfo
 from supervised.tuner.mljar_tuner import MljarTuner
-from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
@@ -299,7 +298,7 @@ class BaseAutoML(BaseEstimator, ABC):
             # self._progress_bar.write(msg)
             print(msg)
 
-    def ensemble_step(self, is_stacked=False):
+    def ensemble_step(self, is_stacked=False, sample_weight=None):
         if self._train_ensemble and len(self._models) > 1:
 
             ensemble_path = os.path.join(
@@ -311,7 +310,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._eval_metric, self._ml_task, is_stacked=is_stacked
             )
             oofs, target = self.ensemble.get_oof_matrix(self._models)
-            self.ensemble.fit(oofs, target)
+            self.ensemble.fit(oofs, target, sample_weight)
             self.ensemble.save(ensemble_path)
             self.keep_model(self.ensemble, ensemble_path)
             return True
@@ -437,18 +436,25 @@ class BaseAutoML(BaseEstimator, ABC):
             self.train_model(params)
         """
 
-    def _save_data(self, X, y):
+    def _save_data(self, X, y, sample_weight=None):
         # save information about original data
-        self._save_data_info(X, y)
+        self._save_data_info(X, y, sample_weight)
 
         # handle drastic imbalance
         # assure at least 20 samples of each class
         # for binary and multiclass classification
-        self._handle_drastic_imbalance(X, y)
+        self._handle_drastic_imbalance(X, y, sample_weight)
 
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.parquet")
         self._y_path = os.path.join(self._results_path, "y.parquet")
+        if sample_weight is not None:
+            self._sample_weight_path = os.path.join(
+                self._results_path, "sample_weight.parquet"
+            )
+            pd.DataFrame({"target": sample_weight}).to_parquet(
+                self._sample_weight_path, index=False
+            )
 
         X.to_parquet(self._X_path, index=False)
 
@@ -461,10 +467,12 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validation_strategy["X_path"] = self._X_path
         self._validation_strategy["y_path"] = self._y_path
         self._validation_strategy["results_path"] = self._results_path
+        if sample_weight is not None:
+            self._validation_strategy["sample_weight_path"] = self._sample_weight_path
 
         self._drop_data_variables(X)
 
-    def _handle_drastic_imbalance(self, X, y):
+    def _handle_drastic_imbalance(self, X, y, sample_weight=None):
         if self._ml_task == REGRESSION:
             return
         classes, cnts = np.unique(y, return_counts=True)
@@ -481,11 +489,21 @@ class BaseAutoML(BaseEstimator, ABC):
                     .sample(n=append_samples, replace=True, random_state=1)
                     .reset_index(drop=True)
                 )
+                if sample_weight is not None:
+                    new_sample_weight = (
+                        sample_weight[y == classes[i]]
+                        .sample(n=append_samples, replace=True, random_state=1)
+                        .reset_index(drop=True)
+                    )
                 for j in range(new_X.shape[0]):
                     X.loc[X.shape[0]] = new_X.loc[j]
                     y.loc[y.shape[0]] = classes[i]
+                    if sample_weight is not None:
+                        sample_weight.loc[
+                            sample_weight.shape[0]
+                        ] = new_sample_weight.loc[j]
 
-    def _save_data_info(self, X, y):
+    def _save_data_info(self, X, y, sample_weight=None):
 
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
@@ -504,6 +522,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "columns_info": columns_and_target_info["columns_info"],
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features_in_,
+            "is_sample_weighted": sample_weight is not None,
         }
         # Add n_classes if not regression
         if self._ml_task != REGRESSION:
@@ -566,7 +585,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
     # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
-    def _build_dataframe(self, X, y=None):
+    def _build_dataframe(self, X, y=None, sample_weight=None):
         if X is None or X.shape[0] == 0:
             raise AutoMLException("Empty input dataset")
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
@@ -602,12 +621,26 @@ class BaseAutoML(BaseEstimator, ABC):
             y = check_array(y, ensure_2d=False)
             y = pd.Series(np.array(y), name="target")
 
-        X, y = ExcludeRowsMissingTarget.transform(X, y, warn=True)
+        if sample_weight is not None:
+            if isinsance(sample_weight, np.ndarray):
+                sample_weight = check_array(sample_weight, ensure_2d=False)
+                sample_weight = pd.Series(np.array(sample_weight), name="sample_weight")
+            elif isinstance(sample_weight, pd.DataFrame):
+                sample_weight = np.array(sample_weight.iloc[:, 0])
+                sample_weight = check_array(sample_weight, ensure_2d=False)
+                sample_weight = pd.Series(np.array(sample_weight), name="sample_weight")
+
+        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
+            X, y, sample_weight, warn=True
+        )
 
         X.reset_index(drop=True, inplace=True)
         y.reset_index(drop=True, inplace=True)
 
-        return X, y
+        if sample_weight is not None:
+            sample_weight.reset_index(drop=True, inplace=True)
+
+        return X, y, sample_weight
 
     def _apply_constraints(self):
 
@@ -699,7 +732,7 @@ class BaseAutoML(BaseEstimator, ABC):
             # cant stack models for train/test split
             self._stack_models = False
 
-    def _fit(self, X, y):
+    def _fit(self, X, y, sample_weight=None):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(
@@ -707,7 +740,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             return
         # Validate input and build dataframes
-        X, y = self._build_dataframe(X, y)
+        X, y, sample_weight = self._build_dataframe(X, y, sample_weight)
 
         self.n_rows_in_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -765,7 +798,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            self._save_data(X.copy(deep=False), y)
+            self._save_data(X.copy(deep=False), y, sample_weight)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -854,7 +887,8 @@ class BaseAutoML(BaseEstimator, ABC):
                         trained = False
                         if "ensemble" in step:
                             trained = self.ensemble_step(
-                                is_stacked=params["is_stacked"]
+                                is_stacked=params["is_stacked"],
+                                sample_weight=sample_weight,
                             )
                         else:
                             trained = self.train_model(params)

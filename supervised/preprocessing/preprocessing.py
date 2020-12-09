@@ -68,7 +68,7 @@ class Preprocessing(object):
         return X, y
 
     # fit and transform
-    def fit_and_transform(self, X_train, y_train):
+    def fit_and_transform(self, X_train, y_train, sample_weight = None):
         logger.debug("Preprocessing.fit_and_transform")
 
         if y_train is not None:
@@ -77,7 +77,7 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            X_train, y_train = ExcludeRowsMissingTarget.transform(X_train, y_train)
+            X_train, y_train, sample_weight = ExcludeRowsMissingTarget.transform(X_train, y_train, sample_weight)
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
@@ -260,9 +260,9 @@ class Preprocessing(object):
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols
 
-        return X_train, y_train
+        return X_train, y_train, sample_weight
 
-    def transform(self, X_validation, y_validation):
+    def transform(self, X_validation, y_validation, sample_weight_validation = None):
         logger.debug("Preprocessing.transform")
 
         # doing copy to avoid SettingWithCopyWarning
@@ -277,8 +277,8 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-            X_validation, y_validation = ExcludeRowsMissingTarget.transform(
-                X_validation, y_validation
+            X_validation, y_validation, sample_weight_validation = ExcludeRowsMissingTarget.transform(
+                X_validation, y_validation, sample_weight_validation
             )
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
@@ -371,7 +371,7 @@ class Preprocessing(object):
         if self._drop_features and X_validation is not None:
             X_validation.drop(self._drop_features, axis=1, inplace=True)
 
-        return X_validation, y_validation
+        return X_validation, y_validation, sample_weight_validation
 
     def inverse_scale_target(self, y):
         if self._scale_y is not None:

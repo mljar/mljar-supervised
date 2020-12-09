@@ -31,7 +31,16 @@ class BaseAlgorithm:
         if self.model is None and self.model_file_path is not None:
             self.load(self.model_file_path)
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
         pass
 
     def predict(self, X):

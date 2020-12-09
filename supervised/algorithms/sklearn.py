@@ -20,8 +20,17 @@ class SklearnAlgorithm(BaseAlgorithm):
     def __init__(self, params):
         super(SklearnAlgorithm, self).__init__(params)
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
-        self.model.fit(X, y)
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
+        self.model.fit(X, y, sample_weight=sample_weight)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -79,7 +88,20 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         )  # max iters is used by model_framework, max_steps is used internally
         self.predict_function = predict_proba_function
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
+
+        # if sample weight available then update metric
+        if sample_weight is not None:
+            self.log_metric = Metric({"name": "weighted_" + self.log_metric.name})
 
         max_steps = self.max_steps
         n_estimators = 0
@@ -92,7 +114,7 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
 
         for i in range(max_steps):
 
-            self.model.fit(X, np.ravel(y))
+            self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
             self.model.n_estimators += self.trees_in_step
 
             if X_validation is None or y_validation is None:
@@ -113,8 +135,14 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 else:
                     p_vd += p
 
-                tr = self.log_metric(y, p_tr / float(e + 1))
-                vd = self.log_metric(y_validation, p_vd / float(e + 1))
+                tr = self.log_metric(
+                    y, p_tr / float(e + 1), sample_weight=sample_weight
+                )
+                vd = self.log_metric(
+                    y_validation,
+                    p_vd / float(e + 1),
+                    sample_weight=sample_weight_validation,
+                )
 
                 result["iteration"] += [e]
                 result["train"] += [tr]

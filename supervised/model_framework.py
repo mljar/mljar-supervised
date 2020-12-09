@@ -71,7 +71,15 @@ class ModelFramework:
         return self.train_time
 
     def predictions(
-        self, learner, preproces, X_train, y_train, X_validation, y_validation
+        self,
+        learner,
+        preproces,
+        X_train,
+        y_train,
+        sample_weight,
+        X_validation,
+        y_validation,
+        sample_weight_validation,
     ):
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
@@ -95,8 +103,10 @@ class ModelFramework:
         return {
             "y_train_true": y_train_true,
             "y_train_predicted": y_train_predicted,
+            "sample_weight": sample_weight,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
+            "sample_weight_validation": sample_weight_validation,
             "validation_index": X_validation.index,
             "validation_columns": y_validation_columns,
         }
@@ -125,11 +135,17 @@ class ModelFramework:
                 # the proprocessing is done at every validation step
                 self.preprocessings += [Preprocessing(self.preprocessing_params)]
 
-                X_train, y_train = self.preprocessings[-1].fit_and_transform(
-                    train_data["X"], train_data["y"]
+                X_train, y_train, sample_weight = self.preprocessings[
+                    -1
+                ].fit_and_transform(
+                    train_data["X"], train_data["y"], train_data.get("sample_weight")
                 )
-                X_validation, y_validation = self.preprocessings[-1].transform(
-                    validation_data["X"], validation_data["y"]
+                X_validation, y_validation, sample_weight_validation = self.preprocessings[
+                    -1
+                ].transform(
+                    validation_data["X"],
+                    validation_data["y"],
+                    validation_data.get("sample_weight"),
                 )
 
                 self.learner_params["explain_level"] = self._explain_level
@@ -149,7 +165,13 @@ class ModelFramework:
                     self.callbacks.on_iteration_start()
 
                     learner.fit(
-                        X_train, y_train, X_validation, y_validation, log_to_file
+                        X_train,
+                        y_train,
+                        sample_weight,
+                        X_validation,
+                        y_validation,
+                        sample_weight_validation,
+                        log_to_file,
                     )
 
                     self.callbacks.on_iteration_end(
@@ -159,8 +181,10 @@ class ModelFramework:
                             self.preprocessings[-1],
                             X_train,
                             y_train,
+                            sample_weight,
                             X_validation,
                             y_validation,
+                            sample_weight_validation,
                         ),
                     )
 
@@ -212,7 +236,7 @@ class ModelFramework:
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping:
             return early_stopping.metric
-        return Metric({'name': self.get_metric_name()})
+        return Metric({"name": self.get_metric_name()})
 
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
@@ -275,7 +299,7 @@ class ModelFramework:
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
             # preprocessing goes here
-            X_data, _ = self.preprocessings[ind].transform(X.copy(), None)
+            X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
             y_p = learner.predict(X_data)
             y_p = self.preprocessings[ind].inverse_scale_target(y_p)
 
@@ -290,6 +314,9 @@ class ModelFramework:
         return y_predicted_final
 
     def get_additional_metrics(self):
+
+        print("add sample_weight in get_additional_metrics")
+
         if self._additional_metrics is None:
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
@@ -309,7 +336,7 @@ class ModelFramework:
                 oof_preds = oof_predictions[prediction_cols]
 
             self._additional_metrics = AdditionalMetrics.compute(
-                target, oof_preds, self._ml_task
+                target, oof_preds, sample_weight, self._ml_task
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])

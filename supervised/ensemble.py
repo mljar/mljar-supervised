@@ -126,7 +126,7 @@ class Ensemble:
 
         return oofs, self.target
 
-    def get_additional_metrics(self):
+    def get_additional_metrics(self, sample_weight=None):
         if self._additional_metrics is None:
             logger.debug("Get additional metrics for Ensemble")
             # 'target' - the target after processing used for model training
@@ -148,7 +148,8 @@ class Ensemble:
 
             self._additional_metrics = AdditionalMetrics.compute(
                 oof_predictions[target_cols],
-                oof_preds,  # oof_predictions[prediction_cols],
+                oof_preds, 
+                sample_weight,
                 self._ml_task,
             )
             if self._ml_task == BINARY_CLASSIFICATION:
@@ -156,7 +157,7 @@ class Ensemble:
 
         return self._additional_metrics
 
-    def fit(self, oofs, y):
+    def fit(self, oofs, y, sample_weight=None):
         logger.debug("Ensemble.fit")
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
@@ -169,7 +170,7 @@ class Ensemble:
             # try to add some algorithm to the best_sum to minimize metric
             for model_name in oofs.keys():
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
-                score = self.metric(y, y_ens)
+                score = self.metric(y, y_ens, sample_weight)
 
                 if self.metric.improvement(previous=min_score, current=score):
                     min_score = score
@@ -205,7 +206,7 @@ class Ensemble:
             ]
             logger.debug(f"{model_name} {self.best_algs.count(model_name)}")
 
-        self.get_additional_metrics()
+        self.get_additional_metrics(sample_weight)
         self.train_time = time.time() - start_time
 
     def predict(self, X, X_stacked=None):

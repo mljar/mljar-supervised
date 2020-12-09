@@ -17,7 +17,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost
+from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost, Pool
 import catboost
 
 
@@ -70,7 +70,16 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
         if self.cat_features is None:
             self.cat_features = []
             for i in range(X.shape[1]):
@@ -79,11 +88,17 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         eval_set = None
         if X_validation is not None and y_validation is not None:
-            eval_set = (X_validation, y_validation)
+            eval_set = Pool(
+                data=X_validation,
+                label=y_validation,
+                cat_features=self.cat_features,
+                weight=sample_weight_validation,
+            )
 
         self.model.fit(
             X,
             y,
+            sample_weight=sample_weight,
             cat_features=self.cat_features,
             init_model=None if self.model.tree_count_ is None else self.model,
             eval_set=eval_set,

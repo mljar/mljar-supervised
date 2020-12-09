@@ -271,18 +271,20 @@ class AutoML(BaseAutoML):
         self.top_models_to_improve = top_models_to_improve
         self.random_state = random_state
 
-    def fit(self, X, y):
+    def fit(self, X, y, sample_weight=None):
         """Fit the AutoML model.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame): Training data 
+            X (numpy.ndarray or pandas.DataFrame): Training data 
 
-            y (list or numpy.ndarray or pandas.DataFrame): Training targets
+            y (numpy.ndarray or pandas.DataFrame): Training targets
+
+            sample_weight (numpy.ndarray or pandas.DataFrame): Training sample weights
 
         Returns:
             AutoML object: Returns `self`
         """
-        return self._fit(X, y)
+        return self._fit(X, y, sample_weight)
 
     def predict(self, X):
         """
