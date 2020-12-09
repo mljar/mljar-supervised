@@ -73,6 +73,9 @@ class Ensemble:
     def get_metric_name(self):
         return self.metric.name
 
+    def get_metric(self):
+        return self.metric
+
     def get_out_of_folds(self):
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
         # single prediction (in case of binary classification and regression)

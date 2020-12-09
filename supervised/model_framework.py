@@ -17,6 +17,7 @@ from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.exceptions import AutoMLException
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.metric import Metric
 
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -206,6 +207,12 @@ class ModelFramework:
             return None
         self.metric_name = early_stopping.metric.name
         return early_stopping.metric.name
+
+    def get_metric(self):
+        early_stopping = self.callbacks.get("early_stopping")
+        if early_stopping:
+            return early_stopping.metric
+        return Metric({'name': self.get_metric_name()})
 
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
