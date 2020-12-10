@@ -91,6 +91,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._all_params = {}
         # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
         self.n_features_in_ = None  # for scikit-learn api
+        self.tuner = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -698,6 +699,25 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             # cant stack models for train/test split
             self._stack_models = False
+            self.verbose_print("Disable stacking for split validation")
+
+        self._apply_constraints_stack_models()
+
+    def _apply_constraints_stack_models(self):
+
+        if self._validation_strategy["validation_type"] == "split":
+            if self._stack_models:
+                self.verbose_print("Disable stacking for split validation")
+            self._stack_models = False
+        if "repeats" in self._validation_strategy:
+            if self._stack_models:
+                self.verbose_print("Disable stacking for repeated validation")
+            self._stack_models = False
+
+        if self.tuner is not None:
+            self.tuner._stack_models = self._stack_models
+        if self._time_ctrl is not None:
+            self._time_ctrl._is_stacking = self._stack_models
 
     def _fit(self, X, y):
         """Fits the AutoML model with data"""
@@ -735,6 +755,12 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._adjust_validation = False
         self._apply_constraints()
+        if not self._adjust_validation:
+            # if there is no validation adjustement
+            # then we can apply stack_models constraints immediately
+            # if there is validation adjustement
+            # then we will apply contraints after the adjustement
+            self._apply_constraints_stack_models()
 
         try:
 
@@ -810,6 +836,9 @@ class BaseAutoML(BaseEstimator, ABC):
                 start = time.time()
                 # self._time_start[step] = start
 
+                if step in ["stack", "ensemble_stacked"] and not self._stack_models:
+                    continue
+
                 if step == "stack":
                     self.prepare_for_stacking()
                 if "hill_climbing" in step or step in ["ensemble", "stack"]:
@@ -862,7 +891,11 @@ class BaseAutoML(BaseEstimator, ABC):
                         params["final_loss"] = self._models[-1].get_final_loss()
                         params["train_time"] = self._models[-1].get_train_time()
 
-                        if self._adjust_validation and len(self._models) == 1:
+                        if (
+                            self._adjust_validation
+                            and len(self._models) == 1
+                            and step == "adjust_validation"
+                        ):
                             self._set_adjusted_validation()
 
                     except Exception as e:

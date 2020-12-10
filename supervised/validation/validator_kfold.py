@@ -26,14 +26,13 @@ class KFoldValidator(BaseValidator):
         self.stratify = self.params.get("stratify", False)
         self.random_seed = self.params.get("random_seed", 1906)
         self.repeats = self.params.get("repeats", 1)
-        
+
         if not self.shuffle and self.repeats > 1:
             warnings.warn("Disable repeats in validation because shuffle is disabled")
             self.repeats = 1
 
-
         self.skf = []
-        
+
         for r in range(self.repeats):
             random_seed = self.random_seed + r if self.shuffle else None
             if self.stratify:

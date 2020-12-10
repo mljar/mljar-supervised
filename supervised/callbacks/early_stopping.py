@@ -83,7 +83,6 @@ class EarlyStopping(Callback):
                 self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols]
             )
 
-        
     def on_iteration_end(self, logs, predictions):
         train_loss = 0
         if predictions.get("y_train_predicted") is not None:

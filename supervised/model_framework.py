@@ -212,7 +212,7 @@ class ModelFramework:
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping:
             return early_stopping.metric
-        return Metric({'name': self.get_metric_name()})
+        return Metric({"name": self.get_metric_name()})
 
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
