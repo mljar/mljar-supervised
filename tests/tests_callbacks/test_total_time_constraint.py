@@ -15,7 +15,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         params = {
             "total_time_limit": 100,
             "total_time_start": time.time(),
-            "expected_learners_cnt": 6000 + 1000 + 10,
+            "expected_learners_cnt": 1000 + 10,
         }
         callback = TotalTimeConstraint(params)
         callback.add_and_set_learner(learner={})

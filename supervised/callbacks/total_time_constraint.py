@@ -39,11 +39,11 @@ class TotalTimeConstraint(Callback):
                 self.expected_learners_cnt - 1
             )
 
-            if estimate_elapsed_time >= self.total_time_limit + 600: # add 10 minutes of margin
+            if estimate_elapsed_time >= self.total_time_limit:
                 raise AutoMLException(
-                    "Stop training after first fold. "
-                    f"Time needed to train on first fold {np.round(one_fold_time)} seconds. "
-                    "The time estimate for training on all folds is larger than total_time_limit+1800 seconds."
+                    "Stop training after the first fold. "
+                    f"Time needed to train on the first fold {np.round(one_fold_time)} seconds. "
+                    "The time estimate for training on all folds is larger than total_time_limit."
                 )
         if (
             self.total_time_limit is not None
@@ -52,7 +52,11 @@ class TotalTimeConstraint(Callback):
         ):
             total_elapsed_time = np.round(time.time() - self.total_time_start, 2)
 
-            if total_elapsed_time > self.total_time_limit + 600: # add 10 minutes of margin
+            if total_elapsed_time > self.total_time_limit + 600:
+                # add 10 minutes of margin
+                # margin is added because of unexpected time changes
+                # if training on each fold will be the same
+                # then the training will be stopped after first fold (above condition)
                 raise AutoMLException(
                     "Force to stop the training. "
                     "Total time for AutoML training already exceeded."
