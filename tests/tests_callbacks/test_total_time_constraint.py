@@ -15,7 +15,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         params = {
             "total_time_limit": 100,
             "total_time_start": time.time(),
-            "expected_learners_cnt": 1000 + 10,
+            "expected_learners_cnt": 1001,
         }
         callback = TotalTimeConstraint(params)
         callback.add_and_set_learner(learner={})
@@ -23,7 +23,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         time.sleep(0.1)
         with self.assertRaises(AutoMLException) as context:
             callback.on_learner_train_end(logs=None)
-        self.assertTrue("Stop training after first fold" in str(context.exception))
+        self.assertTrue("Stop training after the first fold" in str(context.exception))
 
     def test_stop_on_not_first_learner(self):
         params = {
