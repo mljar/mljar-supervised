@@ -102,3 +102,13 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
             self.assertTrue(
                 automl._time_ctrl.enough_time(model_type_2, "not_so_random")
             )
+
+    def test_expected_learners_cnt(self):
+        automl = AutoML(results_path=self.automl_dir)
+        automl._validation_strategy = {"k_folds": 7, "repeats": 6}
+        self.assertEqual(automl._expected_learners_cnt(), 42)
+
+        automl._validation_strategy = {"k_folds": 7}
+        self.assertEqual(automl._expected_learners_cnt(), 7)
+        automl._validation_strategy = {}
+        self.assertEqual(automl._expected_learners_cnt(), 1)

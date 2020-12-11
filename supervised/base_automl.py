@@ -237,6 +237,15 @@ class BaseAutoML(BaseEstimator, ABC):
             except Exception as e:
                 raise AutoMLException(f"Cannot create directory {model_path}. {str(e)}")
 
+    def _expected_learners_cnt(self):
+        try:
+            repeats = self._validation_strategy.get("repeats", 1)
+            folds = self._validation_strategy.get("k_folds", 1)
+            return repeats * folds
+        except Exception as e:
+            pass
+        return 1
+
     def train_model(self, params):
 
         # do we have enough time to train?
@@ -273,6 +282,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 if self._model_time_limit is None
                 else None,
                 "total_time_start": self._start_time,
+                "expected_learners_cnt": self._expected_learners_cnt(),
             }
         )
 

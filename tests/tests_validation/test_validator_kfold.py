@@ -8,16 +8,13 @@ import shutil
 
 
 class KFoldValidatorTest(unittest.TestCase):
-    
     def setUp(self):
         self._results_path = "/tmp/k_fold_test"
         os.mkdir(self._results_path)
 
-    
     def tearDown(self):
         shutil.rmtree(self._results_path, ignore_errors=True)
-    
-    
+
     def test_create(self):
 
         data = {
@@ -133,8 +130,6 @@ class KFoldValidatorTest(unittest.TestCase):
             self.assertEqual(X_validation.shape[0], 2)
             self.assertEqual(y_validation.shape[0], 2)
 
-
-
     def test_repeats(self):
 
         data = {
@@ -158,13 +153,13 @@ class KFoldValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "random_seed": 1
+            "random_seed": 1,
         }
         vl = KFoldValidator(params)
 
         self.assertEqual(params["k_folds"], vl.get_n_splits())
         self.assertEqual(params["repeats"], vl.get_repeats())
-        
+
         for repeat in range(vl.get_repeats()):
             for k_fold in range(vl.get_n_splits()):
                 train, validation = vl.get_split(k_fold, repeat)
@@ -176,9 +171,6 @@ class KFoldValidatorTest(unittest.TestCase):
                 self.assertEqual(y_train.shape[0], 2)
                 self.assertEqual(X_validation.shape[0], 2)
                 self.assertEqual(y_validation.shape[0], 2)
-
-
-
 
     def test_disable_repeats_when_disabled_shuffle(self):
 
@@ -203,10 +195,9 @@ class KFoldValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "random_seed": 1
+            "random_seed": 1,
         }
         vl = KFoldValidator(params)
 
         self.assertEqual(params["k_folds"], vl.get_n_splits())
         self.assertEqual(1, vl.get_repeats())
-        

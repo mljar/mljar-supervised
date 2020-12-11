@@ -9,7 +9,7 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 class CategoricalIntegersTest(unittest.TestCase):
     def test_selector(self):
 
-        d = {"col1": [f"{i}" for i in range(31)], "col2": ["a"]*31}
+        d = {"col1": [f"{i}" for i in range(31)], "col2": ["a"] * 31}
         df = pd.DataFrame(data=d)
 
         self.assertEqual(
