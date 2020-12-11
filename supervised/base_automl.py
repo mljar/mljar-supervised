@@ -206,8 +206,9 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
 
         ldb = pd.DataFrame(ldb)
-        minimize_direction = m.get_metric().get_minimize_direction()
-        ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
+        # need to add argument for sorting
+        #minimize_direction = m.get_metric().get_minimize_direction()
+        #ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
 
         return ldb
 
