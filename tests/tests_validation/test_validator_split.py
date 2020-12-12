@@ -8,7 +8,6 @@ import shutil
 
 
 class SplitValidatorTest(unittest.TestCase):
-    
     def setUp(self):
         self._results_path = "/tmp/split_test"
         os.mkdir(self._results_path)
@@ -134,7 +133,6 @@ class SplitValidatorTest(unittest.TestCase):
             self.assertEqual(X_validation.shape[0], 2)
             self.assertEqual(y_validation.shape[0], 2)
 
-
     def test_repeats(self):
 
         data = {
@@ -160,13 +158,13 @@ class SplitValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "repeats": 3
+            "repeats": 3,
         }
         vl = SplitValidator(params)
 
         self.assertEqual(1, vl.get_n_splits())
         self.assertEqual(3, vl.get_repeats())
-        
+
         cnt = 0
         for repeat in range(vl.get_repeats()):
             for k_fold in range(vl.get_n_splits()):
@@ -180,10 +178,9 @@ class SplitValidatorTest(unittest.TestCase):
                 self.assertEqual(X_validation.shape[0], 4)
                 self.assertEqual(y_validation.shape[0], 4)
                 cnt += 1
-        
+
         self.assertEqual(cnt, 3)
 
-    
     def test_disable_repeats_when_disabled_shuffle(self):
 
         data = {
@@ -209,7 +206,7 @@ class SplitValidatorTest(unittest.TestCase):
             "results_path": self._results_path,
             "X_path": X_path,
             "y_path": y_path,
-            "repeats": 3
+            "repeats": 3,
         }
         vl = SplitValidator(params)
 
