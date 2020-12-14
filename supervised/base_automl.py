@@ -460,11 +460,12 @@ class BaseAutoML(BaseEstimator, ABC):
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.parquet")
         self._y_path = os.path.join(self._results_path, "y.parquet")
+        self._sample_weight_path = None
         if sample_weight is not None:
             self._sample_weight_path = os.path.join(
                 self._results_path, "sample_weight.parquet"
             )
-            pd.DataFrame({"target": sample_weight}).to_parquet(
+            pd.DataFrame({"sample_weight": sample_weight}).to_parquet(
                 self._sample_weight_path, index=False
             )
 
@@ -1132,7 +1133,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # Make and return predictions
         return self._base_predict(X)
 
-    def _score(self, X, y=None):
+    def _score(self, X, y=None, sample_weight=None):
         # y default must be None for scikit-learn compatibility
 
         # Check if y is None
@@ -1141,9 +1142,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         predictions = self._predict(X)
         return (
-            r2_score(y, predictions)
+            r2_score(y, predictions, sample_weight=sample_weight)
             if self._ml_task == REGRESSION
-            else accuracy_score(y, predictions)
+            else accuracy_score(y, predictions, sample_weight=sample_weight)
         )
 
     def _get_mode(self):

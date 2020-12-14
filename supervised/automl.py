@@ -277,9 +277,9 @@ class AutoML(BaseAutoML):
         Arguments:
             X (numpy.ndarray or pandas.DataFrame): Training data 
 
-            y (numpy.ndarray or pandas.DataFrame): Training targets
+            y (numpy.ndarray or pandas.Series): Training targets
 
-            sample_weight (numpy.ndarray or pandas.DataFrame): Training sample weights
+            sample_weight (numpy.ndarray or pandas.Series): Training sample weights
 
         Returns:
             AutoML object: Returns `self`
@@ -345,20 +345,22 @@ class AutoML(BaseAutoML):
         """
         return self._predict_all(X)
 
-    def score(self, X, y=None):
+    def score(self, X, y=None, sample_weight=None):
         """Calculates a goodness of `fit` for an AutoML instance.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame):
+            X (numpy.ndarray or pandas.DataFrame):
                 Test values to make predictions on.
 
-            y (list or numpy.ndarray or pandas.DataFrame):
+            y (numpy.ndarray or pandas.Series):
                 True labels for X.
 
+            sample_weight (numpy.ndarray or pandas.Series):
+                Sample weights.
         Returns:
             float: Returns a goodness of fit measure (higher is better):
 
             - For classification tasks: returns the mean accuracy on the given test data and labels.
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
-        return self._score(X, y)
+        return self._score(X, y, sample_weight)
