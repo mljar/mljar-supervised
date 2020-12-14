@@ -39,7 +39,7 @@ from tabulate import tabulate
 
 class AdditionalMetrics:
     @staticmethod
-    def binary_classification(target, predictions):
+    def binary_classification(target, predictions, sample_weight=None):
 
         predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
@@ -128,7 +128,7 @@ class AdditionalMetrics:
         }
 
     @staticmethod
-    def multiclass_classification(target, predictions):
+    def multiclass_classification(target, predictions, sample_weight=None):
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
         ll = logloss(target, predictions[predictions.columns[:-1]])
@@ -172,7 +172,7 @@ class AdditionalMetrics:
         }
 
     @staticmethod
-    def regression(target, predictions):
+    def regression(target, predictions, sample_weight=None):
         regression_metrics = {
             "MAE": mean_absolute_error,
             "MSE": mean_squared_error,

@@ -316,6 +316,7 @@ class ModelFramework:
     def get_additional_metrics(self):
 
         print("add sample_weight in get_additional_metrics")
+        sample_weight = None
 
         if self._additional_metrics is None:
             # 'target' - the target after processing used for model training

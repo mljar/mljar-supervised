@@ -64,6 +64,7 @@ class KFoldValidator(BaseValidator):
         self._results_path = self.params.get("results_path")
         self._X_path = self.params.get("X_path")
         self._y_path = self.params.get("y_path")
+        self._sample_weight_path = self.params.get("sample_weight_path")
 
         if self._X_path is None or self._y_path is None:
             raise AutoMLException("No data path set in KFoldValidator params")
@@ -126,9 +127,21 @@ class KFoldValidator(BaseValidator):
         y = pd.read_parquet(self._y_path)
         y = y["target"]
 
+        sample_weight = None
+        if self._sample_weight_path is not None:
+            sample_weight = pd.read_parquet(self._sample_weight_path)
+            sample_weight = sample_weight["sample_weight"]
+
+
+        train_data = {"X": X.loc[train_index], "y": y.loc[train_index]}
+        validation_data = {"X": X.loc[validation_index], "y": y.loc[validation_index]}
+        if sample_weight is not None:
+            train_data["sample_weight"] = sample_weight.loc[train_index]
+            validation_data["sample_weight"] = sample_weight.loc[validation_index]
+            
         return (
-            {"X": X.loc[train_index], "y": y.loc[train_index]},
-            {"X": X.loc[validation_index], "y": y.loc[validation_index]},
+            train_data,
+            validation_data,
         )
 
     def get_n_splits(self):
