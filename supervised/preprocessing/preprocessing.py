@@ -68,7 +68,7 @@ class Preprocessing(object):
         return X, y
 
     # fit and transform
-    def fit_and_transform(self, X_train, y_train, sample_weight = None):
+    def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
 
         if y_train is not None:
@@ -77,7 +77,9 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            X_train, y_train, sample_weight = ExcludeRowsMissingTarget.transform(X_train, y_train, sample_weight)
+            X_train, y_train, sample_weight = ExcludeRowsMissingTarget.transform(
+                X_train, y_train, sample_weight
+            )
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
@@ -262,7 +264,7 @@ class Preprocessing(object):
 
         return X_train, y_train, sample_weight
 
-    def transform(self, X_validation, y_validation, sample_weight_validation = None):
+    def transform(self, X_validation, y_validation, sample_weight_validation=None):
         logger.debug("Preprocessing.transform")
 
         # doing copy to avoid SettingWithCopyWarning

@@ -147,10 +147,7 @@ class Ensemble:
                 oof_preds["label"] = oof_preds["label"].map(labels)
 
             self._additional_metrics = AdditionalMetrics.compute(
-                oof_predictions[target_cols],
-                oof_preds, 
-                sample_weight,
-                self._ml_task,
+                oof_predictions[target_cols], oof_preds, sample_weight, self._ml_task
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])

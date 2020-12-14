@@ -197,9 +197,13 @@ class AdditionalMetrics:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if ml_task == BINARY_CLASSIFICATION:
-                return AdditionalMetrics.binary_classification(target, predictions, sample_weight)
+                return AdditionalMetrics.binary_classification(
+                    target, predictions, sample_weight
+                )
             elif ml_task == MULTICLASS_CLASSIFICATION:
-                return AdditionalMetrics.multiclass_classification(target, predictions, sample_weight)
+                return AdditionalMetrics.multiclass_classification(
+                    target, predictions, sample_weight
+                )
             elif ml_task == REGRESSION:
                 return AdditionalMetrics.regression(target, predictions, sample_weight)
 

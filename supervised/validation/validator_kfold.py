@@ -132,17 +132,13 @@ class KFoldValidator(BaseValidator):
             sample_weight = pd.read_parquet(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
 
-
         train_data = {"X": X.loc[train_index], "y": y.loc[train_index]}
         validation_data = {"X": X.loc[validation_index], "y": y.loc[validation_index]}
         if sample_weight is not None:
             train_data["sample_weight"] = sample_weight.loc[train_index]
             validation_data["sample_weight"] = sample_weight.loc[validation_index]
-            
-        return (
-            train_data,
-            validation_data,
-        )
+
+        return (train_data, validation_data)
 
     def get_n_splits(self):
         return self.k_folds

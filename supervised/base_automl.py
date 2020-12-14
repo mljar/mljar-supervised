@@ -206,8 +206,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
-        #minimize_direction = m.get_metric().get_minimize_direction()
-        #ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
+        # minimize_direction = m.get_metric().get_minimize_direction()
+        # ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
 
         return ldb
 

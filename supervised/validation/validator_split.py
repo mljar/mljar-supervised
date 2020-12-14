@@ -32,6 +32,7 @@ class SplitValidator(BaseValidator):
         self._results_path = self.params.get("results_path")
         self._X_path = self.params.get("X_path")
         self._y_path = self.params.get("y_path")
+        self._sample_weight_path = self.params.get("sample_weight_path")
 
         if self._X_path is None or self._y_path is None:
             raise AutoMLException("No data path set in SplitValidator params")
@@ -42,22 +43,45 @@ class SplitValidator(BaseValidator):
         y = pd.read_parquet(self._y_path)
         y = y["target"]
 
+        sample_weight = None
+        if self._sample_weight_path is not None:
+            sample_weight = pd.read_parquet(self._sample_weight_path)
+            sample_weight = sample_weight["sample_weight"]
+
         stratify = None
         if self.stratify:
             stratify = y
         if self.shuffle == False:
             stratify = None
 
-        X_train, X_validation, y_train, y_validation = train_test_split(
-            X,
-            y,
-            train_size=self.train_ratio,
-            test_size=1.0 - self.train_ratio,
-            shuffle=self.shuffle,
-            stratify=stratify,
-            random_state=self.random_seed + repeat,
-        )
-        return {"X": X_train, "y": y_train}, {"X": X_validation, "y": y_validation}
+        if sample_weight is not None:
+            X_train, X_validation, y_train, y_validation, sample_weight_train, sample_weight_validation = train_test_split(
+                X,
+                y,
+                sample_weight,
+                train_size=self.train_ratio,
+                test_size=1.0 - self.train_ratio,
+                shuffle=self.shuffle,
+                stratify=stratify,
+                random_state=self.random_seed + repeat,
+            )
+        else:
+            X_train, X_validation, y_train, y_validation = train_test_split(
+                X,
+                y,
+                train_size=self.train_ratio,
+                test_size=1.0 - self.train_ratio,
+                shuffle=self.shuffle,
+                stratify=stratify,
+                random_state=self.random_seed + repeat,
+            )
+        train_data = {"X": X_train, "y": y_train}
+        validation_data = {"X": X_validation, "y": y_validation}
+        if sample_weight is not None:
+            train_data["sample_weight"] = sample_weight_train
+            validation_data["sample_weight"] = sample_weight_validation
+
+        return train_data, validation_data
 
     def get_n_splits(self):
         return 1
