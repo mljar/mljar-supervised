@@ -16,7 +16,7 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
     def test_compute(self):
         target = np.array([0, 0, 0, 0, 1, 1, 1, 1])
         pred = np.array([0.1, 0.8, 0.1, 0.1, 0.8, 0.1, 0.8, 0.8])
-        info = AdditionalMetrics.compute(target, pred, BINARY_CLASSIFICATION)
+        info = AdditionalMetrics.compute(target, pred, None, BINARY_CLASSIFICATION)
         details = info["metric_details"]
         max_metrics = info["max_metrics"]
         conf = info["confusion_matrix"]
@@ -28,7 +28,7 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
     def test_compute_f1(self):
         target = np.array([0, 0, 0, 0, 1, 1, 1, 1])
         pred = np.array([0.01, 0.2, 0.1, 0.1, 0.8, 0.8, 0.8, 0.8])
-        info = AdditionalMetrics.compute(target, pred, BINARY_CLASSIFICATION)
+        info = AdditionalMetrics.compute(target, pred, None, BINARY_CLASSIFICATION)
         details = info["metric_details"]
         max_metrics = info["max_metrics"]
         conf = info["confusion_matrix"]
@@ -39,7 +39,7 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
     def test_compute_for_regression(self):
         target = np.array([0, 0, 0, 0, 1, 1, 1, 1])
         pred = np.array([0.01, 0.2, 0.1, 0.1, 0.8, 0.8, 0.8, 0.8])
-        info = AdditionalMetrics.compute(target, pred, REGRESSION)
+        info = AdditionalMetrics.compute(target, pred, None, REGRESSION)
         all_metrics = list(info["max_metrics"]["Metric"].values)
         for m in ["MAE", "MSE", "RMSE", "R2"]:
             self.assertTrue(m in all_metrics)
@@ -47,7 +47,7 @@ class ComputeAdditionalMetricsTest(unittest.TestCase):
     def test_compute_constant_preds(self):
         target = np.array([0, 0, 1, 1, 0, 0, 0, 0])
         pred = np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-        info = AdditionalMetrics.compute(target, pred, BINARY_CLASSIFICATION)
+        info = AdditionalMetrics.compute(target, pred, None, BINARY_CLASSIFICATION)
         details = info["metric_details"]
         max_metrics = info["max_metrics"]
         conf = info["confusion_matrix"]

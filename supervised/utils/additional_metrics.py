@@ -70,23 +70,33 @@ class AdditionalMetrics:
             response = (predictions > th).astype(int)
 
             details["threshold"] += [th]
-            details["f1"] += [f1_score(target, response)]
-            details["accuracy"] += [accuracy_score(target, response)]
-            details["precision"] += [precision_score(target, response)]
-            details["recall"] += [recall_score(target, response)]
+            details["f1"] += [f1_score(target, response, sample_weight=sample_weight)]
+            details["accuracy"] += [
+                accuracy_score(target, response, sample_weight=sample_weight)
+            ]
+            details["precision"] += [
+                precision_score(target, response, sample_weight=sample_weight)
+            ]
+            details["recall"] += [
+                recall_score(target, response, sample_weight=sample_weight)
+            ]
             if i == 0:
                 details["mcc"] += [0.0]
             else:
-                details["mcc"] += [matthews_corrcoef(target, response)]
+                details["mcc"] += [
+                    matthews_corrcoef(target, response, sample_weight=sample_weight)
+                ]
 
         # max metrics
         max_metrics = {
             "logloss": {
-                "score": logloss(target, predictions),
+                "score": logloss(target, predictions, sample_weight=sample_weight),
                 "threshold": None,
             },  # there is no threshold for LogLoss
             "auc": {
-                "score": roc_auc_score(target, predictions),
+                "score": roc_auc_score(
+                    target, predictions, sample_weight=sample_weight
+                ),
                 "threshold": None,
             },  # there is no threshold for AUC
             "f1": {
@@ -110,10 +120,21 @@ class AdditionalMetrics:
                 "threshold": details["threshold"][np.argmax(details["mcc"])],
             },
         }
+
+        threshold = float(max_metrics["accuracy"]["threshold"])
+
+        # if sample_weight is not None:
+        #    new_max_metrics = {}
+        #    for k, v in max_metrics.items():
+        #        new_max_metrics["weighted_" + k] = v
+        #    max_metrics = new_max_metrics
+
         # confusion matrix
+
         conf_matrix = confusion_matrix(
-            target, predictions > max_metrics["f1"]["threshold"]
+            target, predictions > threshold, sample_weight=sample_weight
         )
+
         conf_matrix = pd.DataFrame(
             conf_matrix,
             columns=["Predicted as negative", "Predicted as positive"],
@@ -124,14 +145,16 @@ class AdditionalMetrics:
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
             "confusion_matrix": conf_matrix,
-            "threshold": float(max_metrics["accuracy"]["threshold"]),
+            "threshold": threshold,
         }
 
     @staticmethod
     def multiclass_classification(target, predictions, sample_weight=None):
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
-        ll = logloss(target, predictions[predictions.columns[:-1]])
+        ll = logloss(
+            target, predictions[predictions.columns[:-1]], sample_weight=sample_weight
+        )
 
         if "target" in target.columns.tolist():
             # multiclass coding with integer
@@ -154,7 +177,9 @@ class AdditionalMetrics:
         if not pd.api.types.is_string_dtype(target):
             target = target.astype(str)
 
-        conf_matrix = confusion_matrix(target, predictions, labels=all_labels)
+        conf_matrix = confusion_matrix(
+            target, predictions, labels=all_labels, sample_weight=sample_weight
+        )
 
         rows = [f"Predicted as {a}" for a in all_labels]
         cols = [f"Labeled as {a}" for a in all_labels]
@@ -162,7 +187,12 @@ class AdditionalMetrics:
         conf_matrix = pd.DataFrame(conf_matrix, columns=rows, index=cols)
 
         max_metrics = classification_report(
-            target, predictions, digits=6, labels=all_labels, output_dict=True
+            target,
+            predictions,
+            digits=6,
+            labels=all_labels,
+            output_dict=True,
+            sample_weight=sample_weight,
         )
         max_metrics["logloss"] = ll
 
@@ -176,12 +206,14 @@ class AdditionalMetrics:
         regression_metrics = {
             "MAE": mean_absolute_error,
             "MSE": mean_squared_error,
-            "RMSE": lambda t, p: np.sqrt(mean_squared_error(t, p)),
+            "RMSE": lambda t, p, sample_weight: np.sqrt(
+                mean_squared_error(t, p, sample_weight=sample_weight)
+            ),
             "R2": r2_score,
         }
         max_metrics = {}
         for k, v in regression_metrics.items():
-            max_metrics[k] = v(target, predictions)
+            max_metrics[k] = v(target, predictions, sample_weight=sample_weight)
 
         return {
             "max_metrics": pd.DataFrame(

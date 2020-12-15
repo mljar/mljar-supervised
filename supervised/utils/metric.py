@@ -9,6 +9,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import r2_score
 
 
 class MetricException(Exception):
@@ -17,21 +18,21 @@ class MetricException(Exception):
         log.error(message)
 
 
-def logloss(y_true, y_predicted):
+def logloss(y_true, y_predicted, sample_weight=None):
     epsilon = 1e-6
     y_predicted = sp.maximum(epsilon, y_predicted)
     y_predicted = sp.minimum(1 - epsilon, y_predicted)
-    ll = log_loss(y_true, y_predicted)
+    ll = log_loss(y_true, y_predicted, sample_weight=sample_weight)
     return ll
 
 
-def rmse(y_true, y_predicted):
-    val = mean_squared_error(y_true, y_predicted)
+def rmse(y_true, y_predicted, sample_weight=None):
+    val = mean_squared_error(y_true, y_predicted, sample_weight=sample_weight)
     return np.sqrt(val) if val > 0 else -np.Inf
 
 
-def negative_auc(y_true, y_predicted):
-    val = roc_auc_score(y_true, y_predicted)
+def negative_auc(y_true, y_predicted, sample_weight=None):
+    val = roc_auc_score(y_true, y_predicted, sample_weight=sample_weight)
     return -1.0 * val
 
 
@@ -43,11 +44,6 @@ class Metric(object):
         self.name = self.params.get("name")
         if self.name is None:
             raise MetricException("Metric name not defined")
-
-        self.is_weighted = False
-        if "weighted_" in self.name:
-            self.is_weighted = True
-            self.name = self.name[9:]
 
         self.minimize_direction = self.name in [
             "logloss",
@@ -68,13 +64,13 @@ class Metric(object):
             self.metric = mean_squared_error
         elif self.name == "mae":
             self.metric = mean_absolute_error
+        elif self.name == "r2":
+            self.metric = r2_score
         else:
             raise MetricException(f"Unknown metric '{self.name}'")
 
     def __call__(self, y_true, y_predicted, sample_weight=None):
-        if self.is_weighted and sample_weight is not None:
-            return self.metric(y_true, y_predicted, sample_weight=sample_weight)
-        return self.metric(y_true, y_predicted)
+        return self.metric(y_true, y_predicted, sample_weight=sample_weight)
 
     def improvement(self, previous, current):
         if self.minimize_direction:

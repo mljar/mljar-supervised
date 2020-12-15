@@ -44,6 +44,7 @@ class Ensemble:
         self.total_best_sum = None  # total sum of predictions, the oof of ensemble
         self.target = None
         self.target_columns = None
+        self.sample_weight = None
         self._ml_task = ml_task
         self._optimize_metric = optimize_metric
         self._is_stacked = is_stacked
@@ -95,6 +96,9 @@ class Ensemble:
             # ]
         )
         ensemble_oof["target"] = self.target
+        if self.sample_weight is not None:
+            ensemble_oof["sample_weight"] = self.sample_weight
+            
         self.oof_predictions = ensemble_oof
         return ensemble_oof
 
@@ -124,9 +128,12 @@ class Ensemble:
                     self.target_columns
                 ]  # it will be needed for computing advance model statistics
 
-        return oofs, self.target
+            if self.sample_weight is None and "sample_weight" in oof.columns:
+                self.sample_weight = oof["sample_weight"]
 
-    def get_additional_metrics(self, sample_weight=None):
+        return oofs, self.target, self.sample_weight
+
+    def get_additional_metrics(self):
         if self._additional_metrics is None:
             logger.debug("Get additional metrics for Ensemble")
             # 'target' - the target after processing used for model training
@@ -145,6 +152,10 @@ class Ensemble:
                     np.array(oof_preds[prediction_cols]), axis=1
                 )
                 oof_preds["label"] = oof_preds["label"].map(labels)
+
+            sample_weight = None
+            if "sample_weight" in oof_predictions.columns:
+                sample_weight = oof_predictions["sample_weight"]
 
             self._additional_metrics = AdditionalMetrics.compute(
                 oof_predictions[target_cols], oof_preds, sample_weight, self._ml_task
@@ -203,7 +214,8 @@ class Ensemble:
             ]
             logger.debug(f"{model_name} {self.best_algs.count(model_name)}")
 
-        self.get_additional_metrics(sample_weight)
+        self._additional_metrics = self.get_additional_metrics()
+
         self.train_time = time.time() - start_time
 
     def predict(self, X, X_stacked=None):
@@ -317,6 +329,7 @@ class Ensemble:
 
         LearningCurves.plot_for_ensemble(self._scores, self.metric.name, model_path)
 
+        # call additional metics just to be sure they are computed
         self._additional_metrics = self.get_additional_metrics()
 
         AdditionalMetrics.save(

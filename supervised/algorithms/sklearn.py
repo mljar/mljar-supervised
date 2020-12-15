@@ -98,11 +98,6 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         sample_weight_validation=None,
         log_to_file=None,
     ):
-
-        # if sample weight available then update metric
-        if sample_weight is not None:
-            self.log_metric = Metric({"name": "weighted_" + self.log_metric.name})
-
         max_steps = self.max_steps
         n_estimators = 0
 

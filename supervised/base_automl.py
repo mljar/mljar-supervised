@@ -310,7 +310,7 @@ class BaseAutoML(BaseEstimator, ABC):
             # self._progress_bar.write(msg)
             print(msg)
 
-    def ensemble_step(self, is_stacked=False, sample_weight=None):
+    def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
 
             ensemble_path = os.path.join(
@@ -321,7 +321,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.ensemble = Ensemble(
                 self._eval_metric, self._ml_task, is_stacked=is_stacked
             )
-            oofs, target = self.ensemble.get_oof_matrix(self._models)
+            oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target, sample_weight)
             self.ensemble.save(ensemble_path)
             self.keep_model(self.ensemble, ensemble_path)
@@ -635,7 +635,7 @@ class BaseAutoML(BaseEstimator, ABC):
             y = pd.Series(np.array(y), name="target")
 
         if sample_weight is not None:
-            if isinsance(sample_weight, np.ndarray):
+            if isinstance(sample_weight, np.ndarray):
                 sample_weight = check_array(sample_weight, ensure_2d=False)
                 sample_weight = pd.Series(np.array(sample_weight), name="sample_weight")
             elif isinstance(sample_weight, pd.DataFrame):
@@ -928,8 +928,7 @@ class BaseAutoML(BaseEstimator, ABC):
                         trained = False
                         if "ensemble" in step:
                             trained = self.ensemble_step(
-                                is_stacked=params["is_stacked"],
-                                sample_weight=sample_weight,
+                                is_stacked=params["is_stacked"]
                             )
                         else:
                             trained = self.train_model(params)

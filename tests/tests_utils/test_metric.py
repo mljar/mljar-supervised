@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_almost_equal
 
 from supervised.utils.metric import Metric
 
@@ -30,4 +31,13 @@ class MetricTest(unittest.TestCase):
         self.assertTrue(m.improvement(score_1, score_2))
 
     def test_sample_weight(self):
-        self.assertTrue(False)
+        metrics = ["logloss", "auc", "acc", "rmse", "mse", "mae", "r2"]
+        for m in metrics:
+            metric = Metric({"name": m})
+            y_true = np.array([0, 0, 1, 1])
+            y_predicted = np.array([0, 0, 0, 1])
+            sample_weight = np.array([1, 1, 1, 1])
+
+            score_1 = metric(y_true, y_predicted)
+            score_2 = metric(y_true, y_predicted, sample_weight)
+            assert_almost_equal(score_1, score_2)

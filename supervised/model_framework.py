@@ -131,6 +131,8 @@ class ModelFramework:
                         validation_data["y"].shape,
                     )
                 )
+                if "sample_weight" in train_data:
+                    logger.debug("Sample weight available during the training.")
 
                 # the proprocessing is done at every validation step
                 self.preprocessings += [Preprocessing(self.preprocessing_params)]
@@ -146,7 +148,7 @@ class ModelFramework:
                     validation_data["X"],
                     validation_data["y"],
                     validation_data.get("sample_weight"),
-                )
+                )                
 
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [
@@ -173,7 +175,7 @@ class ModelFramework:
                         sample_weight_validation,
                         log_to_file,
                     )
-
+                    
                     self.callbacks.on_iteration_end(
                         {"iter_cnt": i},
                         self.predictions(
@@ -219,7 +221,9 @@ class ModelFramework:
 
         # end of validation loop
         self.callbacks.on_framework_train_end()
-        self.get_additional_metrics()
+        #self.get_additional_metrics()
+        self._additional_metrics = self.get_additional_metrics()
+
         self.train_time = time.time() - start_time
         logger.debug("ModelFramework end of training")
 
@@ -315,9 +319,6 @@ class ModelFramework:
 
     def get_additional_metrics(self):
 
-        print("add sample_weight in get_additional_metrics")
-        sample_weight = None
-
         if self._additional_metrics is None:
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
@@ -335,6 +336,10 @@ class ModelFramework:
 
             else:
                 oof_preds = oof_predictions[prediction_cols]
+
+            sample_weight = None
+            if "sample_weight" in oof_predictions.columns:
+                sample_weight = oof_predictions["sample_weight"]
 
             self._additional_metrics = AdditionalMetrics.compute(
                 target, oof_preds, sample_weight, self._ml_task
@@ -389,6 +394,7 @@ class ModelFramework:
             trees_in_iteration=self.additional_params.get("trees_in_step"),
         )
 
+        # call additional metics just to be sure they are computed
         self._additional_metrics = self.get_additional_metrics()
 
         AdditionalMetrics.save(
