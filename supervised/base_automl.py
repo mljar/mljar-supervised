@@ -207,8 +207,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
-        #minimize_direction = m.get_metric().get_minimize_direction()
-        #ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
+        # minimize_direction = m.get_metric().get_minimize_direction()
+        # ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
 
         return ldb
 
@@ -626,6 +626,13 @@ class BaseAutoML(BaseEstimator, ABC):
         # remove algorithms in the case of multiclass
         # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
+
+            if self.n_classes >= 10 and self.n_features_in_ * self.n_classes > 500:
+                if self.algorithms == "auto":
+                    for a in ["CatBoost"]:
+                        if a in self._algorithms:
+                            self._algorithms.remove(a)
+
             if self.n_features_in_ * self.n_classes > 1000:
 
                 if self.algorithms == "auto":
