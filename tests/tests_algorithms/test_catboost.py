@@ -29,6 +29,7 @@ class CatBoostRegressorAlgorithmTest(unittest.TestCase):
             "l2_leaf_reg": 1,
             "seed": 1,
             "ml_task": "regression",
+            "loss_function": "RMSE",
         }
 
     def test_reproduce_fit(self):
@@ -42,6 +43,10 @@ class CatBoostRegressorAlgorithmTest(unittest.TestCase):
             if prev_loss is not None:
                 assert_almost_equal(prev_loss, loss)
             prev_loss = loss
+
+    def test_get_metric_name(self):
+        model = CatBoostAlgorithm(self.params)
+        self.assertEqual(model.get_metric_name(), "rmse")
 
 
 class CatBoostAlgorithmTest(unittest.TestCase):
@@ -66,6 +71,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
             "l2_leaf_reg": 1,
             "seed": 1,
             "ml_task": "binary_classification",
+            "loss_function": "Logloss",
         }
 
     def test_reproduce_fit(self):
@@ -139,3 +145,11 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+    def test_get_metric_name(self):
+        model = CatBoostAlgorithm(self.params)
+        self.assertEqual(model.get_metric_name(), "logloss")
+        params = dict(self.params)
+        params["loss_function"] = "MultiClass"
+        model = CatBoostAlgorithm(params)
+        self.assertEqual(model.get_metric_name(), "logloss")

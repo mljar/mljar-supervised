@@ -79,6 +79,9 @@ class MLPAlgorithm(NNFit):
             max_iter=max_iter,
         )
 
+    def get_metric_name(self):
+        return "logloss"
+
 
 class MLPRegressorAlgorithm(NNFit):
 
@@ -106,6 +109,9 @@ class MLPRegressorAlgorithm(NNFit):
             early_stopping=early_stopping,
             max_iter=max_iter,
         )
+
+    def get_metric_name(self):
+        return "mse"
 
 
 nn_params = {

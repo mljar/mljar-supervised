@@ -104,3 +104,6 @@ class BaseAlgorithm:
                 class_names,
                 ml_task,
             )
+
+    def get_metric_name(self):
+        return None

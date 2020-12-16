@@ -188,6 +188,20 @@ class XgbAlgorithm(BaseAlgorithm):
     def file_extension(self):
         return "xgboost"
 
+    def get_metric_name(self):
+        metric = self.params.get("eval_metric")
+        if metric is None:
+            return None
+        if metric == "logloss":
+            return "logloss"
+        elif metric == "auc":
+            return "auc"
+        elif metric == "mlogloss":
+            return "logloss"
+        elif metric == "rmse":
+            return "rmse"
+        return None
+
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {

@@ -101,6 +101,6 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_get_metric_name(self):
+        model = LightgbmAlgorithm(self.params)
+        self.assertEqual(model.get_metric_name(), "logloss")

@@ -79,12 +79,16 @@ class EarlyStopping(Callback):
 
         if "prediction" in self.best_y_oof:
             self.final_loss = self.metric(
-                self.best_y_oof[self.target_columns], self.best_y_oof["prediction"], sample_weight=sample_weight
+                self.best_y_oof[self.target_columns],
+                self.best_y_oof["prediction"],
+                sample_weight=sample_weight,
             )
         else:
             prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
             self.final_loss = self.metric(
-                self.best_y_oof[self.target_columns], self.best_y_oof[prediction_cols], sample_weight=sample_weight
+                self.best_y_oof[self.target_columns],
+                self.best_y_oof[prediction_cols],
+                sample_weight=sample_weight,
             )
 
     def on_iteration_end(self, logs, predictions):
@@ -156,7 +160,7 @@ class EarlyStopping(Callback):
                 self.best_y_predicted[self.learner.uid]["sample_weight"] = np.array(
                     sample_weight_validation
                 )
-            
+
             self.best_models[self.learner.uid] = self.learner.copy()
             # if local copy is not available, save model and keep path
             if self.best_models[self.learner.uid] is None:

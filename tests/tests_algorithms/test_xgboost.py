@@ -100,3 +100,12 @@ class XgboostAlgorithmTest(unittest.TestCase):
         xgb = XgbAlgorithm(params)
         xgb.fit(X, y)
         xgb.predict(X)
+
+    def test_get_metric_name(self):
+        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        model = XgbAlgorithm(params)
+        self.assertEqual(model.get_metric_name(), "logloss")
+
+        params = {"eval_metric": "rmse"}
+        model = XgbAlgorithm(params)
+        self.assertEqual(model.get_metric_name(), "rmse")

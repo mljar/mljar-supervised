@@ -25,7 +25,6 @@ class AutoMLSampleWeightTest(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
-        
 
     def test_iris_dataset_sample_weight(self):
         """ Tests AutoML in the iris dataset (Multiclass classification)
@@ -45,26 +44,27 @@ class AutoMLSampleWeightTest(unittest.TestCase):
             iris.data, iris.target, sample_weight=sample_weight
         )
         assert_almost_equal(score_1, score_2)
-        
+
     def test_boston_dataset(self):
         """ Tests AutoML in the boston dataset (Regression)
             without and with sample weight"""
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
-        score_1 = model.fit(boston.data, boston.target).score(boston.data, boston.target)
+        score_1 = model.fit(boston.data, boston.target).score(
+            boston.data, boston.target
+        )
         self.assertGreater(score_1, 0.5)
-        
+
         shutil.rmtree(self.automl_dir, ignore_errors=True)
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
         sample_weight = np.ones(boston.data.shape[0])
-        score_2 = model.fit(boston.data, boston.target, sample_weight=sample_weight).score(
+        score_2 = model.fit(
             boston.data, boston.target, sample_weight=sample_weight
-        )
+        ).score(boston.data, boston.target, sample_weight=sample_weight)
         assert_almost_equal(score_1, score_2)
-        
 
     def test_breast_cancer_dataset(self):
         """ Tests AutoML in the breast cancer (binary classification)
@@ -75,16 +75,14 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         score_1 = model.fit(breast_cancer.data, breast_cancer.target).score(
             breast_cancer.data, breast_cancer.target
         )
-        self.assertGreater(score_1, 0.5) 
-        
+        self.assertGreater(score_1, 0.5)
+
         shutil.rmtree(self.automl_dir, ignore_errors=True)
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
         sample_weight = np.ones(breast_cancer.data.shape[0])
-        score_2 = model.fit(breast_cancer.data, breast_cancer.target, sample_weight=sample_weight).score(
+        score_2 = model.fit(
             breast_cancer.data, breast_cancer.target, sample_weight=sample_weight
-        )
+        ).score(breast_cancer.data, breast_cancer.target, sample_weight=sample_weight)
         assert_almost_equal(score_1, score_2)
-        
-

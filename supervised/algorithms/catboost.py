@@ -167,6 +167,18 @@ class CatBoostAlgorithm(BaseAlgorithm):
     def file_extension(self):
         return "catboost"
 
+    def get_metric_name(self):
+        metric = self.params.get("loss_function")
+        if metric is None:
+            return None
+        if metric == "Logloss":
+            return "logloss"
+        elif metric == "MultiClass":
+            return "logloss"
+        elif metric == "RMSE":
+            return "rmse"
+        return None
+
 
 classification_params = {
     "learning_rate": [0.05, 0.1, 0.2],

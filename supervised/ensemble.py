@@ -98,7 +98,7 @@ class Ensemble:
         ensemble_oof["target"] = self.target
         if self.sample_weight is not None:
             ensemble_oof["sample_weight"] = self.sample_weight
-            
+
         self.oof_predictions = ensemble_oof
         return ensemble_oof
 

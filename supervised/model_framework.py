@@ -148,7 +148,7 @@ class ModelFramework:
                     validation_data["X"],
                     validation_data["y"],
                     validation_data.get("sample_weight"),
-                )                
+                )
 
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [
@@ -175,7 +175,7 @@ class ModelFramework:
                         sample_weight_validation,
                         log_to_file,
                     )
-                    
+
                     self.callbacks.on_iteration_end(
                         {"iter_cnt": i},
                         self.predictions(
@@ -221,7 +221,7 @@ class ModelFramework:
 
         # end of validation loop
         self.callbacks.on_framework_train_end()
-        #self.get_additional_metrics()
+        # self.get_additional_metrics()
         self._additional_metrics = self.get_additional_metrics()
 
         self.train_time = time.time() - start_time
@@ -387,9 +387,13 @@ class ModelFramework:
                 desc["threshold"] = self._threshold
             fout.write(json.dumps(desc, indent=4))
 
+        learning_curve_metric = self.learners[0].get_metric_name()
+        if learning_curve_metric is None:
+            learning_curve_metric = self.get_metric_name()
+
         LearningCurves.plot(
             [l.name for l in self.learners],
-            self.get_metric_name(),
+            learning_curve_metric,
             model_path,
             trees_in_iteration=self.additional_params.get("trees_in_step"),
         )

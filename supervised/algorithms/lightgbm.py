@@ -151,6 +151,20 @@ class LightgbmAlgorithm(BaseAlgorithm):
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
 
+    def get_metric_name(self):
+        metric = self.params.get("metric")
+        if metric is None:
+            return None
+        if metric == "binary_logloss":
+            return "logloss"
+        elif metric == "auc":
+            return "auc"
+        elif metric == "multi_logloss":
+            return "logloss"
+        elif metric == "rmse":
+            return "rmse"
+        return None
+
 
 lgbm_bin_params = {
     "objective": ["binary"],
