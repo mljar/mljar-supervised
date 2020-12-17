@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import time
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -70,6 +71,30 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
+    def _assess_iterations(self, X, y, eval_set):
+        # We limit the number of iterations to learn one instance of CatBoost
+        # in less than 3600 seconds
+        try:
+            model = copy.deepcopy(self.model)
+            model.set_params(iterations=1)
+            start_time = time.time()
+            model.fit(
+                X,
+                y,
+                cat_features=self.cat_features,
+                init_model=None if self.model.tree_count_ is None else self.model,
+                eval_set=eval_set,
+                early_stopping_rounds=self.early_stopping_rounds,
+                verbose_eval=False,
+            )        
+            elapsed_time = np.round(time.time() - start_time, 2)
+            new_rounds = int(min(self.rounds, 3600 / elapsed_time))
+            if new_rounds < 10:
+                new_rounds = 10
+            return new_rounds
+        except Exception as e:
+            return 1000
+
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
         if self.cat_features is None:
             self.cat_features = []
@@ -81,6 +106,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
         if X_validation is not None and y_validation is not None:
             eval_set = (X_validation, y_validation)
 
+        new_iterations =self._assess_iterations(X, y, eval_set)
+        self.model.set_params(iterations = new_iterations)
+        
         self.model.fit(
             X,
             y,
