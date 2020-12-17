@@ -96,6 +96,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return 1000
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
+        if self.model.tree_count_ is not None:
+            print("CatBoost model already fitted. Skip fit().")
+            return
+            
         if self.cat_features is None:
             self.cat_features = []
             for i in range(X.shape[1]):
