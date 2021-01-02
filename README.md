@@ -7,7 +7,7 @@
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/supervised.png" width="100%" />
+  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_overview_mljar.png" width="100%" />
 </p>
 
 ---
