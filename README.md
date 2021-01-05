@@ -22,10 +22,10 @@
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it-boom)
+ - [Atomatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-school-books)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
- - [Markdown Reports](https://github.com/mljar/mljar-supervised#markdown-reports)
  - [Installation](https://github.com/mljar/mljar-supervised#installation-package)
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
  - [License](https://github.com/mljar/mljar-supervised#license-necktie)
@@ -61,6 +61,32 @@ Of course, you can further customize the details of each `mode` to meet the requ
 - The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
 - There is automatic documnetation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics and charts. 
+
+# Automatic Documentation
+
+## The AutoML Report
+
+The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :throphy:.
+
+![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
+
+## The `Decision Tree` Report
+
+The example for `Decision Tree` summary with trees visualization. For classification tasks additional metrics are provided:
+- confusion matrix
+- threshold (optimized in the case of binary classification task)
+- F1 score
+- Accuracy
+- Precision, Recall, MCC
+
+![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
+
+## The `LightGBM` Report
+
+The example for `LightGBM` summary:
+
+![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
+
 
 ## Available Modes :books:
 
@@ -214,34 +240,6 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 # Documentation :books:
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
-
-If you need help: submit the issue or join our [Slack channel](https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/).
-
-# Markdown reports
-
-## The AutoML Report
-
-The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :throphy:.
-
-![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
-
-## The `Decision Tree` Report
-
-The example for `Decision Tree` summary with trees visualization. For classification tasks additional metrics are provided:
-- confusion matrix
-- threshold (optimized in the case of binary classification task)
-- F1 score
-- Accuracy
-- Precision, Recall, MCC
-
-![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
-
-## The `LightGBM` Report
-
-The example for `LightGBM` summary:
-
-![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
-
 
 # Installation :package: 
 
