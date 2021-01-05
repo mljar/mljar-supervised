@@ -1,4 +1,4 @@
-# Automated Machine Learning
+# MLJAR Automated Machine Learning
 
 [![Build Status](https://travis-ci.org/mljar/mljar-supervised.svg?branch=master)](https://travis-ci.org/mljar/mljar-supervised)
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
@@ -33,12 +33,12 @@
 
 ## Automated Machine Learning :rocket: 
 
-The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
+The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
 The `mljar-supervised` will help you with:
- - explaining and understanding your data,
- - trying many different machine learning models,
- - creating Markdown reports from analysis with details about all models,
+ - explaining and understanding your data (Automatic Exploratory Data Analysis),
+ - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
+ - creating Markdown reports from analysis with details about all models (Atomatic-Documentation),
  - saving, re-running and loading the analysis and ML models.
 
 It has three built-in modes of work:
@@ -50,17 +50,17 @@ Of course, you can further customize the details of each `mode` to meet the requ
 
 ## What's good in it? :boom:
 
-- It is using a many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
-- It can do features preprocessing, like: missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing (You won't believe how often it is needed!). For example, converting categorical target into numeric.
-- It can tune hyper-parameters with `not-so-random-search` algorithm (random-search over defined set of values) and hill climbing to fine-tune final models.
-- It can compute the `Baseline` for your data. So you will know if you need Machine Learning or not! You will know how good are your ML models comparing to the `Baseline`. The `Baseline` is computed based on prior class distribution for classification, and simple mean for regression.
-- This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
-- The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
+- It is using many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
 - It can compute Ensemble based on greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
 - It can stack models to build level 2 ensemble (available in `Compete` mode or after setting `stack_models` parameter).
+- It can do features preprocessing, like: missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing.
+- It can do advanced features engineering, like: [Golden Features](https://supervised.mljar.com/features/golden_features/), [Features Selection](https://supervised.mljar.com/features/features_selection/), Text and Time Transformations.
+- It can tune hyper-parameters with `not-so-random-search` algorithm (random-search over defined set of values) and hill climbing to fine-tune final models.
+- It can compute the `Baseline` for your data. That you will know if you need Machine Learning or not!
+- It has extensive explanations. This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
+- The `mljar-supervised` is using simple linear regression and include its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
-- `mljar-supervised` creates markdown reports from AutoML training full of ML details and charts. 
-- There is [Golden Features](https://supervised.mljar.com/features/golden_features/) algorithm available and [Features Selection](https://supervised.mljar.com/features/features_selection/) that can work with any ML algorithm.
+- There is automatic documnetation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics and charts. 
 
 ## Available Modes :books:
 
@@ -95,7 +95,7 @@ automl = AutoML(mode="Compete")
 ```
 
 It should be used for machine learning competitions.
- - It is using 10-fold CV. 
+ - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: train/test split (80/20), 5-fold CV or 10-fold CV. 
  - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network` and `Nearest Neighbors`. It uses ensemble and **stacking**. 
  - It has only learning curves in the reports.
 
