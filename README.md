@@ -16,14 +16,12 @@
 
 **Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
 
-**Community chat**: <a href="https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/" target="_blank">Slack channel</a>
-
 ---
 
 ## Table of Contents
 
- - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket-computer-bulb)
- - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it-eyes-cake-boom)
+ - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket)
+ - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it-boom)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-school-books)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
