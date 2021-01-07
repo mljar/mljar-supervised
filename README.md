@@ -66,7 +66,7 @@ Of course, you can further customize the details of each `mode` to meet the requ
 
 ## The AutoML Report
 
-The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :throphy:.
+The report from running AutoML will contain the table with infomation about each model score and time needed to train the model. For each model there is a link, which you can click to see model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :trophy:.
 
 ![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
 
