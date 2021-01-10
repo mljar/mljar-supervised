@@ -10,7 +10,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="mljar-supervised",
-    version="0.7.15",
+    version="0.7.16",
     description="Automates Machine Learning Pipeline with Feature Engineering and Hyper-Parameters Tuning",
     long_description=long_description,
     long_description_content_type="text/markdown",
