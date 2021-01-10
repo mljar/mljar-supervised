@@ -86,7 +86,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 eval_set=eval_set,
                 early_stopping_rounds=self.early_stopping_rounds,
                 verbose_eval=False,
-            )        
+            )
             elapsed_time = np.round(time.time() - start_time, 2)
             new_rounds = int(min(self.rounds, 3600 / elapsed_time))
             if new_rounds < 10:
@@ -99,7 +99,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         if self.model.tree_count_ is not None:
             print("CatBoost model already fitted. Skip fit().")
             return
-            
+
         if self.cat_features is None:
             self.cat_features = []
             for i in range(X.shape[1]):
@@ -110,9 +110,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
         if X_validation is not None and y_validation is not None:
             eval_set = (X_validation, y_validation)
 
-        new_iterations =self._assess_iterations(X, y, eval_set)
-        self.model.set_params(iterations = new_iterations)
-        
+        new_iterations = self._assess_iterations(X, y, eval_set)
+        self.model.set_params(iterations=new_iterations)
+
         self.model.fit(
             X,
             y,

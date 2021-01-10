@@ -35,4 +35,4 @@ class MetricTest(unittest.TestCase):
         y_true = np.array([0, 0, 1, 1])
         y_predicted = np.array([0, 0, 1, 1])
         score = m(y_true, y_predicted)
-        self.assertEqual(score, -1.0) # negative r2
+        self.assertEqual(score, -1.0)  # negative r2

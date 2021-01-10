@@ -109,8 +109,6 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
-        
-
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})

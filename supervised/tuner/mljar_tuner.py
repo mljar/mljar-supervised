@@ -117,9 +117,8 @@ class MljarTuner:
     def get_model_name(self, model_type, models_cnt, special=""):
         return f"{models_cnt}_" + special + model_type.replace(" ", "")
 
-
     def filter_random_feature_model(self, models):
-        return [m for m in models if "RandomFeature" not in m.get_name()]    
+        return [m for m in models if "RandomFeature" not in m.get_name()]
 
     def generate_params(self, step, models, results_path, stacked_models):
 
@@ -141,9 +140,13 @@ class MljarTuner:
         elif step == "insert_random_feature":
             return self.get_params_to_insert_random_feature(models)
         elif step == "features_selection":
-            return self.get_features_selection_params(self.filter_random_feature_model(models), results_path)
+            return self.get_features_selection_params(
+                self.filter_random_feature_model(models), results_path
+            )
         elif "hill_climbing" in step:
-            return self.get_hill_climbing_params(self.filter_random_feature_model(models))
+            return self.get_hill_climbing_params(
+                self.filter_random_feature_model(models)
+            )
         elif step == "ensemble":
             return [
                 {
@@ -374,6 +377,7 @@ class MljarTuner:
                     self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
 
+        """
         return_params = []
         for i in range(100):
             total = 0
@@ -395,6 +399,24 @@ class MljarTuner:
         if rest_params:
             np.random.shuffle(rest_params)
             return_params += rest_params
+        """
+        return_params = []
+        for i in range(100):
+            total = 0
+            for m in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost",
+                "Random Forest",
+                "Extra Trees",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]:
+                if generated_params[m]:
+                    return_params += [generated_params[m].pop(0)]
+                total += len(generated_params[m])
+            if total == 0:
+                break
 
         return return_params
 

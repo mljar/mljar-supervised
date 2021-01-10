@@ -35,6 +35,7 @@ def negative_auc(y_true, y_predicted):
     val = roc_auc_score(y_true, y_predicted)
     return -1.0 * val
 
+
 def negative_r2(y_true, y_predicted):
     val = r2_score(y_true, y_predicted)
     return -1.0 * val
@@ -54,7 +55,7 @@ class Metric(object):
             "rmse",
             "mae",
             "mse",
-            "r2" # negative r2
+            "r2",  # negative r2
         ]
         if self.name == "logloss":
             self.metric = logloss
