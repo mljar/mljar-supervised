@@ -9,6 +9,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import r2_score
 
 
 class MetricException(Exception):
@@ -34,6 +35,10 @@ def negative_auc(y_true, y_predicted):
     val = roc_auc_score(y_true, y_predicted)
     return -1.0 * val
 
+def negative_r2(y_true, y_predicted):
+    val = r2_score(y_true, y_predicted)
+    return -1.0 * val
+
 
 class Metric(object):
     def __init__(self, params):
@@ -49,6 +54,7 @@ class Metric(object):
             "rmse",
             "mae",
             "mse",
+            "r2" # negative r2
         ]
         if self.name == "logloss":
             self.metric = logloss
@@ -62,6 +68,8 @@ class Metric(object):
             self.metric = mean_squared_error
         elif self.name == "mae":
             self.metric = mean_absolute_error
+        elif self.name == "r2":
+            self.metric = negative_r2
         else:
             raise MetricException(f"Unknown metric '{self.name}'")
 

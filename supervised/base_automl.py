@@ -1469,6 +1469,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "rmse",
             "mse",
             "mae",
+            "r2"
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
