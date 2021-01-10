@@ -120,7 +120,9 @@ class MljarTuner:
     def filter_random_feature_model(self, models):
         return [m for m in models if "RandomFeature" not in m.get_name()]
 
-    def generate_params(self, step, models, results_path, stacked_models):
+    def generate_params(
+        self, step, models, results_path, stacked_models, total_time_limit
+    ):
 
         models_cnt = len(models)
         if step == "adjust_validation":
@@ -132,13 +134,13 @@ class MljarTuner:
         elif step == "not_so_random":
             return self.get_not_so_random_params(models_cnt)
         elif step == "all_ints_encoding":
-            return self.get_all_int_categorical_strategy(models)
+            return self.get_all_int_categorical_strategy(models, total_time_limit)
         elif step == "loo_encoding":
-            return self.get_loo_categorical_strategy(models)
+            return self.get_loo_categorical_strategy(models, total_time_limit)
         elif step == "golden_features":
-            return self.get_golden_features_params(models, results_path)
+            return self.get_golden_features_params(models, results_path, total_time_limit)
         elif step == "insert_random_feature":
-            return self.get_params_to_insert_random_feature(models)
+            return self.get_params_to_insert_random_feature(models, total_time_limit)
         elif step == "features_selection":
             return self.get_features_selection_params(
                 self.filter_random_feature_model(models), results_path
@@ -421,32 +423,16 @@ class MljarTuner:
         return return_params
 
     def get_hill_climbing_params(self, current_models):
-
-        # second, hill climbing
-        # for _ in range(self._hill_climbing_steps):
-        # just do one step
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
-        )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
-
+        df_models, algorithms = self.df_models_algorithms(current_models)
         generated_params = []
-        for m_type in unique_model_types:
+        for m_type in algorithms:
             if m_type in ["Baseline", "Decision Tree", "Linear", "Nearest Neighbors"]:
-                # dont tune Baseline and Decision Tree
+                # dont tune ...
                 continue
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(self._top_models_to_improve, len(models))):
-                m = models[i]
+                m = models.iloc[i]
 
                 for p in HillClimbing.get(
                     m.params.get("learner"),
@@ -486,33 +472,21 @@ class MljarTuner:
                             generated_params += [all_params]
         return generated_params
 
-    def get_all_int_categorical_strategy(self, current_models):
+    def get_all_int_categorical_strategy(self, current_models, total_time_limit):
         return self.get_categorical_strategy(
-            current_models, PreprocessingTuner.CATEGORICALS_ALL_INT
+            current_models, PreprocessingTuner.CATEGORICALS_ALL_INT, total_time_limit
         )
 
-    def get_loo_categorical_strategy(self, current_models):
+    def get_loo_categorical_strategy(self, current_models, total_time_limit):
         return self.get_categorical_strategy(
-            current_models, PreprocessingTuner.CATEGORICALS_LOO
+            current_models, PreprocessingTuner.CATEGORICALS_LOO, total_time_limit
         )
 
-    def get_categorical_strategy(self, current_models, strategy):
+    def get_categorical_strategy(self, current_models, strategy, total_time_limit):
 
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
-        )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
-
+        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.03*total_time_limit)
         generated_params = []
-        for m_type in unique_model_types:
+        for m_type in algorithms:
             # try to add categorical strategy only for below algorithms
             if m_type not in [
                 "Xgboost",
@@ -525,7 +499,7 @@ class MljarTuner:
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
+                m = models.iloc[i]
 
                 params = copy.deepcopy(m.params)
                 cols_preprocessing = params["preprocessing"]["columns_preprocessing"]
@@ -569,30 +543,43 @@ class MljarTuner:
                     generated_params += [params]
         return generated_params
 
-    def get_golden_features_params(self, current_models, results_path):
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
+    def df_models_algorithms(self, current_models, time_limit=None):
         scores = [m.get_final_loss() for m in current_models]
         model_types = [m.get_type() for m in current_models]
+        names = [m.get_name() for m in current_models]
+        train_times = [m.get_train_time() for m in current_models]
+        
         df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
+            {"model": current_models, "score": scores, "model_type": model_types, "name": names, "train_time": train_times}
         )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
+        if time_limit is not None:
+            df_models = df_models[df_models.train_time < time_limit]
+            df_models.reset_index(drop=True, inplace=True)
+
+        df_models.sort_values(by="score", ascending=True, inplace=True)
+        model_types = list(df_models.model_type)
+        u, idx = np.unique(model_types, return_index=True)
+        algorithms = u[np.argsort(idx)]
+        
+        #print(df_models)
+        #print(algorithms)
+        return df_models, algorithms
+
+
+    def get_golden_features_params(self, current_models, results_path, total_time_limit):
+
+        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.03*total_time_limit)
 
         generated_params = []
-        for m_type in unique_model_types:
+        for m_type in algorithms:
             # try to add golden features only for below algorithms
             if m_type not in ["Xgboost", "LightGBM", "CatBoost"]:
                 continue
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
-
+                m = models.iloc[i]
+    
                 params = copy.deepcopy(m.params)
                 params["preprocessing"]["golden_features"] = {
                     "results_path": results_path,
@@ -611,15 +598,49 @@ class MljarTuner:
                     generated_params += [params]
         return generated_params
 
-    def get_params_to_insert_random_feature(self, current_models):
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
-        )
-        df_models.sort_values(by="score", ascending=True, inplace=True)
+    def time_features_selection(self, current_models):
+        
+        df_models, algorithms = self.df_models_algorithms(current_models)        
+
+        time_needed = 0
+        for m_type in algorithms:
+
+            if m_type not in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost",
+                "Neural Network",
+                "Random Forest",
+                "Extra Trees",
+            ]:
+                continue
+            models = df_models[df_models.model_type == m_type]["model"]
+
+            for i in range(min(1, len(models))):
+                m = models.iloc[i]
+                if time_needed == 0:
+                    # best model will be used two times
+                    # one for insert random feature
+                    # one for selected features
+                    time_needed += 2.0 * m.get_train_time()
+                else:
+                    time_needed += m.get_train_time()
+                print(m.get_name(), m.get_final_loss(), time_needed)
+        print("Time needed for features selection ~", np.round(time_needed), "seconds")
+        return time_needed
+
+    def get_params_to_insert_random_feature(self, current_models, total_time_limit):
+
+        time_needed = self.time_features_selection(current_models)
+
+        if time_needed > 0.1 * total_time_limit:
+            print("Not enough time to perform features selection. Skip")
+            print(
+                f"Please increase total_time_limit to at least ({int(np.round(10.0*time_needed))+60} seconds) to have features selection"
+            )
+            return None
+
+        df_models, algorithms = self.df_models_algorithms(current_models)
 
         m = df_models.iloc[0]["model"]
 
@@ -653,22 +674,12 @@ class MljarTuner:
         # skip this step
         if len(drop_features) <= 1:
             return None
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
-        )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
+        
+        df_models, algorithms = self.df_models_algorithms(current_models)      
 
         generated_params = []
-        for m_type in unique_model_types:
-            # try to add golden features only for below algorithms
+        for m_type in algorithms:
+            # try to do features selection only for below algorithms
             if m_type not in [
                 "Xgboost",
                 "LightGBM",
@@ -681,7 +692,7 @@ class MljarTuner:
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
+                m = models.iloc[i]
 
                 params = copy.deepcopy(m.params)
                 params["preprocessing"]["drop_features"] = drop_features

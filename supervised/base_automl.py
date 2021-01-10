@@ -874,7 +874,11 @@ class BaseAutoML(BaseEstimator, ABC):
                     generated_params = self._all_params[step]
                 else:
                     generated_params = tuner.generate_params(
-                        step, self._models, self._results_path, self._stacked_models
+                        step,
+                        self._models,
+                        self._results_path,
+                        self._stacked_models,
+                        self._total_time_limit,
                     )
 
                 if generated_params is None or not generated_params:
