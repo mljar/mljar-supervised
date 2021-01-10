@@ -138,12 +138,14 @@ class MljarTuner:
         elif step == "loo_encoding":
             return self.get_loo_categorical_strategy(models, total_time_limit)
         elif step == "golden_features":
-            return self.get_golden_features_params(models, results_path, total_time_limit)
+            return self.get_golden_features_params(
+                models, results_path, total_time_limit
+            )
         elif step == "insert_random_feature":
             return self.get_params_to_insert_random_feature(models, total_time_limit)
         elif step == "features_selection":
             return self.get_features_selection_params(
-                self.filter_random_feature_model(models), results_path
+                self.filter_random_feature_model(models), results_path, total_time_limit
             )
         elif "hill_climbing" in step:
             return self.get_hill_climbing_params(
@@ -484,7 +486,9 @@ class MljarTuner:
 
     def get_categorical_strategy(self, current_models, strategy, total_time_limit):
 
-        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.03*total_time_limit)
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.03 * total_time_limit
+        )
         generated_params = []
         for m_type in algorithms:
             # try to add categorical strategy only for below algorithms
@@ -548,9 +552,15 @@ class MljarTuner:
         model_types = [m.get_type() for m in current_models]
         names = [m.get_name() for m in current_models]
         train_times = [m.get_train_time() for m in current_models]
-        
+
         df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types, "name": names, "train_time": train_times}
+            {
+                "model": current_models,
+                "score": scores,
+                "model_type": model_types,
+                "name": names,
+                "train_time": train_times,
+            }
         )
         if time_limit is not None:
             df_models = df_models[df_models.train_time < time_limit]
@@ -560,15 +570,18 @@ class MljarTuner:
         model_types = list(df_models.model_type)
         u, idx = np.unique(model_types, return_index=True)
         algorithms = u[np.argsort(idx)]
-        
-        #print(df_models)
-        #print(algorithms)
+
+        # print(df_models)
+        # print(algorithms)
         return df_models, algorithms
 
+    def get_golden_features_params(
+        self, current_models, results_path, total_time_limit
+    ):
 
-    def get_golden_features_params(self, current_models, results_path, total_time_limit):
-
-        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.03*total_time_limit)
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.03 * total_time_limit
+        )
 
         generated_params = []
         for m_type in algorithms:
@@ -579,7 +592,7 @@ class MljarTuner:
 
             for i in range(min(1, len(models))):
                 m = models.iloc[i]
-    
+
                 params = copy.deepcopy(m.params)
                 params["preprocessing"]["golden_features"] = {
                     "results_path": results_path,
@@ -598,9 +611,11 @@ class MljarTuner:
                     generated_params += [params]
         return generated_params
 
-    def time_features_selection(self, current_models):
-        
-        df_models, algorithms = self.df_models_algorithms(current_models)        
+    def time_features_selection(self, current_models, total_time_limit):
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
+        )
 
         time_needed = 0
         for m_type in algorithms:
@@ -631,7 +646,7 @@ class MljarTuner:
 
     def get_params_to_insert_random_feature(self, current_models, total_time_limit):
 
-        time_needed = self.time_features_selection(current_models)
+        time_needed = self.time_features_selection(current_models, total_time_limit)
 
         if time_needed > 0.1 * total_time_limit:
             print("Not enough time to perform features selection. Skip")
@@ -640,7 +655,9 @@ class MljarTuner:
             )
             return None
 
-        df_models, algorithms = self.df_models_algorithms(current_models)
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
+        )
 
         m = df_models.iloc[0]["model"]
 
@@ -660,7 +677,9 @@ class MljarTuner:
             return [params]
         return None
 
-    def get_features_selection_params(self, current_models, results_path):
+    def get_features_selection_params(
+        self, current_models, results_path, total_time_limit
+    ):
 
         fname = os.path.join(results_path, "drop_features.json")
         if not os.path.exists(fname):
@@ -674,8 +693,10 @@ class MljarTuner:
         # skip this step
         if len(drop_features) <= 1:
             return None
-        
-        df_models, algorithms = self.df_models_algorithms(current_models)      
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
+        )
 
         generated_params = []
         for m_type in algorithms:
