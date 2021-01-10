@@ -190,7 +190,7 @@ class BaseAutoML(BaseEstimator, ABC):
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
-    def get_leaderboard(self):
+    def get_leaderboard(self, filter_random_feature=False):
         ldb = {
             "name": [],
             "model_type": [],
@@ -199,6 +199,9 @@ class BaseAutoML(BaseEstimator, ABC):
             "train_time": [],
         }
         for m in self._models:
+            # filter model with random feature
+            if filter_random_feature and "RandomFeature" in m.get_name():
+                continue
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
             ldb["metric_type"] += [self._eval_metric]
@@ -367,7 +370,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._stacked_models is not None:
             return
 
-        ldb = self.get_leaderboard()
+        ldb = self.get_leaderboard(filter_random_feature=True)
         ldb = ldb.sort_values(by="metric_value", ascending=True)
 
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}

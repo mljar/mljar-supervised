@@ -117,6 +117,10 @@ class MljarTuner:
     def get_model_name(self, model_type, models_cnt, special=""):
         return f"{models_cnt}_" + special + model_type.replace(" ", "")
 
+
+    def filter_random_feature_model(self, models):
+        return [m for m in models if "RandomFeature" not in m.get_name()]    
+
     def generate_params(self, step, models, results_path, stacked_models):
 
         models_cnt = len(models)
@@ -137,9 +141,9 @@ class MljarTuner:
         elif step == "insert_random_feature":
             return self.get_params_to_insert_random_feature(models)
         elif step == "features_selection":
-            return self.get_features_selection_params(models, results_path)
+            return self.get_features_selection_params(self.filter_random_feature_model(models), results_path)
         elif "hill_climbing" in step:
-            return self.get_hill_climbing_params(models)
+            return self.get_hill_climbing_params(self.filter_random_feature_model(models))
         elif step == "ensemble":
             return [
                 {

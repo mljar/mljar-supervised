@@ -111,6 +111,10 @@ class Ensemble:
 
         oofs = {}
         for m in models:
+            # do not use model with RandomFeature
+            if "RandomFeature" in m.get_name():
+                continue
+
             # ensemble only the same level of stack
             # if m._is_stacked != self._is_stacked:
             #    continue
