@@ -640,8 +640,8 @@ class MljarTuner:
                     time_needed += 2.0 * m.get_train_time()
                 else:
                     time_needed += m.get_train_time()
-                print(m.get_name(), m.get_final_loss(), time_needed)
-        print("Time needed for features selection ~", np.round(time_needed), "seconds")
+                #print(m.get_name(), m.get_final_loss(), time_needed)
+        
         return time_needed
 
     def get_params_to_insert_random_feature(self, current_models, total_time_limit):
@@ -650,6 +650,7 @@ class MljarTuner:
 
         if time_needed > 0.1 * total_time_limit:
             print("Not enough time to perform features selection. Skip")
+            print("Time needed for features selection ~", np.round(time_needed), "seconds")
             print(
                 f"Please increase total_time_limit to at least ({int(np.round(10.0*time_needed))+60} seconds) to have features selection"
             )
@@ -658,6 +659,8 @@ class MljarTuner:
         df_models, algorithms = self.df_models_algorithms(
             current_models, time_limit=0.05 * total_time_limit
         )
+        if df_models.shape[0] == 0:
+            return None
 
         m = df_models.iloc[0]["model"]
 
