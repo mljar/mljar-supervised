@@ -142,10 +142,14 @@ class MljarTuner:
                     models, results_path, total_time_limit
                 )
             elif step == "insert_random_feature":
-                return self.get_params_to_insert_random_feature(models, total_time_limit)
+                return self.get_params_to_insert_random_feature(
+                    models, total_time_limit
+                )
             elif step == "features_selection":
                 return self.get_features_selection_params(
-                    self.filter_random_feature_model(models), results_path, total_time_limit
+                    self.filter_random_feature_model(models),
+                    results_path,
+                    total_time_limit,
                 )
             elif "hill_climbing" in step:
                 return self.get_hill_climbing_params(
@@ -429,51 +433,51 @@ class MljarTuner:
     def get_hill_climbing_params(self, current_models):
         df_models, algorithms = self.df_models_algorithms(current_models)
         generated_params = []
-        for m_type in algorithms:
-            if m_type in ["Baseline", "Decision Tree", "Linear", "Nearest Neighbors"]:
-                # dont tune ...
+        counts = {model_type: 0 for model_type in algorithms}
+
+        for i in range(df_models.shape[0]):
+
+            model_type = df_models["model_type"].iloc[i]
+            counts[model_type] += 1
+            if counts[model_type] > self._top_models_to_improve:
                 continue
-            models = df_models[df_models.model_type == m_type]["model"]
 
-            for i in range(min(self._top_models_to_improve, len(models))):
-                m = models.iloc[i]
+            m = df_models["model"].iloc[i]
 
-                for p in HillClimbing.get(
-                    m.params.get("learner"),
-                    self._ml_task,
-                    len(current_models) + self._seed,
-                ):
+            for p in HillClimbing.get(
+                m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+            ):
 
-                    model_indices = [
-                        int(m.get_name().split("_")[0]) for m in current_models
-                    ]
-                    model_max_index = np.max(model_indices)
+                model_indices = [
+                    int(m.get_name().split("_")[0]) for m in current_models
+                ]
+                model_max_index = np.max(model_indices)
 
-                    logger.info(
-                        "Hill climbing step, for model #{0}".format(model_max_index + 1)
+                logger.info(
+                    "Hill climbing step, for model #{0}".format(model_max_index + 1)
+                )
+                if p is not None:
+                    all_params = copy.deepcopy(m.params)
+                    all_params["learner"] = p
+
+                    all_params["name"] = self.get_model_name(
+                        all_params["learner"]["model_type"],
+                        model_max_index + 1 + len(generated_params),
                     )
-                    if p is not None:
-                        all_params = copy.deepcopy(m.params)
-                        all_params["learner"] = p
 
-                        all_params["name"] = self.get_model_name(
-                            all_params["learner"]["model_type"],
-                            model_max_index + 1 + len(generated_params),
-                        )
-
-                        if "golden_features" in all_params["preprocessing"]:
-                            all_params["name"] += "_GoldenFeatures"
-                        if "drop_features" in all_params["preprocessing"] and len(
-                            all_params["preprocessing"]["drop_features"]
-                        ):
-                            all_params["name"] += "_SelectedFeatures"
-                        all_params["status"] = "initialized"
-                        all_params["final_loss"] = None
-                        all_params["train_time"] = None
-                        unique_params_key = MljarTuner.get_params_key(all_params)
-                        if unique_params_key not in self._unique_params_keys:
-                            self._unique_params_keys += [unique_params_key]
-                            generated_params += [all_params]
+                    if "golden_features" in all_params["preprocessing"]:
+                        all_params["name"] += "_GoldenFeatures"
+                    if "drop_features" in all_params["preprocessing"] and len(
+                        all_params["preprocessing"]["drop_features"]
+                    ):
+                        all_params["name"] += "_SelectedFeatures"
+                    all_params["status"] = "initialized"
+                    all_params["final_loss"] = None
+                    all_params["train_time"] = None
+                    unique_params_key = MljarTuner.get_params_key(all_params)
+                    if unique_params_key not in self._unique_params_keys:
+                        self._unique_params_keys += [unique_params_key]
+                        generated_params += [all_params]
         return generated_params
 
     def get_all_int_categorical_strategy(self, current_models, total_time_limit):
@@ -520,13 +524,12 @@ class MljarTuner:
                 ].items():
                     new_preproc = []
                     convert_categorical = False
-                    
+
                     for p in preproc:
                         if "categorical" not in p:
                             new_preproc += [p]
                         else:
                             convert_categorical = True
-
 
                     col_data_info = self._data_info["columns_info"].get(col)
                     few_categories = False
@@ -540,9 +543,13 @@ class MljarTuner:
                             new_preproc += [PreprocessingCategorical.CONVERT_LOO]
                         elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
                             if few_categories:
-                                new_preproc += [PreprocessingCategorical.CONVERT_ONE_HOT]
+                                new_preproc += [
+                                    PreprocessingCategorical.CONVERT_ONE_HOT
+                                ]
                             else:
-                                new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
+                                new_preproc += [
+                                    PreprocessingCategorical.CONVERT_INTEGER
+                                ]
 
                     cols_preprocessing[col] = new_preproc
 
@@ -552,9 +559,9 @@ class MljarTuner:
                 for st in [
                     PreprocessingTuner.CATEGORICALS_LOO,
                     PreprocessingTuner.CATEGORICALS_ALL_INT,
-                    PreprocessingTuner.CATEGORICALS_MIX
+                    PreprocessingTuner.CATEGORICALS_MIX,
                 ]:
-                    params["name"] = params["name"].replace("_"+st, "")
+                    params["name"] = params["name"].replace("_" + st, "")
                 params["name"] += f"_{strategy}"
                 params["status"] = "initialized"
                 params["final_loss"] = None
@@ -660,8 +667,8 @@ class MljarTuner:
                     time_needed += 2.0 * m.get_train_time()
                 else:
                     time_needed += m.get_train_time()
-                #print(m.get_name(), m.get_final_loss(), time_needed)
-        
+                # print(m.get_name(), m.get_final_loss(), time_needed)
+
         return time_needed
 
     def get_params_to_insert_random_feature(self, current_models, total_time_limit):
@@ -670,7 +677,9 @@ class MljarTuner:
 
         if time_needed > 0.1 * total_time_limit:
             print("Not enough time to perform features selection. Skip")
-            print("Time needed for features selection ~", np.round(time_needed), "seconds")
+            print(
+                "Time needed for features selection ~", np.round(time_needed), "seconds"
+            )
             print(
                 f"Please increase total_time_limit to at least ({int(np.round(10.0*time_needed))+60} seconds) to have features selection"
             )
