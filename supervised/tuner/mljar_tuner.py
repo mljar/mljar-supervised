@@ -506,7 +506,7 @@ class MljarTuner:
             if m_type not in [
                 "Xgboost",
                 "LightGBM",
-                "Neural Network",
+                # "Neural Network",
                 # "Random Forest",
                 # "Extra Trees",
             ]:
