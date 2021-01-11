@@ -27,7 +27,7 @@ class PreprocessingUtils(object):
         data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
             data_type = PreprocessingUtils.CONTINOUS
-        elif col_type.startswith("int"):
+        elif col_type.startswith("int") or col_type.startswith("uint"):
             data_type = PreprocessingUtils.DISCRETE
         elif col_type.startswith("datetime"):
             data_type = PreprocessingUtils.DATETIME
