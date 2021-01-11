@@ -64,11 +64,11 @@ class MljarTuner:
 
         strategies = []
         for k, v in self._data_info["columns_info"].items():
-            if (
-                "categorical" in v
-                and PreprocessingTuner.CATEGORICALS_LOO not in strategies
-            ):
-                strategies += [PreprocessingTuner.CATEGORICALS_LOO]
+            #if (
+            #    "categorical" in v
+            #    and PreprocessingTuner.CATEGORICALS_LOO not in strategies
+            #):
+            #    strategies += [PreprocessingTuner.CATEGORICALS_LOO]
 
             if (
                 PreprocessingCategorical.FEW_CATEGORIES in v
@@ -76,7 +76,7 @@ class MljarTuner:
             ):
                 strategies += [PreprocessingTuner.CATEGORICALS_MIX]
 
-            if len(strategies) == 2:
+            if len(strategies) == 1: # disable loo encoding
                 # cant add more
                 # stop
                 break
