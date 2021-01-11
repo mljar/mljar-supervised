@@ -60,7 +60,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def fit(self, X, y, X_validation=None, y_validation=None, log_to_file=None):
 
-        lgb_train = lgb.Dataset(X, y)
+        lgb_train = lgb.Dataset(X.to_numpy() if isinstance(X, pd.DataFrame) else X, y)
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
                 self.learner_params,
@@ -73,7 +73,15 @@ class LightgbmAlgorithm(BaseAlgorithm):
             valid_names = None
             esr = None
             if X_validation is not None and y_validation is not None:
-                valid_sets = [lgb_train, lgb.Dataset(X_validation, y_validation)]
+                valid_sets = [
+                    lgb_train,
+                    lgb.Dataset(
+                        X_validation.to_numpy()
+                        if isinstance(X_validation, pd.DataFrame)
+                        else X_validation,
+                        y_validation,
+                    ),
+                ]
                 valid_names = ["train", "validation"]
                 esr = self.early_stopping_rounds
             evals_result = {}
@@ -102,7 +110,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def predict(self, X):
         self.reload()
-        return self.model.predict(X)
+        return self.model.predict(X.to_numpy() if isinstance(X, pd.DataFrame) else X)
 
     def copy(self):
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
