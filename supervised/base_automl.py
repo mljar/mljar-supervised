@@ -174,7 +174,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if os.path.exists(best_model_fname):
                 best_model_name = None
                 with open(best_model_fname, "r") as fin:
-                    best_model_name = fin.read()
+                    best_model_name = fin.read().rstrip()
                 self._best_model = models_map[best_model_name]
             else:
                 self._best_model = None

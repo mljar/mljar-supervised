@@ -18,7 +18,7 @@ class PreprocessingTuner:
         This class prepare configuration for data preprocessing
     """
 
-    CATEGORICALS_MIX_INT_ONE_HOT = "categorical_mix_integers_and_one_hot"
+    CATEGORICALS_MIX = "categorical_mix" # mix int and one-hot
     CATEGORICALS_ALL_INT = "categoricals_all_integers"
     CATEGORICALS_LOO = "categoricals_loo"
 
@@ -27,7 +27,7 @@ class PreprocessingTuner:
         required_preprocessing,
         data_info,
         machinelearning_task,
-        categorical_strategy=CATEGORICALS_MIX_INT_ONE_HOT,
+        categorical_strategy=CATEGORICALS_ALL_INT
     ):
 
         columns_preprocessing = {}
@@ -61,7 +61,7 @@ class PreprocessingTuner:
 
                 if (
                     categorical_strategy
-                    == PreprocessingTuner.CATEGORICALS_MIX_INT_ONE_HOT
+                    == PreprocessingTuner.CATEGORICALS_MIX
                 ):
                     if PreprocessingCategorical.MANY_CATEGORIES in preprocessing_needed:
                         preprocessing_to_apply += [

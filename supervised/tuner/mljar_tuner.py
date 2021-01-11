@@ -72,9 +72,9 @@ class MljarTuner:
 
             if (
                 PreprocessingCategorical.FEW_CATEGORIES in v
-                and PreprocessingTuner.CATEGORICALS_ALL_INT not in strategies
+                and PreprocessingTuner.CATEGORICALS_MIX not in strategies
             ):
-                strategies += [PreprocessingTuner.CATEGORICALS_ALL_INT]
+                strategies += [PreprocessingTuner.CATEGORICALS_MIX]
 
             if len(strategies) == 2:
                 # cant add more
@@ -94,8 +94,8 @@ class MljarTuner:
             all_steps += ["not_so_random"]
 
         categorical_strategies = self._apply_categorical_strategies()
-        if PreprocessingTuner.CATEGORICALS_ALL_INT in categorical_strategies:
-            all_steps += ["all_ints_encoding"]
+        if PreprocessingTuner.CATEGORICALS_MIX in categorical_strategies:
+            all_steps += ["mix_encoding"]
         if PreprocessingTuner.CATEGORICALS_LOO in categorical_strategies:
             all_steps += ["loo_encoding"]
 
@@ -123,70 +123,72 @@ class MljarTuner:
     def generate_params(
         self, step, models, results_path, stacked_models, total_time_limit
     ):
+        try:
+            models_cnt = len(models)
+            if step == "adjust_validation":
+                return self.adjust_validation_params(models_cnt)
+            elif step == "simple_algorithms":
+                return self.simple_algorithms_params(models_cnt)
+            elif step == "default_algorithms":
+                return self.default_params(models_cnt)
+            elif step == "not_so_random":
+                return self.get_not_so_random_params(models_cnt)
+            elif step == "mix_encoding":
+                return self.get_mix_categorical_strategy(models, total_time_limit)
+            elif step == "loo_encoding":
+                return self.get_loo_categorical_strategy(models, total_time_limit)
+            elif step == "golden_features":
+                return self.get_golden_features_params(
+                    models, results_path, total_time_limit
+                )
+            elif step == "insert_random_feature":
+                return self.get_params_to_insert_random_feature(models, total_time_limit)
+            elif step == "features_selection":
+                return self.get_features_selection_params(
+                    self.filter_random_feature_model(models), results_path, total_time_limit
+                )
+            elif "hill_climbing" in step:
+                return self.get_hill_climbing_params(
+                    self.filter_random_feature_model(models)
+                )
+            elif step == "ensemble":
+                return [
+                    {
+                        "model_type": "ensemble",
+                        "is_stacked": False,
+                        "name": "Ensemble",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                    }
+                ]
+            elif step == "stack":
+                return self.get_params_stack_models(stacked_models)
+            elif step == "ensemble_stacked":
 
-        models_cnt = len(models)
-        if step == "adjust_validation":
-            return self.adjust_validation_params(models_cnt)
-        elif step == "simple_algorithms":
-            return self.simple_algorithms_params(models_cnt)
-        elif step == "default_algorithms":
-            return self.default_params(models_cnt)
-        elif step == "not_so_random":
-            return self.get_not_so_random_params(models_cnt)
-        elif step == "all_ints_encoding":
-            return self.get_all_int_categorical_strategy(models, total_time_limit)
-        elif step == "loo_encoding":
-            return self.get_loo_categorical_strategy(models, total_time_limit)
-        elif step == "golden_features":
-            return self.get_golden_features_params(
-                models, results_path, total_time_limit
-            )
-        elif step == "insert_random_feature":
-            return self.get_params_to_insert_random_feature(models, total_time_limit)
-        elif step == "features_selection":
-            return self.get_features_selection_params(
-                self.filter_random_feature_model(models), results_path, total_time_limit
-            )
-        elif "hill_climbing" in step:
-            return self.get_hill_climbing_params(
-                self.filter_random_feature_model(models)
-            )
-        elif step == "ensemble":
-            return [
-                {
-                    "model_type": "ensemble",
-                    "is_stacked": False,
-                    "name": "Ensemble",
-                    "status": "initialized",
-                    "final_loss": None,
-                    "train_time": None,
-                }
-            ]
-        elif step == "stack":
-            return self.get_params_stack_models(stacked_models)
-        elif step == "ensemble_stacked":
+                # do we have stacked models?
+                any_stacked = False
+                for m in models:
+                    if m._is_stacked:
+                        any_stacked = True
+                if not any_stacked:
+                    return []
 
-            # do we have stacked models?
-            any_stacked = False
-            for m in models:
-                if m._is_stacked:
-                    any_stacked = True
-            if not any_stacked:
-                return []
+                return [
+                    {
+                        "model_type": "ensemble",
+                        "is_stacked": True,
+                        "name": "Ensemble_Stacked",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                    }
+                ]
 
-            return [
-                {
-                    "model_type": "ensemble",
-                    "is_stacked": True,
-                    "name": "Ensemble_Stacked",
-                    "status": "initialized",
-                    "final_loss": None,
-                    "train_time": None,
-                }
-            ]
-
-        # didnt find anything matching the step, return empty array
-        return []
+            # didnt find anything matching the step, return empty array
+            return []
+        except Exception as e:
+            return []
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -479,6 +481,11 @@ class MljarTuner:
             current_models, PreprocessingTuner.CATEGORICALS_ALL_INT, total_time_limit
         )
 
+    def get_mix_categorical_strategy(self, current_models, total_time_limit):
+        return self.get_categorical_strategy(
+            current_models, PreprocessingTuner.CATEGORICALS_MIX, total_time_limit
+        )
+
     def get_loo_categorical_strategy(self, current_models, total_time_limit):
         return self.get_categorical_strategy(
             current_models, PreprocessingTuner.CATEGORICALS_LOO, total_time_limit
@@ -513,17 +520,29 @@ class MljarTuner:
                 ].items():
                     new_preproc = []
                     convert_categorical = False
+                    
                     for p in preproc:
                         if "categorical" not in p:
                             new_preproc += [p]
                         else:
                             convert_categorical = True
 
+
+                    col_data_info = self._data_info["columns_info"].get(col)
+                    few_categories = False
+                    if col_data_info is not None and "few_categories" in col_data_info:
+                        few_categories = True
+
                     if convert_categorical:
                         if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
                             new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
                         elif strategy == PreprocessingTuner.CATEGORICALS_LOO:
                             new_preproc += [PreprocessingCategorical.CONVERT_LOO]
+                        elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
+                            if few_categories:
+                                new_preproc += [PreprocessingCategorical.CONVERT_ONE_HOT]
+                            else:
+                                new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
 
                     cols_preprocessing[col] = new_preproc
 
@@ -533,8 +552,9 @@ class MljarTuner:
                 for st in [
                     PreprocessingTuner.CATEGORICALS_LOO,
                     PreprocessingTuner.CATEGORICALS_ALL_INT,
+                    PreprocessingTuner.CATEGORICALS_MIX
                 ]:
-                    params["name"] = params["name"].replace(st, "")
+                    params["name"] = params["name"].replace("_"+st, "")
                 params["name"] += f"_{strategy}"
                 params["status"] = "initialized"
                 params["final_loss"] = None
