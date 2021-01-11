@@ -52,7 +52,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "depth": self.params.get("depth", 3),
             "min_data_in_leaf": self.params.get("min_data_in_leaf", 1),
             "rsm": self.params.get("rsm", 1.0),
-            "subsample": self.params.get("subsample", 1.0),
             "random_seed": self.params.get("seed", 1),
             "loss_function": loss_function,
         }
@@ -189,7 +188,6 @@ classification_params = {
     "learning_rate": [0.05, 0.1, 0.2],
     "depth": [2, 3, 4, 5, 6],
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
-    "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
     "min_data_in_leaf": [1, 5, 10, 15, 20, 30, 50],
     "loss_function": ["Logloss"],
 }
@@ -198,7 +196,6 @@ classification_default_params = {
     "learning_rate": 0.1,
     "depth": 6,
     "rsm": 0.9,
-    "subsample": 1.0,
     "min_data_in_leaf": 15,
     "loss_function": "Logloss",
 }
@@ -256,7 +253,6 @@ regression_default_params = {
     "learning_rate": 0.1,
     "depth": 6,
     "rsm": 0.9,
-    "subsample": 1.0,
     "min_data_in_leaf": 15,
     "loss_function": "RMSE",
 }
