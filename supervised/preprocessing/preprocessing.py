@@ -260,6 +260,9 @@ class Preprocessing(object):
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols
 
+        if X_train is not None:
+            X_train.clip(lower=np.finfo(np.float32).min+1000, upper=np.finfo(np.float32).max-1000, inplace=True)
+
         return X_train, y_train
 
     def transform(self, X_validation, y_validation):
@@ -370,6 +373,9 @@ class Preprocessing(object):
 
         if self._drop_features and X_validation is not None:
             X_validation.drop(self._drop_features, axis=1, inplace=True)
+
+        if X_validation is not None:
+            X_validation.clip(lower=np.finfo(np.float32).min+1000, upper=np.finfo(np.float32).max-1000, inplace=True)
 
         return X_validation, y_validation
 
