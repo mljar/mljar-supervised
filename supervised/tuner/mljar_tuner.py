@@ -804,9 +804,9 @@ class MljarTuner:
     def get_params_key(params):
         key = "key_"
         for main_key in ["preprocessing", "learner"]:
-            key += main_key
-            for k, v in params[main_key].items():
+            key += "_" + main_key
+            for k in sorted(params[main_key]):
                 if k == "seed":
                     continue
-                key += "_{}_{}".format(k, v)
+                key += "_{}_{}".format(k, params[main_key][k])
         return key
