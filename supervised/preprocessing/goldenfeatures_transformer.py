@@ -91,7 +91,7 @@ def get_score(item):
     except Exception as e:
         sum_score = None
         print(str(e))
-    
+
     try:
         x_train = np.array(X_train[col1] * X_train[col2]).reshape(-1, 1)
         x_test = np.array(X_test[col1] * X_test[col2]).reshape(-1, 1)
@@ -179,7 +179,7 @@ class GoldenFeaturesTransformer(object):
         )
         df.sort_values(by="score", inplace=True)
 
-        new_cols_cnt = np.min([50, np.max([5, int(0.05 * X.shape[1])])])
+        new_cols_cnt = np.min([100, np.max([10, int(0.1 * X.shape[1])])])
 
         self._new_features = json.loads(df.head(new_cols_cnt).to_json(orient="records"))
 
@@ -216,12 +216,14 @@ class GoldenFeaturesTransformer(object):
                     np.array(X[new_feature["feature1"]], dtype=float),
                     np.array(X[new_feature["feature2"]], dtype=float),
                 )
-                X[new_col] = np.divide(a, b, out=np.zeros_like(a), where=b != 0).reshape(-1, 1)
+                X[new_col] = np.divide(
+                    a, b, out=np.zeros_like(a), where=b != 0
+                ).reshape(-1, 1)
             elif new_feature["operation"] == "sum":
                 X[new_col] = X[new_feature["feature1"]] + X[new_feature["feature2"]]
             elif new_feature["operation"] == "multiply":
                 X[new_col] = X[new_feature["feature1"]] * X[new_feature["feature2"]]
-            
+
         return X
 
     def to_json(self):
@@ -252,17 +254,22 @@ class GoldenFeaturesTransformer(object):
 
     def _subsample(self, X, y):
 
-        MAX_SIZE = 5000
+        MAX_SIZE = 10000
         TRAIN_SIZE = 2500
 
         shuffle = True
         stratify = None
 
-        if X.shape[0] > 5000:
+        if X.shape[0] > MAX_SIZE:
             if self._ml_task != REGRESSION:
                 stratify = y
             X_train, _, y_train, _ = train_test_split(
-                X, y, train_size=MAX_SIZE, shuffle=shuffle, stratify=stratify
+                X,
+                y,
+                train_size=MAX_SIZE,
+                shuffle=shuffle,
+                stratify=stratify,
+                random_state=1,
             )
             if self._ml_task != REGRESSION:
                 stratify = y_train
@@ -273,13 +280,19 @@ class GoldenFeaturesTransformer(object):
                 train_size=TRAIN_SIZE,
                 shuffle=shuffle,
                 stratify=stratify,
+                random_state=1,
             )
         else:
             if self._ml_task != REGRESSION:
                 stratify = y
-            train_size = X.shape[0] // 2
+            train_size = X.shape[0] // 4
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, train_size=train_size, shuffle=shuffle, stratify=stratify
+                X,
+                y,
+                train_size=train_size,
+                shuffle=shuffle,
+                stratify=stratify,
+                random_state=1,
             )
 
         return X_train, X_test, y_train, y_test
