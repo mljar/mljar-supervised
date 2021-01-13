@@ -611,31 +611,26 @@ class MljarTuner:
         )
 
         generated_params = []
-        for m_type in algorithms:
-            # try to add golden features only for below algorithms
-            if m_type not in ["Xgboost", "LightGBM", "CatBoost"]:
-                continue
-            models = df_models[df_models.model_type == m_type]["model"]
+        for i in range(min(5, df_models.shape[0])):    
+            m = df_models["model"].iloc[i]
+            print("golden features", m.get_name())
 
-            for i in range(min(1, len(models))):
-                m = models.iloc[i]
+            params = copy.deepcopy(m.params)
+            params["preprocessing"]["golden_features"] = {
+                "results_path": results_path,
+                "ml_task": self._ml_task,
+            }
+            params["name"] += "_GoldenFeatures"
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
 
-                params = copy.deepcopy(m.params)
-                params["preprocessing"]["golden_features"] = {
-                    "results_path": results_path,
-                    "ml_task": self._ml_task,
-                }
-                params["name"] += "_GoldenFeatures"
-                params["status"] = "initialized"
-                params["final_loss"] = None
-                params["train_time"] = None
-
-                if "model_architecture_json" in params["learner"]:
-                    del params["learner"]["model_architecture_json"]
-                unique_params_key = MljarTuner.get_params_key(params)
-                if unique_params_key not in self._unique_params_keys:
-                    self._unique_params_keys += [unique_params_key]
-                    generated_params += [params]
+            if "model_architecture_json" in params["learner"]:
+                del params["learner"]["model_architecture_json"]
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key not in self._unique_params_keys:
+                self._unique_params_keys += [unique_params_key]
+                generated_params += [params]
         return generated_params
 
     def time_features_selection(self, current_models, total_time_limit):
