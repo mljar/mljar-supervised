@@ -184,15 +184,15 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
 classification_params = {
     "learning_rate": [0.05, 0.1, 0.2],
-    "depth": [2, 3, 4, 5, 6],
+    "depth": [4, 5, 6, 7, 8, 9],
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
     "loss_function": ["Logloss"],
 }
 
 classification_default_params = {
-    "learning_rate": 0.1,
+    "learning_rate": 0.05,
     "depth": 6,
-    "rsm": 0.9,
+    "rsm": 1,
     "loss_function": "Logloss",
 }
 
@@ -235,7 +235,7 @@ AlgorithmsRegistry.add(
 )
 
 regression_params = copy.deepcopy(classification_params)
-regression_params["loss_function"] = ["RMSE"]
+regression_params["loss_function"] = ["RMSE", "MAE"]
 
 regression_required_preprocessing = [
     "missing_values_inputation",
@@ -246,9 +246,9 @@ regression_required_preprocessing = [
 
 
 regression_default_params = {
-    "learning_rate": 0.1,
+    "learning_rate": 0.05,
     "depth": 6,
-    "rsm": 0.9,
+    "rsm": 1,
     "loss_function": "RMSE",
 }
 
