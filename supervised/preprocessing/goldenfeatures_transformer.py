@@ -84,7 +84,23 @@ def get_score(item):
         print(str(e))
         ratio_2_score = None
 
-    return (diff_score, ratio_1_score, ratio_2_score)
+    try:
+        x_train = np.array(X_train[col1] + X_train[col2]).reshape(-1, 1)
+        x_test = np.array(X_test[col1] + X_test[col2]).reshape(-1, 1)
+        sum_score = scorer(x_train, y_train, x_test, y_test)
+    except Exception as e:
+        sum_score = None
+        print(str(e))
+    
+    try:
+        x_train = np.array(X_train[col1] * X_train[col2]).reshape(-1, 1)
+        x_test = np.array(X_test[col1] * X_test[col2]).reshape(-1, 1)
+        multiply_score = scorer(x_train, y_train, x_test, y_test)
+    except Exception as e:
+        multiply_score = None
+        print(str(e))
+
+    return (diff_score, ratio_1_score, ratio_2_score, sum_score, multiply_score)
 
 
 class GoldenFeaturesTransformer(object):
@@ -153,6 +169,10 @@ class GoldenFeaturesTransformer(object):
                 result += [(items[i][0], items[i][1], "ratio", scores[i][1])]
             if scores[i][2] is not None:
                 result += [(items[i][1], items[i][0], "ratio", scores[i][2])]
+            if scores[i][3] is not None:
+                result += [(items[i][1], items[i][0], "sum", scores[i][3])]
+            if scores[i][4] is not None:
+                result += [(items[i][1], items[i][0], "multiply", scores[i][4])]
 
         df = pd.DataFrame(
             result, columns=["feature1", "feature2", "operation", "score"]
@@ -189,8 +209,19 @@ class GoldenFeaturesTransformer(object):
                     new_feature["feature2"],
                 ]
             )
-            X[new_col] = X[new_feature["feature1"]] - X[new_feature["feature2"]]
-
+            if new_feature["operation"] == "diff":
+                X[new_col] = X[new_feature["feature1"]] - X[new_feature["feature2"]]
+            elif new_feature["operation"] == "ratio":
+                a, b = (
+                    np.array(X[new_feature["feature1"]], dtype=float),
+                    np.array(X[new_feature["feature2"]], dtype=float),
+                )
+                X[new_col] = np.divide(a, b, out=np.zeros_like(a), where=b != 0).reshape(-1, 1)
+            elif new_feature["operation"] == "sum":
+                X[new_col] = X[new_feature["feature1"]] + X[new_feature["feature2"]]
+            elif new_feature["operation"] == "multiply":
+                X[new_col] = X[new_feature["feature1"]] * X[new_feature["feature2"]]
+            
         return X
 
     def to_json(self):
