@@ -1584,3 +1584,42 @@ class BaseAutoML(BaseEstimator, ABC):
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
+
+
+    def _md_to_html(self, md_fname):
+        import markdown
+        if not os.path.exists(md_fname):
+            return None
+        content = ""
+        with open(md_fname) as fin:
+            content = fin.read()
+
+        content = content.replace("README.md", "README.html")
+        content_html = markdown.markdown(content, extensions=["markdown.extensions.tables"])
+        content_html = content_html.replace("<img ", '<img style="width:80%" ')
+        content_html = content_html.replace("<table>", '<table class="dataframe" border="1">')
+        content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
+
+        html_fname = md_fname.replace("README.md", "README.html")
+        with open(html_fname, "w") as fout:
+            fout.write(content_html)
+        
+        return html_fname
+
+    def _report(self, width=900, height=1200):
+        print("Report from", self._results_path)
+        
+        from IPython.display import IFrame
+
+        main_readme_html = os.path.join(self._results_path, "README.html")
+        if not os.path.exists(main_readme_html):
+            fname = os.path.join(self._results_path, "README.md")
+            main_readme_html = self._md_to_html(fname)
+            for f in os.listdir(self._results_path):
+                fname = os.path.join(self._results_path, f, "README.md")
+                if os.path.exists(fname):
+                    self._md_to_html(fname)
+
+        
+        if main_readme_html is not None:
+            return IFrame(main_readme_html, width, height)
