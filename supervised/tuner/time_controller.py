@@ -61,7 +61,7 @@ class TimeController:
     def time_should_use(self, fit_level):
 
         ratios = {
-            "not_so_random": 0.035,
+            "not_so_random": 0.35,
             "mix_encoding": 0.05,
             "golden_features": 0.1,
             "insert_random_feature": 0.05,
@@ -123,8 +123,9 @@ class TimeController:
         
             if fit_level == step:
                 break
-        if fit_level == "stack":
-            compound -= 120 # leave time for ensemble
+        #if fit_level == "stack":
+        #    compound -= 120 # leave time for ensemble
+        # maybe not needed
         return compound
 
     def enough_time_for_step(self, fit_level):
