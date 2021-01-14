@@ -361,6 +361,5 @@ class AutoML(BaseAutoML):
         """
         return self._score(X, y)
 
-
     def report(self, width=900, height=1200):
         return self._report(width, height)

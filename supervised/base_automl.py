@@ -1585,9 +1585,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._ml_task = json_data.get("ml_task")
 
-
-    def _md_to_html(self, md_fname):
+    def _md_to_html(self, md_fname, page_type):
         import markdown
+
         if not os.path.exists(md_fname):
             return None
         content = ""
@@ -1595,31 +1595,80 @@ class BaseAutoML(BaseEstimator, ABC):
             content = fin.read()
 
         content = content.replace("README.md", "README.html")
-        content_html = markdown.markdown(content, extensions=["markdown.extensions.tables"])
+        content_html = markdown.markdown(
+            content, extensions=["markdown.extensions.tables"]
+        )
         content_html = content_html.replace("<img ", '<img style="width:80%" ')
-        content_html = content_html.replace("<table>", '<table class="dataframe" border="1">')
+        content_html = content_html.replace("<table>", '<table class="styled-table">')
         content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
+
+        styles = '<link rel="stylesheet" href="table_style.css">\n\n'
+        if page_type == "sub":
+            styles = '<link rel="stylesheet" href="../table_style.css">\n\n'
+        beginning = styles 
+
+        if page_type == "main":
+            beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
+margin-right: auto;display: block;"/>\n\n"""
+
+        content_html = beginning + content_html
 
         html_fname = md_fname.replace("README.md", "README.html")
         with open(html_fname, "w") as fout:
             fout.write(content_html)
-        
+
         return html_fname
 
     def _report(self, width=900, height=1200):
         print("Report from", self._results_path)
-        
+
         from IPython.display import IFrame
 
         main_readme_html = os.path.join(self._results_path, "README.html")
         if not os.path.exists(main_readme_html):
             fname = os.path.join(self._results_path, "README.md")
-            main_readme_html = self._md_to_html(fname)
+            main_readme_html = self._md_to_html(fname, "main")
             for f in os.listdir(self._results_path):
                 fname = os.path.join(self._results_path, f, "README.md")
                 if os.path.exists(fname):
-                    self._md_to_html(fname)
+                    self._md_to_html(fname, "sub")
+            with open(os.path.join(self._results_path, "table_style.css"), "w") as fout:
+                fout.write(
+                    """
+.styled-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+}
+.styled-table thead tr {
+    background-color: #0099cc;
+    color: #ffffff;
+    text-align: left;
+}
+.styled-table th,
+.styled-table td {
+    padding: 8px 10px;
+}
+.styled-table tbody tr {
+    border-bottom: 1px solid #dddddd;
+}
 
-        
+.styled-table tbody tr:nth-of-type(even) {
+    background-color: #e0ecf5;
+}
+
+.styled-table tbody tr:last-of-type {
+    border-bottom: 2px solid #0099cc;
+}
+.styled-table tbody tr.active-row {
+    font-weight: bold;
+    color: #0099cc;
+}
+"""
+                )
+
         if main_readme_html is not None:
             return IFrame(main_readme_html, width, height)

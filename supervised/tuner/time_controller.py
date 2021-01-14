@@ -57,7 +57,6 @@ class TimeController:
     def already_spend(self):
         return np.sum([s["train_time"] for s in self._spend])
 
-
     def time_should_use(self, fit_level):
 
         ratios = {
@@ -87,11 +86,11 @@ class TimeController:
             for k, v in ratios.items():
                 if k in self._steps:
                     ratio += v
-            
+
             fl = fit_level
             if "hill_climbing" in fit_level:
                 fl = "hill_climbing_1"
-            
+
             ratio = ratios[fl] / ratio
 
             if "hill_climbing" in fit_level:
@@ -102,7 +101,7 @@ class TimeController:
                 ratio /= float(hill_climbing_cnt)
 
             should_use = self._total_time_limit * ratio
-            
+
             return should_use
 
         return 0
@@ -120,19 +119,19 @@ class TimeController:
                 continue
             time_should_use = self.time_should_use(step)
             compound += time_should_use
-        
+
             if fit_level == step:
                 break
-        #if fit_level == "stack":
+        # if fit_level == "stack":
         #    compound -= 120 # leave time for ensemble
         # maybe not needed
         return compound
 
     def enough_time_for_step(self, fit_level):
-        
+
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
-        
+
         if total_time_spend > compound:
             # dont train more
             return False
