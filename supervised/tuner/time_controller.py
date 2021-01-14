@@ -123,6 +123,8 @@ class TimeController:
         
             if fit_level == step:
                 break
+        if fit_level == "stack":
+            compound -= 120 # leave time for ensemble
         return compound
 
     def enough_time_for_step(self, fit_level):
