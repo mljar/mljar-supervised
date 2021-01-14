@@ -611,7 +611,7 @@ class MljarTuner:
         )
 
         generated_params = []
-        for i in range(min(5, df_models.shape[0])):    
+        for i in range(min(5, df_models.shape[0])):
             m = df_models["model"].iloc[i]
             print("golden features", m.get_name())
 

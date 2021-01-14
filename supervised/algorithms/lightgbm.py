@@ -149,7 +149,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 lgbm_bin_params = {
     "objective": ["binary"],
     "metric": ["binary_logloss", "auc"],
-    "num_leaves": [15, 31, 63, 95, 127], 
+    "num_leaves": [15, 31, 63, 95, 127],
     "learning_rate": [0.05, 0.1, 0.2],
     "feature_fraction": [0.5, 0.8, 0.9, 1.0],
     "bagging_fraction": [0.5, 0.8, 0.9, 1.0],

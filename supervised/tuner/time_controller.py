@@ -57,72 +57,82 @@ class TimeController:
     def already_spend(self):
         return np.sum([s["train_time"] for s in self._spend])
 
+
     def time_should_use(self, fit_level):
 
-        if fit_level == "not_so_random":
+        ratios = {
+            "not_so_random": 0.035,
+            "mix_encoding": 0.05,
+            "golden_features": 0.1,
+            "insert_random_feature": 0.05,
+            "features_selection": 0.05,
+            "hill_climbing_1": 0.2,  # enough to have only first
+            "stack": 0.2,
+        }
 
-            time_should_use = (
-                self._total_time_limit
-                - self.step_spend("simple_algorithms")
-                - self.step_spend("default_algorithms")
-            )
-            if self._is_stacking:
-                time_should_use *= 0.66  # leave time for stacking
-            if self._is_hill_climbing:
-                time_should_use *= 0.5  # leave time for hill-climbing
-            return time_should_use
+        if (
+            fit_level
+            in [
+                "not_so_random",
+                "mix_encoding",
+                "golden_features",
+                "insert_random_feature",
+                "features_selection",
+                "stack",
+            ]
+            or "hill_climbing" in fit_level
+        ):
 
-        if "hill_climbing" in fit_level or fit_level in [
-            "golden_features",
-            "insert_random_feature",
-            "features_selection",
-        ]:
+            ratio = 0
+            for k, v in ratios.items():
+                if k in self._steps:
+                    ratio += v
+            
+            fl = fit_level
+            if "hill_climbing" in fit_level:
+                fl = "hill_climbing_1"
+            
+            ratio = ratios[fl] / ratio
 
-            time_should_use = (
-                self._total_time_limit
-                - self.step_spend("simple_algorithms")
-                - self.step_spend("default_algorithms")
-                - self.step_spend("not_so_random")
-            )
-            if self._is_stacking:
-                time_should_use *= 0.5  # leave time for stacking
-            return time_should_use
+            if "hill_climbing" in fit_level:
+                # print("before hill climbing scale", ratio)
+                hill_climbing_cnt = len(
+                    [i for i in self._steps if "hill_climbing" in i]
+                )
+                ratio /= float(hill_climbing_cnt)
 
-        return self._total_time_limit
+            should_use = self._total_time_limit * ratio
+            
+            return should_use
+
+        return 0
+
+    def compound_time_should_use(self, fit_level):
+        compound = 0
+        for step in self._steps:
+            if step in [
+                "adjust_validation",
+                "simple_algorithms",
+                "default_algorithms",
+                "ensemble",
+                "ensemble_stacked",
+            ]:
+                continue
+            time_should_use = self.time_should_use(step)
+            compound += time_should_use
+        
+            if fit_level == step:
+                break
+        return compound
 
     def enough_time_for_step(self, fit_level):
-
+        
         total_time_spend = time.time() - self._start_time
-        if fit_level == "not_so_random":
-
-            time_should_use = self.time_should_use(fit_level)
-
-            # print("not_so_random should use", time_should_use)
-            # print(total_time_spend)
-            # print(
-            #    self.step_spend("simple_algorithms")
-            #    + self.step_spend("default_algorithms")
-            # )
-
-            if total_time_spend > time_should_use + self.step_spend(
-                "simple_algorithms"
-            ) + self.step_spend("default_algorithms"):
-                return False
-
-        if "hill_climbing" in fit_level or fit_level in [
-            "golden_features",
-            "insert_random_feature",
-            "features_selection",
-        ]:
-
-            time_should_use = self.time_should_use(fit_level)
-
-            if total_time_spend > time_should_use + self.step_spend(
-                "simple_algorithms"
-            ) + self.step_spend("default_algorithms") + self.step_spend(
-                "not_so_random"
-            ):
-                return False
+        compound = self.compound_time_should_use(fit_level)
+        
+        if total_time_spend > compound:
+            # dont train more
+            return False
 
         return True
 
