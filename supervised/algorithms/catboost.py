@@ -92,7 +92,16 @@ class CatBoostAlgorithm(BaseAlgorithm):
         except Exception as e:
             return 1000
 
-    def fit(self, X, y, X_validation=None, y_validation=None, sample_weight_validation=None, log_to_file=None):
+    def fit(
+        self,
+        X,
+        y,
+        sample_weight=None,
+        X_validation=None,
+        y_validation=None,
+        sample_weight_validation=None,
+        log_to_file=None,
+    ):
         if self.model.tree_count_ is not None:
             print("CatBoost model already fitted. Skip fit().")
             return

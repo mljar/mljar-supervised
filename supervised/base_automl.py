@@ -1042,7 +1042,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 ldb.name == self._best_model.get_name(), "Best model"
             ] = "**the best**"
             ldb["name"] = [f"[{m}]({m}/README.md)" for m in ldb["name"].values]
-            
+
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
@@ -1639,7 +1639,7 @@ class BaseAutoML(BaseEstimator, ABC):
         styles = '<link rel="stylesheet" href="style.css">\n\n'
         if page_type == "sub":
             styles = '<link rel="stylesheet" href="../style.css">\n\n'
-        beginning = styles 
+        beginning = styles
 
         if page_type == "main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;

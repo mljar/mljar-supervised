@@ -68,7 +68,9 @@ class LightgbmAlgorithm(BaseAlgorithm):
         sample_weight_validation=None,
         log_to_file=None,
     ):
-        lgb_train = lgb.Dataset(X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight)
+        lgb_train = lgb.Dataset(
+            X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight
+        )
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
                 self.learner_params,
@@ -88,7 +90,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                         if isinstance(X_validation, pd.DataFrame)
                         else X_validation,
                         y_validation,
-                        weight=sample_weight_validation
+                        weight=sample_weight_validation,
                     ),
                 ]
                 valid_names = ["train", "validation"]
