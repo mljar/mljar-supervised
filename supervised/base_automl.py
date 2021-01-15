@@ -1602,14 +1602,16 @@ class BaseAutoML(BaseEstimator, ABC):
         content_html = content_html.replace("<table>", '<table class="styled-table">')
         content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
 
-        styles = '<link rel="stylesheet" href="table_style.css">\n\n'
+        styles = '<link rel="stylesheet" href="style.css">\n\n'
         if page_type == "sub":
-            styles = '<link rel="stylesheet" href="../table_style.css">\n\n'
+            styles = '<link rel="stylesheet" href="../style.css">\n\n'
         beginning = styles 
 
         if page_type == "main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
+            if os.path.exists(os.path.join(self._results_path, "EDA")):
+                beginning += '<a href="EDA/README.html">Automatic Exploratory Data Analysis Report</a>'
 
         content_html = beginning + content_html
 
@@ -1625,14 +1627,14 @@ margin-right: auto;display: block;"/>\n\n"""
         from IPython.display import IFrame
 
         main_readme_html = os.path.join(self._results_path, "README.html")
-        if not os.path.exists(main_readme_html):
+        if not os.path.exists(main_readme_html) or 1:
             fname = os.path.join(self._results_path, "README.md")
             main_readme_html = self._md_to_html(fname, "main")
             for f in os.listdir(self._results_path):
                 fname = os.path.join(self._results_path, f, "README.md")
                 if os.path.exists(fname):
                     self._md_to_html(fname, "sub")
-            with open(os.path.join(self._results_path, "table_style.css"), "w") as fout:
+            with open(os.path.join(self._results_path, "style.css"), "w") as fout:
                 fout.write(
                     """
 .styled-table {
@@ -1661,6 +1663,30 @@ margin-right: auto;display: block;"/>\n\n"""
 body {
     font-family: Arial;
     background-color: rgba(236, 243, 249, 0.15);
+}
+
+h1 {
+    color: #004666;
+    border-bottom: 1px solid rgba(0,70,102,0.3)
+}
+h2 {
+    color: #004666;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
+}
+
+ul {
+    margin-top: 0px;
+}
+
+p {
+    margin-top: 5px;
+}
+
+h3 {
+    color: #004666;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
 }
 
 """
