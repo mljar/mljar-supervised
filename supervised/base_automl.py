@@ -1003,12 +1003,12 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
             # save report
-            ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
             ldb.insert(loc=0, column="Best model", value="")
             ldb.loc[
                 ldb.name == self._best_model.get_name(), "Best model"
             ] = "**the best**"
-
+            ldb["name"] = [f"[{m}]({m}/README.md)" for m in ldb["name"].values]
+            
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
@@ -1622,7 +1622,6 @@ margin-right: auto;display: block;"/>\n\n"""
         return html_fname
 
     def _report(self, width=900, height=1200):
-        print("Report from", self._results_path)
 
         from IPython.display import IFrame
 
