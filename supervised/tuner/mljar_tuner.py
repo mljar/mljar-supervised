@@ -64,19 +64,19 @@ class MljarTuner:
 
         strategies = []
         for k, v in self._data_info["columns_info"].items():
-            if (
-                "categorical" in v
-                and PreprocessingTuner.CATEGORICALS_LOO not in strategies
-            ):
-                strategies += [PreprocessingTuner.CATEGORICALS_LOO]
+            # if (
+            #    "categorical" in v
+            #    and PreprocessingTuner.CATEGORICALS_LOO not in strategies
+            # ):
+            #    strategies += [PreprocessingTuner.CATEGORICALS_LOO]
 
             if (
                 PreprocessingCategorical.FEW_CATEGORIES in v
-                and PreprocessingTuner.CATEGORICALS_ALL_INT not in strategies
+                and PreprocessingTuner.CATEGORICALS_MIX not in strategies
             ):
-                strategies += [PreprocessingTuner.CATEGORICALS_ALL_INT]
+                strategies += [PreprocessingTuner.CATEGORICALS_MIX]
 
-            if len(strategies) == 2:
+            if len(strategies) == 1:  # disable loo encoding
                 # cant add more
                 # stop
                 break
@@ -94,8 +94,8 @@ class MljarTuner:
             all_steps += ["not_so_random"]
 
         categorical_strategies = self._apply_categorical_strategies()
-        if PreprocessingTuner.CATEGORICALS_ALL_INT in categorical_strategies:
-            all_steps += ["all_ints_encoding"]
+        if PreprocessingTuner.CATEGORICALS_MIX in categorical_strategies:
+            all_steps += ["mix_encoding"]
         if PreprocessingTuner.CATEGORICALS_LOO in categorical_strategies:
             all_steps += ["loo_encoding"]
 
@@ -117,65 +117,82 @@ class MljarTuner:
     def get_model_name(self, model_type, models_cnt, special=""):
         return f"{models_cnt}_" + special + model_type.replace(" ", "")
 
-    def generate_params(self, step, models, results_path, stacked_models):
+    def filter_random_feature_model(self, models):
+        return [m for m in models if "RandomFeature" not in m.get_name()]
 
-        models_cnt = len(models)
-        if step == "adjust_validation":
-            return self.adjust_validation_params(models_cnt)
-        elif step == "simple_algorithms":
-            return self.simple_algorithms_params(models_cnt)
-        elif step == "default_algorithms":
-            return self.default_params(models_cnt)
-        elif step == "not_so_random":
-            return self.get_not_so_random_params(models_cnt)
-        elif step == "all_ints_encoding":
-            return self.get_all_int_categorical_strategy(models)
-        elif step == "loo_encoding":
-            return self.get_loo_categorical_strategy(models)
-        elif step == "golden_features":
-            return self.get_golden_features_params(models, results_path)
-        elif step == "insert_random_feature":
-            return self.get_params_to_insert_random_feature(models)
-        elif step == "features_selection":
-            return self.get_features_selection_params(models, results_path)
-        elif "hill_climbing" in step:
-            return self.get_hill_climbing_params(models)
-        elif step == "ensemble":
-            return [
-                {
-                    "model_type": "ensemble",
-                    "is_stacked": False,
-                    "name": "Ensemble",
-                    "status": "initialized",
-                    "final_loss": None,
-                    "train_time": None,
-                }
-            ]
-        elif step == "stack":
-            return self.get_params_stack_models(stacked_models)
-        elif step == "ensemble_stacked":
+    def generate_params(
+        self, step, models, results_path, stacked_models, total_time_limit
+    ):
+        try:
+            models_cnt = len(models)
+            if step == "adjust_validation":
+                return self.adjust_validation_params(models_cnt)
+            elif step == "simple_algorithms":
+                return self.simple_algorithms_params(models_cnt)
+            elif step == "default_algorithms":
+                return self.default_params(models_cnt)
+            elif step == "not_so_random":
+                return self.get_not_so_random_params(models_cnt)
+            elif step == "mix_encoding":
+                return self.get_mix_categorical_strategy(models, total_time_limit)
+            elif step == "loo_encoding":
+                return self.get_loo_categorical_strategy(models, total_time_limit)
+            elif step == "golden_features":
+                return self.get_golden_features_params(
+                    models, results_path, total_time_limit
+                )
+            elif step == "insert_random_feature":
+                return self.get_params_to_insert_random_feature(
+                    models, total_time_limit
+                )
+            elif step == "features_selection":
+                return self.get_features_selection_params(
+                    self.filter_random_feature_model(models),
+                    results_path,
+                    total_time_limit,
+                )
+            elif "hill_climbing" in step:
+                return self.get_hill_climbing_params(
+                    self.filter_random_feature_model(models)
+                )
+            elif step == "ensemble":
+                return [
+                    {
+                        "model_type": "ensemble",
+                        "is_stacked": False,
+                        "name": "Ensemble",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                    }
+                ]
+            elif step == "stack":
+                return self.get_params_stack_models(stacked_models)
+            elif step == "ensemble_stacked":
 
-            # do we have stacked models?
-            any_stacked = False
-            for m in models:
-                if m._is_stacked:
-                    any_stacked = True
-            if not any_stacked:
-                return []
+                # do we have stacked models?
+                any_stacked = False
+                for m in models:
+                    if m._is_stacked:
+                        any_stacked = True
+                if not any_stacked:
+                    return []
 
-            return [
-                {
-                    "model_type": "ensemble",
-                    "is_stacked": True,
-                    "name": "Ensemble_Stacked",
-                    "status": "initialized",
-                    "final_loss": None,
-                    "train_time": None,
-                }
-            ]
+                return [
+                    {
+                        "model_type": "ensemble",
+                        "is_stacked": True,
+                        "name": "Ensemble_Stacked",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                    }
+                ]
 
-        # didnt find anything matching the step, return empty array
-        return []
+            # didnt find anything matching the step, return empty array
+            return []
+        except Exception as e:
+            return []
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -370,6 +387,7 @@ class MljarTuner:
                     self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
 
+        """
         return_params = []
         for i in range(100):
             total = 0
@@ -391,107 +409,104 @@ class MljarTuner:
         if rest_params:
             np.random.shuffle(rest_params)
             return_params += rest_params
+        """
+        return_params = []
+        for i in range(100):
+            total = 0
+            for m in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost",
+                "Random Forest",
+                "Extra Trees",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]:
+                if generated_params[m]:
+                    return_params += [generated_params[m].pop(0)]
+                total += len(generated_params[m])
+            if total == 0:
+                break
 
         return return_params
 
     def get_hill_climbing_params(self, current_models):
-
-        # second, hill climbing
-        # for _ in range(self._hill_climbing_steps):
-        # just do one step
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
-        )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
-
+        df_models, algorithms = self.df_models_algorithms(current_models)
         generated_params = []
-        for m_type in unique_model_types:
-            if m_type in ["Baseline", "Decision Tree", "Linear", "Nearest Neighbors"]:
-                # dont tune Baseline and Decision Tree
+        counts = {model_type: 0 for model_type in algorithms}
+
+        for i in range(df_models.shape[0]):
+
+            model_type = df_models["model_type"].iloc[i]
+            counts[model_type] += 1
+            if counts[model_type] > self._top_models_to_improve:
                 continue
-            models = df_models[df_models.model_type == m_type]["model"]
 
-            for i in range(min(self._top_models_to_improve, len(models))):
-                m = models[i]
+            m = df_models["model"].iloc[i]
 
-                for p in HillClimbing.get(
-                    m.params.get("learner"),
-                    self._ml_task,
-                    len(current_models) + self._seed,
-                ):
+            for p in HillClimbing.get(
+                m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+            ):
 
-                    model_indices = [
-                        int(m.get_name().split("_")[0]) for m in current_models
-                    ]
-                    model_max_index = np.max(model_indices)
+                model_indices = [
+                    int(m.get_name().split("_")[0]) for m in current_models
+                ]
+                model_max_index = np.max(model_indices)
 
-                    logger.info(
-                        "Hill climbing step, for model #{0}".format(model_max_index + 1)
+                logger.info(
+                    "Hill climbing step, for model #{0}".format(model_max_index + 1)
+                )
+                if p is not None:
+                    all_params = copy.deepcopy(m.params)
+                    all_params["learner"] = p
+
+                    all_params["name"] = self.get_model_name(
+                        all_params["learner"]["model_type"],
+                        model_max_index + 1 + len(generated_params),
                     )
-                    if p is not None:
-                        all_params = copy.deepcopy(m.params)
-                        all_params["learner"] = p
 
-                        all_params["name"] = self.get_model_name(
-                            all_params["learner"]["model_type"],
-                            model_max_index + 1 + len(generated_params),
-                        )
-
-                        if "golden_features" in all_params["preprocessing"]:
-                            all_params["name"] += "_GoldenFeatures"
-                        if "drop_features" in all_params["preprocessing"] and len(
-                            all_params["preprocessing"]["drop_features"]
-                        ):
-                            all_params["name"] += "_SelectedFeatures"
-                        all_params["status"] = "initialized"
-                        all_params["final_loss"] = None
-                        all_params["train_time"] = None
-                        unique_params_key = MljarTuner.get_params_key(all_params)
-                        if unique_params_key not in self._unique_params_keys:
-                            self._unique_params_keys += [unique_params_key]
-                            generated_params += [all_params]
+                    if "golden_features" in all_params["preprocessing"]:
+                        all_params["name"] += "_GoldenFeatures"
+                    if "drop_features" in all_params["preprocessing"] and len(
+                        all_params["preprocessing"]["drop_features"]
+                    ):
+                        all_params["name"] += "_SelectedFeatures"
+                    all_params["status"] = "initialized"
+                    all_params["final_loss"] = None
+                    all_params["train_time"] = None
+                    unique_params_key = MljarTuner.get_params_key(all_params)
+                    if unique_params_key not in self._unique_params_keys:
+                        self._unique_params_keys += [unique_params_key]
+                        generated_params += [all_params]
         return generated_params
 
-    def get_all_int_categorical_strategy(self, current_models):
+    def get_all_int_categorical_strategy(self, current_models, total_time_limit):
         return self.get_categorical_strategy(
-            current_models, PreprocessingTuner.CATEGORICALS_ALL_INT
+            current_models, PreprocessingTuner.CATEGORICALS_ALL_INT, total_time_limit
         )
 
-    def get_loo_categorical_strategy(self, current_models):
+    def get_mix_categorical_strategy(self, current_models, total_time_limit):
         return self.get_categorical_strategy(
-            current_models, PreprocessingTuner.CATEGORICALS_LOO
+            current_models, PreprocessingTuner.CATEGORICALS_MIX, total_time_limit
         )
 
-    def get_categorical_strategy(self, current_models, strategy):
-
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
+    def get_loo_categorical_strategy(self, current_models, total_time_limit):
+        return self.get_categorical_strategy(
+            current_models, PreprocessingTuner.CATEGORICALS_LOO, total_time_limit
         )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
 
+    def get_categorical_strategy(self, current_models, strategy, total_time_limit):
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.03 * total_time_limit
+        )
         generated_params = []
-        for m_type in unique_model_types:
+        for m_type in algorithms:
             # try to add categorical strategy only for below algorithms
             if m_type not in [
                 "Xgboost",
                 "LightGBM",
-                "Neural Network",
+                # "Neural Network",
                 # "Random Forest",
                 # "Extra Trees",
             ]:
@@ -499,7 +514,7 @@ class MljarTuner:
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
+                m = models.iloc[i]
 
                 params = copy.deepcopy(m.params)
                 cols_preprocessing = params["preprocessing"]["columns_preprocessing"]
@@ -509,17 +524,32 @@ class MljarTuner:
                 ].items():
                     new_preproc = []
                     convert_categorical = False
+
                     for p in preproc:
                         if "categorical" not in p:
                             new_preproc += [p]
                         else:
                             convert_categorical = True
 
+                    col_data_info = self._data_info["columns_info"].get(col)
+                    few_categories = False
+                    if col_data_info is not None and "few_categories" in col_data_info:
+                        few_categories = True
+
                     if convert_categorical:
                         if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
                             new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
                         elif strategy == PreprocessingTuner.CATEGORICALS_LOO:
                             new_preproc += [PreprocessingCategorical.CONVERT_LOO]
+                        elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
+                            if few_categories:
+                                new_preproc += [
+                                    PreprocessingCategorical.CONVERT_ONE_HOT
+                                ]
+                            else:
+                                new_preproc += [
+                                    PreprocessingCategorical.CONVERT_INTEGER
+                                ]
 
                     cols_preprocessing[col] = new_preproc
 
@@ -529,8 +559,9 @@ class MljarTuner:
                 for st in [
                     PreprocessingTuner.CATEGORICALS_LOO,
                     PreprocessingTuner.CATEGORICALS_ALL_INT,
+                    PreprocessingTuner.CATEGORICALS_MIX,
                 ]:
-                    params["name"] = params["name"].replace(st, "")
+                    params["name"] = params["name"].replace("_" + st, "")
                 params["name"] += f"_{strategy}"
                 params["status"] = "initialized"
                 params["final_loss"] = None
@@ -543,57 +574,117 @@ class MljarTuner:
                     generated_params += [params]
         return generated_params
 
-    def get_golden_features_params(self, current_models, results_path):
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
+    def df_models_algorithms(self, current_models, time_limit=None):
         scores = [m.get_final_loss() for m in current_models]
         model_types = [m.get_type() for m in current_models]
+        names = [m.get_name() for m in current_models]
+        train_times = [m.get_train_time() for m in current_models]
+
         df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
+            {
+                "model": current_models,
+                "score": scores,
+                "model_type": model_types,
+                "name": names,
+                "train_time": train_times,
+            }
         )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
+        if time_limit is not None:
+            df_models = df_models[df_models.train_time < time_limit]
+            df_models.reset_index(drop=True, inplace=True)
+
+        df_models.sort_values(by="score", ascending=True, inplace=True)
+        model_types = list(df_models.model_type)
+        u, idx = np.unique(model_types, return_index=True)
+        algorithms = u[np.argsort(idx)]
+
+        # print(df_models)
+        # print(algorithms)
+        return df_models, algorithms
+
+    def get_golden_features_params(
+        self, current_models, results_path, total_time_limit
+    ):
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.03 * total_time_limit
         )
-        unique_model_types = np.unique(df_models.model_type)
 
         generated_params = []
-        for m_type in unique_model_types:
-            # try to add golden features only for below algorithms
-            if m_type not in ["Xgboost", "LightGBM", "CatBoost"]:
+        for i in range(min(5, df_models.shape[0])):
+            m = df_models["model"].iloc[i]
+            print("golden features", m.get_name())
+
+            params = copy.deepcopy(m.params)
+            params["preprocessing"]["golden_features"] = {
+                "results_path": results_path,
+                "ml_task": self._ml_task,
+            }
+            params["name"] += "_GoldenFeatures"
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
+
+            if "model_architecture_json" in params["learner"]:
+                del params["learner"]["model_architecture_json"]
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key not in self._unique_params_keys:
+                self._unique_params_keys += [unique_params_key]
+                generated_params += [params]
+        return generated_params
+
+    def time_features_selection(self, current_models, total_time_limit):
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
+        )
+
+        time_needed = 0
+        for m_type in algorithms:
+
+            if m_type not in [
+                "Xgboost",
+                "LightGBM",
+                "CatBoost",
+                "Neural Network",
+                "Random Forest",
+                "Extra Trees",
+            ]:
                 continue
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
+                m = models.iloc[i]
+                if time_needed == 0:
+                    # best model will be used two times
+                    # one for insert random feature
+                    # one for selected features
+                    time_needed += 2.0 * m.get_train_time()
+                else:
+                    time_needed += m.get_train_time()
+                # print(m.get_name(), m.get_final_loss(), time_needed)
 
-                params = copy.deepcopy(m.params)
-                params["preprocessing"]["golden_features"] = {
-                    "results_path": results_path,
-                    "ml_task": self._ml_task,
-                }
-                params["name"] += "_GoldenFeatures"
-                params["status"] = "initialized"
-                params["final_loss"] = None
-                params["train_time"] = None
+        return time_needed
 
-                if "model_architecture_json" in params["learner"]:
-                    del params["learner"]["model_architecture_json"]
-                unique_params_key = MljarTuner.get_params_key(params)
-                if unique_params_key not in self._unique_params_keys:
-                    self._unique_params_keys += [unique_params_key]
-                    generated_params += [params]
-        return generated_params
+    def get_params_to_insert_random_feature(self, current_models, total_time_limit):
 
-    def get_params_to_insert_random_feature(self, current_models):
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
+        time_needed = self.time_features_selection(current_models, total_time_limit)
+
+        if time_needed > 0.1 * total_time_limit:
+            print("Not enough time to perform features selection. Skip")
+            print(
+                "Time needed for features selection ~", np.round(time_needed), "seconds"
+            )
+            print(
+                f"Please increase total_time_limit to at least ({int(np.round(10.0*time_needed))+60} seconds) to have features selection"
+            )
+            return None
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
         )
-        df_models.sort_values(by="score", ascending=True, inplace=True)
+        if df_models.shape[0] == 0:
+            return None
 
         m = df_models.iloc[0]["model"]
 
@@ -613,7 +704,9 @@ class MljarTuner:
             return [params]
         return None
 
-    def get_features_selection_params(self, current_models, results_path):
+    def get_features_selection_params(
+        self, current_models, results_path, total_time_limit
+    ):
 
         fname = os.path.join(results_path, "drop_features.json")
         if not os.path.exists(fname):
@@ -627,22 +720,14 @@ class MljarTuner:
         # skip this step
         if len(drop_features) <= 1:
             return None
-        # get models orderer by loss
-        # TODO: refactor this callbacks.callbacks[0]
-        scores = [m.get_final_loss() for m in current_models]
-        model_types = [m.get_type() for m in current_models]
-        df_models = pd.DataFrame(
-            {"model": current_models, "score": scores, "model_type": model_types}
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.05 * total_time_limit
         )
-        # do group by for debug reason
-        df_models = df_models.groupby("model_type").apply(
-            lambda x: x.sort_values("score")
-        )
-        unique_model_types = np.unique(df_models.model_type)
 
         generated_params = []
-        for m_type in unique_model_types:
-            # try to add golden features only for below algorithms
+        for m_type in algorithms:
+            # try to do features selection only for below algorithms
             if m_type not in [
                 "Xgboost",
                 "LightGBM",
@@ -655,7 +740,7 @@ class MljarTuner:
             models = df_models[df_models.model_type == m_type]["model"]
 
             for i in range(min(1, len(models))):
-                m = models[i]
+                m = models.iloc[i]
 
                 params = copy.deepcopy(m.params)
                 params["preprocessing"]["drop_features"] = drop_features
@@ -714,9 +799,9 @@ class MljarTuner:
     def get_params_key(params):
         key = "key_"
         for main_key in ["preprocessing", "learner"]:
-            key += main_key
-            for k, v in params[main_key].items():
+            key += "_" + main_key
+            for k in sorted(params[main_key]):
                 if k == "seed":
                     continue
-                key += "_{}_{}".format(k, v)
+                key += "_{}_{}".format(k, params[main_key][k])
         return key

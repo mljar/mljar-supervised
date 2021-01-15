@@ -364,3 +364,6 @@ class AutoML(BaseAutoML):
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y, sample_weight)
+
+    def report(self, width=900, height=1200):
+        return self._report(width, height)

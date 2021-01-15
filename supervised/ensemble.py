@@ -115,6 +115,10 @@ class Ensemble:
 
         oofs = {}
         for m in models:
+            # do not use model with RandomFeature
+            if "RandomFeature" in m.get_name():
+                continue
+
             # ensemble only the same level of stack
             # if m._is_stacked != self._is_stacked:
             #    continue
@@ -345,7 +349,8 @@ class Ensemble:
             select_models_desc += [
                 {"model": selected["model"]._name, "repeat": selected["repeat"]}
             ]
-        desc = f"# Summary of {self.get_name()}\n"
+        desc = f"# Summary of {self.get_name()}\n\n"
+        desc += "[<< Go back](../README.md)\n\n"
         desc += "\n## Ensemble structure\n"
         selected = pd.DataFrame(select_models_desc)
         desc += tabulate(selected.values, ["Model", "Weight"], tablefmt="pipe")

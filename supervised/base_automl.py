@@ -173,7 +173,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if os.path.exists(best_model_fname):
                 best_model_name = None
                 with open(best_model_fname, "r") as fin:
-                    best_model_name = fin.read()
+                    best_model_name = fin.read().rstrip()
                 self._best_model = models_map[best_model_name]
             else:
                 self._best_model = None
@@ -189,7 +189,7 @@ class BaseAutoML(BaseEstimator, ABC):
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
-    def get_leaderboard(self):
+    def get_leaderboard(self, filter_random_feature=False):
         ldb = {
             "name": [],
             "model_type": [],
@@ -198,6 +198,9 @@ class BaseAutoML(BaseEstimator, ABC):
             "train_time": [],
         }
         for m in self._models:
+            # filter model with random feature
+            if filter_random_feature and "RandomFeature" in m.get_name():
+                continue
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
             ldb["metric_type"] += [self._eval_metric]
@@ -366,7 +369,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._stacked_models is not None:
             return
 
-        ldb = self.get_leaderboard()
+        ldb = self.get_leaderboard(filter_random_feature=True)
         ldb = ldb.sort_values(by="metric_value", ascending=True)
 
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
@@ -660,6 +663,13 @@ class BaseAutoML(BaseEstimator, ABC):
         # remove algorithms in the case of multiclass
         # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
+
+            if self.n_classes >= 10 and self.n_features_in_ * self.n_classes > 500:
+                if self.algorithms == "auto":
+                    for a in ["CatBoost"]:
+                        if a in self._algorithms:
+                            self._algorithms.remove(a)
+
             if self.n_features_in_ * self.n_classes > 1000:
 
                 if self.algorithms == "auto":
@@ -898,7 +908,11 @@ class BaseAutoML(BaseEstimator, ABC):
                     generated_params = self._all_params[step]
                 else:
                     generated_params = tuner.generate_params(
-                        step, self._models, self._results_path, self._stacked_models
+                        step,
+                        self._models,
+                        self._results_path,
+                        self._stacked_models,
+                        self._total_time_limit,
                     )
 
                 if generated_params is None or not generated_params:
@@ -1023,12 +1037,12 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
             # save report
-            ldb["Link"] = [f"[Results link]({m}/README.md)" for m in ldb["name"].values]
             ldb.insert(loc=0, column="Best model", value="")
             ldb.loc[
                 ldb.name == self._best_model.get_name(), "Best model"
             ] = "**the best**"
-
+            ldb["name"] = [f"[{m}]({m}/README.md)" for m in ldb["name"].values]
+            
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
@@ -1493,6 +1507,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "rmse",
             "mse",
             "mae",
+            "r2",
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
@@ -1603,3 +1618,112 @@ class BaseAutoML(BaseEstimator, ABC):
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
+
+    def _md_to_html(self, md_fname, page_type):
+        import markdown
+
+        if not os.path.exists(md_fname):
+            return None
+        content = ""
+        with open(md_fname) as fin:
+            content = fin.read()
+
+        content = content.replace("README.md", "README.html")
+        content_html = markdown.markdown(
+            content, extensions=["markdown.extensions.tables"]
+        )
+        content_html = content_html.replace("<img ", '<img style="width:80%" ')
+        content_html = content_html.replace("<table>", '<table class="styled-table">')
+        content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
+
+        styles = '<link rel="stylesheet" href="style.css">\n\n'
+        if page_type == "sub":
+            styles = '<link rel="stylesheet" href="../style.css">\n\n'
+        beginning = styles 
+
+        if page_type == "main":
+            beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
+margin-right: auto;display: block;"/>\n\n"""
+            if os.path.exists(os.path.join(self._results_path, "EDA")):
+                beginning += '<a href="EDA/README.html">Automatic Exploratory Data Analysis Report</a>'
+
+        content_html = beginning + content_html
+
+        html_fname = md_fname.replace("README.md", "README.html")
+        with open(html_fname, "w") as fout:
+            fout.write(content_html)
+
+        return html_fname
+
+    def _report(self, width=900, height=1200):
+
+        from IPython.display import IFrame
+
+        main_readme_html = os.path.join(self._results_path, "README.html")
+        if not os.path.exists(main_readme_html) or 1:
+            fname = os.path.join(self._results_path, "README.md")
+            main_readme_html = self._md_to_html(fname, "main")
+            for f in os.listdir(self._results_path):
+                fname = os.path.join(self._results_path, f, "README.md")
+                if os.path.exists(fname):
+                    self._md_to_html(fname, "sub")
+            with open(os.path.join(self._results_path, "style.css"), "w") as fout:
+                fout.write(
+                    """
+.styled-table {
+    border-collapse: collapse;
+    font-size: 0.9em;
+    font-family:Courier New;
+}
+
+.styled-table td, .styled-table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.styled-table tr:nth-child(even){background-color: #f2f2f2;}
+
+.styled-table tr:hover {background-color: #e0ecf5;}
+
+.styled-table th {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    text-align: left;
+    background-color: #0099cc;
+    color: white;
+}
+
+body {
+    font-family: Arial;
+    background-color: rgba(236, 243, 249, 0.15);
+}
+
+h1 {
+    color: #004666;
+    border-bottom: 1px solid rgba(0,70,102,0.3)
+}
+h2 {
+    color: #004666;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
+}
+
+ul {
+    margin-top: 0px;
+}
+
+p {
+    margin-top: 5px;
+}
+
+h3 {
+    color: #004666;
+    padding-bottom: 5px;
+    margin-bottom: 0px;
+}
+
+"""
+                )
+
+        if main_readme_html is not None:
+            return IFrame(main_readme_html, width, height)

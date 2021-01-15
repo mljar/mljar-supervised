@@ -262,6 +262,14 @@ class Preprocessing(object):
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols
 
+        if X_train is not None:
+            # there can be catagorical columns (in CatBoost) which cant be clipped
+            numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
+            X_train[numeric_cols] = X_train[numeric_cols].clip(
+                lower=np.finfo(np.float32).min + 1000,
+                upper=np.finfo(np.float32).max - 1000,
+            )
+
         return X_train, y_train, sample_weight
 
     def transform(self, X_validation, y_validation, sample_weight_validation=None):
@@ -372,6 +380,14 @@ class Preprocessing(object):
 
         if self._drop_features and X_validation is not None:
             X_validation.drop(self._drop_features, axis=1, inplace=True)
+
+        if X_validation is not None:
+            # there can be catagorical columns (in CatBoost) which cant be clipped
+            numeric_cols = X_validation.select_dtypes(include="number").columns.tolist()
+            X_validation[numeric_cols] = X_validation[numeric_cols].clip(
+                lower=np.finfo(np.float32).min + 1000,
+                upper=np.finfo(np.float32).max - 1000,
+            )
 
         return X_validation, y_validation, sample_weight_validation
 

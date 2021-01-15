@@ -208,16 +208,16 @@ xgb_bin_class_params = {
     "objective": ["binary:logistic"],
     "eval_metric": ["logloss", "auc"],
     "eta": [0.05, 0.075, 0.1, 0.15],
-    "max_depth": [1, 2, 3, 4, 5, 6, 7, 8, 9],
-    "min_child_weight": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    "subsample": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
-    "colsample_bytree": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "max_depth": [4, 5, 6, 7, 8, 9],
+    "min_child_weight": [1, 5, 10, 25, 50],
+    "subsample": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "colsample_bytree": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
 }
 
 classification_bin_default_params = {
     "objective": "binary:logistic",
     "eval_metric": "logloss",
-    "eta": 0.1,
+    "eta": 0.05,
     "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
@@ -226,8 +226,8 @@ classification_bin_default_params = {
 
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["objective"] = ["reg:squarederror"]
-xgb_regression_params["eval_metric"] = ["rmse"]
-xgb_regression_params["max_depth"] = [1, 2, 3, 4]
+xgb_regression_params["eval_metric"] = ["rmse", "mae"]
+xgb_regression_params["max_depth"] = [4, 5, 6, 7, 8, 9]
 
 
 xgb_multi_class_params = dict(xgb_bin_class_params)
@@ -237,7 +237,7 @@ xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 classification_multi_default_params = {
     "objective": "multi:softprob",
     "eval_metric": "mlogloss",
-    "eta": 0.1,
+    "eta": 0.05,
     "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
@@ -248,8 +248,8 @@ classification_multi_default_params = {
 regression_default_params = {
     "objective": "reg:squarederror",
     "eval_metric": "rmse",
-    "eta": 0.1,
-    "max_depth": 4,
+    "eta": 0.05,
+    "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
     "colsample_bytree": 1.0,

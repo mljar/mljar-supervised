@@ -68,8 +68,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         sample_weight_validation=None,
         log_to_file=None,
     ):
-
-        lgb_train = lgb.Dataset(X, y, weight=sample_weight)
+        lgb_train = lgb.Dataset(X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight)
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
                 self.learner_params,
@@ -85,7 +84,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 valid_sets = [
                     lgb_train,
                     lgb.Dataset(
-                        X_validation, y_validation, weight=sample_weight_validation
+                        X_validation.to_numpy()
+                        if isinstance(X_validation, pd.DataFrame)
+                        else X_validation,
+                        y_validation,
+                        weight=sample_weight_validation
                     ),
                 ]
                 valid_names = ["train", "validation"]
@@ -116,7 +119,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def predict(self, X):
         self.reload()
-        return self.model.predict(X)
+        return self.model.predict(X.to_numpy() if isinstance(X, pd.DataFrame) else X)
 
     def copy(self):
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
@@ -169,18 +172,18 @@ class LightgbmAlgorithm(BaseAlgorithm):
 lgbm_bin_params = {
     "objective": ["binary"],
     "metric": ["binary_logloss", "auc"],
-    "num_leaves": [3, 7, 15, 31],  # , 63, 127],
-    "learning_rate": [0.05, 0.075, 0.1, 0.15],
-    "feature_fraction": [0.8, 0.9, 1.0],
-    "bagging_fraction": [0.8, 0.9, 1.0],
+    "num_leaves": [15, 31, 63, 95, 127],
+    "learning_rate": [0.05, 0.1, 0.2],
+    "feature_fraction": [0.5, 0.8, 0.9, 1.0],
+    "bagging_fraction": [0.5, 0.8, 0.9, 1.0],
     "min_data_in_leaf": [5, 10, 15, 20, 30, 50],
 }
 
 classification_bin_default_params = {
     "objective": "binary",
     "metric": "binary_logloss",
-    "num_leaves": 31,
-    "learning_rate": 0.1,
+    "num_leaves": 63,
+    "learning_rate": 0.05,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
     "min_data_in_leaf": 10,
@@ -209,8 +212,8 @@ lgbm_multi_params["metric"] = ["multi_logloss"]
 classification_multi_default_params = {
     "objective": "multiclass",
     "metric": "multi_logloss",
-    "num_leaves": 31,
-    "learning_rate": 0.1,
+    "num_leaves": 63,
+    "learning_rate": 0.05,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
     "min_data_in_leaf": 10,
@@ -250,8 +253,8 @@ regression_required_preprocessing = [
 regression_default_params = {
     "objective": "regression",
     "metric": "rmse",
-    "num_leaves": 15,
-    "learning_rate": 0.1,
+    "num_leaves": 63,
+    "learning_rate": 0.05,
     "feature_fraction": 0.9,
     "bagging_fraction": 0.9,
     "min_data_in_leaf": 10,

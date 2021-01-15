@@ -291,6 +291,7 @@ class AdditionalMetrics:
                 fout, model_path, fold_cnt, repeat_cnt
             )
             AdditionalMetrics.add_shap_binary(fout, model_path, fold_cnt, repeat_cnt)
+            fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
     def save_multiclass_classification(
@@ -317,6 +318,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_shap_multiclass(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+            fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
     def save_regression(
@@ -342,6 +344,7 @@ class AdditionalMetrics:
             AdditionalMetrics.add_shap_regression(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+            fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
     def add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt):

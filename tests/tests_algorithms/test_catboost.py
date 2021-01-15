@@ -115,15 +115,6 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         y_predicted = cat2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         self.assertEqual(loss, loss2)
-        # fit model #1, there should be improvement in loss
-        cat.fit(self.X, self.y)
-        y_predicted = cat.predict(self.X)
-        loss3 = metric(self.y, y_predicted)
-        self.assertTrue(loss3 < loss)
-        # the loss of model #2 should not change
-        y_predicted = cat2.predict(self.X)
-        loss4 = metric(self.y, y_predicted)
-        assert_almost_equal(loss2, loss4)
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})

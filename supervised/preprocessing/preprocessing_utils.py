@@ -27,7 +27,7 @@ class PreprocessingUtils(object):
         data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
             data_type = PreprocessingUtils.CONTINOUS
-        elif col_type.startswith("int"):
+        elif col_type.startswith("int") or col_type.startswith("uint"):
             data_type = PreprocessingUtils.DISCRETE
         elif col_type.startswith("datetime"):
             data_type = PreprocessingUtils.DATETIME
@@ -83,11 +83,11 @@ class PreprocessingUtils(object):
 
     @staticmethod
     def is_log_scale_needed(x_org):
-        x = np.array(x_org[~pd.isnull(x_org)])
+        x_full = np.array(x_org[~pd.isnull(x_org)])
         # first scale on raw data
-        x = preprocessing.scale(x)
+        x = preprocessing.scale(x_full)
         # second scale on log data
-        x_log = preprocessing.scale(np.log(x - np.min(x) + 1))
+        x_log = preprocessing.scale(np.log(x_full - np.min(x_full) + 1))
 
         # the old approach, let's check how new approach will work
         # original_skew = np.abs(stats.skew(x))

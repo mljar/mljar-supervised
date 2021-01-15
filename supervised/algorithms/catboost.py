@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import time
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -49,9 +50,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         self.learner_params = {
             "learning_rate": self.params.get("learning_rate", 0.1),
             "depth": self.params.get("depth", 3),
-            "min_data_in_leaf": self.params.get("min_data_in_leaf", 1),
             "rsm": self.params.get("rsm", 1.0),
-            "subsample": self.params.get("subsample", 1.0),
             "random_seed": self.params.get("seed", 1),
             "loss_function": loss_function,
         }
@@ -61,7 +60,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
             learning_rate=self.learner_params["learning_rate"],
             depth=self.learner_params["depth"],
             rsm=self.learner_params["rsm"],
-            min_data_in_leaf=self.learner_params["min_data_in_leaf"],
             loss_function=self.learner_params["loss_function"],
             verbose=False,
             allow_writing_files=False,
@@ -70,16 +68,35 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def fit(
-        self,
-        X,
-        y,
-        sample_weight=None,
-        X_validation=None,
-        y_validation=None,
-        sample_weight_validation=None,
-        log_to_file=None,
-    ):
+    def _assess_iterations(self, X, y, eval_set):
+        # We limit the number of iterations to learn one instance of CatBoost
+        # in less than 3600 seconds
+        try:
+            model = copy.deepcopy(self.model)
+            model.set_params(iterations=1)
+            start_time = time.time()
+            model.fit(
+                X,
+                y,
+                cat_features=self.cat_features,
+                init_model=None if self.model.tree_count_ is None else self.model,
+                eval_set=eval_set,
+                early_stopping_rounds=self.early_stopping_rounds,
+                verbose_eval=False,
+            )
+            elapsed_time = np.round(time.time() - start_time, 2)
+            new_rounds = int(min(self.rounds, 3600 / elapsed_time))
+            if new_rounds < 10:
+                new_rounds = 10
+            return new_rounds
+        except Exception as e:
+            return 1000
+
+    def fit(self, X, y, X_validation=None, y_validation=None, sample_weight_validation=None, log_to_file=None):
+        if self.model.tree_count_ is not None:
+            print("CatBoost model already fitted. Skip fit().")
+            return
+
         if self.cat_features is None:
             self.cat_features = []
             for i in range(X.shape[1]):
@@ -94,6 +111,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 cat_features=self.cat_features,
                 weight=sample_weight_validation,
             )
+
+        new_iterations = self._assess_iterations(X, y, eval_set)
+        self.model.set_params(iterations=new_iterations)
 
         self.model.fit(
             X,
@@ -182,19 +202,15 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
 classification_params = {
     "learning_rate": [0.05, 0.1, 0.2],
-    "depth": [2, 3, 4, 5, 6],
+    "depth": [4, 5, 6, 7, 8, 9],
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
-    "subsample": [0.7, 0.8, 0.9, 1],  # random subspace method
-    "min_data_in_leaf": [1, 5, 10, 15, 20, 30, 50],
     "loss_function": ["Logloss"],
 }
 
 classification_default_params = {
-    "learning_rate": 0.1,
+    "learning_rate": 0.05,
     "depth": 6,
-    "rsm": 0.9,
-    "subsample": 1.0,
-    "min_data_in_leaf": 15,
+    "rsm": 1,
     "loss_function": "Logloss",
 }
 
@@ -237,7 +253,7 @@ AlgorithmsRegistry.add(
 )
 
 regression_params = copy.deepcopy(classification_params)
-regression_params["loss_function"] = ["RMSE"]
+regression_params["loss_function"] = ["RMSE", "MAE"]
 
 regression_required_preprocessing = [
     "missing_values_inputation",
@@ -248,11 +264,9 @@ regression_required_preprocessing = [
 
 
 regression_default_params = {
-    "learning_rate": 0.1,
+    "learning_rate": 0.05,
     "depth": 6,
-    "rsm": 0.9,
-    "subsample": 1.0,
-    "min_data_in_leaf": 15,
+    "rsm": 1,
     "loss_function": "RMSE",
 }
 

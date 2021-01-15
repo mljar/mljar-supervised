@@ -104,3 +104,25 @@ class LightgbmAlgorithmTest(unittest.TestCase):
     def test_get_metric_name(self):
         model = LightgbmAlgorithm(self.params)
         self.assertEqual(model.get_metric_name(), "logloss")
+        
+    def test_restricted_characters_in_feature_name(self):
+        df = pd.DataFrame(
+            {
+                "y": np.random.randint(0, 2, size=100),
+                "[test1]": np.random.uniform(0, 1, size=100),
+                "test2 < 1": np.random.uniform(0, 1, size=100),
+            }
+        )
+
+        y = df.iloc[:, 0]
+        X = df.iloc[:, 1:]
+
+        metric = Metric({"name": "logloss"})
+        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        lgb = LightgbmAlgorithm(self.params)
+        lgb.fit(X, y)
+        lgb.predict(X)
+        
+
+if __name__ == "__main__":
+    unittest.main()

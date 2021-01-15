@@ -416,7 +416,10 @@ class ModelFramework:
             self._ml_task, self.learner_params["model_type"]
         )
         short_name = self.learner_params["model_type"]
-        desc = f"# Summary of {self.get_name()}\n"
+        desc = f"# Summary of {self.get_name()}\n\n"
+
+        desc += "[<< Go back](../README.md)\n\n"
+
         if long_name == short_name:
             desc += f"\n## {short_name}\n"
         else:

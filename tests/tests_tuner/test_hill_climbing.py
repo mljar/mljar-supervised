@@ -19,6 +19,9 @@ class ModelMock:
     def get_final_loss(self):
         return self.final_loss
 
+    def get_train_time(self):
+        return 0.1
+
 
 class TunerHillClimbingTest(unittest.TestCase):
     def test_hill_climbing(self):

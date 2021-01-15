@@ -145,6 +145,9 @@ class EDA:
 
             with open(os.path.join(eda_path, "README.md"), "w") as fout:
 
+                fout.write("# Exploratory Data Analysis\n")
+                fout.write("\n\n[<< Go back](../README.md)\n")
+
                 for i, row in df.iterrows():
 
                     fout.write(f"## Feature : {row['feature']}\n")
@@ -163,6 +166,7 @@ class EDA:
                             )
 
                     fout.write(f"\n{row['plot']}\n")
+                fout.write("\n\n[<< Go back](../README.md)\n")
 
             fout.close()
         except Exception as e:
