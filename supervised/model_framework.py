@@ -176,6 +176,11 @@ class ModelFramework:
                         log_to_file,
                     )
 
+                    if self.params.get("injected_sample_weight", False):
+                        print("Dont use sample weight in model evaluation")
+                        sample_weight = None
+                        sample_weight_validation = None
+
                     self.callbacks.on_iteration_end(
                         {"iter_cnt": i},
                         self.predictions(
@@ -244,7 +249,7 @@ class ModelFramework:
 
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
-            return self.oof_predictions
+            return self.oof_predictions.copy(deep=True)
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
             return None

@@ -65,14 +65,16 @@ class TimeController:
             "golden_features": 0.1,
             "insert_random_feature": 0.05,
             "features_selection": 0.05,
-            "hill_climbing_1": 0.2,  # enough to have only first
-            "stack": 0.2,
+            "hill_climbing_1": 0.175,  # enough to have only first step from hill climbing
+            "boost_on_errors": 0.05,
+            "stack": 0.175,
         }
 
         if (
             fit_level
             in [
                 "not_so_random",
+                "boost_on_errors",
                 "mix_encoding",
                 "golden_features",
                 "insert_random_feature",

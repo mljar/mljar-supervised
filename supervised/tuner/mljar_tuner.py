@@ -4,6 +4,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from sklearn.preprocessing import OneHotEncoder
+
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
@@ -36,6 +38,7 @@ class MljarTuner:
         train_ensemble,
         stack_models,
         adjust_validation,
+        boost_on_errors,
         seed,
     ):
         logger.debug("MljarTuner.__init__")
@@ -52,6 +55,7 @@ class MljarTuner:
         self._train_ensemble = train_ensemble
         self._stack_models = stack_models
         self._adjust_validation = adjust_validation
+        self._boost_on_errors = boost_on_errors
         self._seed = seed
 
         self._unique_params_keys = []
@@ -106,6 +110,8 @@ class MljarTuner:
             all_steps += ["features_selection"]
         for i in range(self._hill_climbing_steps):
             all_steps += [f"hill_climbing_{i+1}"]
+        if self._boost_on_errors:
+            all_steps += ["boost_on_errors"]
         if self._train_ensemble:
             all_steps += ["ensemble"]
         if self._stack_models:
@@ -123,7 +129,7 @@ class MljarTuner:
     def generate_params(
         self, step, models, results_path, stacked_models, total_time_limit
     ):
-        try:
+        try:    
             models_cnt = len(models)
             if step == "adjust_validation":
                 return self.adjust_validation_params(models_cnt)
@@ -142,19 +148,17 @@ class MljarTuner:
                     models, results_path, total_time_limit
                 )
             elif step == "insert_random_feature":
-                return self.get_params_to_insert_random_feature(
-                    models, total_time_limit
-                )
+                return self.get_params_to_insert_random_feature(models, total_time_limit)
             elif step == "features_selection":
                 return self.get_features_selection_params(
-                    self.filter_random_feature_model(models),
-                    results_path,
-                    total_time_limit,
+                    self.filter_random_feature_model(models), results_path, total_time_limit
                 )
             elif "hill_climbing" in step:
                 return self.get_hill_climbing_params(
                     self.filter_random_feature_model(models)
                 )
+            elif step == "boost_on_errors":
+                return self.boost_params(models, results_path)
             elif step == "ensemble":
                 return [
                     {
@@ -192,7 +196,7 @@ class MljarTuner:
             # didnt find anything matching the step, return empty array
             return []
         except Exception as e:
-            return []
+           return []
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -207,6 +211,11 @@ class MljarTuner:
             # print(m.get_type())
             # use only Xgboost, LightGBM and CatBoost as stacked models
             if m.get_type() not in ["Xgboost", "LightGBM", "CatBoost"]:
+                continue
+
+            if m.params.get("injected_sample_weight", False):
+                # dont use boost_on_errors model for stacking 
+                # there will be additional boost_on_errors step
                 continue
 
             params = copy.deepcopy(m.params)
@@ -798,10 +807,86 @@ class MljarTuner:
     @staticmethod
     def get_params_key(params):
         key = "key_"
-        for main_key in ["preprocessing", "learner"]:
+        for main_key in ["preprocessing", "learner", "validation_strategy"]:
             key += "_" + main_key
             for k in sorted(params[main_key]):
-                if k == "seed":
+                if k in ["seed", "explain_level"]:
                     continue
                 key += "_{}_{}".format(k, params[main_key][k])
         return key
+
+    def boost_params(self, current_models, results_path):
+        
+        df_models, algorithms = self.df_models_algorithms(current_models)
+        best_model = None
+        for i in range(df_models.shape[0]):
+            if df_models["model_type"].iloc[i] in [
+                "Ensemble",
+                "Neural Network",
+                "Nearest Neighbors",
+            ]:
+                continue
+            best_model = df_models["model"].iloc[i]
+            break
+        if best_model is None:
+            return []
+
+        # load predictions
+        oof = best_model.get_out_of_folds()
+
+        predictions = oof[[c for c in oof.columns if c.startswith("prediction")]]
+        y = oof["target"]
+
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            oh = OneHotEncoder(sparse=False)
+            y_encoded = oh.fit_transform(np.array(y).reshape(-1, 1))
+            residua = np.sum(
+                np.abs(np.array(y_encoded) - np.array(predictions)), axis=1
+            )
+        else:
+            residua = np.abs(np.array(y) - np.array(predictions).ravel())
+
+        df_preds = pd.DataFrame(
+            {"res": residua, "lp": range(residua.shape[0]), "target": np.array(y)}
+        )
+        # df_preds = df_preds.sort_values(by="res", ascending=False)
+
+        df_preds = df_preds.sort_values(by="res", ascending=True)
+        df_preds["order"] = range(residua.shape[0])
+        df_preds["order"] = (df_preds["order"]) / residua.shape[0] / 5.0 + 0.9
+        # df_preds["order"] = (df_preds["order"]) / residua.shape[0] / 2.0 + 0.75
+        # df_preds["order"] = (df_preds["order"]) / residua.shape[0] / 2.5 + 0.75 # lets say it works
+        df_preds = df_preds.sort_values(by="lp", ascending=True)
+        #print("sum", df_preds["order"].sum(), "N", df_preds.shape[0])
+
+        sample_weight_path = os.path.join(
+            results_path, best_model.get_name(), "_sample_weight.parquet"
+        )
+        pd.DataFrame({"sample_weight": df_preds["order"]}).to_parquet(
+            sample_weight_path, index=False
+        )
+
+        generated_params = []
+
+        params = copy.deepcopy(best_model.params)
+        # print(params)
+        # print(json.dumps(params, indent=4))
+
+        params["validation_strategy"]["sample_weight_path"] = sample_weight_path
+        params["injected_sample_weight"] = True
+        params["name"] += "_BoostOnErrors"
+        params["status"] = "initialized"
+        params["final_loss"] = None
+        params["train_time"] = None
+        if "model_architecture_json" in params["learner"]:
+            del params["learner"]["model_architecture_json"]
+        unique_params_key = MljarTuner.get_params_key(params)
+
+        #print(unique_params_key)
+        #print(self._unique_params_keys)
+
+        if unique_params_key not in self._unique_params_keys:
+            self._unique_params_keys += [unique_params_key]
+            generated_params += [params]
+
+        return generated_params

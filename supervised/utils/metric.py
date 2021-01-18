@@ -36,8 +36,8 @@ def negative_auc(y_true, y_predicted, sample_weight=None):
     return -1.0 * val
 
 
-def negative_r2(y_true, y_predicted):
-    val = r2_score(y_true, y_predicted)
+def negative_r2(y_true, y_predicted, sample_weight=None):
+    val = r2_score(y_true, y_predicted, sample_weight=sample_weight)
     return -1.0 * val
 
 

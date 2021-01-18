@@ -91,6 +91,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
         self.n_features_in_ = None  # for scikit-learn api
         self.tuner = None
+        self._boost_on_errors = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -148,6 +149,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._top_models_to_improve = params.get(
                 "top_models_to_improve", self._top_models_to_improve
             )
+            self._boost_on_errors = params.get("boost_on_errors", self._boost_on_errors)
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -764,15 +766,29 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._stack_models:
                 self.verbose_print("Disable stacking for split validation")
             self._stack_models = False
+            self._boost_on_errors = False
         if "repeats" in self._validation_strategy:
             if self._stack_models:
                 self.verbose_print("Disable stacking for repeated validation")
             self._stack_models = False
+            self._boost_on_errors = False
 
+        # update Tuner
         if self.tuner is not None:
             self.tuner._stack_models = self._stack_models
+            self.tuner._boost_on_errors = self._boost_on_errors
+
+        # update Time Controler
         if self._time_ctrl is not None:
             self._time_ctrl._is_stacking = self._stack_models
+
+            if "stack" in self._time_ctrl._steps and not self._stack_models:
+                self._time_ctrl._steps.remove("stack")
+            if (
+                "boost_on_errors" in self._time_ctrl._steps
+                and not self._boost_on_errors
+            ):
+                self._time_ctrl._steps.remove("boost_on_errors")
 
     def _fit(self, X, y, sample_weight=None):
         """Fits the AutoML model with data"""
@@ -806,6 +822,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._start_random_models = self._get_start_random_models()
         self._hill_climbing_steps = self._get_hill_climbing_steps()
         self._top_models_to_improve = self._get_top_models_to_improve()
+        self._boost_on_errors = self._get_boost_on_errors()
         self._random_state = self._get_random_state()
 
         self._adjust_validation = False
@@ -864,6 +881,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._train_ensemble,
                 self._stack_models,
                 self._adjust_validation,
+                self._boost_on_errors,
                 self._random_state,
             )
             self.tuner = tuner
@@ -1025,6 +1043,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "start_random_models": self._start_random_models,
                 "hill_climbing_steps": self._hill_climbing_steps,
                 "top_models_to_improve": self._top_models_to_improve,
+                "boost_on_errors": self._boost_on_errors,
                 "random_state": self._random_state,
                 "saved": self._model_paths,
             }
@@ -1415,6 +1434,19 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.top_models_to_improve)
 
+    def _get_boost_on_errors(self):
+        """ Gets the current boost_on_errors"""
+        self._validate_boost_on_errors()
+        if self.boost_on_errors == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return False
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return deepcopy(self.boost_on_errors)
+
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1592,6 +1624,12 @@ class BaseAutoML(BaseEstimator, ABC):
         ):
             return
         check_positive_integer(self.top_models_to_improve, "top_models_to_improve")
+
+    def _validate_boost_on_errors(self):
+        """ Validates boost_on_errors parameter"""
+        if isinstance(self.boost_on_errors, str) and self.boost_on_errors == "auto":
+            return
+        check_bool(self.boost_on_errors, "boost_on_errors")
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""

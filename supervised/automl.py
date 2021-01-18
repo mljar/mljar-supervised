@@ -36,6 +36,7 @@ class AutoML(BaseAutoML):
         start_random_models="auto",
         hill_climbing_steps="auto",
         top_models_to_improve="auto",
+        boost_on_errors="auto",
         verbose=1,
         random_state=1234,
     ):
@@ -173,6 +174,8 @@ class AutoML(BaseAutoML):
                 - If `mode` is "Perform", `top_models_to_improve` = 2.
                 - If `mode` is "Compete", `top_models_to_improve` = 3.
 
+            boost_on_errors (boolean): Whether a model with boost on errors from previous best model should be trained. By default available in the `Compete` mode.
+
             verbose (int): Controls the verbosity when fitting and predicting.
                 
                 Note:
@@ -269,6 +272,7 @@ class AutoML(BaseAutoML):
         self.start_random_models = start_random_models
         self.hill_climbing_steps = hill_climbing_steps
         self.top_models_to_improve = top_models_to_improve
+        self.boost_on_errors = boost_on_errors
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):

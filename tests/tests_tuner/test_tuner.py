@@ -13,7 +13,8 @@ class TunerTest(unittest.TestCase):
             "learner": {
                 "p1": 1,
                 "p2": 2
-            }
+            },
+            "validation_strategy": {}
         }
         params2 = {
             "preprocessing": {
@@ -23,7 +24,8 @@ class TunerTest(unittest.TestCase):
             "learner": {
                 "p2": 2,
                 "p1": 1
-            }
+            },
+            "validation_strategy": {}
         }
         key1 = MljarTuner.get_params_key(params1)
         key2 = MljarTuner.get_params_key(params2)

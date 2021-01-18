@@ -81,7 +81,7 @@ class Ensemble:
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
         # single prediction (in case of binary classification and regression)
         if self.oof_predictions is not None:
-            return self.oof_predictions
+            return self.oof_predictions.copy(deep=True)
 
         if self.total_best_sum.shape[1] == 1:
             tmp_df = pd.DataFrame({"prediction": self.total_best_sum["prediction"]})
