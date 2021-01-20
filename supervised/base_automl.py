@@ -92,6 +92,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self.n_features_in_ = None  # for scikit-learn api
         self.tuner = None
         self._boost_on_errors = None
+        self._kmeans_features = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -150,6 +151,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "top_models_to_improve", self._top_models_to_improve
             )
             self._boost_on_errors = params.get("boost_on_errors", self._boost_on_errors)
+            self._kmeans_features = params.get("kmeans_features", self._kmeans_features)
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -234,6 +236,9 @@ class BaseAutoML(BaseEstimator, ABC):
         self._time_ctrl.log_time(
             model.get_name(), model.get_type(), self._fit_level, model.get_train_time()
         )
+        
+        self.tuner.add_key(model)
+        
 
     def create_dir(self, model_path):
         if not os.path.exists(model_path):
@@ -823,6 +828,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._hill_climbing_steps = self._get_hill_climbing_steps()
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._boost_on_errors = self._get_boost_on_errors()
+        self._kmeans_features = self._get_kmeans_features()
         self._random_state = self._get_random_state()
 
         self._adjust_validation = False
@@ -882,6 +888,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._stack_models,
                 self._adjust_validation,
                 self._boost_on_errors,
+                self._kmeans_features,
                 self._random_state,
             )
             self.tuner = tuner
@@ -1044,6 +1051,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "hill_climbing_steps": self._hill_climbing_steps,
                 "top_models_to_improve": self._top_models_to_improve,
                 "boost_on_errors": self._boost_on_errors,
+                "kmeans_features": self._kmeans_features,
                 "random_state": self._random_state,
                 "saved": self._model_paths,
             }
@@ -1447,6 +1455,19 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.boost_on_errors)
 
+    def _get_kmeans_features(self):
+        """ Gets the current kmeans_features"""
+        self._validate_kmeans_features()
+        if self.kmeans_features == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return False
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return deepcopy(self.kmeans_features)
+
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1630,6 +1651,12 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.boost_on_errors, str) and self.boost_on_errors == "auto":
             return
         check_bool(self.boost_on_errors, "boost_on_errors")
+    
+    def _validate_kmeans_features(self):
+        """ Validates kmeans_features parameter"""
+        if isinstance(self.kmeans_features, str) and self.kmeans_features == "auto":
+            return
+        check_bool(self.kmeans_features, "kmeans_features")
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""

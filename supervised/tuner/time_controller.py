@@ -60,14 +60,15 @@ class TimeController:
     def time_should_use(self, fit_level):
 
         ratios = {
-            "not_so_random": 0.35,
+            "not_so_random": 0.6,
             "mix_encoding": 0.05,
-            "golden_features": 0.1,
+            "golden_features": 0.05,
+            "kmeans_features": 0.05,
             "insert_random_feature": 0.05,
             "features_selection": 0.05,
-            "hill_climbing_1": 0.175,  # enough to have only first step from hill climbing
+            "hill_climbing_1": 0.2,  # enough to have only first step from hill climbing
             "boost_on_errors": 0.05,
-            "stack": 0.175,
+            "stack": 0.15,
         }
 
         if (
@@ -77,6 +78,7 @@ class TimeController:
                 "boost_on_errors",
                 "mix_encoding",
                 "golden_features",
+                "kmeans_features",
                 "insert_random_feature",
                 "features_selection",
                 "stack",
@@ -133,7 +135,7 @@ class TimeController:
 
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
-
+        print(fit_level, total_time_spend, compound, self._total_time_limit, "====================")
         if total_time_spend > compound:
             # dont train more
             return False

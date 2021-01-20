@@ -135,7 +135,7 @@ class ModelFramework:
                     logger.debug("Sample weight available during the training.")
 
                 # the proprocessing is done at every validation step
-                self.preprocessings += [Preprocessing(self.preprocessing_params)]
+                self.preprocessings += [Preprocessing(self.preprocessing_params, self.get_name(), k_fold, repeat)]
 
                 X_train, y_train, sample_weight = self.preprocessings[
                     -1

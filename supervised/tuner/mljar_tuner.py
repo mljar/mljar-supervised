@@ -39,6 +39,7 @@ class MljarTuner:
         stack_models,
         adjust_validation,
         boost_on_errors,
+        kmeans_features,
         seed,
     ):
         logger.debug("MljarTuner.__init__")
@@ -56,6 +57,7 @@ class MljarTuner:
         self._stack_models = stack_models
         self._adjust_validation = adjust_validation
         self._boost_on_errors = boost_on_errors
+        self._kmeans_features = kmeans_features
         self._seed = seed
 
         self._unique_params_keys = []
@@ -87,6 +89,44 @@ class MljarTuner:
 
         return strategies
 
+    def _can_apply_kmeans_features(self):
+        if self._data_info is None:
+            return False
+
+        # are there any continous
+        continous_cols = 0
+        for k, v in self._data_info["columns_info"].items():
+            if "categorical" not in v:
+                continous_cols += 1
+        
+        # too little columns
+        if continous_cols == 0:
+            return False
+
+        # too many columns
+        if continous_cols > 300:
+            return False
+
+        # all good, can apply kmeans
+        return True
+
+    def _can_apply_golden_features(self):
+        if self._data_info is None:
+            return False
+
+        # are there any continous
+        continous_cols = 0
+        for k, v in self._data_info["columns_info"].items():
+            if "categorical" not in v:
+                continous_cols += 1
+        
+        # too little columns
+        if continous_cols == 0:
+            return False
+
+        # all good, can apply golden features
+        return True
+
     def steps(self):
 
         all_steps = []
@@ -94,6 +134,7 @@ class MljarTuner:
             all_steps += ["adjust_validation"]
 
         all_steps += ["simple_algorithms", "default_algorithms"]
+        
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
 
@@ -102,9 +143,10 @@ class MljarTuner:
             all_steps += ["mix_encoding"]
         if PreprocessingTuner.CATEGORICALS_LOO in categorical_strategies:
             all_steps += ["loo_encoding"]
-
-        if self._golden_features:
+        if self._golden_features and self._can_apply_golden_features():
             all_steps += ["golden_features"]
+        if self._kmeans_features and self._can_apply_kmeans_features():
+            all_steps += ["kmeans_features"]
         if self._features_selection:
             all_steps += ["insert_random_feature"]
             all_steps += ["features_selection"]
@@ -129,7 +171,7 @@ class MljarTuner:
     def generate_params(
         self, step, models, results_path, stacked_models, total_time_limit
     ):
-        try:    
+        try:
             models_cnt = len(models)
             if step == "adjust_validation":
                 return self.adjust_validation_params(models_cnt)
@@ -147,11 +189,19 @@ class MljarTuner:
                 return self.get_golden_features_params(
                     models, results_path, total_time_limit
                 )
+            elif step == "kmeans_features":
+                return self.get_kmeans_features_params(
+                    models, results_path, total_time_limit
+                )
             elif step == "insert_random_feature":
-                return self.get_params_to_insert_random_feature(models, total_time_limit)
+                return self.get_params_to_insert_random_feature(
+                    models, total_time_limit
+                )
             elif step == "features_selection":
                 return self.get_features_selection_params(
-                    self.filter_random_feature_model(models), results_path, total_time_limit
+                    self.filter_random_feature_model(models),
+                    results_path,
+                    total_time_limit,
                 )
             elif "hill_climbing" in step:
                 return self.get_hill_climbing_params(
@@ -196,7 +246,7 @@ class MljarTuner:
             # didnt find anything matching the step, return empty array
             return []
         except Exception as e:
-           return []
+            return []
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -214,7 +264,7 @@ class MljarTuner:
                 continue
 
             if m.params.get("injected_sample_weight", False):
-                # dont use boost_on_errors model for stacking 
+                # dont use boost_on_errors model for stacking
                 # there will be additional boost_on_errors step
                 continue
 
@@ -269,7 +319,7 @@ class MljarTuner:
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
                 generated_params += [params]
-                self._unique_params_keys += [unique_params_key]
+                #self._unique_params_keys += [unique_params_key]
                 models_cnt += 1
         return generated_params
 
@@ -295,7 +345,7 @@ class MljarTuner:
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     generated_params += [params]
-                    self._unique_params_keys += [unique_params_key]
+                    #self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
         return generated_params
 
@@ -351,7 +401,7 @@ class MljarTuner:
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
                 generated_params += [params]
-                self._unique_params_keys += [unique_params_key]
+                #self._unique_params_keys += [unique_params_key]
                 models_cnt += 1
         return generated_params
 
@@ -393,7 +443,7 @@ class MljarTuner:
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     generated_params[model_type] += [params]
-                    self._unique_params_keys += [unique_params_key]
+                    #self._unique_params_keys += [unique_params_key]
                     models_cnt += 1
 
         """
@@ -444,6 +494,11 @@ class MljarTuner:
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
 
+        print("=== hill climbing ====================")
+        print(df_models)
+        print(counts)
+        print(self._top_models_to_improve)
+
         for i in range(df_models.shape[0]):
 
             model_type = df_models["model_type"].iloc[i]
@@ -484,9 +539,14 @@ class MljarTuner:
                     all_params["final_loss"] = None
                     all_params["train_time"] = None
                     unique_params_key = MljarTuner.get_params_key(all_params)
+                    
+                    print("unique params len", len(self._unique_params_keys))
+                    
                     if unique_params_key not in self._unique_params_keys:
-                        self._unique_params_keys += [unique_params_key]
+                        #self._unique_params_keys += [unique_params_key]
                         generated_params += [all_params]
+                    else:
+                        print("Already trained!")
         return generated_params
 
     def get_all_int_categorical_strategy(self, current_models, total_time_limit):
@@ -507,7 +567,7 @@ class MljarTuner:
     def get_categorical_strategy(self, current_models, strategy, total_time_limit):
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.03 * total_time_limit
+            current_models, time_limit=0.1 * total_time_limit
         )
         generated_params = []
         for m_type in algorithms:
@@ -579,11 +639,11 @@ class MljarTuner:
                     del params["learner"]["model_architecture_json"]
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
-                    self._unique_params_keys += [unique_params_key]
+                    #self._unique_params_keys += [unique_params_key]
                     generated_params += [params]
         return generated_params
 
-    def df_models_algorithms(self, current_models, time_limit=None):
+    def df_models_algorithms(self, current_models, time_limit=None, exclude_golden=False):
         scores = [m.get_final_loss() for m in current_models]
         model_types = [m.get_type() for m in current_models]
         names = [m.get_name() for m in current_models]
@@ -602,6 +662,11 @@ class MljarTuner:
             df_models = df_models[df_models.train_time < time_limit]
             df_models.reset_index(drop=True, inplace=True)
 
+        if exclude_golden:
+            ii = df_models["name"].apply(lambda x: "GoldenFeatures" in x)
+            df_models = df_models[~ii]
+            df_models.reset_index(drop=True, inplace=True)
+
         df_models.sort_values(by="score", ascending=True, inplace=True)
         model_types = list(df_models.model_type)
         u, idx = np.unique(model_types, return_index=True)
@@ -616,13 +681,12 @@ class MljarTuner:
     ):
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.03 * total_time_limit
+            current_models, time_limit=0.1 * total_time_limit
         )
 
         generated_params = []
-        for i in range(min(5, df_models.shape[0])):
+        for i in range(min(3, df_models.shape[0])):
             m = df_models["model"].iloc[i]
-            print("golden features", m.get_name())
 
             params = copy.deepcopy(m.params)
             params["preprocessing"]["golden_features"] = {
@@ -638,14 +702,46 @@ class MljarTuner:
                 del params["learner"]["model_architecture_json"]
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
-                self._unique_params_keys += [unique_params_key]
+                #self._unique_params_keys += [unique_params_key]
+                generated_params += [params]
+        return generated_params
+
+    def get_kmeans_features_params(
+        self, current_models, results_path, total_time_limit
+    ):
+
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.1 * total_time_limit,
+            exclude_golden=True
+        )
+        print("kmeans ======================================")
+        print(df_models)
+
+        generated_params = []
+        for i in range(min(3, df_models.shape[0])):
+            m = df_models["model"].iloc[i]
+            
+            print("kmeans features", m.get_name())
+
+            params = copy.deepcopy(m.params)
+            params["preprocessing"]["kmeans_features"] = {"results_path": results_path}
+            params["name"] += "_KMeansFeatures"
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
+
+            if "model_architecture_json" in params["learner"]:
+                del params["learner"]["model_architecture_json"]
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key not in self._unique_params_keys:
+                #self._unique_params_keys += [unique_params_key]
                 generated_params += [params]
         return generated_params
 
     def time_features_selection(self, current_models, total_time_limit):
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.05 * total_time_limit
+            current_models, time_limit=0.1 * total_time_limit
         )
 
         time_needed = 0
@@ -690,7 +786,7 @@ class MljarTuner:
             return None
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.05 * total_time_limit
+            current_models, time_limit=0.1 * total_time_limit
         )
         if df_models.shape[0] == 0:
             return None
@@ -709,7 +805,7 @@ class MljarTuner:
 
         unique_params_key = MljarTuner.get_params_key(params)
         if unique_params_key not in self._unique_params_keys:
-            self._unique_params_keys += [unique_params_key]
+            #self._unique_params_keys += [unique_params_key]
             return [params]
         return None
 
@@ -731,7 +827,7 @@ class MljarTuner:
             return None
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.05 * total_time_limit
+            current_models, time_limit=0.1 * total_time_limit
         )
 
         generated_params = []
@@ -761,7 +857,7 @@ class MljarTuner:
                     del params["learner"]["model_architecture_json"]
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
-                    self._unique_params_keys += [unique_params_key]
+                    #self._unique_params_keys += [unique_params_key]
                     generated_params += [params]
         return generated_params
 
@@ -815,8 +911,14 @@ class MljarTuner:
                 key += "_{}_{}".format(k, params[main_key][k])
         return key
 
+    def add_key(self, model):
+        if model.get_type() != "Ensemble":
+            key = MljarTuner.get_params_key(model.params)
+            self._unique_params_keys += [key]
+
+
     def boost_params(self, current_models, results_path):
-        
+
         df_models, algorithms = self.df_models_algorithms(current_models)
         best_model = None
         for i in range(df_models.shape[0]):
@@ -857,10 +959,10 @@ class MljarTuner:
         # df_preds["order"] = (df_preds["order"]) / residua.shape[0] / 2.0 + 0.75
         # df_preds["order"] = (df_preds["order"]) / residua.shape[0] / 2.5 + 0.75 # lets say it works
         df_preds = df_preds.sort_values(by="lp", ascending=True)
-        #print("sum", df_preds["order"].sum(), "N", df_preds.shape[0])
+        # print("sum", df_preds["order"].sum(), "N", df_preds.shape[0])
 
         sample_weight_path = os.path.join(
-            results_path, best_model.get_name(), "_sample_weight.parquet"
+            results_path, best_model.get_name() + "_sample_weight.parquet"
         )
         pd.DataFrame({"sample_weight": df_preds["order"]}).to_parquet(
             sample_weight_path, index=False
@@ -882,11 +984,11 @@ class MljarTuner:
             del params["learner"]["model_architecture_json"]
         unique_params_key = MljarTuner.get_params_key(params)
 
-        #print(unique_params_key)
-        #print(self._unique_params_keys)
+        # print(unique_params_key)
+        # print(self._unique_params_keys)
 
         if unique_params_key not in self._unique_params_keys:
-            self._unique_params_keys += [unique_params_key]
+            #self._unique_params_keys += [unique_params_key]
             generated_params += [params]
 
         return generated_params

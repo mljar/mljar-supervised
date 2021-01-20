@@ -104,7 +104,7 @@ class LightgbmAlgorithmTest(unittest.TestCase):
     def test_get_metric_name(self):
         model = LightgbmAlgorithm(self.params)
         self.assertEqual(model.get_metric_name(), "logloss")
-        
+
     def test_restricted_characters_in_feature_name(self):
         df = pd.DataFrame(
             {
@@ -122,7 +122,7 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         lgb = LightgbmAlgorithm(self.params)
         lgb.fit(X, y)
         lgb.predict(X)
-        
+
 
 if __name__ == "__main__":
     unittest.main()

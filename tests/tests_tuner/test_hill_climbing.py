@@ -35,7 +35,7 @@ class TunerHillClimbingTest(unittest.TestCase):
                 {
                     "learner": {"max_features": 0.4, "model_type": "Random Forest"},
                     "preprocessing": {},
-                    "validation_strategy": {}
+                    "validation_strategy": {},
                 },
             )
         ]
@@ -47,7 +47,7 @@ class TunerHillClimbingTest(unittest.TestCase):
                 {
                     "learner": {"max_features": 0.4, "model_type": "Random Forest"},
                     "preprocessing": {},
-                    "validation_strategy": {}
+                    "validation_strategy": {},
                 },
             )
         ]
@@ -68,6 +68,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             stack_models=False,
             adjust_validation=False,
             boost_on_errors=False,
+            kmeans_features=False,
             seed=12,
         )
         ind = 121

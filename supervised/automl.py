@@ -37,6 +37,7 @@ class AutoML(BaseAutoML):
         hill_climbing_steps="auto",
         top_models_to_improve="auto",
         boost_on_errors="auto",
+        kmeans_features="auto",
         verbose=1,
         random_state=1234,
     ):
@@ -176,6 +177,8 @@ class AutoML(BaseAutoML):
 
             boost_on_errors (boolean): Whether a model with boost on errors from previous best model should be trained. By default available in the `Compete` mode.
 
+            kmeans_features (boolean): Whether a model with kmeans generated features should be trained. By default available in the `Compete` mode.
+
             verbose (int): Controls the verbosity when fitting and predicting.
                 
                 Note:
@@ -273,6 +276,7 @@ class AutoML(BaseAutoML):
         self.hill_climbing_steps = hill_climbing_steps
         self.top_models_to_improve = top_models_to_improve
         self.boost_on_errors = boost_on_errors
+        self.kmeans_features = kmeans_features
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):

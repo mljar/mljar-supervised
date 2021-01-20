@@ -248,9 +248,11 @@ AlgorithmsRegistry.add(
 
 multiclass_classification_params = copy.deepcopy(classification_params)
 multiclass_classification_params["loss_function"] = ["MultiClass"]
+multiclass_classification_params["depth"] = [3, 4, 5, 6],
 
 multiclass_classification_default_params = copy.deepcopy(classification_default_params)
 multiclass_classification_default_params["loss_function"] = "MultiClass"
+multiclass_classification_default_params["depth"] = 4
 
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,

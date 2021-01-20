@@ -15,6 +15,8 @@ from supervised.preprocessing.text_transformer import TextTransformer
 from supervised.preprocessing.goldenfeatures_transformer import (
     GoldenFeaturesTransformer,
 )
+from supervised.preprocessing.kmeans_transformer import KMeansTransformer
+
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -32,6 +34,8 @@ class Preprocessing(object):
     def __init__(
         self,
         preprocessing_params={"target_preprocessing": [], "columns_preprocessing": {}},
+        model_name =None,
+        k_fold = None, repeat = None
     ):
         self._params = preprocessing_params
 
@@ -50,8 +54,12 @@ class Preprocessing(object):
         self._datetime_transforms = []
         self._text_transforms = []
         self._golden_features = None
+        self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
         self._drop_features = self._params.get("drop_features", [])
+        self._model_name = model_name
+        self._k_fold = k_fold
+        self._repeat = repeat
 
     def _exclude_missing_targets(self, X=None, y=None):
         # check if there are missing values in target column
@@ -135,7 +143,9 @@ class Preprocessing(object):
 
         numeric_cols = []  # get numeric cols before text transformations
         # needed for golden features
-        if X_train is not None and "golden_features" in self._params:
+        if X_train is not None and (
+            "golden_features" in self._params or "kmeans_features" in self._params
+        ):
             numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
 
         # there can be missing values in the text data,
@@ -174,11 +184,18 @@ class Preprocessing(object):
         if "golden_features" in self._params:
             results_path = self._params["golden_features"]["results_path"]
             ml_task = self._params["golden_features"]["ml_task"]
-            # if ml_task in [BINARY_CLASSIFICATION]:
             self._golden_features = GoldenFeaturesTransformer(results_path, ml_task)
             self._golden_features.fit(X_train[numeric_cols], y_train)
             X_train = self._golden_features.transform(X_train)
             golden_columns = self._golden_features._new_columns
+
+        kmeans_columns = []
+        if "kmeans_features" in self._params:
+            results_path = self._params["kmeans_features"]["results_path"]
+            self._kmeans = KMeansTransformer(results_path, self._model_name, self._k_fold)
+            self._kmeans.fit(X_train[numeric_cols], y_train)
+            X_train = self._kmeans.transform(X_train)
+            kmeans_columns = self._kmeans._new_features
 
         for convert_method in [
             PreprocessingCategorical.CONVERT_INTEGER,
@@ -240,6 +257,13 @@ class Preprocessing(object):
                 and scale_method == Scale.SCALE_NORMAL
             ):
                 cols_to_process += golden_columns
+
+            if (
+                len(cols_to_process)
+                and len(kmeans_columns)
+                and scale_method == Scale.SCALE_NORMAL
+            ):
+                cols_to_process += kmeans_columns
 
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
@@ -359,6 +383,9 @@ class Preprocessing(object):
         # golden features
         if self._golden_features is not None:
             X_validation = self._golden_features.transform(X_validation)
+
+        if self._kmeans is not None:
+            X_validation = self._kmeans.transform(X_validation)
 
         for convert in self._categorical:
             if X_validation is not None and convert is not None:
@@ -531,6 +558,9 @@ class Preprocessing(object):
         if self._golden_features is not None:
             preprocessing_params["golden_features"] = self._golden_features.to_json()
 
+        if self._kmeans is not None:
+            preprocessing_params["kmeans"] = self._kmeans.to_json()
+
         if self._scale is not None and len(self._scale):
             scs = [sc.to_json() for sc in self._scale if sc.to_json()]
             if scs:
@@ -591,6 +621,10 @@ class Preprocessing(object):
         if "golden_features" in data_json:
             self._golden_features = GoldenFeaturesTransformer()
             self._golden_features.from_json(data_json["golden_features"])
+
+        if "kmeans" in data_json:
+            self._kmeans = KMeansTransformer()
+            self._kmeans.from_json(data_json["kmeans"])
 
         if "scale" in data_json:
             self._scale = []
