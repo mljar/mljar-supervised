@@ -60,7 +60,8 @@ class TimeController:
     def time_should_use(self, fit_level):
 
         ratios = {
-            "not_so_random": 0.6,
+            "default_algorithms": 0.3,
+            "not_so_random": 0.3,
             "mix_encoding": 0.05,
             "golden_features": 0.05,
             "kmeans_features": 0.05,
@@ -74,6 +75,7 @@ class TimeController:
         if (
             fit_level
             in [
+                "default_algorithms",
                 "not_so_random",
                 "boost_on_errors",
                 "mix_encoding",
@@ -116,7 +118,7 @@ class TimeController:
             if step in [
                 "adjust_validation",
                 "simple_algorithms",
-                "default_algorithms",
+                #"default_algorithms",
                 "ensemble",
                 "ensemble_stacked",
             ]:
@@ -183,17 +185,17 @@ class TimeController:
             # print("No time left", time_left)
             return False
 
-        # there is still time and model_type was not tested yet
-        # we should try it
-        if time_left > 0 and self.model_spend(model_type) == 0:
-            return True
-
         # check the fit level type
         # we dont want to spend too much time on one step
         if not self.enough_time_for_step(step):
             # print("Not enough time for step", step)
             return False
 
+        # there is still time and model_type was not tested yet
+        # we should try it
+        if time_left > 0 and self.model_spend(model_type) == 0:
+            return True
+        
         # check if there is enough time for model to train
         return self.enough_time_for_model(model_type)
 

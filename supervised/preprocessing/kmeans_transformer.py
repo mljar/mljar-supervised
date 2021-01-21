@@ -43,7 +43,6 @@ class KMeansTransformer(object):
         n_clusters = int(np.log10(X.shape[0]) * 8)
         n_clusters = max(8, n_clusters)
         n_clusters = min(n_clusters, X.shape[1])
-        print(f"Fit KMneas with n_clusters={n_clusters}")
 
         self._input_columns = X.columns.tolist()
         # scale data
@@ -76,7 +75,6 @@ class KMeansTransformer(object):
         # kmeans
         distances = self._kmeans.transform(X_scaled)
         clusters = self._kmeans.predict(X_scaled)
-        print(distances.shape, self._new_features)
 
         X[self._new_features[:-1]] = distances
         X[self._new_features[-1]] = clusters

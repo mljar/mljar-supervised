@@ -217,7 +217,7 @@ xgb_bin_class_params = {
 classification_bin_default_params = {
     "objective": "binary:logistic",
     "eval_metric": "logloss",
-    "eta": 0.05,
+    "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
@@ -237,7 +237,7 @@ xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 classification_multi_default_params = {
     "objective": "multi:softprob",
     "eval_metric": "mlogloss",
-    "eta": 0.05,
+    "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
@@ -248,7 +248,7 @@ classification_multi_default_params = {
 regression_default_params = {
     "objective": "reg:squarederror",
     "eval_metric": "rmse",
-    "eta": 0.05,
+    "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
     "subsample": 1.0,
