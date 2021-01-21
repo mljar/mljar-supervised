@@ -217,7 +217,7 @@ classification_params = {
 }
 
 classification_default_params = {
-    "learning_rate": 0.05,
+    "learning_rate": 0.1,
     "depth": 6,
     "rsm": 1,
     "loss_function": "Logloss",
@@ -278,7 +278,7 @@ regression_required_preprocessing = [
 
 
 regression_default_params = {
-    "learning_rate": 0.05,
+    "learning_rate": 0.1,
     "depth": 6,
     "rsm": 1,
     "loss_function": "RMSE",

@@ -381,7 +381,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
-        models_limit = 5 #10
+        models_limit = 10
 
         for model_type in np.unique(ldb.model_type):
             if model_type in ["Baseline"]:
