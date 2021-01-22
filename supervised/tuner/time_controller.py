@@ -137,7 +137,7 @@ class TimeController:
 
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
-        print(fit_level, total_time_spend, compound, self._total_time_limit, "====================")
+        #print(fit_level, total_time_spend, compound, self._total_time_limit)
         if total_time_spend > compound:
             # dont train more
             return False
