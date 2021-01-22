@@ -177,7 +177,7 @@ class ModelFramework:
                     )
 
                     if self.params.get("injected_sample_weight", False):
-                        print("Dont use sample weight in model evaluation")
+                        #print("Dont use sample weight in model evaluation")
                         sample_weight = None
                         sample_weight_validation = None
 
