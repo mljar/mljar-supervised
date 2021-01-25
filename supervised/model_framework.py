@@ -66,6 +66,7 @@ class ModelFramework:
         self.oof_predictions = None
         self._additional_metrics = None
         self._threshold = None  # used only for binary classifiers
+        self._max_time_for_learner = params.get("max_time_for_learner", 3600)
 
     def get_train_time(self):
         return self.train_time
@@ -174,6 +175,7 @@ class ModelFramework:
                         y_validation,
                         sample_weight_validation,
                         log_to_file,
+                        self._max_time_for_learner
                     )
 
                     if self.params.get("injected_sample_weight", False):

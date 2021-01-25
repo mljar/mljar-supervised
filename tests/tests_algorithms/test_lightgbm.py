@@ -54,14 +54,11 @@ class LightgbmAlgorithmTest(unittest.TestCase):
     def test_fit_predict(self):
         metric = Metric({"name": "logloss"})
         lgb = LightgbmAlgorithm(self.params)
-        loss_prev = None
-        for _ in range(3):
-            lgb.fit(self.X, self.y)
-            y_predicted = lgb.predict(self.X)
-            loss = metric(self.y, y_predicted)
-            if loss_prev is not None:
-                self.assertTrue(loss + 0.001 < loss_prev)
-            loss_prev = loss
+        lgb.fit(self.X, self.y)
+        y_predicted = lgb.predict(self.X)
+        loss = metric(self.y, y_predicted)
+        self.assertTrue(loss < 0.7)
+            
 
     def test_copy(self):
         # train model #1

@@ -68,9 +68,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def _assess_iterations(self, X, y, eval_set):
-        # We limit the number of iterations to learn one instance of CatBoost
-        # in less than 3600 seconds
+    def _assess_iterations(self, X, y, eval_set, max_time):
+        if max_time is None:
+            max_time = 3600
         try:
             model = copy.deepcopy(self.model)
             model.set_params(iterations=1)
@@ -85,9 +85,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 verbose_eval=False,
             )
             elapsed_time = np.round(time.time() - start_time, 2)
-            new_rounds = int(min(self.rounds, 3600 / elapsed_time))
-            if new_rounds < 10:
-                new_rounds = 10
+            new_rounds = int(min(10000, max_time / elapsed_time * 2.0))
+            new_rounds = max(max_rounds, 100)
             return new_rounds
         except Exception as e:
             return 1000
@@ -101,6 +100,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         if self.model.tree_count_ is not None:
             print("CatBoost model already fitted. Skip fit().")
@@ -121,7 +121,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 weight=sample_weight_validation,
             )
 
-        new_iterations = self._assess_iterations(X, y, eval_set)
+        new_iterations = self._assess_iterations(X, y, eval_set, max_time)
         self.model.set_params(iterations=new_iterations)
 
         self.model.fit(

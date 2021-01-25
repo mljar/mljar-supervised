@@ -40,6 +40,7 @@ class BaseAlgorithm:
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         pass
 

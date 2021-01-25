@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import pandas as pd
 import os
+import time
 import xgboost as xgb
 
 from supervised.algorithms.algorithm import BaseAlgorithm
@@ -71,6 +72,30 @@ class XgbAlgorithm(BaseAlgorithm):
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
 
+    def get_boosting_rounds(self, dtrain, evals, esr, max_time):
+        if max_time is None:
+            return self.boosting_rounds
+
+        start_time = time.time()
+        evals_result = {}
+        model = xgb.train(
+            self.learner_params,
+            dtrain,
+            2,
+            evals=evals,
+            early_stopping_rounds=esr,
+            evals_result=evals_result,
+            verbose_eval=False,
+        )
+        time_1_iter = (time.time() - start_time) / 2.0
+
+        # 2.0 is just a scaling factor
+        # purely heuristic
+        iters = int(max_time / time_1_iter * 2.0)
+        iters = max(iters, 100)
+        iters = min(iters, 10000)
+        return iters
+
     def fit(
         self,
         X,
@@ -80,6 +105,7 @@ class XgbAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         dtrain = xgb.DMatrix(
             X.to_numpy() if isinstance(X, pd.DataFrame) else X,
@@ -102,16 +128,23 @@ class XgbAlgorithm(BaseAlgorithm):
         if X_validation is not None and y_validation is not None:
             evals = [(dtrain, "train"), (dvalidation, "validation")]
             esr = self.early_stopping_rounds
+
+        boosting_rounds = self.get_boosting_rounds(dtrain, evals, esr, max_time)
+
         self.model = xgb.train(
             self.learner_params,
             dtrain,
-            self.boosting_rounds,
+            boosting_rounds,
             evals=evals,
             early_stopping_rounds=esr,
             evals_result=evals_result,
-            verbose_eval=False,
+            verbose_eval=False
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
+
+        #dump_list = self.model.get_dump()
+        #num_trees = len(dump_list)
+        #print(self.model.best_ntree_limit, num_trees)
 
         if log_to_file is not None:
             metric_name = list(evals_result["train"].keys())[0]

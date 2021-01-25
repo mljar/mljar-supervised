@@ -36,6 +36,7 @@ class KNNFit(SklearnAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         if X.shape[0] > 1000:
             X1, _, y1, _ = train_test_split(

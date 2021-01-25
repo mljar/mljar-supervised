@@ -2,6 +2,7 @@ import logging
 import copy
 import numpy as np
 import pandas as pd
+import time
 import os
 import contextlib
 import multiprocessing
@@ -58,6 +59,29 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
+    def get_boosting_rounds(self, lgb_train, valid_sets, esr, max_time):
+        if max_time is None:
+            max_time = 3600.0
+        start_time = time.time()
+        evals_result = {}
+        model = lgb.train(
+            self.learner_params,
+            lgb_train,
+            num_boost_round=2,
+            valid_sets=valid_sets,
+            early_stopping_rounds=esr,
+            evals_result=evals_result,
+            verbose_eval=False
+        )
+        time_1_iter = (time.time() - start_time) / 2.0
+
+        # 2.0 is just a scaling factor
+        # purely heuristic
+        iters = int(max_time / time_1_iter * 2.0)
+        iters = max(iters, 100)
+        iters = min(iters, 10000)
+        return iters
+
     def fit(
         self,
         X,
@@ -67,6 +91,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         lgb_train = lgb.Dataset(
             X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight
@@ -96,11 +121,14 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 valid_names = ["train", "validation"]
                 esr = self.early_stopping_rounds
             evals_result = {}
+
+            boosting_rounds = self.get_boosting_rounds(lgb_train, valid_sets, esr, max_time)            
+
             self.model = lgb.train(
                 self.learner_params,
                 lgb_train,
-                num_boost_round=self.rounds,
-                init_model=self.model,
+                num_boost_round=boosting_rounds,
+                #init_model=self.model,
                 valid_sets=valid_sets,
                 valid_names=valid_names,
                 early_stopping_rounds=esr,

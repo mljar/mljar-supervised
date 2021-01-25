@@ -2,6 +2,7 @@ import copy
 import logging
 import numpy as np
 import pandas as pd
+import time
 import joblib
 
 from supervised.algorithms.algorithm import BaseAlgorithm
@@ -29,6 +30,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         self.model.fit(X, y, sample_weight=sample_weight)
 
@@ -97,6 +99,7 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
+        max_time=None
     ):
         max_steps = self.max_steps
         n_estimators = 0
@@ -106,6 +109,8 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
 
         p_tr, p_vd = None, None
         result = {"iteration": [], "train": [], "validation": []}
+
+        start_time = time.time()
 
         for i in range(max_steps):
 
@@ -150,6 +155,9 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 if e - min_e >= self.early_stopping_rounds:
                     stop = True
                     break
+
+            if max_time is not None and time.time()-start_time > max_time:
+                stop = True
 
             if stop:
                 self.model.estimators_ = estimators[: (min_e + 1)]

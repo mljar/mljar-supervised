@@ -275,16 +275,18 @@ class BaseAutoML(BaseEstimator, ABC):
             {"metric": {"name": self._eval_metric}, "log_to_dir": model_path}
         )
 
-        learner_time_constraint = LearnerTimeConstraint(
-            {
-                "learner_time_limit": self._time_ctrl.learner_time_limit(
-                    params["learner"]["model_type"],
-                    self._fit_level,
-                    self._validation_strategy.get("k_folds", 1.0),
-                ),
-                "min_steps": params["additional"].get("min_steps"),
-            }
-        )
+
+        max_time_for_learner = 3600
+        if self._total_time_limit is not None:
+            k_folds = self._validation_strategy.get("k_folds", 1.0)
+            at_least_algorithms = 10.0
+            
+            max_time_for_learner = self._total_time_limit / k_folds / at_least_algorithms
+            max_time_for_learner += 60.0 
+
+        print("max_time_for_learner --->", max_time_for_learner)
+        params["max_time_for_learner"] = max_time_for_learner
+
 
         total_time_constraint = TotalTimeConstraint(
             {
@@ -299,7 +301,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # create model framework
         mf = ModelFramework(
             params,
-            callbacks=[early_stop, learner_time_constraint, total_time_constraint],
+            callbacks=[early_stop, total_time_constraint],
         )
 
         # start training
