@@ -271,6 +271,7 @@ AlgorithmsRegistry.add(
 
 regression_params = copy.deepcopy(classification_params)
 regression_params["loss_function"] = ["RMSE", "MAE"]
+regression_params["learning_rate"] = [0.1, 0.15, 0.2]
 
 regression_required_preprocessing = [
     "missing_values_inputation",
@@ -281,7 +282,7 @@ regression_required_preprocessing = [
 
 
 regression_default_params = {
-    "learning_rate": 0.1,
+    "learning_rate": 0.15,
     "depth": 6,
     "rsm": 1,
     "loss_function": "RMSE",

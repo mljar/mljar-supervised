@@ -275,17 +275,16 @@ class BaseAutoML(BaseEstimator, ABC):
             {"metric": {"name": self._eval_metric}, "log_to_dir": model_path}
         )
 
-
-        max_time_for_learner = 3600
-        if self._total_time_limit is not None:
-            k_folds = self._validation_strategy.get("k_folds", 1.0)
-            at_least_algorithms = 10.0
-            
-            max_time_for_learner = self._total_time_limit / k_folds / at_least_algorithms
-            max_time_for_learner += 60.0 
-
-        print("max_time_for_learner --->", max_time_for_learner)
-        params["max_time_for_learner"] = max_time_for_learner
+        # disable for now
+        #max_time_for_learner = 3600
+        #if self._total_time_limit is not None:
+        #    k_folds = self._validation_strategy.get("k_folds", 1.0)
+        #    at_least_algorithms = 10.0
+        #    
+        #    max_time_for_learner = self._total_time_limit / k_folds / at_least_algorithms
+        #    max_time_for_learner += 60.0 
+        #print("max_time_for_learner --->", max_time_for_learner)
+        #params["max_time_for_learner"] = max_time_for_learner
 
 
         total_time_constraint = TotalTimeConstraint(
