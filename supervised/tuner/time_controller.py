@@ -68,7 +68,7 @@ class TimeController:
             "insert_random_feature": 0.05,
             "features_selection": 0.05,
             "hill_climbing_1": 0.2,  # enough to have only first step from hill climbing
-            "boost_on_errors": 0.1,
+            "boost_on_errors": 0.05,
             "stack": 0.15,
         }
 

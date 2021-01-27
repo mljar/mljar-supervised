@@ -68,7 +68,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def _assess_iterations(self, X, y, eval_set, max_time):
+    def _assess_iterations(self, X, y, eval_set, max_time = None):
         if max_time is None:
             max_time = 3600
         try:
@@ -85,8 +85,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 verbose_eval=False,
             )
             elapsed_time = np.round(time.time() - start_time, 2)
-            new_rounds = int(min(10000, max_time / elapsed_time * 2.0))
-            new_rounds = max(max_rounds, 100)
+            new_rounds = int(min(10000, max_time / elapsed_time))
+            new_rounds = max(max_rounds, 10)
             return new_rounds
         except Exception as e:
             return 1000
@@ -122,10 +122,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
             )
 
         # disable for now ...
-        # new_iterations = self._assess_iterations(X, y, eval_set, max_time)
-        # self.model.set_params(iterations=new_iterations)
-
-        self.model.set_params(iterations=self.rounds)
+        new_iterations = self._assess_iterations(X, y, eval_set, max_time = None)
+        self.model.set_params(iterations=new_iterations)
+        #self.model.set_params(iterations=self.rounds)
 
         self.model.fit(
             X,
