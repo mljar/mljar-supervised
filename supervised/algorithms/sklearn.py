@@ -156,8 +156,9 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                     stop = True
                     break
 
-            if max_time is not None and time.time()-start_time > max_time:
-                stop = True
+            # disable for now ...
+            #if max_time is not None and time.time()-start_time > max_time:
+            #    stop = True
 
             if stop:
                 self.model.estimators_ = estimators[: (min_e + 1)]

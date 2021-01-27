@@ -122,13 +122,13 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 esr = self.early_stopping_rounds
             evals_result = {}
 
-            boosting_rounds = self.get_boosting_rounds(lgb_train, valid_sets, esr, max_time)            
+            # disable for now ...
+            # boosting_rounds = self.get_boosting_rounds(lgb_train, valid_sets, esr, max_time)            
 
             self.model = lgb.train(
                 self.learner_params,
                 lgb_train,
-                num_boost_round=boosting_rounds,
-                #init_model=self.model,
+                num_boost_round=self.rounds,
                 valid_sets=valid_sets,
                 valid_names=valid_names,
                 early_stopping_rounds=esr,

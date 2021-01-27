@@ -121,8 +121,11 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 weight=sample_weight_validation,
             )
 
-        new_iterations = self._assess_iterations(X, y, eval_set, max_time)
-        self.model.set_params(iterations=new_iterations)
+        # disable for now ...
+        # new_iterations = self._assess_iterations(X, y, eval_set, max_time)
+        # self.model.set_params(iterations=new_iterations)
+
+        self.model.set_params(iterations=self.rounds)
 
         self.model.fit(
             X,
@@ -249,12 +252,12 @@ AlgorithmsRegistry.add(
 multiclass_classification_params = copy.deepcopy(classification_params)
 multiclass_classification_params["loss_function"] = ["MultiClass"]
 multiclass_classification_params["depth"] = [3, 4, 5, 6]
-multiclass_classification_params["learning_rate"] = [0.1, 0.2]
+multiclass_classification_params["learning_rate"] = [0.1, 0.15, 0.2]
 
 multiclass_classification_default_params = copy.deepcopy(classification_default_params)
 multiclass_classification_default_params["loss_function"] = "MultiClass"
 multiclass_classification_default_params["depth"] = 5
-multiclass_classification_default_params["learning_rate"] = 0.1
+multiclass_classification_default_params["learning_rate"] = 0.15
 
 
 AlgorithmsRegistry.add(

@@ -129,12 +129,15 @@ class XgbAlgorithm(BaseAlgorithm):
             evals = [(dtrain, "train"), (dvalidation, "validation")]
             esr = self.early_stopping_rounds
 
-        boosting_rounds = self.get_boosting_rounds(dtrain, evals, esr, max_time)
+        # disable for now, dont have better idea how to handle time limit ...
+        # looks like there is better not to limit the algorithm
+        # just wait till they converge ...
+        # boosting_rounds = self.get_boosting_rounds(dtrain, evals, esr, max_time)
 
         self.model = xgb.train(
             self.learner_params,
             dtrain,
-            boosting_rounds,
+            self.boosting_rounds,
             evals=evals,
             early_stopping_rounds=esr,
             evals_result=evals_result,
