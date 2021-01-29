@@ -208,7 +208,7 @@ class MljarTuner:
                     self.filter_random_feature_model(models)
                 )
             elif step == "boost_on_errors":
-                return self.boost_params(models, results_path)
+                return self.boost_params(models, results_path, total_time_limit)
             elif step == "ensemble":
                 return [
                     {
@@ -906,9 +906,9 @@ class MljarTuner:
             self._unique_params_keys += [key]
 
 
-    def boost_params(self, current_models, results_path):
+    def boost_params(self, current_models, results_path, total_time_limit):
 
-        df_models, algorithms = self.df_models_algorithms(current_models)
+        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.1 * total_time_limit)
         best_model = None
         for i in range(df_models.shape[0]):
             if df_models["model_type"].iloc[i] in [
