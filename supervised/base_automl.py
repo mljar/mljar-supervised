@@ -946,11 +946,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
                     continue
                 if generated_params:
-                    if "learner" in generated_params[
-                        0
-                    ] and not self._time_ctrl.enough_time(
-                        generated_params[0]["learner"]["model_type"], self._fit_level
-                    ):
+                    if not self._time_ctrl.enough_time_for_step(self._fit_level):
                         self.verbose_print(f"Skip {step} because of the time limit.")
                         continue
                     else:

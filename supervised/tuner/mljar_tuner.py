@@ -917,6 +917,8 @@ class MljarTuner:
                 "Nearest Neighbors",
             ]:
                 continue
+            if "RandomFeature" in df_models["model"].iloc[i].get_name():
+                continue
             best_model = df_models["model"].iloc[i]
             break
         if best_model is None:
