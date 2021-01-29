@@ -52,6 +52,7 @@ class TimeControllerTest(unittest.TestCase):
             tc.log_time("6_Xgboost", "Xgboost", "hill_climbing_2", t)
             tc.log_time("7_Xgboost", "Xgboost", "hill_climbing_3", t)
 
+            tc._start_time = time.time() - 7 * t
             assert_almost_equal(tc.already_spend(), 7 * t)
             if t < 20:
                 self.assertTrue(tc.enough_time("Xgboost", "stack"))

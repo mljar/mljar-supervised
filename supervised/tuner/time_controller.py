@@ -169,7 +169,8 @@ class TimeController:
         bool
             `True` if there is time for training next model, `False` otherwise.
         """
-
+        if step in ["ensemble", "ensemble_stacked"]:
+            return True
         # if model_time_limit is set, train every model
         # do not apply total_time_limit
         if self._model_time_limit is not None:
