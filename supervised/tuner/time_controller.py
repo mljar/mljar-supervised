@@ -196,6 +196,10 @@ class TimeController:
         if time_left > 0 and self.model_spend(model_type) == 0:
             return True
         
+        # stacked models converge faster
+        # dont need to check ...
+        if step == "stack":
+            return True
         # check if there is enough time for model to train
         return self.enough_time_for_model(model_type)
 
