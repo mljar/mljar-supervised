@@ -26,6 +26,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
     algorithm_name = "CatBoost"
     algorithm_short_name = "CatBoost"
+    warmup_iterations = 20
 
     def __init__(self, params):
         super(CatBoostAlgorithm, self).__init__(params)
@@ -62,9 +63,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
             rsm=self.learner_params["rsm"],
             loss_function=self.learner_params["loss_function"],
             verbose=False,
-            allow_writing_files=False,
+            allow_writing_files=False
         )
         self.cat_features = None
+        self.best_ntree_limit = 0
 
         logger.debug("CatBoostAlgorithm.__init__")
 
@@ -73,7 +75,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             max_time = 3600
         try:
             model = copy.deepcopy(self.model)
-            model.set_params(iterations=1)
+            model.set_params(iterations=self.warmup_iterations)
             start_time = time.time()
             model.fit(
                 X,
@@ -82,14 +84,16 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 init_model=None if self.model.tree_count_ is None else self.model,
                 eval_set=eval_set,
                 early_stopping_rounds=self.early_stopping_rounds,
-                verbose_eval=False,
+                verbose_eval=False
             )
-            elapsed_time = np.round(time.time() - start_time, 2)
+            elapsed_time = (time.time() - start_time) / float(self.warmup_iterations)
+            #print(max_time, elapsed_time, max_time / elapsed_time, np.round(time.time() - start_time, 2))
             new_rounds = int(min(10000, max_time / elapsed_time))
-            new_rounds = max(max_rounds, 10)
-            return new_rounds
+            new_rounds = max(new_rounds, 10)
+            return model, new_rounds
         except Exception as e:
-            return 1000
+            #print(str(e))
+            return None, 1000
 
     def fit(
         self,
@@ -122,30 +126,41 @@ class CatBoostAlgorithm(BaseAlgorithm):
             )
 
         # disable for now ...
-        new_iterations = self._assess_iterations(X, y, eval_set, max_time = None)
+        model_init, new_iterations = self._assess_iterations(X, y, eval_set, max_time)
         self.model.set_params(iterations=new_iterations)
-        #self.model.set_params(iterations=self.rounds)
-
+        
         self.model.fit(
             X,
             y,
             sample_weight=sample_weight,
             cat_features=self.cat_features,
-            init_model=None if self.model.tree_count_ is None else self.model,
+            init_model=model_init,
             eval_set=eval_set,
             early_stopping_rounds=self.early_stopping_rounds,
-            verbose_eval=False,
-        )
+            verbose_eval=False
+        )        
+        if self.model.best_iteration_ is not None:
+            self.best_ntree_limit = self.model.best_iteration_+self.warmup_iterations+1
+        else:
+            # just take all the trees
+            # the warm-up trees are already included
+            # dont need to add +1
+            self.best_ntree_limit = self.model.tree_count_
+
         if log_to_file is not None:
 
             metric_name = list(self.model.evals_result_["learn"].keys())[0]
+            train_scores = self.model.evals_result_["learn"][metric_name]
+            validation_scores = self.model.evals_result_["validation"][metric_name]
+            if model_init is not None:
+                train_scores = model_init.evals_result_["learn"][metric_name] + train_scores
+                validation_scores = model_init.evals_result_["validation"][metric_name] + validation_scores
+            
             result = pd.DataFrame(
                 {
-                    "iteration": range(
-                        len(self.model.evals_result_["learn"][metric_name])
-                    ),
-                    "train": self.model.evals_result_["learn"][metric_name],
-                    "validation": self.model.evals_result_["validation"][metric_name],
+                    "iteration": range(len(train_scores)),
+                    "train":  train_scores,
+                    "validation":  validation_scores,
                 }
             )
             result.to_csv(log_to_file, index=False, header=False)
@@ -153,10 +168,11 @@ class CatBoostAlgorithm(BaseAlgorithm):
     def predict(self, X):
         self.reload()
         if self.params["ml_task"] == BINARY_CLASSIFICATION:
-            return self.model.predict_proba(X)[:, 1]
+            return self.model.predict_proba(X, ntree_end=self.best_ntree_limit)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
-            return self.model.predict_proba(X)
-        return self.model.predict(X)
+            return self.model.predict_proba(X, ntree_end=self.best_ntree_limit)
+        
+        return self.model.predict(X, ntree_end=self.best_ntree_limit)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -184,6 +200,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
             "params": self.params,
+            "best_ntree_limit": self.best_ntree_limit
         }
 
     def set_params(self, json_desc):
@@ -194,6 +211,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         )
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
+        self.best_ntree_limit = json_desc.get("best_ntree_limit", self.best_ntree_limit)
 
     def file_extension(self):
         return "catboost"
@@ -212,7 +230,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
 
 classification_params = {
-    "learning_rate": [0.05, 0.1, 0.2],
+    "learning_rate": [0.025, 0.05, 0.1, 0.2],
     "depth": [4, 5, 6, 7, 8, 9],
     "rsm": [0.7, 0.8, 0.9, 1],  # random subspace method
     "loss_function": ["Logloss"],
@@ -270,7 +288,6 @@ AlgorithmsRegistry.add(
 
 regression_params = copy.deepcopy(classification_params)
 regression_params["loss_function"] = ["RMSE", "MAE"]
-regression_params["learning_rate"] = [0.1, 0.15, 0.2]
 
 regression_required_preprocessing = [
     "missing_values_inputation",
@@ -281,7 +298,7 @@ regression_required_preprocessing = [
 
 
 regression_default_params = {
-    "learning_rate": 0.15,
+    "learning_rate": 0.1,
     "depth": 6,
     "rsm": 1,
     "loss_function": "RMSE",

@@ -61,7 +61,7 @@ class TimeController:
 
         ratios = {
             "default_algorithms": 0.3,
-            "not_so_random": 0.3,
+            "not_so_random": 0.35,
             "mix_encoding": 0.05,
             "golden_features": 0.05,
             "kmeans_features": 0.05,
@@ -69,7 +69,7 @@ class TimeController:
             "features_selection": 0.05,
             "hill_climbing_1": 0.2,  # enough to have only first step from hill climbing
             "boost_on_errors": 0.05,
-            "stack": 0.15,
+            "stack": 0.2,
         }
 
         if (
@@ -137,7 +137,7 @@ class TimeController:
 
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
-        #print(fit_level, total_time_spend, compound, self._total_time_limit)
+        #print("Enough time for step", fit_level, np.round(total_time_spend,2), np.round(compound,2))
         if total_time_spend > compound:
             # dont train more
             return False

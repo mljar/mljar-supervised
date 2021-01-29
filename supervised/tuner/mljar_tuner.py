@@ -255,12 +255,17 @@ class MljarTuner:
         X_train_stacked_path = ""
         added_columns = []
 
-        generated_params = []
+        model_types = ["Xgboost", "LightGBM", "CatBoost"]
+        generated_params = {m: [] for m in model_types}
+        types_score_order = []
         # resue old params
         for m in stacked_models:
             # use only Xgboost, LightGBM and CatBoost as stacked models
-            if m.get_type() not in ["Xgboost", "LightGBM", "CatBoost"]:
+            if m.get_type() not in model_types:
                 continue
+
+            if m.get_type() not in types_score_order:
+                types_score_order += [m.get_type()]
 
             if m.params.get("injected_sample_weight", False):
                 # dont use boost_on_errors model for stacking
@@ -296,8 +301,19 @@ class MljarTuner:
                     for col in added_columns:
                         params["preprocessing"]["columns_preprocessing"][col] = [scale]
 
-            generated_params += [params]
-        return generated_params
+            generated_params[m.get_type()] += [params]
+
+        return_params = []
+        for i in range(100):
+            total = 0
+            for m in types_score_order:
+                if generated_params[m]:
+                    return_params += [generated_params[m].pop(0)]
+                total += len(generated_params[m])
+            if total == 0:
+                break
+
+        return return_params
 
     def adjust_validation_params(self, models_cnt):
         generated_params = []

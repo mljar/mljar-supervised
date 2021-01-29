@@ -265,7 +265,6 @@ class BaseAutoML(BaseEstimator, ABC):
         ):
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
-
         # let's create directory to log all training artifacts
         model_path = os.path.join(self._results_path, params["name"])
         self.create_dir(model_path)
@@ -276,15 +275,15 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
         # disable for now
-        #max_time_for_learner = 3600
-        #if self._total_time_limit is not None:
-        #    k_folds = self._validation_strategy.get("k_folds", 1.0)
-        #    at_least_algorithms = 10.0
-        #    
-        #    max_time_for_learner = self._total_time_limit / k_folds / at_least_algorithms
-        #    max_time_for_learner += 60.0 
+        max_time_for_learner = 3600
+        if self._total_time_limit is not None:
+            k_folds = self._validation_strategy.get("k_folds", 1.0)
+            at_least_algorithms = 10.0
+            
+            max_time_for_learner = max(self._total_time_limit / k_folds / at_least_algorithms, 60) 
+            
         #print("max_time_for_learner --->", max_time_for_learner)
-        #params["max_time_for_learner"] = max_time_for_learner
+        params["max_time_for_learner"] = max_time_for_learner
 
 
         total_time_constraint = TotalTimeConstraint(
@@ -953,6 +952,7 @@ class BaseAutoML(BaseEstimator, ABC):
                         generated_params[0]["learner"]["model_type"], self._fit_level
                     ):
                         self.verbose_print(f"Skip {step} because of the time limit.")
+                        continue
                     else:
                         model_str = "models" if len(generated_params) > 1 else "model"
                         self.verbose_print(
