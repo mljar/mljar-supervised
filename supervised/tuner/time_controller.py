@@ -134,7 +134,8 @@ class TimeController:
         return compound
 
     def enough_time_for_step(self, fit_level):
-
+        if fit_level in ["ensemble", "ensemble_stacked"]:
+            return True
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
         #print("Enough time for step", fit_level, np.round(total_time_spend,2), np.round(compound,2))
