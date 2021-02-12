@@ -25,18 +25,13 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8"
     ],
     keywords=[
+        "automated machine learning",
         "automl",
         "machine learning",
-        "random forest",
-        "keras",
-        "xgboost",
-        "lightgbm",
-        "catboost",
-        "mljar",
         "data science",
-        "feature engineering"
+        "data mining",
+        "mljar"
     ],
 )
