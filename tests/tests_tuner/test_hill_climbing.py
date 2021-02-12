@@ -69,6 +69,7 @@ class TunerHillClimbingTest(unittest.TestCase):
             adjust_validation=False,
             boost_on_errors=False,
             kmeans_features=False,
+            mix_encoding=False,
             seed=12,
         )
         ind = 121

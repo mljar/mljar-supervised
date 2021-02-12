@@ -40,6 +40,7 @@ class MljarTuner:
         adjust_validation,
         boost_on_errors,
         kmeans_features,
+        mix_encoding,
         seed,
     ):
         logger.debug("MljarTuner.__init__")
@@ -58,6 +59,7 @@ class MljarTuner:
         self._adjust_validation = adjust_validation
         self._boost_on_errors = boost_on_errors
         self._kmeans_features = kmeans_features
+        self._mix_encoding = mix_encoding
         self._seed = seed
 
         self._unique_params_keys = []
@@ -79,6 +81,7 @@ class MljarTuner:
             if (
                 PreprocessingCategorical.FEW_CATEGORIES in v
                 and PreprocessingTuner.CATEGORICALS_MIX not in strategies
+                and self._mix_encoding
             ):
                 strategies += [PreprocessingTuner.CATEGORICALS_MIX]
 

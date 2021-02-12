@@ -38,6 +38,7 @@ class AutoML(BaseAutoML):
         top_models_to_improve="auto",
         boost_on_errors="auto",
         kmeans_features="auto",
+        mix_encoding="auto",
         verbose=1,
         random_state=1234,
     ):
@@ -177,7 +178,11 @@ class AutoML(BaseAutoML):
 
             boost_on_errors (boolean): Whether a model with boost on errors from previous best model should be trained. By default available in the `Compete` mode.
 
-            kmeans_features (boolean): Whether a model with kmeans generated features should be trained. By default available in the `Compete` mode.
+            kmeans_features (boolean): Whether a model with k-means generated features should be trained. By default available in the `Compete` mode.
+
+            mix_encoding (boolean): Whether a model with mixed encoding should be trained. Mixed encoding is the encoding that uses label encoding
+                for categoricals with more than 25 categories, and one-hot binary encoding for other categoricals. It is only applied if there are
+                categorical features with cardinality smaller than 25. By default it is available in the `Compete` mode.
 
             verbose (int): Controls the verbosity when fitting and predicting.
                 
@@ -277,6 +282,7 @@ class AutoML(BaseAutoML):
         self.top_models_to_improve = top_models_to_improve
         self.boost_on_errors = boost_on_errors
         self.kmeans_features = kmeans_features
+        self.mix_encoding = mix_encoding
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):

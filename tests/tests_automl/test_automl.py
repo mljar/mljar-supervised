@@ -25,6 +25,9 @@ class AutoMLTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
+    def setUp(self):
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
+
     def test_new_directory(self):
         """ Directory does not exist, create it """
         # Assert directory does not exist

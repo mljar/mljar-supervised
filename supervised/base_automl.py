@@ -93,6 +93,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self.tuner = None
         self._boost_on_errors = None
         self._kmeans_features = None
+        self._mix_encoding = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -152,6 +153,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self._boost_on_errors = params.get("boost_on_errors", self._boost_on_errors)
             self._kmeans_features = params.get("kmeans_features", self._kmeans_features)
+            self._mix_encoding = params.get("mix_encoding", self._mix_encoding)
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -829,6 +831,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._top_models_to_improve = self._get_top_models_to_improve()
         self._boost_on_errors = self._get_boost_on_errors()
         self._kmeans_features = self._get_kmeans_features()
+        self._mix_encoding = self._get_mix_encoding()
         self._random_state = self._get_random_state()
 
         self._adjust_validation = False
@@ -889,6 +892,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._adjust_validation,
                 self._boost_on_errors,
                 self._kmeans_features,
+                self._mix_encoding,
                 self._random_state,
             )
             self.tuner = tuner
@@ -1049,6 +1053,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "top_models_to_improve": self._top_models_to_improve,
                 "boost_on_errors": self._boost_on_errors,
                 "kmeans_features": self._kmeans_features,
+                "mix_encoding": self._mix_encoding,
                 "random_state": self._random_state,
                 "saved": self._model_paths,
             }
@@ -1465,6 +1470,20 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.kmeans_features)
 
+    def _get_mix_encoding(self):
+        """ Gets the current mix_encoding"""
+        self._validate_mix_encoding()
+        if self.mix_encoding == "auto":
+            if self._get_mode() == "Explain":
+                return False
+            if self._get_mode() == "Perform":
+                return False
+            if self._get_mode() == "Compete":
+                return True
+        else:
+            return deepcopy(self.mix_encoding)
+
+
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1654,6 +1673,12 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.kmeans_features, str) and self.kmeans_features == "auto":
             return
         check_bool(self.kmeans_features, "kmeans_features")
+
+    def _validate_mix_encoding(self):
+        """ Validates mix_encoding parameter"""
+        if isinstance(self.mix_encoding, str) and self.mix_encoding == "auto":
+            return
+        check_bool(self.mix_encoding, "mix_encoding")
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""
