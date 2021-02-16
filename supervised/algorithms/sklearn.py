@@ -30,7 +30,7 @@ class SklearnAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         self.model.fit(X, y, sample_weight=sample_weight)
 
@@ -47,23 +47,12 @@ class SklearnAlgorithm(BaseAlgorithm):
         self.model = joblib.load(model_file_path)
         self.model_file_path = model_file_path
 
-    def get_params(self):
-        return {
-            "library_version": self.library_version,
-            "algorithm_name": self.algorithm_name,
-            "algorithm_short_name": self.algorithm_short_name,
-            "uid": self.uid,
-            "params": self.params,
-        }
-
-    def set_params(self, json_desc):
-        self.library_version = json_desc.get("library_version", self.library_version)
-        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
-        self.algorithm_short_name = json_desc.get(
-            "algorithm_short_name", self.algorithm_short_name
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "n_features_")
+            and self.model.n_features_ is not None
+            and self.model.n_features_ > 0
         )
-        self.uid = json_desc.get("uid", self.uid)
-        self.params = json_desc.get("params", self.params)
 
     def predict(self, X):
         self.reload()
@@ -86,8 +75,8 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
         self.log_metric = Metric({"name": "logloss"})
         self.max_iters = (
-            1
-        )  # max iters is used by model_framework, max_steps is used internally
+            1  # max iters is used by model_framework, max_steps is used internally
+        )
         self.predict_function = predict_proba_function
 
     def fit(
@@ -99,7 +88,7 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         max_steps = self.max_steps
         n_estimators = 0
@@ -157,7 +146,7 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                     break
 
             # disable for now ...
-            #if max_time is not None and time.time()-start_time > max_time:
+            # if max_time is not None and time.time()-start_time > max_time:
             #    stop = True
 
             if stop:

@@ -27,6 +27,13 @@ class KNNFit(SklearnAlgorithm):
     def file_extension(self):
         return "k_neighbors"
 
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "n_samples_fit_")
+            and self.model.n_samples_fit_ is not None
+            and self.model.n_samples_fit_ > 0
+        )
+
     def fit(
         self,
         X,
@@ -36,7 +43,7 @@ class KNNFit(SklearnAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         if X.shape[0] > 1000:
             X1, _, y1, _ = train_test_split(

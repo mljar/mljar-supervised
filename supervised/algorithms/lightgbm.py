@@ -71,7 +71,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             valid_sets=valid_sets,
             early_stopping_rounds=esr,
             evals_result=evals_result,
-            verbose_eval=False
+            verbose_eval=False,
         )
         time_1_iter = (time.time() - start_time) / 2.0
 
@@ -91,7 +91,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         lgb_train = lgb.Dataset(
             X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight
@@ -123,7 +123,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             evals_result = {}
 
             # disable for now ...
-            # boosting_rounds = self.get_boosting_rounds(lgb_train, valid_sets, esr, max_time)            
+            # boosting_rounds = self.get_boosting_rounds(lgb_train, valid_sets, esr, max_time)
 
             self.model = lgb.train(
                 self.learner_params,
@@ -147,6 +147,9 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 )
                 result.to_csv(log_to_file, index=False, header=False)
 
+    def is_fitted(self):
+        return self.model is not None
+
     def predict(self, X):
         self.reload()
         return self.model.predict(X.to_numpy() if isinstance(X, pd.DataFrame) else X)
@@ -164,25 +167,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
         logger.debug("LightgbmAlgorithm load model from %s" % model_file_path)
         self.model_file_path = model_file_path
         self.model = lgb.Booster(model_file=model_file_path)
-
-    def get_params(self):
-        json_desc = {
-            "library_version": self.library_version,
-            "algorithm_name": self.algorithm_name,
-            "algorithm_short_name": self.algorithm_short_name,
-            "uid": self.uid,
-            "params": self.params,
-        }
-        return json_desc
-
-    def set_params(self, json_desc):
-        self.library_version = json_desc.get("library_version", self.library_version)
-        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
-        self.algorithm_short_name = json_desc.get(
-            "algorithm_short_name", self.algorithm_short_name
-        )
-        self.uid = json_desc.get("uid", self.uid)
-        self.params = json_desc.get("params", self.params)
 
     def get_metric_name(self):
         metric = self.params.get("metric")

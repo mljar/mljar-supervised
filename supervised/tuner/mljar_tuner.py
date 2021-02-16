@@ -101,7 +101,7 @@ class MljarTuner:
         for k, v in self._data_info["columns_info"].items():
             if "categorical" not in v:
                 continous_cols += 1
-        
+
         # too little columns
         if continous_cols == 0:
             return False
@@ -122,7 +122,7 @@ class MljarTuner:
         for k, v in self._data_info["columns_info"].items():
             if "categorical" not in v:
                 continous_cols += 1
-        
+
         # too little columns
         if continous_cols == 0:
             return False
@@ -137,7 +137,7 @@ class MljarTuner:
             all_steps += ["adjust_validation"]
 
         all_steps += ["simple_algorithms", "default_algorithms"]
-        
+
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
 
@@ -458,7 +458,7 @@ class MljarTuner:
                 if unique_params_key not in self._unique_params_keys:
                     generated_params[model_type] += [params]
                     models_cnt += 1
-        
+
         """
         return_params = []
         for i in range(100):
@@ -547,10 +547,10 @@ class MljarTuner:
                     all_params["final_loss"] = None
                     all_params["train_time"] = None
                     unique_params_key = MljarTuner.get_params_key(all_params)
-                    
+
                     if unique_params_key not in self._unique_params_keys:
                         generated_params += [all_params]
-                    
+
         return generated_params
 
     def get_all_int_categorical_strategy(self, current_models, total_time_limit):
@@ -646,7 +646,9 @@ class MljarTuner:
                     generated_params += [params]
         return generated_params
 
-    def df_models_algorithms(self, current_models, time_limit=None, exclude_golden=False):
+    def df_models_algorithms(
+        self, current_models, time_limit=None, exclude_golden=False
+    ):
         scores = [m.get_final_loss() for m in current_models]
         model_types = [m.get_type() for m in current_models]
         names = [m.get_name() for m in current_models]
@@ -711,8 +713,7 @@ class MljarTuner:
     ):
 
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit,
-            exclude_golden=True
+            current_models, time_limit=0.1 * total_time_limit, exclude_golden=True
         )
 
         generated_params = []
@@ -762,7 +763,6 @@ class MljarTuner:
                     time_needed += 2.0 * m.get_train_time()
                 else:
                     time_needed += m.get_train_time()
-                
 
         return time_needed
 
@@ -908,10 +908,11 @@ class MljarTuner:
             key = MljarTuner.get_params_key(model.params)
             self._unique_params_keys += [key]
 
-
     def boost_params(self, current_models, results_path, total_time_limit):
 
-        df_models, algorithms = self.df_models_algorithms(current_models, time_limit=0.1 * total_time_limit)
+        df_models, algorithms = self.df_models_algorithms(
+            current_models, time_limit=0.1 * total_time_limit
+        )
         best_model = None
         for i in range(df_models.shape[0]):
             if df_models["model_type"].iloc[i] in [
@@ -961,7 +962,7 @@ class MljarTuner:
         generated_params = []
 
         params = copy.deepcopy(best_model.params)
-        
+
         params["validation_strategy"]["sample_weight_path"] = sample_weight_path
         params["injected_sample_weight"] = True
         params["name"] += "_BoostOnErrors"

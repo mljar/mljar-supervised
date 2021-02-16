@@ -12,7 +12,7 @@ from supervised.exceptions import AutoMLException
 
 
 class KMeansTransformer(object):
-    def __init__(self, results_path=None, model_name = None, k_fold=None):
+    def __init__(self, results_path=None, model_name=None, k_fold=None):
         self._new_features = []
         self._input_columns = []
         self._error = None
@@ -22,8 +22,10 @@ class KMeansTransformer(object):
         self._k_fold = k_fold
 
         if results_path is not None:
-            self._result_file = os.path.join(results_path, self._model_name, f"kmeans_fold_{k_fold}.joblib")
-            #self.try_load()
+            self._result_file = os.path.join(
+                results_path, self._model_name, f"kmeans_fold_{k_fold}.joblib"
+            )
+            # self.try_load()
 
     def fit(self, X, y):
         if self._new_features:
@@ -46,16 +48,14 @@ class KMeansTransformer(object):
 
         self._input_columns = X.columns.tolist()
         # scale data
-        self._scale = StandardScaler(
-            copy=True, with_mean=True, with_std=True
-        )
+        self._scale = StandardScaler(copy=True, with_mean=True, with_std=True)
         X = self._scale.fit_transform(X)
 
         # Kmeans
         self._kmeans = kmeans = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++")
         self._kmeans.fit(X)
         self._create_new_features_names()
-        
+
         print(
             f"Created {len(self._new_features)} KMeans Features in {np.round(time.time() - start_time,2)} seconds."
         )
@@ -86,7 +86,7 @@ class KMeansTransformer(object):
         data_json = {
             "new_features": self._new_features,
             "result_file": self._result_file,
-            "input_columns": self._input_columns
+            "input_columns": self._input_columns,
         }
         if self._error is not None and self._error:
             data_json["error"] = self._error
@@ -100,12 +100,16 @@ class KMeansTransformer(object):
         self.try_load()
 
     def save(self):
-        joblib.dump({"kmeans": self._kmeans, "scale": self._scale}, self._result_file, compress=True)
+        joblib.dump(
+            {"kmeans": self._kmeans, "scale": self._scale},
+            self._result_file,
+            compress=True,
+        )
 
     def try_load(self):
         if os.path.exists(self._result_file):
             data = joblib.load(self._result_file)
             self._kmeans = data["kmeans"]
             self._scale = data["scale"]
-            
+
             self._create_new_features_names()

@@ -33,6 +33,13 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm):
     def file_extension(self):
         return "baseline"
 
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "n_outputs_")
+            and self.model.n_outputs_ is not None
+            and self.model.n_outputs_ > 0
+        )
+
 
 class BaselineRegressorAlgorithm(SklearnAlgorithm):
 
@@ -49,6 +56,13 @@ class BaselineRegressorAlgorithm(SklearnAlgorithm):
 
     def file_extension(self):
         return "baseline"
+
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "n_outputs_")
+            and self.model.n_outputs_ is not None
+            and self.model.n_outputs_ > 0
+        )
 
 
 additional = {"max_steps": 1, "max_rows_limit": None, "max_cols_limit": None}

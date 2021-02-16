@@ -54,6 +54,7 @@ class Ensemble:
         self._name = "Ensemble_Stacked" if is_stacked else "Ensemble"
         self._scores = []
         self.oof_predictions = None
+        self._oof_predictions_fname = None
 
     def get_train_time(self):
         return self.train_time
@@ -81,6 +82,10 @@ class Ensemble:
         """ Needed when ensemble is treated as model and we want to compute additional metrics for it """
         # single prediction (in case of binary classification and regression)
         if self.oof_predictions is not None:
+            return self.oof_predictions.copy(deep=True)
+
+        if self._oof_predictions_fname is not None:
+            self.oof_predictions = pd.read_csv(self._oof_predictions_fname)
             return self.oof_predictions.copy(deep=True)
 
         if self.total_best_sum.shape[1] == 1:
@@ -307,8 +312,10 @@ class Ensemble:
         logger.info(f"Save the ensemble to {model_path}")
 
         predictions = self.get_out_of_folds()
-        predictions_fname = os.path.join(model_path, f"predictions_ensemble.csv")
-        predictions.to_csv(predictions_fname, index=False)
+        self._oof_predictions_fname = os.path.join(
+            model_path, f"predictions_ensemble.csv"
+        )
+        predictions.to_csv(_oof_predictions_fname, index=False)
 
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
@@ -320,7 +327,7 @@ class Ensemble:
                 "ml_task": self._ml_task,
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
-                "predictions_fname": predictions_fname,
+                "predictions_fname": self._oof_predictions_fname,
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -374,7 +381,7 @@ class Ensemble:
         ensemble.best_loss = json_desc.get("final_loss", ensemble.best_loss)
         ensemble.train_time = json_desc.get("train_time", ensemble.train_time)
         ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
-        predictions_fname = json_desc.get("predictions_fname")
-        if predictions_fname is not None:
-            ensemble.oof_predictions = pd.read_csv(predictions_fname)
+        ensemble._oof_predictions_fname = json_desc.get(
+            "predictions_fname", ensemble._oof_predictions_fname
+        )
         return ensemble

@@ -55,7 +55,14 @@ class SplitValidator(BaseValidator):
             stratify = None
 
         if sample_weight is not None:
-            X_train, X_validation, y_train, y_validation, sample_weight_train, sample_weight_validation = train_test_split(
+            (
+                X_train,
+                X_validation,
+                y_train,
+                y_validation,
+                sample_weight_train,
+                sample_weight_validation,
+            ) = train_test_split(
                 X,
                 y,
                 sample_weight,

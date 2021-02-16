@@ -25,3 +25,9 @@ class AlgorithmFactory(object):
         learner.set_params(json_desc)
         learner.load(model_file_path)
         return learner
+
+    @classmethod
+    def lazy_load(cls, json_desc):
+        learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
+        learner.set_params(json_desc)
+        return learner

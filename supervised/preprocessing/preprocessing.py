@@ -34,8 +34,9 @@ class Preprocessing(object):
     def __init__(
         self,
         preprocessing_params={"target_preprocessing": [], "columns_preprocessing": {}},
-        model_name =None,
-        k_fold = None, repeat = None
+        model_name=None,
+        k_fold=None,
+        repeat=None,
     ):
         self._params = preprocessing_params
 
@@ -192,7 +193,9 @@ class Preprocessing(object):
         kmeans_columns = []
         if "kmeans_features" in self._params:
             results_path = self._params["kmeans_features"]["results_path"]
-            self._kmeans = KMeansTransformer(results_path, self._model_name, self._k_fold)
+            self._kmeans = KMeansTransformer(
+                results_path, self._model_name, self._k_fold
+            )
             self._kmeans.fit(X_train[numeric_cols], y_train)
             X_train = self._kmeans.transform(X_train)
             kmeans_columns = self._kmeans._new_features
@@ -311,7 +314,11 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing -> {}".format(target_preprocessing))
 
-            X_validation, y_validation, sample_weight_validation = ExcludeRowsMissingTarget.transform(
+            (
+                X_validation,
+                y_validation,
+                sample_weight_validation,
+            ) = ExcludeRowsMissingTarget.transform(
                 X_validation, y_validation, sample_weight_validation
             )
 

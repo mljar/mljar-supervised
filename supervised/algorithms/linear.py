@@ -32,6 +32,13 @@ class LinearAlgorithm(SklearnAlgorithm):
         self.library_version = sklearn.__version__
         self.model = LogisticRegression(max_iter=500, tol=5e-4, n_jobs=-1)
 
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "coef_")
+            and self.model.coef_ is not None
+            and self.model.coef_.shape[0] > 0
+        )
+
     def file_extension(self):
         return "linear"
 
@@ -107,6 +114,13 @@ class LinearRegressorAlgorithm(SklearnAlgorithm):
         self.max_iters = 1
         self.library_version = sklearn.__version__
         self.model = LinearRegression(n_jobs=-1)
+
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "coef_")
+            and self.model.coef_ is not None
+            and self.model.coef_.shape[0] > 0
+        )
 
     def file_extension(self):
         return "linear"

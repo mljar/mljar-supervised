@@ -28,11 +28,11 @@ class EarlyStopping(Callback):
         self.best_models = {}
         self.best_y_predicted = {}
         self.best_y_oof = (
-            None
-        )  # predictions computed on out of folds or on validation set
+            None  # predictions computed on out of folds or on validation set
+        )
         self.final_loss = (
-            None
-        )  # final score computed on combined predictions from all learners
+            None  # final score computed on combined predictions from all learners
+        )
         # path to best model local copy, only used if cannot deep copy
         self.best_model_paths = {}
         self.multiple_target = False

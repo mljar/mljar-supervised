@@ -105,7 +105,7 @@ class XgbAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         dtrain = xgb.DMatrix(
             X.to_numpy() if isinstance(X, pd.DataFrame) else X,
@@ -145,9 +145,9 @@ class XgbAlgorithm(BaseAlgorithm):
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 
-        #dump_list = self.model.get_dump()
-        #num_trees = len(dump_list)
-        #print(self.model.best_ntree_limit, num_trees)
+        # dump_list = self.model.get_dump()
+        # num_trees = len(dump_list)
+        # print(self.model.best_ntree_limit, num_trees)
 
         if log_to_file is not None:
             metric_name = list(evals_result["train"].keys())[0]
@@ -175,6 +175,9 @@ class XgbAlgorithm(BaseAlgorithm):
             self.model.load_model(tmp.name)
         """
 
+    def is_fitted(self):
+        return self.model is not None
+
     def predict(self, X):
         self.reload()
 
@@ -200,26 +203,6 @@ class XgbAlgorithm(BaseAlgorithm):
         self.model = xgb.Booster()  # init model
         self.model.load_model(model_file_path)
         self.model_file_path = model_file_path
-
-    def get_params(self):
-        return {
-            "library_version": self.library_version,
-            "algorithm_name": self.algorithm_name,
-            "algorithm_short_name": self.algorithm_short_name,
-            "uid": self.uid,
-            "params": self.params,
-            "best_ntree_limit": self.best_ntree_limit,
-        }
-
-    def set_params(self, json_desc):
-        self.library_version = json_desc.get("library_version", self.library_version)
-        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
-        self.algorithm_short_name = json_desc.get(
-            "algorithm_short_name", self.algorithm_short_name
-        )
-        self.uid = json_desc.get("uid", self.uid)
-        self.params = json_desc.get("params", self.params)
-        self.best_ntree_limit = json_desc.get("best_ntree_limit", self.best_ntree_limit)
 
     def file_extension(self):
         return "xgboost"

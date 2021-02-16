@@ -15,7 +15,7 @@ logger.setLevel(LOG_LEVEL)
 class AutoML(BaseAutoML):
 
     """
-        Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
+    Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
     """
 
     def __init__(
@@ -51,7 +51,7 @@ class AutoML(BaseAutoML):
                 If the `results_path` will point to directory with AutoML results (`params.json` must be present),
                 then all models will be loaded.
 
-            total_time_limit (int): The total time limit in seconds for AutoML training. 
+            total_time_limit (int): The total time limit in seconds for AutoML training.
                 It is not used when `model_time_limit` is not `None`.
 
             mode (str): Can be {`Explain`, `Perform`, `Compete`}. This parameter defines the goal of AutoML and how intensive the AutoML search will be.
@@ -71,7 +71,7 @@ class AutoML(BaseAutoML):
                     - It has only learning curves in the reports.
 
             ml_task (str): Can be {"auto", "binary_classification", "multiclass_classification", "regression"}.
-                
+
                 - If left `auto` AutoML will try to guess the task based on target values.
                 - If there will be only 2 values in the target, then task will be set to `"binary_classification"`.
                 - If number of values in the target will be between 2 and 20 (included), then task will be set to `"multiclass_classification"`.
@@ -80,13 +80,13 @@ class AutoML(BaseAutoML):
             model_time_limit (int): The time limit for training a single model, in seconds.
                 If `model_time_limit` is set, the `total_time_limit` is not respected.
                 The single model can contain several learners. The time limit for subsequent learners is computed based on `model_time_limit`.
-                
+
                 For example, in the case of 10-fold cross-validation, one model will have 10 learners.
                 The `model_time_limit` is the time for all 10 learners.
 
-            algorithms (list of str): The list of algorithms that will be used in the training. 
+            algorithms (list of str): The list of algorithms that will be used in the training.
                 The algorithms can be:
-                
+
                 - `Baseline`,
                 - `Linear`,
                 - `Decision Tree`,
@@ -97,7 +97,7 @@ class AutoML(BaseAutoML):
                 - `CatBoost`,
                 - `Neural Network`,
                 - `Nearest Neighbors`,
-                
+
 
             train_ensemble (boolean): Whether an ensemble gets created at the end of the training.
 
@@ -105,23 +105,23 @@ class AutoML(BaseAutoML):
 
             eval_metric (str): The metric to be optimized.
                 If "auto", then:
-    
+
                 - `logloss` is used for classifications taks.
                 - `rmse` is used for regression taks.
-    
-                Note: 
+
+                Note:
                     Still not implemented, please left `None`
 
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
-                
+
                 Example:
-                    
+
                     Cross-validation exmaple:
                     {
-                        "validation_type": "kfold", 
-                        "k_folds": 5, 
-                        "shuffle": True, 
-                        "stratify": True, 
+                        "validation_type": "kfold",
+                        "k_folds": 5,
+                        "shuffle": True,
+                        "stratify": True,
                         "random_seed": 123
                     }
 
@@ -134,23 +134,23 @@ class AutoML(BaseAutoML):
                     }
 
             explain_level (int): The level of explanations included to each model:
-                
+
                 - if `explain_level` is `0` no explanations are produced.
                 - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
                 - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
-                
+
                 If left `auto` AutoML will produce explanations based on the selected `mode`.
 
             golden_features (boolean): Whether to use golden features
                 If left `auto` AutoML will use golden features based on the selected `mode`:
-                
+
                 - If `mode` is "Explain", `golden_features` = False.
                 - If `mode` is "Perform", `golden_features` = True.
                 - If `mode` is "Compete", `golden_features` = True.
 
             features_selection (boolean): Whether to do features_selection
                 If left `auto` AutoML will do feature selection based on the selected `mode`:
-                
+
                 - If `mode` is "Explain", `features_selection` = False.
                 - If `mode` is "Perform", `features_selection` = True.
                 - If `mode` is "Compete", `features_selection` = True.
@@ -164,7 +164,7 @@ class AutoML(BaseAutoML):
 
             hill_climbing_steps (int): Number of steps to perform during hill climbing.
                 If left `auto` AutoML will select it based on the selected `mode`:
-                
+
                 - If `mode` is "Explain", `hill_climbing_steps` = 0.
                 - If `mode` is "Perform", `hill_climbing_steps` = 2.
                 - If `mode` is "Compete", `hill_climbing_steps` = 2.
@@ -185,7 +185,7 @@ class AutoML(BaseAutoML):
                 categorical features with cardinality smaller than 25. By default it is available in the `Compete` mode.
 
             verbose (int): Controls the verbosity when fitting and predicting.
-                
+
                 Note:
                     Still not implemented, please left `1`
 
@@ -289,7 +289,7 @@ class AutoML(BaseAutoML):
         """Fit the AutoML model.
 
         Arguments:
-            X (numpy.ndarray or pandas.DataFrame): Training data 
+            X (numpy.ndarray or pandas.DataFrame): Training data
 
             y (numpy.ndarray or pandas.Series): Training targets
 
@@ -303,14 +303,14 @@ class AutoML(BaseAutoML):
     def predict(self, X):
         """
         Computes predictions from AutoML best model.
-        
+
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame): 
+            X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            numpy.ndarray: 
-                
+            numpy.ndarray:
+
             - One-dimensional array of class labels for classification.
             - One-dimensional array of predictions for regression.
 
@@ -321,15 +321,15 @@ class AutoML(BaseAutoML):
 
     def predict_proba(self, X):
         """
-        Computes class probabilities from AutoML best model. 
+        Computes class probabilities from AutoML best model.
         This method can only be used for classification tasks.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame): 
+            X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            numpy.ndarray of shape (n_samples, n_classes): 
+            numpy.ndarray of shape (n_samples, n_classes):
                 Matrix of containing class probabilities of the input samples
 
         Raises:
@@ -349,9 +349,9 @@ class AutoML(BaseAutoML):
 
         Returns:
             pandas.Dataframe:
-                Dataframe (n_samples, n_classes + 1) containing both class probabilities and class 
+                Dataframe (n_samples, n_classes + 1) containing both class probabilities and class
                 labels of the input samples for classification tasks.
-                Dataframe with predictions for regression tasks. 
+                Dataframe with predictions for regression tasks.
 
         Raises:
             AutoMLException: Model has not yet been fitted.

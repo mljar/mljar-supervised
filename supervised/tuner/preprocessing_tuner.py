@@ -15,7 +15,7 @@ from supervised.algorithms.registry import (
 class PreprocessingTuner:
 
     """
-        This class prepare configuration for data preprocessing
+    This class prepare configuration for data preprocessing
     """
 
     CATEGORICALS_MIX = "categorical_mix"  # mix int and one-hot

@@ -28,6 +28,13 @@ class NNFit(SklearnAlgorithm):
     def file_extension(self):
         return "neural_network"
 
+    def is_fitted(self):
+        return (
+            hasattr(self.model, "n_iter_")
+            and self.model.n_iter_ is not None
+            and self.model.n_iter_ > 0
+        )
+
     def fit(
         self,
         X,
@@ -37,7 +44,7 @@ class NNFit(SklearnAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         self.model.fit(X, y)
 

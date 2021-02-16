@@ -27,8 +27,12 @@ class BaseAlgorithm:
     def set_learner_name(self, fold, repeat, repeats):
         self.name = construct_learner_name(fold, repeat, repeats)
 
+    def is_fitted(self):
+        # base class method
+        return False
+
     def reload(self):
-        if self.model is None and self.model_file_path is not None:
+        if not self.is_fitted() and self.model_file_path is not None:
             self.load(self.model_file_path)
 
     def fit(
@@ -40,7 +44,7 @@ class BaseAlgorithm:
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
         pass
 
@@ -108,3 +112,32 @@ class BaseAlgorithm:
 
     def get_metric_name(self):
         return None
+
+    def get_params(self):
+        params = {
+            "library_version": self.library_version,
+            "algorithm_name": self.algorithm_name,
+            "algorithm_short_name": self.algorithm_short_name,
+            "uid": self.uid,
+            "params": self.params,
+        }
+        if self.model_file_path is not None:
+            params["model_file_path"] = self.model_file_path
+        if hasattr(self, "best_ntree_limit") and self.best_ntree_limit is not None:
+            params["best_ntree_limit"] = self.best_ntree_limit
+        return params
+
+    def set_params(self, json_desc):
+        self.library_version = json_desc.get("library_version", self.library_version)
+        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
+        self.algorithm_short_name = json_desc.get(
+            "algorithm_short_name", self.algorithm_short_name
+        )
+        self.uid = json_desc.get("uid", self.uid)
+        self.params = json_desc.get("params", self.params)
+        self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
+
+        if hasattr(self, "best_ntree_limit"):
+            self.best_ntree_limit = json_desc.get(
+                "best_ntree_limit", self.best_ntree_limit
+            )

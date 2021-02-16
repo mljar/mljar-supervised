@@ -118,7 +118,7 @@ class TimeController:
             if step in [
                 "adjust_validation",
                 "simple_algorithms",
-                #"default_algorithms",
+                # "default_algorithms",
                 "ensemble",
                 "ensemble_stacked",
             ]:
@@ -138,7 +138,7 @@ class TimeController:
             return True
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)
-        #print("Enough time for step", fit_level, np.round(total_time_spend,2), np.round(compound,2))
+        # print("Enough time for step", fit_level, np.round(total_time_spend,2), np.round(compound,2))
         if total_time_spend > compound:
             # dont train more
             return False
@@ -155,12 +155,12 @@ class TimeController:
     def enough_time(self, model_type, step):
         """
         Check if there is enough time to train the next model.
-        
+
         Parameters
         ----------
         model_type : str
             String with type of the model.
-        
+
         step: str
             String with name of the step in the process of AutoML training.
 
@@ -197,7 +197,7 @@ class TimeController:
         # we should try it
         if time_left > 0 and self.model_spend(model_type) == 0:
             return True
-        
+
         # stacked models converge faster
         # dont need to check ...
         if step == "stack":

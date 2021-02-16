@@ -67,6 +67,7 @@ class ModelFramework:
         self._additional_metrics = None
         self._threshold = None  # used only for binary classifiers
         self._max_time_for_learner = params.get("max_time_for_learner", 3600)
+        self._oof_predictions_fname = None
 
     def get_train_time(self):
         return self.train_time
@@ -136,16 +137,22 @@ class ModelFramework:
                     logger.debug("Sample weight available during the training.")
 
                 # the proprocessing is done at every validation step
-                self.preprocessings += [Preprocessing(self.preprocessing_params, self.get_name(), k_fold, repeat)]
+                self.preprocessings += [
+                    Preprocessing(
+                        self.preprocessing_params, self.get_name(), k_fold, repeat
+                    )
+                ]
 
                 X_train, y_train, sample_weight = self.preprocessings[
                     -1
                 ].fit_and_transform(
                     train_data["X"], train_data["y"], train_data.get("sample_weight")
                 )
-                X_validation, y_validation, sample_weight_validation = self.preprocessings[
-                    -1
-                ].transform(
+                (
+                    X_validation,
+                    y_validation,
+                    sample_weight_validation,
+                ) = self.preprocessings[-1].transform(
                     validation_data["X"],
                     validation_data["y"],
                     validation_data.get("sample_weight"),
@@ -175,11 +182,11 @@ class ModelFramework:
                         y_validation,
                         sample_weight_validation,
                         log_to_file,
-                        self._max_time_for_learner
+                        self._max_time_for_learner,
                     )
 
                     if self.params.get("injected_sample_weight", False):
-                        #print("Dont use sample weight in model evaluation")
+                        # print("Dont use sample weight in model evaluation")
                         sample_weight = None
                         sample_weight_validation = None
 
@@ -252,6 +259,11 @@ class ModelFramework:
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
             return self.oof_predictions.copy(deep=True)
+
+        if self._oof_predictions_fname is not None:
+            self.oof_predictions = pd.read_csv(self._oof_predictions_fname)
+            return self.oof_predictions.copy(deep=True)
+
         early_stopping = self.callbacks.get("early_stopping")
         if early_stopping is None:
             return None
@@ -297,8 +309,8 @@ class ModelFramework:
         return self._name
 
     def is_valid(self):
-        """ is_valid is used in Ensemble to check if it has more than 1 model in it.
-            If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model """
+        """is_valid is used in Ensemble to check if it has more than 1 model in it.
+        If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model"""
         return True
 
     def predict(self, X):
@@ -362,11 +374,11 @@ class ModelFramework:
         type_of_predictions = (
             "validation" if "k_folds" not in self.validation_params else "out_of_folds"
         )
-        predictions_fname = os.path.join(
+        self._oof_predictions_fname = os.path.join(
             model_path, f"predictions_{type_of_predictions}.csv"
         )
         predictions = self.get_out_of_folds()
-        predictions.to_csv(predictions_fname, index=False)
+        predictions.to_csv(self._oof_predictions_fname, index=False)
 
         saved = []
         for i, l in enumerate(self.learners):
@@ -384,7 +396,7 @@ class ModelFramework:
                 "learners": learners_params,
                 "params": self.params,
                 "saved": saved,
-                "predictions_fname": predictions_fname,
+                "predictions_fname": self._oof_predictions_fname,
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -458,16 +470,17 @@ class ModelFramework:
         mf.final_loss = json_desc.get("final_loss", mf.final_loss)
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
-        predictions_fname = json_desc.get("predictions_fname")
-        if predictions_fname is not None:
-            mf.oof_predictions = pd.read_csv(predictions_fname)
+        mf._oof_predictions_fname = json_desc.get(
+            "predictions_fname", mf._oof_predictions_fname
+        )
 
         mf.learners = []
         for learner_desc, learner_path in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
 
-            l = AlgorithmFactory.load(learner_desc, learner_path)
+            # l = AlgorithmFactory.load(learner_desc, learner_path)
+            l = AlgorithmFactory.lazy_load(learner_desc)
             mf.learners += [l]
 
         mf.preprocessings = []

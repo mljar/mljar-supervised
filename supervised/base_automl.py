@@ -238,9 +238,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._time_ctrl.log_time(
             model.get_name(), model.get_type(), self._fit_level, model.get_train_time()
         )
-        
+
         self.tuner.add_key(model)
-        
 
     def create_dir(self, model_path):
         if not os.path.exists(model_path):
@@ -281,12 +280,13 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._total_time_limit is not None:
             k_folds = self._validation_strategy.get("k_folds", 1.0)
             at_least_algorithms = 10.0
-            
-            max_time_for_learner = max(self._total_time_limit / k_folds / at_least_algorithms, 60) 
-            
-        #print("max_time_for_learner --->", max_time_for_learner)
-        params["max_time_for_learner"] = max_time_for_learner
 
+            max_time_for_learner = max(
+                self._total_time_limit / k_folds / at_least_algorithms, 60
+            )
+
+        # print("max_time_for_learner --->", max_time_for_learner)
+        params["max_time_for_learner"] = max_time_for_learner
 
         total_time_constraint = TotalTimeConstraint(
             {
@@ -1077,17 +1077,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 LeaderboardPlots.compute(ldb, self._results_path, fout)
 
-    def _check_is_fitted(self):
-        # First check if model can be loaded
-        self._check_can_load()
-        # Check if fitted
-        if self._fit_level != "finished":
+    def _base_predict(self, X):
+        
+        if self._best_model is None:
+            self.load(self.results_path)
+
+        if self._best_model is None:
             raise AutoMLException(
                 "This model has not been fitted yet. Please call `fit()` first."
             )
-
-    def _base_predict(self, X):
-        self._check_is_fitted()
 
         X = self._build_dataframe(X)
         if not isinstance(X.columns[0], str):
@@ -1483,7 +1481,6 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.mix_encoding)
 
-
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1667,7 +1664,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.boost_on_errors, str) and self.boost_on_errors == "auto":
             return
         check_bool(self.boost_on_errors, "boost_on_errors")
-    
+
     def _validate_kmeans_features(self):
         """ Validates kmeans_features parameter"""
         if isinstance(self.kmeans_features, str) and self.kmeans_features == "auto":

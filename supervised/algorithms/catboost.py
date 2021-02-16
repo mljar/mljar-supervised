@@ -63,14 +63,14 @@ class CatBoostAlgorithm(BaseAlgorithm):
             rsm=self.learner_params["rsm"],
             loss_function=self.learner_params["loss_function"],
             verbose=False,
-            allow_writing_files=False
+            allow_writing_files=False,
         )
         self.cat_features = None
         self.best_ntree_limit = 0
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def _assess_iterations(self, X, y, eval_set, max_time = None):
+    def _assess_iterations(self, X, y, eval_set, max_time=None):
         if max_time is None:
             max_time = 3600
         try:
@@ -84,15 +84,15 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 init_model=None if self.model.tree_count_ is None else self.model,
                 eval_set=eval_set,
                 early_stopping_rounds=self.early_stopping_rounds,
-                verbose_eval=False
+                verbose_eval=False,
             )
             elapsed_time = (time.time() - start_time) / float(self.warmup_iterations)
-            #print(max_time, elapsed_time, max_time / elapsed_time, np.round(time.time() - start_time, 2))
+            # print(max_time, elapsed_time, max_time / elapsed_time, np.round(time.time() - start_time, 2))
             new_rounds = int(min(10000, max_time / elapsed_time))
             new_rounds = max(new_rounds, 10)
             return model, new_rounds
         except Exception as e:
-            #print(str(e))
+            # print(str(e))
             return None, 1000
 
     def fit(
@@ -104,9 +104,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
         y_validation=None,
         sample_weight_validation=None,
         log_to_file=None,
-        max_time=None
+        max_time=None,
     ):
-        if self.model.tree_count_ is not None:
+        if self.is_fitted():
             print("CatBoost model already fitted. Skip fit().")
             return
 
@@ -128,7 +128,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         # disable for now ...
         model_init, new_iterations = self._assess_iterations(X, y, eval_set, max_time)
         self.model.set_params(iterations=new_iterations)
-        
+
         self.model.fit(
             X,
             y,
@@ -137,10 +137,12 @@ class CatBoostAlgorithm(BaseAlgorithm):
             init_model=model_init,
             eval_set=eval_set,
             early_stopping_rounds=self.early_stopping_rounds,
-            verbose_eval=False
-        )        
+            verbose_eval=False,
+        )
         if self.model.best_iteration_ is not None:
-            self.best_ntree_limit = self.model.best_iteration_+self.warmup_iterations+1
+            self.best_ntree_limit = (
+                self.model.best_iteration_ + self.warmup_iterations + 1
+            )
         else:
             # just take all the trees
             # the warm-up trees are already included
@@ -153,17 +155,25 @@ class CatBoostAlgorithm(BaseAlgorithm):
             train_scores = self.model.evals_result_["learn"][metric_name]
             validation_scores = self.model.evals_result_["validation"][metric_name]
             if model_init is not None:
-                train_scores = model_init.evals_result_["learn"][metric_name] + train_scores
-                validation_scores = model_init.evals_result_["validation"][metric_name] + validation_scores
-            
+                train_scores = (
+                    model_init.evals_result_["learn"][metric_name] + train_scores
+                )
+                validation_scores = (
+                    model_init.evals_result_["validation"][metric_name]
+                    + validation_scores
+                )
+
             result = pd.DataFrame(
                 {
                     "iteration": range(len(train_scores)),
-                    "train":  train_scores,
-                    "validation":  validation_scores,
+                    "train": train_scores,
+                    "validation": validation_scores,
                 }
             )
             result.to_csv(log_to_file, index=False, header=False)
+
+    def is_fitted(self):
+        return self.model.tree_count_ is not None
 
     def predict(self, X):
         self.reload()
@@ -171,7 +181,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return self.model.predict_proba(X, ntree_end=self.best_ntree_limit)[:, 1]
         elif self.params["ml_task"] == MULTICLASS_CLASSIFICATION:
             return self.model.predict_proba(X, ntree_end=self.best_ntree_limit)
-        
+
         return self.model.predict(X, ntree_end=self.best_ntree_limit)
 
     def copy(self):
@@ -192,26 +202,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         self.model = Algo().load_model(model_file_path)
         self.model_file_path = model_file_path
-
-    def get_params(self):
-        return {
-            "library_version": self.library_version,
-            "algorithm_name": self.algorithm_name,
-            "algorithm_short_name": self.algorithm_short_name,
-            "uid": self.uid,
-            "params": self.params,
-            "best_ntree_limit": self.best_ntree_limit
-        }
-
-    def set_params(self, json_desc):
-        self.library_version = json_desc.get("library_version", self.library_version)
-        self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
-        self.algorithm_short_name = json_desc.get(
-            "algorithm_short_name", self.algorithm_short_name
-        )
-        self.uid = json_desc.get("uid", self.uid)
-        self.params = json_desc.get("params", self.params)
-        self.best_ntree_limit = json_desc.get("best_ntree_limit", self.best_ntree_limit)
 
     def file_extension(self):
         return "catboost"
