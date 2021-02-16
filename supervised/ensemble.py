@@ -315,7 +315,7 @@ class Ensemble:
         self._oof_predictions_fname = os.path.join(
             model_path, f"predictions_ensemble.csv"
         )
-        predictions.to_csv(_oof_predictions_fname, index=False)
+        predictions.to_csv(self._oof_predictions_fname, index=False)
 
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
