@@ -173,7 +173,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             result.to_csv(log_to_file, index=False, header=False)
 
     def is_fitted(self):
-        return self.model.tree_count_ is not None
+        return self.model is not None and self.model.tree_count_ is not None
 
     def predict(self, X):
         self.reload()

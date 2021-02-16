@@ -1078,7 +1078,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 LeaderboardPlots.compute(ldb, self._results_path, fout)
 
     def _base_predict(self, X):
-        
+
         if self._best_model is None:
             self.load(self.results_path)
 
