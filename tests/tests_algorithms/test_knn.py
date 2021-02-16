@@ -70,3 +70,11 @@ class KNeighborsAlgorithmTest(unittest.TestCase):
         la.fit(self.X, self.y)
         y_predicted = la.predict(self.X)
         self.assertTrue(metric(self.y, y_predicted) < 0.6)
+
+
+    def test_is_fitted(self):
+        params = {"ml_task": "binary_classification"}
+        model = KNeighborsAlgorithm(params)
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())

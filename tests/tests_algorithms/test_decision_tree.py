@@ -60,3 +60,10 @@ class DecisionTreeTest(unittest.TestCase):
 
         # Finished with temp file, delete it
         os.remove(filename)
+
+    def test_is_fitted(self):
+        params = {"max_depth": 1, "seed": 1, "ml_task": "regression"}
+        model = DecisionTreeRegressorAlgorithm(params)
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())

@@ -144,3 +144,9 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         params["loss_function"] = "MultiClass"
         model = CatBoostAlgorithm(params)
         self.assertEqual(model.get_metric_name(), "logloss")
+
+    def test_is_fitted(self):
+        cat = CatBoostAlgorithm(self.params)
+        self.assertFalse(cat.is_fitted())
+        cat.fit(self.X, self.y)
+        self.assertTrue(cat.is_fitted())

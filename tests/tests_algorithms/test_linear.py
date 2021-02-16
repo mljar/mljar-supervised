@@ -104,3 +104,9 @@ class LinearAlgorithmTest(unittest.TestCase):
         y_predicted = model2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+    def test_is_fitted(self):
+        model = LinearAlgorithm({"ml_task": "binary_classification"})
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())

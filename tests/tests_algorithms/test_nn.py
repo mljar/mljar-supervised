@@ -152,3 +152,9 @@ class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
         y_predicted = nn.predict(self.X)
         loss = metric(self.y, y_predicted)
         self.assertLess(loss, 2)
+
+    def test_is_fitted(self):
+        model = MLPAlgorithm(self.params)
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())

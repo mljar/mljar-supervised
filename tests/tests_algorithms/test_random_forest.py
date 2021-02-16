@@ -114,3 +114,9 @@ class RandomForestAlgorithmTest(unittest.TestCase):
         y_predicted = rf2.predict(self.X)
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
+
+    def test_is_fitted(self):
+        model = RandomForestAlgorithm({"ml_task": "binary_classification"})
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())

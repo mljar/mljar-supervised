@@ -120,6 +120,8 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         lgb.fit(X, y)
         lgb.predict(X)
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_is_fitted(self):
+        model = LightgbmAlgorithm(self.params)
+        self.assertFalse(model.is_fitted())
+        model.fit(self.X, self.y)
+        self.assertTrue(model.is_fitted())
