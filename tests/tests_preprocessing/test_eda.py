@@ -148,8 +148,8 @@ class EDATest(unittest.TestCase):
         self.tearDown()
 
     def test_naughty_column_name_to_filename(self):
-        """ Test with naughty strings.
-            String from https://github.com/minimaxir/big-list-of-naughty-strings """
+        """Test with naughty strings.
+        String from https://github.com/minimaxir/big-list-of-naughty-strings"""
         os.mkdir(self.automl_dir)
         naughty_columns = [
             "feature_1",

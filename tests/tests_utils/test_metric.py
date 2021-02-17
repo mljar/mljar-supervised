@@ -49,12 +49,11 @@ class MetricTest(unittest.TestCase):
         y_predicted = np.array([0, 0, 1, 1])
         score = m(y_true, y_predicted)
         self.assertEqual(score, -1.0)  # negative r2
-    
+
     def test_mape_metric(self):
         params = {"name": "mape"}
         m = Metric(params)
         y_true = np.array([0, 0, 1, 1])
         y_predicted = np.array([0, 0, 1, 1])
         score = m(y_true, y_predicted)
-        self.assertEqual(score, 0.0) 
-
+        self.assertEqual(score, 0.0)

@@ -7,8 +7,8 @@ class LearningCurvesTest(unittest.TestCase):
     def test_plot_close(self):
         """
         Test if we close plots. To avoid following warning:
-        RuntimeWarning: More than 20 figures have been opened. 
-        Figures created through the pyplot interface (`matplotlib.pyplot.figure`) 
+        RuntimeWarning: More than 20 figures have been opened.
+        Figures created through the pyplot interface (`matplotlib.pyplot.figure`)
         are retained until explicitly closed and may consume too much memory.
         """
         for _ in range(

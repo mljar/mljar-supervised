@@ -25,6 +25,7 @@ from sklearn.metrics import (
     r2_score,
     mean_squared_error,
     mean_absolute_error,
+    mean_absolute_percentage_error,
 )
 from supervised.utils.metric import logloss
 
@@ -210,6 +211,7 @@ class AdditionalMetrics:
                 mean_squared_error(t, p, sample_weight=sample_weight)
             ),
             "R2": r2_score,
+            "MAPE": mean_absolute_percentage_error,
         }
         max_metrics = {}
         for k, v in regression_metrics.items():

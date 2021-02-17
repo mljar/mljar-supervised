@@ -58,7 +58,6 @@ class LightgbmAlgorithmTest(unittest.TestCase):
         y_predicted = lgb.predict(self.X)
         loss = metric(self.y, y_predicted)
         self.assertTrue(loss < 0.7)
-            
 
     def test_copy(self):
         # train model #1

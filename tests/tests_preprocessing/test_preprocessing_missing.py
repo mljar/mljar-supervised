@@ -9,7 +9,7 @@ from supervised.preprocessing.preprocessing_missing import PreprocessingMissingV
 class PreprocessingMissingValuesTest(unittest.TestCase):
     def test_preprocessing_constructor(self):
         """
-            Check if PreprocessingMissingValues object is properly initialized
+        Check if PreprocessingMissingValues object is properly initialized
         """
         preprocess_missing = PreprocessingMissingValues(
             PreprocessingMissingValues.FILL_NA_MEDIAN
@@ -22,8 +22,8 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
 
     def test_get_fill_value(self):
         """
-            Check if correct value is returned for filling in case of different
-            column type and fill method
+        Check if correct value is returned for filling in case of different
+        column type and fill method
         """
         d = {"col1": [1, 2, 3, np.nan, np.nan], "col2": ["a", "a", np.nan, "b", "c"]}
         df = pd.DataFrame(data=d)
@@ -50,7 +50,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
 
     def test_fit_na_fill(self):
         """
-            Check fit private method
+        Check fit private method
         """
         d = {
             "col1": [1, 2, 3, np.nan, np.nan],
@@ -91,7 +91,7 @@ class PreprocessingMissingValuesTest(unittest.TestCase):
 
     def test_transform(self):
         """
-            Check transform
+        Check transform
         """
         # training data
         d = {

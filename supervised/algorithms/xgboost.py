@@ -223,7 +223,7 @@ class XgbAlgorithm(BaseAlgorithm):
             return "mae"
         elif metric == "mape":
             return "mape"
-        
+
         return None
 
 

@@ -27,8 +27,8 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_iris_dataset_sample_weight(self):
-        """ Tests AutoML in the iris dataset (Multiclass classification)
-            without and with sample weight"""
+        """Tests AutoML in the iris dataset (Multiclass classification)
+        without and with sample weight"""
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
@@ -46,8 +46,8 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         assert_almost_equal(score_1, score_2)
 
     def test_boston_dataset(self):
-        """ Tests AutoML in the boston dataset (Regression)
-            without and with sample weight"""
+        """Tests AutoML in the boston dataset (Regression)
+        without and with sample weight"""
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
@@ -67,8 +67,8 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         assert_almost_equal(score_1, score_2)
 
     def test_breast_cancer_dataset(self):
-        """ Tests AutoML in the breast cancer (binary classification)
-            without and with sample weight"""
+        """Tests AutoML in the breast cancer (binary classification)
+        without and with sample weight"""
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )

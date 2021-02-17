@@ -8,7 +8,7 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 class CategoricalIntegersTest(unittest.TestCase):
     def test_constructor_preprocessing_categorical(self):
         """
-            Check if PreprocessingCategorical object is properly initialized
+        Check if PreprocessingCategorical object is properly initialized
         """
         categorical = PreprocessingCategorical(
             [], PreprocessingCategorical.CONVERT_INTEGER

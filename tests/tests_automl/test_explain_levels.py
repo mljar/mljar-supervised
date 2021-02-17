@@ -29,7 +29,6 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
-
     def run_explain_default(self, task, alg):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
         a = AutoML(
@@ -72,9 +71,12 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             )
         else:
             X, y = datasets.make_regression(
-                n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
+                n_samples=100,
+                n_features=5,
+                n_informative=4,
+                shuffle=False,
+                random_state=0,
             )
-
 
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
 
@@ -124,7 +126,6 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         for task in ["binary", "multi", "regression"]:
             for alg in ["Xgboost", "Random Forest", "LightGBM"]:
                 self.run_explain_default(task, alg)
-            
 
     def test_no_explain_linear(self):
         a = AutoML(
