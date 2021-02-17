@@ -216,6 +216,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return "logloss"
         elif metric == "RMSE":
             return "rmse"
+        elif metric == "MAE":
+            return "mae"
+        elif metric == "MAPE":
+            return "mape"
         return None
 
 
@@ -277,7 +281,7 @@ AlgorithmsRegistry.add(
 )
 
 regression_params = copy.deepcopy(classification_params)
-regression_params["loss_function"] = ["RMSE", "MAE"]
+regression_params["loss_function"] = ["RMSE", "MAE", "MAPE"]
 
 regression_required_preprocessing = [
     "missing_values_inputation",

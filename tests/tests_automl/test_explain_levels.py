@@ -11,7 +11,7 @@ from supervised import AutoML
 
 from supervised.algorithms.random_forest import additional
 
-additional["max_steps"] = 1
+additional["max_steps"] = 3
 additional["trees_in_step"] = 1
 
 from supervised.algorithms.xgboost import additional
@@ -23,14 +23,19 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
 
     automl_dir = "automl_1"
 
+    def setUp(self):
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
+
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
-    def test_explain_default(self):
+
+    def run_explain_default(self, task, alg):
+        shutil.rmtree(self.automl_dir, ignore_errors=True)
         a = AutoML(
             results_path=self.automl_dir,
             total_time_limit=10,
-            algorithms=["Random Forest"],
+            algorithms=[alg],
             train_ensemble=False,
             validation_strategy={
                 "validation_type": "kfold",
@@ -41,23 +46,42 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
             start_random_models=1,
         )
 
-        X, y = datasets.make_classification(
-            n_samples=100,
-            n_features=5,
-            n_informative=4,
-            n_redundant=1,
-            n_classes=2,
-            n_clusters_per_class=3,
-            n_repeated=0,
-            shuffle=False,
-            random_state=0,
-        )
+        if task == "binary":
+            X, y = datasets.make_classification(
+                n_samples=100,
+                n_features=5,
+                n_informative=4,
+                n_redundant=1,
+                n_classes=2,
+                n_clusters_per_class=3,
+                n_repeated=0,
+                shuffle=False,
+                random_state=0,
+            )
+        elif task == "multi":
+            X, y = datasets.make_classification(
+                n_samples=100,
+                n_features=5,
+                n_informative=4,
+                n_redundant=1,
+                n_classes=5,
+                n_clusters_per_class=3,
+                n_repeated=0,
+                shuffle=False,
+                random_state=0,
+            )
+        else:
+            X, y = datasets.make_regression(
+                n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
+            )
+
+
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
 
         a.fit(X, y)
 
         result_files = os.listdir(
-            os.path.join(self.automl_dir, "1_Default_RandomForest")
+            os.path.join(self.automl_dir, f'1_Default_{alg.replace(" ", "")}')
         )
 
         # There should be files with:
@@ -83,7 +107,7 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
         # Check shap dependence
         produced = False
         for f in result_files:
-            if "dependence.png" in f:
+            if "shap_dependence" in f:
                 produced = True
                 break
         self.assertTrue(produced)
@@ -94,6 +118,13 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 produced = True
                 break
         self.assertTrue(produced)
+
+    def test_explain_default(self):
+
+        for task in ["binary", "multi", "regression"]:
+            for alg in ["Xgboost", "Random Forest", "LightGBM"]:
+                self.run_explain_default(task, alg)
+            
 
     def test_no_explain_linear(self):
         a = AutoML(

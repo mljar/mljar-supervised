@@ -44,8 +44,10 @@ class PermutationImportance:
         # for scoring check https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
         if ml_task == BINARY_CLASSIFICATION:
             scoring = log_loss_scorer
+            model.classes_ = np.unique(y_validation)
         elif ml_task == MULTICLASS_CLASSIFICATION:
             scoring = log_loss_scorer
+            model.classes_ = np.unique(y_validation)
         else:
             scoring = "neg_mean_squared_error"
 
@@ -91,4 +93,5 @@ class PermutationImportance:
                 index=False,
             )
         except Exception as e:
+            print(str(e))
             print("Problem during computing permutation importance. Skipping ...")

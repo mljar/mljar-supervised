@@ -235,7 +235,7 @@ classification_multi_default_params = {
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
-lgbr_params["metric"] = ["rmse"]
+lgbr_params["metric"] = ["rmse", "mae", "mape"]
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,

@@ -31,7 +31,7 @@ class MetricTest(unittest.TestCase):
         self.assertTrue(m.improvement(score_1, score_2))
 
     def test_sample_weight(self):
-        metrics = ["logloss", "auc", "acc", "rmse", "mse", "mae", "r2"]
+        metrics = ["logloss", "auc", "acc", "rmse", "mse", "mae", "r2", "mape"]
         for m in metrics:
             metric = Metric({"name": m})
             y_true = np.array([0, 0, 1, 1])
@@ -49,3 +49,12 @@ class MetricTest(unittest.TestCase):
         y_predicted = np.array([0, 0, 1, 1])
         score = m(y_true, y_predicted)
         self.assertEqual(score, -1.0)  # negative r2
+    
+    def test_mape_metric(self):
+        params = {"name": "mape"}
+        m = Metric(params)
+        y_true = np.array([0, 0, 1, 1])
+        y_predicted = np.array([0, 0, 1, 1])
+        score = m(y_true, y_predicted)
+        self.assertEqual(score, 0.0) 
+

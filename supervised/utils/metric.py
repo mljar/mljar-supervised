@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import r2_score
-
+from sklearn.metrics import mean_absolute_percentage_error
 
 class MetricException(Exception):
     def __init__(self, message):
@@ -57,6 +57,7 @@ class Metric(object):
             "mae",
             "mse",
             "r2",  # negative r2
+            "mape"
         ]
         if self.name == "logloss":
             self.metric = logloss
@@ -72,6 +73,8 @@ class Metric(object):
             self.metric = mean_absolute_error
         elif self.name == "r2":
             self.metric = negative_r2
+        elif self.name == "mape":
+            self.metric = mean_absolute_percentage_error
         else:
             raise MetricException(f"Unknown metric '{self.name}'")
 

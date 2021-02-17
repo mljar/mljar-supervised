@@ -219,6 +219,11 @@ class XgbAlgorithm(BaseAlgorithm):
             return "logloss"
         elif metric == "rmse":
             return "rmse"
+        elif metric == "mae":
+            return "mae"
+        elif metric == "mape":
+            return "mape"
+        
         return None
 
 
@@ -245,7 +250,7 @@ classification_bin_default_params = {
 
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["objective"] = ["reg:squarederror"]
-xgb_regression_params["eval_metric"] = ["rmse", "mae"]
+xgb_regression_params["eval_metric"] = ["rmse", "mae", "mape"]
 xgb_regression_params["max_depth"] = [4, 5, 6, 7, 8, 9]
 
 
