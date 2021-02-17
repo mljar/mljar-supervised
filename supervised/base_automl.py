@@ -195,7 +195,7 @@ class BaseAutoML(BaseEstimator, ABC):
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
-    def get_leaderboard(self, filter_random_feature=False):
+    def get_leaderboard(self, filter_random_feature=False, original_metric_values=False):
         ldb = {
             "name": [],
             "model_type": [],
@@ -218,6 +218,10 @@ class BaseAutoML(BaseEstimator, ABC):
         # minimize_direction = m.get_metric().get_minimize_direction()
         # ldb = ldb.sort_values("metric_value", ascending=minimize_direction)
 
+        if original_metric_values:
+            if Metric.optimize_negative(self._eval_metric):
+                ldb["metric_value"] *= -1.0
+
         return ldb
 
     def keep_model(self, model, model_path):
@@ -227,11 +231,12 @@ class BaseAutoML(BaseEstimator, ABC):
         self._model_paths += [model_path]
         self.select_and_save_best()
 
+        sign = -1.0 if Metric.optimize_negative(self._eval_metric) else 1.0
         self.verbose_print(
             "{} {} {} trained in {} seconds".format(
                 model.get_name(),
                 self._eval_metric,
-                np.round(model.get_final_loss(), 6),
+                np.round(sign*model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
         )
@@ -1072,7 +1077,7 @@ class BaseAutoML(BaseEstimator, ABC):
             fout.write(json.dumps(params, indent=4))
 
         if self._models:
-            ldb = self.get_leaderboard()
+            ldb = self.get_leaderboard(original_metric_values=True)
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
 
             # save report

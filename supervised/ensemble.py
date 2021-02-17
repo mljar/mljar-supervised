@@ -194,7 +194,11 @@ class Ensemble:
                     best_model = model_name
 
             # there is improvement, save it
-            self._scores += [min_score]
+            # save scores for plotting learning curve
+            # if we optimize negative, then we need to multiply by -1.0
+            # to save correct values in the learning curve
+            sign = -1.0 if Metric.optimize_negative(self.metric.name) else 1.0
+            self._scores += [sign*min_score]
 
             if self.metric.improvement(previous=self.best_loss, current=min_score):
                 self.best_loss = min_score

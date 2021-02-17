@@ -48,6 +48,9 @@ class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def file_extension(self):
         return "random_forest"
 
+    def get_metric_name(self):
+        return "logloss"
+
 
 class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
@@ -77,6 +80,9 @@ class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
     def file_extension(self):
         return "random_forest"
+
+    def get_metric_name(self):
+        return "rmse"
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.

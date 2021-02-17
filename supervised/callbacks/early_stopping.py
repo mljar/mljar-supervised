@@ -189,12 +189,12 @@ class EarlyStopping(Callback):
             "CatBoost",
             "Neural Network",
         ]:
-
+            sign = -1.0 if Metric.optimize_negative(self.metric.name) else 1.0
             with open(
                 os.path.join(self.log_to_dir, f"{self.learner.name}_training.log"), "a"
             ) as fout:
                 iteration = len(self.loss_values[self.learner.uid]["iters"])
-                fout.write(f"{iteration},{train_loss},{validation_loss}\n")
+                fout.write(f"{iteration},{sign*train_loss},{sign*validation_loss}\n")
 
     def get_status(self):
         return "Train loss: {}, Validation loss: {} @ iteration {}".format(

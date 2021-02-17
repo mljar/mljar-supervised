@@ -47,6 +47,9 @@ class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def file_extension(self):
         return "extra_trees"
 
+    def get_metric_name(self):
+        return "logloss"
+
 
 class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
@@ -76,6 +79,9 @@ class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
 
     def file_extension(self):
         return "extra_trees"
+
+    def get_metric_name(self):
+        return "rmse"
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.

@@ -100,3 +100,7 @@ class Metric(object):
 
     def get_minimize_direction(self):
         return self.minimize_direction
+
+    @staticmethod
+    def optimize_negative(metric_name):
+        return metric_name in ["auc", "r2"]

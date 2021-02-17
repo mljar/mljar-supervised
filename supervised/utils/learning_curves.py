@@ -6,6 +6,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.common import learner_name_to_fold_repeat
+from supervised.utils.metric import Metric
 
 logger.setLevel(LOG_LEVEL)
 
@@ -103,7 +104,12 @@ class LearningCurves:
                     label=f"Fold {fold+1},{repeat_str} test",
                 )
 
-            best_iter = df.test.argmin()
+            best_iter = None
+            if Metric.optimize_negative(metric_name):
+                best_iter = df.test.argmax()
+            else:
+                best_iter = df.test.argmin()
+
             if best_iter is not None and best_iter != -1:
                 plt.axvline(best_iter, color=colors[fold], alpha=0.3)
 
