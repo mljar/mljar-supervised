@@ -39,10 +39,13 @@ class HillClimbing:
 
         permuted_keys = np.random.permutation(keys)
         key_to_update = None
+        values = None
         for key_to_update in permuted_keys:
             values = model_params[key_to_update]
             if len(values) > 1:
                 break
+        if values is None:
+            return [None, None]
 
         left, right = None, None
         for i, v in enumerate(values):
