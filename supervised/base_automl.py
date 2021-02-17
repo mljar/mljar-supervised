@@ -399,6 +399,14 @@ class BaseAutoML(BaseEstimator, ABC):
             self._stacked_models[i] for i in np.argsort(scores).tolist()
         ]
 
+    def get_stacking_minimum_time_needed(self):
+        try:
+            ldb = self.get_leaderboard(filter_random_feature=True)
+            ldb = ldb.sort_values(by="metric_value", ascending=True)
+            return min(2.0*ldb.iloc[0]["train_time"], 60)
+        except Exception as e:
+            return 60
+
     def prepare_for_stacking(self):
         # print("Stacked models ....")
         # do we have enough models?
@@ -407,8 +415,10 @@ class BaseAutoML(BaseEstimator, ABC):
         # do we have time?
         if self._total_time_limit is not None:
             time_left = self._total_time_limit - (time.time() - self._start_time)
-            # we need at least 60 seconds to do anything
-            if time_left < 60:
+            # we need some time to start stacking
+            # it should be at least 60 seconds for larger data
+            # but for small data it can be less
+            if time_left < self.get_stacking_minimum_time_needed():
                 return
         # too many classes and models
         if self._ml_task == MULTICLASS_CLASSIFICATION:
