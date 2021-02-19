@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
@@ -41,7 +42,9 @@ class LeaderboardPlots:
         by = "model_type"
         column = "metric_value"
         df2 = pd.DataFrame({col: vals[column] for col, vals in ldb.groupby(by)})
-        mins = df2.min().sort_values(ascending=False)
+
+        ascending_sort = Metric.optimize_negative(ldb.metric_type.iloc[0])
+        mins = df2.min().sort_values(ascending=ascending_sort)
 
         plt.figure(figsize=(10, 7))
         # plt.title("")

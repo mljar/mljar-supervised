@@ -195,7 +195,9 @@ class BaseAutoML(BaseEstimator, ABC):
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
-    def get_leaderboard(self, filter_random_feature=False, original_metric_values=False):
+    def get_leaderboard(
+        self, filter_random_feature=False, original_metric_values=False
+    ):
         ldb = {
             "name": [],
             "model_type": [],
@@ -236,7 +238,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "{} {} {} trained in {} seconds".format(
                 model.get_name(),
                 self._eval_metric,
-                np.round(sign*model.get_final_loss(), 6),
+                np.round(sign * model.get_final_loss(), 6),
                 np.round(model.get_train_time(), 2),
             )
         )
@@ -408,7 +410,7 @@ class BaseAutoML(BaseEstimator, ABC):
         try:
             ldb = self.get_leaderboard(filter_random_feature=True)
             ldb = ldb.sort_values(by="metric_value", ascending=True)
-            return min(2.0*ldb.iloc[0]["train_time"], 60)
+            return min(2.0 * ldb.iloc[0]["train_time"], 60)
         except Exception as e:
             return 60
 
