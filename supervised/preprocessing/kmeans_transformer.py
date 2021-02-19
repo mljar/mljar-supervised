@@ -23,8 +23,9 @@ class KMeansTransformer(object):
 
         if results_path is not None:
             self._result_file = os.path.join(
-                results_path, self._model_name, f"kmeans_fold_{k_fold}.joblib"
+                self._model_name, f"kmeans_fold_{k_fold}.joblib"
             )
+            self._result_path = os.path.join(results_path, self._result_file)
             # self.try_load()
 
     def fit(self, X, y):
@@ -92,23 +93,24 @@ class KMeansTransformer(object):
             data_json["error"] = self._error
         return data_json
 
-    def from_json(self, data_json):
+    def from_json(self, data_json, results_path):
         self._new_features = data_json.get("new_features", [])
         self._input_columns = data_json.get("input_columns", [])
         self._result_file = data_json.get("result_file")
+        self._result_path = os.path.join(results_path, self._result_file)
         self._error = data_json.get("error")
         self.try_load()
 
     def save(self):
         joblib.dump(
             {"kmeans": self._kmeans, "scale": self._scale},
-            self._result_file,
+            self._result_path,
             compress=True,
         )
 
     def try_load(self):
-        if os.path.exists(self._result_file):
-            data = joblib.load(self._result_file)
+        if os.path.exists(self._result_path):
+            data = joblib.load(self._result_path)
             self._kmeans = data["kmeans"]
             self._scale = data["scale"]
 

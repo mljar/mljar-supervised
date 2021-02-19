@@ -312,13 +312,13 @@ class Ensemble:
                 {"model": il, "repeat": repeat}
             ]
 
-    def save(self, model_path):
+    def save(self, results_path, model_subpath):
+        model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Save the ensemble to {model_path}")
 
         predictions = self.get_out_of_folds()
-        self._oof_predictions_fname = os.path.join(
-            model_path, f"predictions_ensemble.csv"
-        )
+        predictions_fname = os.path.join(model_subpath, f"predictions_ensemble.csv")
+        self._oof_predictions_fname = os.path.join(results_path, predictions_fname)
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
@@ -331,7 +331,7 @@ class Ensemble:
                 "ml_task": self._ml_task,
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
-                "predictions_fname": self._oof_predictions_fname,
+                "predictions_fname": predictions_fname,
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -369,7 +369,8 @@ class Ensemble:
         return desc
 
     @staticmethod
-    def load(model_path, models_map):
+    def load(results_path, model_subpath, models_map):
+        model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading ensemble from {model_path}")
 
         json_desc = json.load(open(os.path.join(model_path, "ensemble.json")))
@@ -385,7 +386,10 @@ class Ensemble:
         ensemble.best_loss = json_desc.get("final_loss", ensemble.best_loss)
         ensemble.train_time = json_desc.get("train_time", ensemble.train_time)
         ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
-        ensemble._oof_predictions_fname = json_desc.get(
-            "predictions_fname", ensemble._oof_predictions_fname
-        )
+        predictions_fname = json_desc.get("predictions_fname")
+        if predictions_fname is not None:
+            ensemble._oof_predictions_fname = os.path.join(
+                results_path, predictions_fname
+            )
+
         return ensemble

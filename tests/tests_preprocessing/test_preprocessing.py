@@ -320,7 +320,7 @@ class PreprocessingTest(unittest.TestCase):
         _, _, _ = ps.fit_and_transform(X_train, y_train)
 
         ps2 = Preprocessing()
-        ps2.from_json(ps.to_json())
+        ps2.from_json(ps.to_json(), "./")
         del ps
 
         d_test = {
@@ -369,7 +369,7 @@ class PreprocessingTest(unittest.TestCase):
 
         params_json = ps.to_json()
         ps2 = Preprocessing()
-        ps2.from_json(params_json)
+        ps2.from_json(params_json, "./")
 
         X_train3, _, _ = ps2.transform(X_train, y_train)
         self.assertTrue("col1" not in X_train3.columns)

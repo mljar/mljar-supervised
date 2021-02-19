@@ -82,7 +82,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._confusion_matrix = None
         self._X_path, self._y_path = None, None
         self._data_info = None
-        self._model_paths = []
+        self._model_subpaths = []
         self._stacked_models = None
         self._fit_level = None
         self._start_time = time.time()
@@ -119,7 +119,7 @@ class BaseAutoML(BaseEstimator, ABC):
         try:
             params = json.load(open(os.path.join(path, "params.json")))
 
-            self._model_paths = params["saved"]
+            self._model_subpaths = params["saved"]
             self._mode = params.get("mode", self._mode)
             self._ml_task = params.get("ml_task", self._ml_task)
             self._results_path = params.get("results_path", self._results_path)
@@ -158,15 +158,15 @@ class BaseAutoML(BaseEstimator, ABC):
             stacked_models = params.get("stacked")
 
             models_map = {}
-            for model_path in self._model_paths:
-                if model_path.endswith("Ensemble") or model_path.endswith(
+            for model_subpath in self._model_subpaths:
+                if model_subpath.endswith("Ensemble") or model_subpath.endswith(
                     "Ensemble_Stacked"
                 ):
-                    ens = Ensemble.load(model_path, models_map)
+                    ens = Ensemble.load(path, model_subpath, models_map)
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
                 else:
-                    m = ModelFramework.load(model_path)
+                    m = ModelFramework.load(path, model_subpath)
                     self._models += [m]
                     models_map[m.get_name()] = m
 
@@ -226,11 +226,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
         return ldb
 
-    def keep_model(self, model, model_path):
+    def keep_model(self, model, model_subpath):
         if model is None:
             return
         self._models += [model]
-        self._model_paths += [model_path]
+        self._model_subpaths += [model_subpath]
         self.select_and_save_best()
 
         sign = -1.0 if Metric.optimize_negative(self._eval_metric) else 1.0
@@ -274,7 +274,8 @@ class BaseAutoML(BaseEstimator, ABC):
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
         # let's create directory to log all training artifacts
-        model_path = os.path.join(self._results_path, params["name"])
+        results_path, model_subpath = self._results_path, params["name"]
+        model_path = os.path.join(results_path, model_subpath)
         self.create_dir(model_path)
 
         # prepare callbacks
@@ -315,13 +316,13 @@ class BaseAutoML(BaseEstimator, ABC):
         logger.info(
             f"Train model #{len(self._models)+1} / Model name: {params['name']}"
         )
-        mf.train(model_path)
+        mf.train(results_path, model_subpath)
 
         # save the model
-        mf.save(model_path)
+        mf.save(results_path, model_subpath)
 
         # and keep info about the model
-        self.keep_model(mf, model_path)
+        self.keep_model(mf, model_subpath)
         return True
 
     def verbose_print(self, msg):
@@ -332,9 +333,8 @@ class BaseAutoML(BaseEstimator, ABC):
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
 
-            ensemble_path = os.path.join(
-                self._results_path, "Ensemble_Stacked" if is_stacked else "Ensemble"
-            )
+            ensemble_subpath = "Ensemble_Stacked" if is_stacked else "Ensemble"
+            ensemble_path = os.path.join(self._results_path, ensemble_subpath)
             self.create_dir(ensemble_path)
 
             self.ensemble = Ensemble(
@@ -342,8 +342,8 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target, sample_weight)
-            self.ensemble.save(ensemble_path)
-            self.keep_model(self.ensemble, ensemble_path)
+            self.ensemble.save(self._results_path, ensemble_subpath)
+            self.keep_model(self.ensemble, ensemble_subpath)
             return True
         return False
 
@@ -751,7 +751,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         # adjust the validation if possible
         if folds_cnt >= 5.0:
-            self.verbose_print(f"Adjust validation. Remove: {self._model_paths[0]}")
+            self.verbose_print(f"Adjust validation. Remove: {self._model_subpaths[0]}")
             k_folds = 5
             if folds_cnt >= 15:
                 k_folds = 10
@@ -762,9 +762,9 @@ class BaseAutoML(BaseEstimator, ABC):
             del self._validation_strategy["train_ratio"]
             self._validation_strategy["k_folds"] = k_folds
             self.tuner._validation_strategy = self._validation_strategy
-            shutil.rmtree(self._model_paths[0], ignore_errors=True)
+            shutil.rmtree(self._model_subpaths[0], ignore_errors=True)
             del self._models[0]
-            del self._model_paths[0]
+            del self._model_subpaths[0]
             del self.tuner._unique_params_keys[0]
             self._adjust_validation = False
             cv = []
@@ -1072,7 +1072,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "kmeans_features": self._kmeans_features,
                 "mix_encoding": self._mix_encoding,
                 "random_state": self._random_state,
-                "saved": self._model_paths,
+                "saved": self._model_subpaths,
             }
             if self._stacked_models is not None:
                 params["stacked"] = [m.get_name() for m in self._stacked_models]

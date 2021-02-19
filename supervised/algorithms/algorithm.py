@@ -70,6 +70,9 @@ class BaseAlgorithm:
     def load(self, model_file_path):
         pass
 
+    def get_fname(self):
+        return f"{self.name}.{self.file_extension()}"
+
     def interpret(
         self,
         X_train,
@@ -120,14 +123,13 @@ class BaseAlgorithm:
             "algorithm_short_name": self.algorithm_short_name,
             "uid": self.uid,
             "params": self.params,
+            "name": self.name,
         }
-        if self.model_file_path is not None:
-            params["model_file_path"] = self.model_file_path
         if hasattr(self, "best_ntree_limit") and self.best_ntree_limit is not None:
             params["best_ntree_limit"] = self.best_ntree_limit
         return params
 
-    def set_params(self, json_desc):
+    def set_params(self, json_desc, learner_path):
         self.library_version = json_desc.get("library_version", self.library_version)
         self.algorithm_name = json_desc.get("algorithm_name", self.algorithm_name)
         self.algorithm_short_name = json_desc.get(
@@ -135,7 +137,8 @@ class BaseAlgorithm:
         )
         self.uid = json_desc.get("uid", self.uid)
         self.params = json_desc.get("params", self.params)
-        self.model_file_path = json_desc.get("model_file_path", self.model_file_path)
+        self.name = json_desc.get("name", self.name)
+        self.model_file_path = learner_path
 
         if hasattr(self, "best_ntree_limit"):
             self.best_ntree_limit = json_desc.get(

@@ -592,7 +592,7 @@ class Preprocessing(object):
 
         return preprocessing_params
 
-    def from_json(self, data_json):
+    def from_json(self, data_json, results_path):
 
         self._params = data_json.get("params", self._params)
 
@@ -627,11 +627,11 @@ class Preprocessing(object):
 
         if "golden_features" in data_json:
             self._golden_features = GoldenFeaturesTransformer()
-            self._golden_features.from_json(data_json["golden_features"])
+            self._golden_features.from_json(data_json["golden_features"], results_path)
 
         if "kmeans" in data_json:
             self._kmeans = KMeansTransformer()
-            self._kmeans.from_json(data_json["kmeans"])
+            self._kmeans.from_json(data_json["kmeans"], results_path)
 
         if "scale" in data_json:
             self._scale = []

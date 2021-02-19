@@ -50,7 +50,7 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
             print(gft.to_json())
 
             gft3 = GoldenFeaturesTransformer(tmpdir, "binary_classification")
-            gft3.from_json(gft.to_json())
+            gft3.from_json(gft.to_json(), tmpdir)
 
     def test_subsample_regression_10k(self):
 

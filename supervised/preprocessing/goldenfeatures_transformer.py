@@ -118,9 +118,12 @@ class GoldenFeaturesTransformer(object):
 
         self._error = None
 
+        self._result_file = "golden_features.json"
         if results_path is not None:
-            self._result_file = os.path.join(results_path, "golden_features.json")
-            self.try_load()
+            self._result_path = os.path.join(results_path, self._result_file)
+
+            if os.path.exists(self._result_path):
+                self.from_json(json.load(open(self._result_path, "r")), results_path)
 
     def fit(self, X, y):
         if self._new_features:
@@ -133,7 +136,7 @@ class GoldenFeaturesTransformer(object):
             return
         if X.shape[1] == 0:
             self._error = f"Golden Features not created. No continous features. Input data shape: {X.shape}, {y.shape}"
-            self.save(self._result_file)
+            self.save()
             raise AutoMLException("Golden Features not created. No continous features.")
 
         start_time = time.time()
@@ -158,7 +161,7 @@ class GoldenFeaturesTransformer(object):
 
         if not scores:
             self._error = f"Golden Features not created. Empty scores. Input data shape: {X.shape}, {y.shape}"
-            self.save(self._result_file)
+            self.save()
             raise AutoMLException("Golden Features not created. Empty scores.")
 
         result = []
@@ -194,7 +197,7 @@ class GoldenFeaturesTransformer(object):
             self._new_columns += [new_col]
             print(f"Add Golden Feature: {new_col}")
 
-        self.save(self._result_file)
+        self.save()
 
         print(
             f"Created {len(self._new_features)} Golden Features in {np.round(time.time() - start_time,2)} seconds."
@@ -230,27 +233,22 @@ class GoldenFeaturesTransformer(object):
         data_json = {
             "new_features": self._new_features,
             "new_columns": self._new_columns,
-            "result_file": self._result_file,
             "ml_task": self._ml_task,
         }
         if self._error is not None and self._error:
             data_json["error"] = self._error
         return data_json
 
-    def from_json(self, data_json):
+    def from_json(self, data_json, results_path):
         self._new_features = data_json.get("new_features", [])
         self._new_columns = data_json.get("new_columns", [])
-        self._result_file = data_json.get("result_file")
         self._ml_task = data_json.get("ml_task")
         self._error = data_json.get("error")
+        self._result_path = os.path.join(results_path, self._result_file)
 
-    def save(self, destination_file):
-        with open(destination_file, "w") as fout:
+    def save(self):
+        with open(self._result_path, "w") as fout:
             fout.write(json.dumps(self.to_json(), indent=4))
-
-    def try_load(self):
-        if os.path.exists(self._result_file):
-            self.from_json(json.load(open(self._result_file, "r")))
 
     def _subsample(self, X, y):
 

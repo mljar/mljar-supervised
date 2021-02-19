@@ -113,7 +113,7 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
-    def train(self, model_path):
+    def train(self, results_path, model_subpath):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
@@ -168,7 +168,9 @@ class ModelFramework:
                 self.callbacks.add_and_set_learner(learner)
                 self.callbacks.on_learner_train_start()
 
-                log_to_file = os.path.join(model_path, f"{learner.name}_training.log")
+                log_to_file = os.path.join(
+                    results_path, model_subpath, f"{learner.name}_training.log"
+                )
 
                 for i in range(learner.max_iters):
 
@@ -211,6 +213,7 @@ class ModelFramework:
                 # end of learner iters loop
                 self.callbacks.on_learner_train_end()
 
+                model_path = os.path.join(results_path, model_subpath)
                 learner.interpret(
                     X_train,
                     y_train,
@@ -225,9 +228,7 @@ class ModelFramework:
                 )
 
                 # save learner and free the memory
-                p = os.path.join(
-                    model_path, f"{learner.name}.{learner.file_extension()}"
-                )
+                p = os.path.join(model_path, learner.get_fname())
                 learner.save(p)
                 del learner.model
                 learner.model = None
@@ -367,24 +368,22 @@ class ModelFramework:
                 self._threshold = float(self._additional_metrics["threshold"])
         return self._additional_metrics
 
-    def save(self, model_path):
+    def save(self, results_path, model_subpath):
         start_time = time.time()
+        model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Save the model {model_path}")
 
         type_of_predictions = (
             "validation" if "k_folds" not in self.validation_params else "out_of_folds"
         )
-        self._oof_predictions_fname = os.path.join(
-            model_path, f"predictions_{type_of_predictions}.csv"
+        predictions_fname = os.path.join(
+            model_subpath, f"predictions_{type_of_predictions}.csv"
         )
+        self._oof_predictions_fname = os.path.join(results_path, predictions_fname)
         predictions = self.get_out_of_folds()
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
-        saved = []
-        for i, l in enumerate(self.learners):
-            p = os.path.join(model_path, f"{l.name}.{l.file_extension()}")
-            # l.save(p)
-            saved += [p]
+        saved = [os.path.join(model_subpath, l.get_fname()) for l in self.learners]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:
             preprocessing = [p.to_json() for p in self.preprocessings]
@@ -396,7 +395,7 @@ class ModelFramework:
                 "learners": learners_params,
                 "params": self.params,
                 "saved": saved,
-                "predictions_fname": self._oof_predictions_fname,
+                "predictions_fname": predictions_fname,
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -458,7 +457,8 @@ class ModelFramework:
         return desc
 
     @staticmethod
-    def load(model_path):
+    def load(results_path, model_subpath):
+        model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
 
         json_desc = json.load(open(os.path.join(model_path, "framework.json")))
@@ -470,23 +470,22 @@ class ModelFramework:
         mf.final_loss = json_desc.get("final_loss", mf.final_loss)
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
-        mf._oof_predictions_fname = json_desc.get(
-            "predictions_fname", mf._oof_predictions_fname
-        )
+        predictions_fname = json_desc.get("predictions_fname")
+        if predictions_fname is not None:
+            mf._oof_predictions_fname = os.path.join(results_path, predictions_fname)
 
         mf.learners = []
-        for learner_desc, learner_path in zip(
+        for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
-
-            # l = AlgorithmFactory.load(learner_desc, learner_path)
-            l = AlgorithmFactory.lazy_load(learner_desc)
+            learner_path = os.path.join(results_path, learner_subpath)
+            l = AlgorithmFactory.lazy_load(learner_desc, learner_path)
             mf.learners += [l]
 
         mf.preprocessings = []
         for p in json_desc.get("preprocessing"):
             ps = Preprocessing()
-            ps.from_json(p)
+            ps.from_json(p, results_path)
             mf.preprocessings += [ps]
 
         return mf
