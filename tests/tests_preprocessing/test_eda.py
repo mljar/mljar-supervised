@@ -22,7 +22,7 @@ class EDATest(unittest.TestCase):
     def test_explain_default(self):
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
+            total_time_limit=5,
             algorithms=["Baseline"],
             train_ensemble=False,
             explain_level=2,

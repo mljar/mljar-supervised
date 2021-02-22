@@ -457,7 +457,7 @@ class ModelFramework:
         return desc
 
     @staticmethod
-    def load(results_path, model_subpath):
+    def load(results_path, model_subpath, lazy_load=True):
         model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
 
@@ -479,7 +479,7 @@ class ModelFramework:
             json_desc.get("learners"), json_desc.get("saved")
         ):
             learner_path = os.path.join(results_path, learner_subpath)
-            l = AlgorithmFactory.lazy_load(learner_desc, learner_path)
+            l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]
 
         mf.preprocessings = []

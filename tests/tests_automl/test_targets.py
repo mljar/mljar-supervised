@@ -310,7 +310,7 @@ class AutoMLTargetsTest(unittest.TestCase):
         self.assertEqual(len(pred), X.shape[0])
 
     def test_predict_on_empty_dataframe(self):
-        X = np.random.rand(self.rows * 4, 3)
+        X = np.random.rand(self.rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
         y = pd.Series(np.random.rand(self.rows), name="target")
 

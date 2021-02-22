@@ -19,18 +19,10 @@ class AlgorithmFactory(object):
         except Exception as e:
             raise AutoMLException(f"Cannot get algorithm class. {str(e)}")
 
-    """
-    # not used
     @classmethod
-    def load(cls, json_desc, model_file_path):
-        learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
-        learner.set_params(json_desc)
-        learner.load(model_file_path)
-        return learner
-    """
-
-    @classmethod
-    def lazy_load(cls, json_desc, learner_path):
+    def load(cls, json_desc, learner_path, lazy_load):
         learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
         learner.set_params(json_desc, learner_path)
+        if not lazy_load:
+            learner.reload()
         return learner

@@ -157,8 +157,17 @@ class BaseAutoML(BaseEstimator, ABC):
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
+            load_on_predict = params.get("load_on_predict")
+            self._fit_level = params.get("fit_level")
+            lazy_load = not (
+                self._fit_level is not None and self._fit_level == "finished"
+            )
+            load_models = self._model_subpaths
+            if load_on_predict is not None and self._fit_level == "finished":
+                load_models = load_on_predict
             models_map = {}
-            for model_subpath in self._model_subpaths:
+
+            for model_subpath in load_models:
                 if model_subpath.endswith("Ensemble") or model_subpath.endswith(
                     "Ensemble_Stacked"
                 ):
@@ -166,23 +175,21 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
                 else:
-                    m = ModelFramework.load(path, model_subpath)
+                    m = ModelFramework.load(path, model_subpath, lazy_load)
                     self._models += [m]
                     models_map[m.get_name()] = m
 
-            if stacked_models is not None:
+            best_model_name = params.get("best_model")
+            self._best_model = None
+            if best_model_name is not None:
+                self._best_model = models_map.get(best_model_name)
+
+            if stacked_models is not None and (
+                self._best_model._is_stacked or self._fit_level != "finished"
+            ):
                 self._stacked_models = []
                 for stacked_model_name in stacked_models:
                     self._stacked_models += [models_map[stacked_model_name]]
-
-            best_model_fname = os.path.join(path, "best_model.txt")
-            if os.path.exists(best_model_fname):
-                best_model_name = None
-                with open(best_model_fname, "r") as fin:
-                    best_model_name = fin.read().rstrip()
-                self._best_model = models_map[best_model_name]
-            else:
-                self._best_model = None
 
             data_info_path = os.path.join(path, "data_info.json")
             self._data_info = json.load(open(data_info_path))
@@ -191,7 +198,6 @@ class BaseAutoML(BaseEstimator, ABC):
             if "n_classes" in self._data_info:
                 self.n_classes = self._data_info["n_classes"]
 
-            self._fit_level = "finished"
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
@@ -293,7 +299,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._total_time_limit / k_folds / at_least_algorithms, 60
             )
 
-        # print("max_time_for_learner --->", max_time_for_learner)
         params["max_time_for_learner"] = max_time_for_learner
 
         total_time_constraint = TotalTimeConstraint(
@@ -773,9 +778,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
             self.select_and_save_best()  # save validation strategy
-            os.remove(
-                os.path.join(self._results_path, "best_model.txt")
-            )  # remove the file
+
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
         else:
             # cant stack models for train/test split
@@ -1008,11 +1011,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
                     self.save_progress(step, generated_params)
 
-            
             if not self._models:
                 raise AutoMLException("No models produced.")
             self._fit_level = "finished"
             self.save_progress()
+            self.select_and_save_best()
 
             self.verbose_print(
                 f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
@@ -1042,15 +1045,12 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def select_and_save_best(self):
         # Select best model based on the lowest loss
+        self._best_model = None
         if self._models:
             self._best_model = min(
                 [m for m in self._models if m.is_valid()],
                 key=lambda x: x.get_final_loss(),
             )
-            with open(os.path.join(self._results_path, "best_model.txt"), "w") as fout:
-                fout.write(f"{self._best_model.get_name()}")
-        else:
-            self._best_model = None
 
         with open(os.path.join(self._results_path, "params.json"), "w") as fout:
             params = {
@@ -1076,7 +1076,21 @@ class BaseAutoML(BaseEstimator, ABC):
                 "mix_encoding": self._mix_encoding,
                 "random_state": self._random_state,
                 "saved": self._model_subpaths,
+                "fit_level": self._fit_level,
             }
+            if self._best_model is not None:
+                params["best_model"] = self._best_model.get_name()
+                load_on_predict = []
+                if self._best_model._is_stacked and self._stacked_models is not None:
+                    load_on_predict += [m.get_name() for m in self._stacked_models]
+                if "Ensemble" in self._best_model.get_type():
+                    load_on_predict += [
+                        ens["model"].get_name()
+                        for ens in self._best_model.selected_models
+                    ]
+                load_on_predict += [self._best_model.get_name()]
+                params["load_on_predict"] = list(np.unique(load_on_predict))
+
             if self._stacked_models is not None:
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4))
