@@ -1008,6 +1008,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
                     self.save_progress(step, generated_params)
 
+            
+            if not self._models:
+                raise AutoMLException("No models produced.")
             self._fit_level = "finished"
             self.save_progress()
 
