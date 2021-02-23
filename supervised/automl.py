@@ -39,6 +39,7 @@ class AutoML(BaseAutoML):
         boost_on_errors="auto",
         kmeans_features="auto",
         mix_encoding="auto",
+        max_single_prediction_time=None,
         verbose=1,
         random_state=1234,
     ):
@@ -184,6 +185,10 @@ class AutoML(BaseAutoML):
                 for categoricals with more than 25 categories, and one-hot binary encoding for other categoricals. It is only applied if there are
                 categorical features with cardinality smaller than 25. By default it is available in the `Compete` mode.
 
+            max_single_prediction_time (int or float): The limit for prediction time for single sample. Use it if you want to have a model with fast predictions.
+                Ideal for creating ML pipelines used as REST API. Time is in seconds. By default (`max_single_prediction_time=None`) models are not optimized for fast predictions,
+                except the mode `Perform`. For the mode `Perform` the default is `0.5` seconds.
+
             verbose (int): Controls the verbosity when fitting and predicting.
 
                 Note:
@@ -283,6 +288,7 @@ class AutoML(BaseAutoML):
         self.boost_on_errors = boost_on_errors
         self.kmeans_features = kmeans_features
         self.mix_encoding = mix_encoding
+        self.max_single_prediction_time = max_single_prediction_time
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):

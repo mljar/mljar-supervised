@@ -2,7 +2,7 @@ import time
 import logging
 import numpy as np
 from supervised.callbacks.callback import Callback
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import NotTrainedException
 from supervised.utils.config import LOG_LEVEL
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class TotalTimeConstraint(Callback):
             )
 
             if estimate_elapsed_time >= self.total_time_limit:
-                raise AutoMLException(
+                raise NotTrainedException(
                     "Stop training after the first fold. "
                     f"Time needed to train on the first fold {np.round(one_fold_time)} seconds. "
                     "The time estimate for training on all folds is larger than total_time_limit."
@@ -57,7 +57,7 @@ class TotalTimeConstraint(Callback):
                 # margin is added because of unexpected time changes
                 # if training on each fold will be the same
                 # then the training will be stopped after first fold (above condition)
-                raise AutoMLException(
+                raise NotTrainedException(
                     "Force to stop the training. "
                     "Total time for AutoML training already exceeded."
                 )

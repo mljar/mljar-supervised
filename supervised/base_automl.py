@@ -26,6 +26,7 @@ from supervised.callbacks.learner_time_constraint import LearnerTimeConstraint
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
 from supervised.exceptions import AutoMLException
+from supervised.exceptions import NotTrainedException
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.tuner.data_info import DataInfo
@@ -41,6 +42,7 @@ from supervised.utils.data_validation import (
     check_positive_integer,
     check_greater_than_zero_integer,
     check_bool,
+    check_greater_than_zero_integer_or_float,
 )
 
 logger = logging.getLogger(__name__)
@@ -94,6 +96,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._boost_on_errors = None
         self._kmeans_features = None
         self._mix_encoding = None
+        self._max_single_prediction_time = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -154,6 +157,9 @@ class BaseAutoML(BaseEstimator, ABC):
             self._boost_on_errors = params.get("boost_on_errors", self._boost_on_errors)
             self._kmeans_features = params.get("kmeans_features", self._kmeans_features)
             self._mix_encoding = params.get("mix_encoding", self._mix_encoding)
+            self._max_single_prediction_time = params.get(
+                "max_single_prediction_time", self._max_single_prediction_time
+            )
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -211,6 +217,8 @@ class BaseAutoML(BaseEstimator, ABC):
             "metric_value": [],
             "train_time": [],
         }
+        if self._max_single_prediction_time is not None:
+            ldb["single_prediction_time"] = []
         for m in self._models:
             # filter model with random feature
             if filter_random_feature and "RandomFeature" in m.get_name():
@@ -220,6 +228,10 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
+            if self._max_single_prediction_time is not None:
+                ldb["single_prediction_time"] += [
+                    np.round(m._single_prediction_time, 4)
+                ]
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
@@ -235,19 +247,34 @@ class BaseAutoML(BaseEstimator, ABC):
     def keep_model(self, model, model_subpath):
         if model is None:
             return
+
+        if self._max_single_prediction_time is not None:
+            # let's check the prediction time ...
+            # load 2x because of model reloading during the training
+            for _ in range(2):
+                start_time = time.time()
+                self._base_predict(self._one_sample, model)
+                model._single_prediction_time = (
+                    time.time() - start_time
+                )  # prediction time on single sample
+            # again release learners from models
+            if "Ensemble" not in model.get_type():
+                model.release_learners()
+
         self._models += [model]
         self._model_subpaths += [model_subpath]
         self.select_and_save_best()
 
         sign = -1.0 if Metric.optimize_negative(self._eval_metric) else 1.0
-        self.verbose_print(
-            "{} {} {} trained in {} seconds".format(
-                model.get_name(),
-                self._eval_metric,
-                np.round(sign * model.get_final_loss(), 6),
-                np.round(model.get_train_time(), 2),
-            )
+        msg = "{} {} {} trained in {} seconds".format(
+            model.get_name(),
+            self._eval_metric,
+            np.round(sign * model.get_final_loss(), 6),
+            np.round(model.get_train_time(), 2),
         )
+        if model._single_prediction_time is not None:
+            msg += f" (1-sample predict time {np.round(model._single_prediction_time,4)} seconds)"
+        self.verbose_print(msg)
         self._time_ctrl.log_time(
             model.get_name(), model.get_type(), self._fit_level, model.get_train_time()
         )
@@ -343,7 +370,10 @@ class BaseAutoML(BaseEstimator, ABC):
             self.create_dir(ensemble_path)
 
             self.ensemble = Ensemble(
-                self._eval_metric, self._ml_task, is_stacked=is_stacked
+                self._eval_metric,
+                self._ml_task,
+                is_stacked=is_stacked,
+                max_single_prediction_time=self._max_single_prediction_time,
             )
             oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target, sample_weight)
@@ -516,6 +546,9 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validation_strategy["results_path"] = self._results_path
         if sample_weight is not None:
             self._validation_strategy["sample_weight_path"] = self._sample_weight_path
+
+        if self._max_single_prediction_time is not None:
+            self._one_sample = X.iloc[:1].copy(deep=True)
 
         self._drop_data_variables(X)
 
@@ -852,6 +885,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._boost_on_errors = self._get_boost_on_errors()
         self._kmeans_features = self._get_kmeans_features()
         self._mix_encoding = self._get_mix_encoding()
+        self._max_single_prediction_time = self._get_max_single_prediction_time()
         self._random_state = self._get_random_state()
 
         self._adjust_validation = False
@@ -1003,6 +1037,11 @@ class BaseAutoML(BaseEstimator, ABC):
                         ):
                             self._set_adjusted_validation()
 
+                    except NotTrainedException as e:
+                        params["status"] = "error"
+                        self.verbose_print(
+                            params.get("name") + " not trained. " + str(e)
+                        )
                     except Exception as e:
                         self._update_errors_report(
                             params.get("name"), str(e) + "\n" + traceback.format_exc()
@@ -1015,11 +1054,12 @@ class BaseAutoML(BaseEstimator, ABC):
                 raise AutoMLException("No models produced.")
             self._fit_level = "finished"
             self.save_progress()
-            self.select_and_save_best()
+            self.select_and_save_best(show_warnings=True)
 
             self.verbose_print(
                 f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
             )
+            self.verbose_print(f"AutoML best model: {self._best_model.get_name()}")
 
         except Exception as e:
             raise e
@@ -1043,10 +1083,36 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             fout.write("\n\n")
 
-    def select_and_save_best(self):
+    def select_and_save_best(self, show_warnings=False):
         # Select best model based on the lowest loss
         self._best_model = None
         if self._models:
+            model_list = [
+                m
+                for m in self._models
+                if m.is_valid() and m.is_fast_enough(self._max_single_prediction_time)
+            ]
+            if model_list:
+                self._best_model = min(
+                    model_list,
+                    key=lambda x: x.get_final_loss(),
+                )
+        # if none selected please select again and warn the user
+        if (
+            len(self._models)
+            and self._best_model is None
+            and self._max_single_prediction_time is not None
+        ):
+            if show_warnings:
+                msg = (
+                    "*" * 64
+                    + "\nThere were no model with prediction time smaller than the limit.\n"
+                    + "Please increase the prediction time for single sample,\n"
+                    + "or please to use train/test split for validation\n"
+                    + "*" * 64
+                )
+                self.verbose_print(msg)
+
             self._best_model = min(
                 [m for m in self._models if m.is_valid()],
                 key=lambda x: x.get_final_loss(),
@@ -1074,6 +1140,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "boost_on_errors": self._boost_on_errors,
                 "kmeans_features": self._kmeans_features,
                 "mix_encoding": self._mix_encoding,
+                "max_single_prediction_time": self._max_single_prediction_time,
                 "random_state": self._random_state,
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
@@ -1111,12 +1178,14 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 LeaderboardPlots.compute(ldb, self._results_path, fout)
 
-    def _base_predict(self, X):
+    def _base_predict(self, X, model=None):
 
-        if self._best_model is None:
-            self.load(self.results_path)
+        if model is None:
+            if self._best_model is None:
+                self.load(self.results_path)
+            model = self._best_model
 
-        if self._best_model is None:
+        if model is None:
             raise AutoMLException(
                 "This model has not been fitted yet. Please call `fit()` first."
             )
@@ -1136,17 +1205,17 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validate_X_predict(X)
 
         # is stacked model
-        if self._best_model._is_stacked:
+        if model._is_stacked:
             self._perform_model_stacking()
             X_stacked = self.get_stacked_data(X, mode="predict")
 
-            if self._best_model.get_type() == "Ensemble":
+            if model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
-                predictions = self._best_model.predict(X, X_stacked)
+                predictions = model.predict(X, X_stacked)
             else:
-                predictions = self._best_model.predict(X_stacked)
+                predictions = model.predict(X_stacked)
         else:
-            predictions = self._best_model.predict(X)
+            predictions = model.predict(X)
 
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
@@ -1162,7 +1231,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 neg_label = int(neg_label)
                 pos_label = int(pos_label)
             # assume that it is binary classification
-            predictions["label"] = predictions.iloc[:, 1] > self._best_model._threshold
+            predictions["label"] = predictions.iloc[:, 1] > model._threshold
             predictions["label"] = predictions["label"].map(
                 {True: pos_label, False: neg_label}
             )
@@ -1515,6 +1584,16 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.mix_encoding)
 
+    def _get_max_single_prediction_time(self):
+        """ Gets the current max_single_prediction_time"""
+        self._validate_max_single_prediction_time()
+        if self.max_single_prediction_time is None:
+            if self._get_mode() == "Perform":
+                return 0.5  # prediction time should be under 0.5 second
+            return None
+        else:
+            return deepcopy(self.max_single_prediction_time)
+
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1711,6 +1790,14 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.mix_encoding, str) and self.mix_encoding == "auto":
             return
         check_bool(self.mix_encoding, "mix_encoding")
+
+    def _validate_max_single_prediction_time(self):
+        """ Validates max_single_prediction_time parameter"""
+        if self.max_single_prediction_time is None:
+            return
+        check_greater_than_zero_integer_or_float(
+            self.max_single_prediction_time, "max_single_prediction_time"
+        )
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""

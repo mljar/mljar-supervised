@@ -15,6 +15,7 @@ from supervised.model_framework import ModelFramework
 from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.exceptions import NotTrainedException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -31,7 +32,11 @@ class Ensemble:
     algorithm_short_name = "Ensemble"
 
     def __init__(
-        self, optimize_metric="logloss", ml_task=BINARY_CLASSIFICATION, is_stacked=False
+        self,
+        optimize_metric="logloss",
+        ml_task=BINARY_CLASSIFICATION,
+        is_stacked=False,
+        max_single_prediction_time=None,
     ):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
@@ -55,6 +60,9 @@ class Ensemble:
         self._scores = []
         self.oof_predictions = None
         self._oof_predictions_fname = None
+        self._single_prediction_time = None  # prediction time on single sample
+        self._max_single_prediction_time = max_single_prediction_time
+        self.model_prediction_time = {}
 
     def get_train_time(self):
         return self.train_time
@@ -64,6 +72,17 @@ class Ensemble:
 
     def is_valid(self):
         return len(self.selected_models) > 1
+
+    def is_fast_enough(self, max_single_prediction_time):
+        # dont need to check
+        if max_single_prediction_time is None:
+            return True
+
+        # no iformation about prediction time
+        if self._single_prediction_time is None:
+            return True
+
+        return self._single_prediction_time < max_single_prediction_time
 
     def get_type(self):
         prefix = ""  # "Stacked" if self._is_stacked else ""
@@ -117,6 +136,18 @@ class Ensemble:
     def get_oof_matrix(self, models):
         # remember models, will be needed in predictions
         self.models_map = {m.get_name(): m for m in models}
+
+        if self._max_single_prediction_time is not None:
+            self.model_prediction_time = {
+                m.get_name(): m._single_prediction_time for m in models
+            }
+
+            if not [
+                m for m in models if m.is_fast_enough(self._max_single_prediction_time)
+            ]:
+                raise NotTrainedException(
+                    "Can't contruct ensemble with prediction time smaller than limit."
+                )
 
         oofs = {}
         for m in models:
@@ -180,12 +211,22 @@ class Ensemble:
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
 
+        total_prediction_time = 0
         best_sum = None  # sum of best algorihtms
         for j in range(len(oofs)):  # iterate over all solutions
             min_score = self.metric.get_maximum()
             best_model = None
             # try to add some algorithm to the best_sum to minimize metric
             for model_name in oofs.keys():
+                if (
+                    self._max_single_prediction_time
+                    and model_name in self.model_prediction_time
+                ):
+                    if (
+                        total_prediction_time + self.model_prediction_time[model_name]
+                        > self._max_single_prediction_time
+                    ):
+                        continue
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
                 score = self.metric(y, y_ens, sample_weight)
 
@@ -193,6 +234,8 @@ class Ensemble:
                     min_score = score
                     best_model = model_name
 
+            if best_model is None:
+                continue
             # there is improvement, save it
             # save scores for plotting learning curve
             # if we optimize negative, then we need to multiply by -1.0
@@ -211,7 +254,19 @@ class Ensemble:
             )
             if j == selected_algs_cnt:
                 self.total_best_sum = copy.deepcopy(best_sum)
+
+            # update prediction time estimate
+            if self._max_single_prediction_time is not None:
+                total_prediction_time = np.sum(
+                    [
+                        self.model_prediction_time[name]
+                        for name in np.unique(self.best_algs)
+                    ]
+                )
         # end of main loop #
+
+        if not self.best_algs:
+            raise NotTrainedException("Ensemble wasn't fitted.")
 
         # keep oof predictions of ensemble
         self.total_best_sum /= float(selected_algs_cnt + 1)

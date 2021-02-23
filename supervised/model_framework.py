@@ -68,6 +68,7 @@ class ModelFramework:
         self._threshold = None  # used only for binary classifiers
         self._max_time_for_learner = params.get("max_time_for_learner", 3600)
         self._oof_predictions_fname = None
+        self._single_prediction_time = None  # prediction time on single sample
 
     def get_train_time(self):
         return self.train_time
@@ -242,6 +243,12 @@ class ModelFramework:
         self.train_time = time.time() - start_time
         logger.debug("ModelFramework end of training")
 
+    def release_learners(self):
+        for learner in self.learners:
+            if learner.model is not None:
+                del learner.model
+                learner.model = None
+
     def get_metric_name(self):
         if self.metric_name is not None:
             return self.metric_name
@@ -313,6 +320,17 @@ class ModelFramework:
         """is_valid is used in Ensemble to check if it has more than 1 model in it.
         If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model"""
         return True
+
+    def is_fast_enough(self, max_single_prediction_time):
+        # dont need to check
+        if max_single_prediction_time is None:
+            return True
+
+        # no iformation about prediction time
+        if self._single_prediction_time is None:
+            return True
+
+        return self._single_prediction_time < max_single_prediction_time
 
     def predict(self, X):
         logger.debug("ModelFramework.predict")

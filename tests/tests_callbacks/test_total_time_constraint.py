@@ -7,7 +7,7 @@ import pandas as pd
 
 from numpy.testing import assert_almost_equal
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import NotTrainedException
 
 
 class TotalTimeConstraintTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         callback.add_and_set_learner(learner={})
         callback.on_learner_train_start(logs=None)
         time.sleep(0.1)
-        with self.assertRaises(AutoMLException) as context:
+        with self.assertRaises(NotTrainedException) as context:
             callback.on_learner_train_end(logs=None)
         self.assertTrue("Stop training after the first fold" in str(context.exception))
 
@@ -35,7 +35,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         callback.add_and_set_learner(learner={})
         callback.on_learner_train_start(logs=None)
         callback.on_learner_train_end(logs=None)
-        with self.assertRaises(AutoMLException) as context:
+        with self.assertRaises(NotTrainedException) as context:
             #
             # hardcoded change just for tests!
             callback.total_time_start = time.time() - 600 - 100 - 1
