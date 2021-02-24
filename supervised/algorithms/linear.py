@@ -115,7 +115,7 @@ class LinearRegressorAlgorithm(SklearnAlgorithm):
         logger.debug("LinearRegressorAlgorithm.__init__")
         self.max_iters = 1
         self.library_version = sklearn.__version__
-        self.model = LinearRegression(self.params.get("n_jobs", -1))
+        self.model = LinearRegression(n_jobs=self.params.get("n_jobs", -1))
 
     def is_fitted(self):
         return (
