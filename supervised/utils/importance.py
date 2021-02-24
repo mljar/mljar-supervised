@@ -59,11 +59,11 @@ class PermutationImportance:
                 rows, cols = X_validation.shape
                 if cols > 5000:
                     X_vald, _, y_vald, _ = subsample(
-                        X_validation, y_validation, train_size=100, ml_task=ml_task
+                        X_validation, y_validation, train_size=min(rows,100), ml_task=ml_task
                     )
                 elif cols > 50 and rows * cols > 200000:
                     X_vald, _, y_vald, _ = subsample(
-                        X_validation, y_validation, train_size=1000, ml_task=ml_task
+                        X_validation, y_validation, train_size=min(rows,1000), ml_task=ml_task
                     )
                 else:
                     X_vald = X_validation
