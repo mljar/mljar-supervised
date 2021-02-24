@@ -1954,3 +1954,36 @@ h3 {
 
         if main_readme_html is not None:
             return IFrame(main_readme_html, width, height)
+
+
+    def _need_retrain(self, X, y, sample_weight, decrease):
+        
+        metric = self._best_model.get_metric()
+
+        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
+            X, y, sample_weight, warn=True
+        )
+
+        if self._ml_task == BINARY_CLASSIFICATION:
+            prediction = self._predict_proba(X)[:,1]
+        if self._ml_task == MULTICLASS_CLASSIFICATION:
+            prediction = self._predict_proba(X)
+        else:
+            prediction = self._predict(X)
+
+        sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
+
+        
+        new_score = metric(y, prediction)
+        old_score = self._best_model.get_final_loss()
+
+        change = np.abs((old_score - new_score) / old_score)
+
+        # always minimize the score 
+        if new_score > old_score:
+            self.verbose_print(f"Model performance decreased by {np.round(change*100.0,2)}%")
+            return change > decrease
+        else:
+            self.verbose_print(f"Model performance increased by {np.round(change*100.0,2)}%")
+            return False    
+        
