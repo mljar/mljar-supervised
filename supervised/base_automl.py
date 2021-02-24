@@ -43,6 +43,7 @@ from supervised.utils.data_validation import (
     check_greater_than_zero_integer,
     check_bool,
     check_greater_than_zero_integer_or_float,
+    check_integer,
 )
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = None
         self._mix_encoding = None
         self._max_single_prediction_time = None
+        self._n_jobs = -1
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -160,6 +162,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._max_single_prediction_time = params.get(
                 "max_single_prediction_time", self._max_single_prediction_time
             )
+            self._n_jobs = params.get("n_jobs", self._n_jobs)
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
@@ -724,6 +727,12 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _apply_constraints(self):
 
+        if "Neural Network" in self._algorithms and self._n_jobs != -1:
+            self._algorithms.remove("Neural Network")
+            self.verbose_print(
+                "Neural Network algorithm was disabled because it doesn't support n_jobs parameter."
+            )
+
         # remove algorithms in the case of multiclass
         # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
@@ -886,6 +895,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = self._get_kmeans_features()
         self._mix_encoding = self._get_mix_encoding()
         self._max_single_prediction_time = self._get_max_single_prediction_time()
+        self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
 
         self._adjust_validation = False
@@ -947,6 +957,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._boost_on_errors,
                 self._kmeans_features,
                 self._mix_encoding,
+                self._n_jobs,
                 self._random_state,
             )
             self.tuner = tuner
@@ -1141,6 +1152,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "kmeans_features": self._kmeans_features,
                 "mix_encoding": self._mix_encoding,
                 "max_single_prediction_time": self._max_single_prediction_time,
+                "n_jobs": self._n_jobs,
                 "random_state": self._random_state,
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
@@ -1594,6 +1606,11 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.max_single_prediction_time)
 
+    def _get_n_jobs(self):
+        """ Gets the current n_jobs"""
+        self._validate_n_jobs()
+        return deepcopy(self.n_jobs)
+
     def _get_random_state(self):
         """ Gets the current random_state"""
         self._validate_random_state()
@@ -1798,6 +1815,10 @@ class BaseAutoML(BaseEstimator, ABC):
         check_greater_than_zero_integer_or_float(
             self.max_single_prediction_time, "max_single_prediction_time"
         )
+
+    def _validate_n_jobs(self):
+        """ Validates mix_encoding parameter"""
+        check_integer(self.n_jobs, "n_jobs")
 
     def _validate_random_state(self):
         """ Validates random_state parameter"""

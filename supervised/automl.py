@@ -40,6 +40,7 @@ class AutoML(BaseAutoML):
         kmeans_features="auto",
         mix_encoding="auto",
         max_single_prediction_time=None,
+        n_jobs=-1,
         verbose=1,
         random_state=1234,
     ):
@@ -189,6 +190,8 @@ class AutoML(BaseAutoML):
                 Ideal for creating ML pipelines used as REST API. Time is in seconds. By default (`max_single_prediction_time=None`) models are not optimized for fast predictions,
                 except the mode `Perform`. For the mode `Perform` the default is `0.5` seconds.
 
+            n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
+
             verbose (int): Controls the verbosity when fitting and predicting.
 
                 Note:
@@ -289,6 +292,7 @@ class AutoML(BaseAutoML):
         self.kmeans_features = kmeans_features
         self.mix_encoding = mix_encoding
         self.max_single_prediction_time = max_single_prediction_time
+        self.n_jobs = n_jobs
         self.random_state = random_state
 
     def fit(self, X, y, sample_weight=None):

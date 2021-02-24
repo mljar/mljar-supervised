@@ -48,7 +48,6 @@ class XgbAlgorithm(BaseAlgorithm):
         self.boosting_rounds = additional.get("max_rounds", 10000)
         self.max_iters = 1
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
-
         self.learner_params = {
             "tree_method": "hist",
             "booster": "gbtree",
@@ -59,6 +58,7 @@ class XgbAlgorithm(BaseAlgorithm):
             "min_child_weight": self.params.get("min_child_weight", 1),
             "subsample": self.params.get("subsample", 0.8),
             "colsample_bytree": self.params.get("colsample_bytree", 0.8),
+            "n_jobs": self.params.get("n_jobs", -1),
             # "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
         }

@@ -27,6 +27,7 @@ class HillClimbing:
             "ml_task",
             "explain_level",
             "model_architecture_json",
+            "n_jobs",
         ]:
             if k in keys:
                 keys.remove(k)

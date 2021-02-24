@@ -68,7 +68,7 @@ class KNeighborsAlgorithm(KNNFit):
             n_neighbors=params.get("n_neighbors", 3),
             weights=params.get("weights", "uniform"),
             algorithm="kd_tree",
-            n_jobs=-1,
+            n_jobs=params.get("n_jobs", -1),
         )
 
 
@@ -86,7 +86,7 @@ class KNeighborsRegressorAlgorithm(KNNFit):
             n_neighbors=params.get("n_neighbors", 3),
             weights=params.get("weights", "uniform"),
             algorithm="ball_tree",
-            n_jobs=-1,
+            n_jobs=params.get("n_jobs", -1),
         )
 
 

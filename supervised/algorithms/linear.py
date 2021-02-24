@@ -30,7 +30,9 @@ class LinearAlgorithm(SklearnAlgorithm):
         logger.debug("LinearAlgorithm.__init__")
         self.max_iters = 1
         self.library_version = sklearn.__version__
-        self.model = LogisticRegression(max_iter=500, tol=5e-4, n_jobs=-1)
+        self.model = LogisticRegression(
+            max_iter=500, tol=5e-4, n_jobs=self.params.get("n_jobs", -1)
+        )
 
     def is_fitted(self):
         return (
@@ -113,7 +115,7 @@ class LinearRegressorAlgorithm(SklearnAlgorithm):
         logger.debug("LinearRegressorAlgorithm.__init__")
         self.max_iters = 1
         self.library_version = sklearn.__version__
-        self.model = LinearRegression(n_jobs=-1)
+        self.model = LinearRegression(self.params.get("n_jobs", -1))
 
     def is_fitted(self):
         return (

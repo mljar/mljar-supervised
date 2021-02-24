@@ -55,13 +55,13 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "random_seed": self.params.get("seed", 1),
             "loss_function": loss_function,
         }
-
         self.model = Algo(
             iterations=self.rounds,
             learning_rate=self.learner_params["learning_rate"],
             depth=self.learner_params["depth"],
             rsm=self.learner_params["rsm"],
             loss_function=self.learner_params["loss_function"],
+            thread_count=self.params.get("n_jobs", -1),
             verbose=False,
             allow_writing_files=False,
         )

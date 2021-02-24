@@ -22,6 +22,13 @@ def check_positive_integer(value, original_var_name):
         )
 
 
+def check_integer(value, original_var_name):
+    if not isinstance(value, int):
+        raise ValueError(
+            f"'{original_var_name}' must be an integer, got '{type(value)}'."
+        )
+
+
 def check_bool(value, original_var_name):
     if not isinstance(value, bool):
         raise ValueError(

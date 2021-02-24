@@ -41,6 +41,7 @@ class MljarTuner:
         boost_on_errors,
         kmeans_features,
         mix_encoding,
+        n_jobs,
         seed,
     ):
         logger.debug("MljarTuner.__init__")
@@ -60,8 +61,8 @@ class MljarTuner:
         self._boost_on_errors = boost_on_errors
         self._kmeans_features = kmeans_features
         self._mix_encoding = mix_encoding
+        self._n_jobs = n_jobs
         self._seed = seed
-
         self._unique_params_keys = []
 
     def _apply_categorical_strategies(self):
@@ -880,6 +881,7 @@ class MljarTuner:
             "learner": {
                 "model_type": model_info["class"].algorithm_short_name,
                 "ml_task": self._ml_task,
+                "n_jobs": self._n_jobs,
                 **model_params,
             },
         }

@@ -5,7 +5,6 @@ import pandas as pd
 import time
 import os
 import contextlib
-import multiprocessing
 import lightgbm as lgb
 
 from supervised.algorithms.algorithm import BaseAlgorithm
@@ -35,16 +34,21 @@ class LightgbmAlgorithm(BaseAlgorithm):
         self.max_iters = 1
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
 
+        n_jobs = self.params.get("n_jobs", 0)
+        # 0 is the default for LightGBM to use all cores
+        if n_jobs == -1:
+            n_jobs = 0
+
         self.learner_params = {
             "boosting_type": "gbdt",
             "objective": self.params.get("objective", "binary"),
             "metric": self.params.get("metric", "binary_logloss"),
-            "num_threads": multiprocessing.cpu_count(),
             "num_leaves": self.params.get("num_leaves", 31),
             "learning_rate": self.params.get("learning_rate", 0.1),
             "feature_fraction": self.params.get("feature_fraction", 1.0),
             "bagging_fraction": self.params.get("bagging_fraction", 1.0),
             "min_data_in_leaf": self.params.get("min_data_in_leaf", 20),
+            "num_threads": n_jobs,
             "verbose": -1,
             "seed": self.params.get("seed", 1),
         }

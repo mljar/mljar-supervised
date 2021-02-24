@@ -322,6 +322,8 @@ class AutoMLTest(unittest.TestCase):
         X = np.random.uniform(size=(rows, 100))
         y = np.random.randint(0, 2, size=(rows,))
 
-        automl = AutoML(results_path=self.automl_dir, total_time_limit=1, train_ensemble=False)
+        automl = AutoML(
+            results_path=self.automl_dir, total_time_limit=1, train_ensemble=False
+        )
         with self.assertRaises(AutoMLException) as context:
             automl.fit(X, y)
