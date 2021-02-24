@@ -138,7 +138,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
             early_stopping_rounds=self.early_stopping_rounds,
             verbose_eval=False,
         )
-        print(model_init.tree_count_)
         if self.model.best_iteration_ is not None:
             self.best_ntree_limit = (
                 self.model.best_iteration_ + model_init.tree_count_ + 1
