@@ -128,7 +128,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
         # disable for now ...
         model_init, new_iterations = self._assess_iterations(X, y, eval_set, max_time)
         self.model.set_params(iterations=new_iterations)
-
         self.model.fit(
             X,
             y,
@@ -141,7 +140,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         )
         if self.model.best_iteration_ is not None:
             self.best_ntree_limit = (
-                self.model.best_iteration_ + self.warmup_iterations + 1
+                self.model.best_iteration_ + model_init.tree_count_ + 1
             )
         else:
             # just take all the trees
