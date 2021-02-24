@@ -1974,7 +1974,7 @@ h3 {
         sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
 
         
-        new_score = metric(y, prediction)
+        new_score = metric(y, prediction, sample_weight)
         old_score = self._best_model.get_final_loss()
 
         change = np.abs((old_score - new_score) / old_score)

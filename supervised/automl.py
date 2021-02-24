@@ -406,10 +406,10 @@ class AutoML(BaseAutoML):
             sample_weight (numpy.ndarray or pandas.Series):
                 Sample weights.
 
-            decrease (float): The ratio of change in the performance used as a threshold for retrain decision.
-                By default, it is set to `0.1` which means that if performance of AutoML will decrease be 10% 
+            decrease (float): The ratio of change in the performance used as a threshold for retraining decision.
+                By default, it is set to `0.1` which means that if the performance of AutoML will decrease by 10% 
                 on new data then there is a need to retrain. This value should be set depending on your project needs.
-                Sometimes, 10% is enough, but for some projects it can be even lower than 1%.
+                Sometimes, 10% is enough, but for some projects, it can be even lower than 1%.
 
             Returns:
                 boolean: Decides if there is a need to retrain the AutoML.
