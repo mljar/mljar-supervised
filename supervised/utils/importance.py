@@ -57,13 +57,13 @@ class PermutationImportance:
                 # subsample validation data to speed-up importance computation
                 # in the case of large number of columns, it can take a lot of time
                 rows, cols = X_validation.shape
-                if cols > 5000:
+                if cols > 5000 and rows > 100:
                     X_vald, _, y_vald, _ = subsample(
-                        X_validation, y_validation, train_size=min(rows,100), ml_task=ml_task
+                        X_validation, y_validation, train_size=100, ml_task=ml_task
                     )
-                elif cols > 50 and rows * cols > 200000:
+                elif cols > 50 and rows * cols > 200000 and rows > 1000:
                     X_vald, _, y_vald, _ = subsample(
-                        X_validation, y_validation, train_size=min(rows,1000), ml_task=ml_task
+                        X_validation, y_validation, train_size=1000, ml_task=ml_task
                     )
                 else:
                     X_vald = X_validation
