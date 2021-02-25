@@ -402,7 +402,7 @@ class AdditionalMetrics:
 
         tree_viz = [f for f in os.listdir(model_path) if "_tree.svg" in f]
         if len(tree_viz):
-            fout.write("\n\n## Tree visualizations\n")
+            fout.write("\n\n## Decision Tree \n")
             for repeat in range(repeat_cnt):
                 repeat_str = f", Repeat #{repeat+1}" if repeat_cnt > 1 else ""
                 for fold in range(fold_cnt):
@@ -411,6 +411,15 @@ class AdditionalMetrics:
                     if fname in tree_viz:
                         fout.write(f"\n### Tree #{fold+1}{repeat_str}\n")
                         fout.write(f"![Tree {fold+1}{repeat_str}]({fname})")
+                    try:
+                        fname = os.path.join(model_path, learner_name + "_rules.txt")
+                        if os.path.exists(fname):
+                            fout.write("\n\n### Rules\n\n")
+                            with open(fname, "r") as fin:
+                                fout.write(fin.read() + "\n\n")
+                    except Exception as e:
+                        logger.info("Problem with adding rules to report. " + str(e))
+
 
     @staticmethod
     def add_permutation_importance(fout, model_path, fold_cnt, repeat_cnt):
