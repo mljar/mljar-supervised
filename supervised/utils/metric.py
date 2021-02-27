@@ -11,6 +11,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import f1_score
 
 
 class MetricException(Exception):
@@ -41,6 +42,9 @@ def negative_r2(y_true, y_predicted, sample_weight=None):
     val = r2_score(y_true, y_predicted, sample_weight=sample_weight)
     return -1.0 * val
 
+def negative_f1_score(y_true, y_predicted, sample_weight=None):
+    val = f1_score(y_true, y_predicted, sample_weight=sample_weight)
+    return -1.0 * val
 
 class Metric(object):
     def __init__(self, params):
@@ -59,6 +63,7 @@ class Metric(object):
             "mse",
             "r2",  # negative r2
             "mape",
+            "f1_score", # negative f1_score
         ]
         if self.name == "logloss":
             self.metric = logloss
@@ -76,6 +81,8 @@ class Metric(object):
             self.metric = negative_r2
         elif self.name == "mape":
             self.metric = mean_absolute_percentage_error
+        elif self.name == "f1_score":
+            self.metric = negative_f1_score
         else:
             raise MetricException(f"Unknown metric '{self.name}'")
 
