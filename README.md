@@ -1,4 +1,4 @@
-# MLJAR Automated Machine Learning
+# MLJAR Automated Machine Learning for Humans
 
 [![Build Status](https://travis-ci.org/mljar/mljar-supervised.svg?branch=master)](https://travis-ci.org/mljar/mljar-supervised)
 [![Coverage Status](https://coveralls.io/repos/github/mljar/mljar-supervised/badge.svg?branch=master)](https://coveralls.io/github/mljar/mljar-supervised?branch=master)
