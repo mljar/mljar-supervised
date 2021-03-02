@@ -807,9 +807,11 @@ class BaseAutoML(BaseEstimator, ABC):
             k_folds = 5
             if folds_cnt >= 15:
                 k_folds = 10
-            # too small dataset to run 10-fold CV
-            if k_folds == 10 and self.n_rows_in_ <= 1000:
-                k_folds = 5
+            # too small dataset for stacking
+            if self.n_rows_in_ < 500:
+                self._stack_models = False
+                self.verbose_print("*** Disable stacking for small dataset (nrows < 500)")
+
             self._validation_strategy["validation_type"] = "kfold"
             del self._validation_strategy["train_ratio"]
             self._validation_strategy["k_folds"] = k_folds
