@@ -52,10 +52,31 @@ class LightgbmAlgorithm(BaseAlgorithm):
             "verbose": -1,
             "seed": self.params.get("seed", 1),
         }
+
+        for extra_param in [
+            "lambda_l1",
+            "lambda_l2",
+            "bagging_freq",
+            "feature_pre_filter",
+            "cat_feature",
+            "cat_l2",
+            "cat_smooth",
+        ]:
+            if extra_param in self.params:
+                self.learner_params[extra_param] = self.params[extra_param]
+
+        if "num_boost_round" in self.params:
+            self.rounds = self.params["num_boost_round"]
+        if "early_stopping_rounds" in self.params:
+            self.early_stopping_rounds = self.params["early_stopping_rounds"]
+
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
         logger.debug("LightgbmLearner __init__")
+
+        print("LightGBM")
+        print(self.learner_params)
 
     def file_extension(self):
         return "lightgbm"

@@ -31,6 +31,11 @@ logger.setLevel(LOG_LEVEL)
 from supervised.utils.config import mem
 from supervised.utils.learning_curves import LearningCurves
 
+import optuna
+import joblib
+
+from supervised.tuner.optuna.tuner import OptunaTuner
+
 
 class ModelFramework:
     def __init__(self, params, callbacks=[]):
@@ -114,11 +119,122 @@ class ModelFramework:
             "validation_columns": y_validation_columns,
         }
 
+    """
+    def optimize(
+        self,
+        results_path,
+        algorithm,
+        data_type,
+        X_train,
+        y_train,
+        sample_weight,
+        X_validation,
+        y_validation,
+        sample_weight_validation,
+    ):
+
+        from supervised.algorithms.lightgbm import LightgbmObjective
+        from supervised.algorithms.catboost import CatBoostObjective
+        from supervised.algorithms.xgboost import XgboostObjective
+
+        print("check optimize")
+        fname = os.path.join(results_path, "optuna.json")
+        tuning = {}
+        if os.path.exists(fname):
+            tuning = json.loads(open(fname).read())
+        key = f"{data_type}_{algorithm}"
+        if key in tuning:
+            return tuning[key]
+
+        print("optimize", algorithm, data_type)
+        study = optuna.create_study(
+            direction="maximize",
+            sampler=optuna.samplers.TPESampler(seed=42),
+            pruner=optuna.pruners.MedianPruner(n_warmup_steps=50),
+        )
+        obejctive = None
+        if algorithm == "LightGBM":
+            objective = LightgbmObjective(
+                X_train,
+                y_train,
+                sample_weight,
+                X_validation,
+                y_validation,
+                sample_weight_validation,
+                weighted_metric=False,
+            )
+        elif algorithm == "CatBoost":
+            objective = CatBoostObjective(
+                X_train,
+                y_train,
+                sample_weight,
+                X_validation,
+                y_validation,
+                sample_weight_validation,
+                weighted_metric=False,
+            )
+        elif algorithm == "Xgboost":
+            objective = XgboostObjective(
+                X_train,
+                y_train,
+                sample_weight,
+                X_validation,
+                y_validation,
+                sample_weight_validation,
+                weighted_metric=False,
+            )
+
+        study.optimize(objective, n_trials=5000, timeout=3600)
+
+        print("****************************")
+        print("****************************")
+        print("****************************")
+        print(study.best_params)
+
+        best = study.best_params
+
+        joblib.dump(study, os.path.join(results_path, key))
+
+        if algorithm == "LightGBM":
+            best["metric"] = "auc"
+            best["num_boost_round"] = 1000
+            best["early_stopping_rounds"] = 50
+            best["learning_rate"] = 0.1
+        elif algorithm == "CatBoost":
+            best["eval_metric"] = "AUC"
+            best["num_boost_round"] = 1000
+            best["early_stopping_rounds"] = 50
+            best["learning_rate"] = 0.1
+        elif algorithm == "Xgboost":
+            best["eval_metric"] = "auc"
+            best["eta"] = 0.1
+            best["max_rounds"] = 1000
+            best["early_stopping_rounds"] = 50
+
+        tuning[key] = best
+        with open(fname, "w") as fout:
+            fout.write(json.dumps(tuning, indent=4))
+
+        return best
+    """
+
     def train(self, results_path, model_subpath):
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
         np.random.seed(self.learner_params["seed"])
+
+        optuna_tuner = None
+        if self.params.get("optuna", True):
+            optuna_tuner = OptunaTuner(
+                results_path,
+                ml_task=self._ml_task,
+                eval_metric=self.get_metric(),
+                time_budget=18,
+                init_params={},
+                verbose=True,
+                random_state=self.learner_params["seed"],
+            )
 
         self.validation = ValidationStep(self.validation_params)
 
@@ -158,6 +274,24 @@ class ModelFramework:
                     validation_data["y"],
                     validation_data.get("sample_weight"),
                 )
+
+                if optuna_tuner is not None:
+                    print("---OLD Params---")
+                    print(self.learner_params)
+
+                    self.learner_params = optuna_tuner.optimize(
+                        self.learner_params.get("model_type", ""),
+                        self.params.get("data_type", ""),
+                        X_train,
+                        y_train,
+                        sample_weight,
+                        X_validation,
+                        y_validation,
+                        sample_weight_validation,
+                        self.learner_params,
+                    )
+                    print("UPDATE---->")
+                    print(self.learner_params)
 
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [

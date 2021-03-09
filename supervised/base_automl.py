@@ -732,11 +732,11 @@ class BaseAutoML(BaseEstimator, ABC):
             self.verbose_print(
                 "Neural Network algorithm was disabled because it doesn't support n_jobs parameter."
             )
-        if "Linear" in self._algorithms and not (self.n_rows_in_ < 10000 and self.n_features_in_ < 1000):
+        if "Linear" in self._algorithms and not (
+            self.n_rows_in_ < 10000 and self.n_features_in_ < 1000
+        ):
             self._algorithms.remove("Linear")
-            self.verbose_print(
-                "Linear algorithm was disabled."
-            )
+            self.verbose_print("Linear algorithm was disabled.")
 
         # remove algorithms in the case of multiclass
         # and too many classes and columns
@@ -810,7 +810,9 @@ class BaseAutoML(BaseEstimator, ABC):
             # too small dataset for stacking
             if self.n_rows_in_ < 500:
                 self._stack_models = False
-                self.verbose_print("*** Disable stacking for small dataset (nrows < 500)")
+                self.verbose_print(
+                    "*** Disable stacking for small dataset (nrows < 500)"
+                )
 
             self._validation_strategy["validation_type"] = "kfold"
             del self._validation_strategy["train_ratio"]
@@ -1963,9 +1965,8 @@ h3 {
         if main_readme_html is not None:
             return IFrame(main_readme_html, width, height)
 
-
     def _need_retrain(self, X, y, sample_weight, decrease):
-        
+
         metric = self._best_model.get_metric()
 
         X, y, sample_weight = ExcludeRowsMissingTarget.transform(
@@ -1973,7 +1974,7 @@ h3 {
         )
 
         if self._ml_task == BINARY_CLASSIFICATION:
-            prediction = self._predict_proba(X)[:,1]
+            prediction = self._predict_proba(X)[:, 1]
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             prediction = self._predict_proba(X)
         else:
@@ -1981,17 +1982,19 @@ h3 {
 
         sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
 
-        
         new_score = metric(y, prediction, sample_weight)
         old_score = self._best_model.get_final_loss()
 
         change = np.abs((old_score - new_score) / old_score)
 
-        # always minimize the score 
+        # always minimize the score
         if new_score > old_score:
-            self.verbose_print(f"Model performance decreased by {np.round(change*100.0,2)}%")
+            self.verbose_print(
+                f"Model performance decreased by {np.round(change*100.0,2)}%"
+            )
             return change > decrease
         else:
-            self.verbose_print(f"Model performance increased by {np.round(change*100.0,2)}%")
-            return False    
-        
+            self.verbose_print(
+                f"Model performance increased by {np.round(change*100.0,2)}%"
+            )
+            return False

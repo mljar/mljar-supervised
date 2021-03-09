@@ -25,7 +25,7 @@ automl = AutoML(
     train_ensemble=True,
     golden_features=False,
     features_selection=False,
-    eval_metric="auc"
+    eval_metric="auc",
 )
 automl.fit(X_train, y_train)
 

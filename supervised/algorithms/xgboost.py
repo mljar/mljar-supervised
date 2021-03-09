@@ -21,6 +21,7 @@ logger.setLevel(LOG_LEVEL)
 import tempfile
 
 
+
 class XgbAlgorithmException(Exception):
     def __init__(self, message):
         super(XgbAlgorithmException, self).__init__(message)
@@ -62,6 +63,11 @@ class XgbAlgorithm(BaseAlgorithm):
             # "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
         }
+
+        if "lambda" in self.params:
+            self.learner_params["lambda"] = self.params["lambda"]
+        if "alpha" in self.params:
+            self.learner_params["alpha"] = self.params["alpha"]
 
         # check https://github.com/dmlc/xgboost/issues/5637
         if self.learner_params["seed"] > 2147483647:

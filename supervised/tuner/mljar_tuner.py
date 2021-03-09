@@ -287,6 +287,7 @@ class MljarTuner:
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
+            params["data_type"] += "_stacked"
 
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
@@ -333,6 +334,7 @@ class MljarTuner:
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
+            params["data_type"] = "original"
 
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
@@ -358,6 +360,7 @@ class MljarTuner:
                 params["status"] = "initialized"
                 params["final_loss"] = None
                 params["train_time"] = None
+                params["data_type"] = "original"
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -413,6 +416,7 @@ class MljarTuner:
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
+            params["data_type"] = "original"
 
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
@@ -454,6 +458,7 @@ class MljarTuner:
                 params["status"] = "initialized"
                 params["final_loss"] = None
                 params["train_time"] = None
+                params["data_type"] = "original"
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -579,7 +584,7 @@ class MljarTuner:
             # try to add categorical strategy only for below algorithms
             if m_type not in [
                 "Xgboost",
-                "LightGBM",
+                # "LightGBM", # use built-in categoricals (but need to int encode)
                 # "Neural Network",
                 # "Random Forest",
                 # "Extra Trees",
@@ -640,6 +645,8 @@ class MljarTuner:
                 params["status"] = "initialized"
                 params["final_loss"] = None
                 params["train_time"] = None
+                params["data_type"] = strategy
+
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
                 unique_params_key = MljarTuner.get_params_key(params)
@@ -701,6 +708,7 @@ class MljarTuner:
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
+            params["data_type"] = params.get("data_type", "") + "_golden_features"
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -727,6 +735,7 @@ class MljarTuner:
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
+            params["data_type"] = params.get("data_type", "") + "_kmeans_features"
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -847,6 +856,10 @@ class MljarTuner:
                 params["status"] = "initialized"
                 params["final_loss"] = None
                 params["train_time"] = None
+                params["data_type"] = (
+                    params.get("data_type", "") + "_features_selection"
+                )
+
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
                 unique_params_key = MljarTuner.get_params_key(params)
@@ -971,6 +984,7 @@ class MljarTuner:
         params["status"] = "initialized"
         params["final_loss"] = None
         params["train_time"] = None
+        params["data_type"] = "boost_on_error"
         if "model_architecture_json" in params["learner"]:
             del params["learner"]["model_architecture_json"]
         unique_params_key = MljarTuner.get_params_key(params)

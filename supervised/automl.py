@@ -392,7 +392,6 @@ class AutoML(BaseAutoML):
     def report(self, width=900, height=1200):
         return self._report(width, height)
 
-
     def need_retrain(self, X, y, sample_weight=None, decrease=0.1):
         """Decides about model retraining based on new data.
 
@@ -407,7 +406,7 @@ class AutoML(BaseAutoML):
                 Sample weights.
 
             decrease (float): The ratio of change in the performance used as a threshold for retraining decision.
-                By default, it is set to `0.1` which means that if the performance of AutoML will decrease by 10% 
+                By default, it is set to `0.1` which means that if the performance of AutoML will decrease by 10%
                 on new data then there is a need to retrain. This value should be set depending on your project needs.
                 Sometimes, 10% is enough, but for some projects, it can be even lower than 1%.
 

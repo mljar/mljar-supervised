@@ -48,22 +48,22 @@ class CatBoostAlgorithm(BaseAlgorithm):
             loss_function = self.params.get("loss_function", "RMSE")
             Algo = CatBoostRegressor
 
-        self.learner_params = {
-            "learning_rate": self.params.get("learning_rate", 0.1),
-            "depth": self.params.get("depth", 3),
-            "rsm": self.params.get("rsm", 1.0),
-            "random_seed": self.params.get("seed", 1),
-            "loss_function": loss_function,
-        }
+        print("catboost----------------")
+        print(self.params)
+
         self.model = Algo(
             iterations=self.rounds,
-            learning_rate=self.learner_params["learning_rate"],
-            depth=self.learner_params["depth"],
-            rsm=self.learner_params["rsm"],
-            loss_function=self.learner_params["loss_function"],
+            learning_rate=self.params.get("learning_rate", 0.1),
+            depth=self.params.get("depth", 3),
+            rsm=self.params.get("rsm", 1.0),
+            l2_leaf_reg=self.params.get("l2_leaf_reg", 3.0),
+            random_strength=self.params.get("random_strength", 1.0),
+            loss_function=loss_function,
+            eval_metric=self.params.get("eval_metric", loss_function),
             thread_count=self.params.get("n_jobs", -1),
             verbose=False,
             allow_writing_files=False,
+            random_seed=self.params.get("seed", 1),
         )
         self.cat_features = None
         self.best_ntree_limit = 0
@@ -126,8 +126,17 @@ class CatBoostAlgorithm(BaseAlgorithm):
             )
 
         # disable for now ...
-        model_init, new_iterations = self._assess_iterations(X, y, eval_set, max_time)
-        self.model.set_params(iterations=new_iterations)
+        if self.params.get("num_boost_round") is None:
+            model_init, new_iterations = self._assess_iterations(
+                X, y, eval_set, max_time
+            )
+            self.model.set_params(iterations=new_iterations)
+        else:
+            model_init = None
+            self.model.set_params(iterations=self.params.get("num_boost_round"))
+            self.early_stopping_rounds = self.params.get("early_stopping_rounds", 50)
+            print("Rounds", self.params.get("num_boost_round"))
+
         self.model.fit(
             X,
             y,
@@ -139,9 +148,13 @@ class CatBoostAlgorithm(BaseAlgorithm):
             verbose_eval=False,
         )
         if self.model.best_iteration_ is not None:
-            self.best_ntree_limit = (
-                self.model.best_iteration_ + model_init.tree_count_ + 1
-            )
+            if model_init is not None:
+                self.best_ntree_limit = (
+                    self.model.best_iteration_ + model_init.tree_count_ + 1
+                )
+            else:
+                self.best_ntree_limit = self.model.best_iteration_ + 1
+
         else:
             # just take all the trees
             # the warm-up trees are already included

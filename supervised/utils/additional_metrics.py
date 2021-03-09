@@ -420,7 +420,6 @@ class AdditionalMetrics:
                     except Exception as e:
                         logger.info("Problem with adding rules to report. " + str(e))
 
-
     @staticmethod
     def add_permutation_importance(fout, model_path, fold_cnt, repeat_cnt):
         # permutation importance
