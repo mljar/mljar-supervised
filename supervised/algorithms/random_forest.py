@@ -76,6 +76,7 @@ class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
             max_features=params.get("max_features", 0.8),
             max_depth=params.get("max_depth", 6),
             min_samples_split=params.get("min_samples_split", 4),
+            min_samples_leaf=params.get("min_samples_leaf", 1),
             warm_start=True,
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),

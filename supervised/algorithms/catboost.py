@@ -49,7 +49,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             Algo = CatBoostRegressor
 
         cat_params = {
-            "iterations": self.rounds,
+            "iterations": self.params.get("num_boost_round", self.rounds),
             "learning_rate": self.params.get("learning_rate", 0.1),
             "depth": self.params.get("depth", 3),
             "rsm": self.params.get("rsm", 1.0),
@@ -57,6 +57,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "random_strength": self.params.get("random_strength", 1.0),
             "loss_function": loss_function,
             "eval_metric": self.params.get("eval_metric", loss_function),
+            "custom_metric": self.params.get("eval_metric", loss_function),
             "thread_count": self.params.get("n_jobs", -1),
             "verbose": False,
             "allow_writing_files": False,
@@ -68,6 +69,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "bootstrap_type",
             "bagging_temperature",
             "subsample",
+            "border_count",
         ]:
             if extra_param in self.params:
                 cat_params[extra_param] = self.params[extra_param]
@@ -134,7 +136,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 weight=sample_weight_validation,
             )
 
-        # disable for now ...
         if self.params.get("num_boost_round") is None:
             model_init, new_iterations = self._assess_iterations(
                 X, y, eval_set, max_time
@@ -155,6 +156,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             early_stopping_rounds=self.early_stopping_rounds,
             verbose_eval=False,
         )
+        print(self.model.best_iteration_)
         if self.model.best_iteration_ is not None:
             if model_init is not None:
                 self.best_ntree_limit = (
@@ -170,7 +172,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
             self.best_ntree_limit = self.model.tree_count_
 
         if log_to_file is not None:
-
             metric_name = list(self.model.evals_result_["learn"].keys())[0]
             train_scores = self.model.evals_result_["learn"][metric_name]
             validation_scores = self.model.evals_result_["validation"][metric_name]

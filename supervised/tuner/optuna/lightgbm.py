@@ -61,9 +61,9 @@ class LightgbmObjective:
         if ml_task == BINARY_CLASSIFICATION:
             self.objective = "binary"
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            self.objective = "binary:logistic"
+            self.objective = "multiclass"
         else:  # ml_task == REGRESSION
-            self.objective = "reg:squarederror"
+            self.objective = "regression"
 
     def __call__(self, trial):
         # max_bin = trial.suggest_int("max_bin", 2, 1024)
@@ -97,7 +97,7 @@ class LightgbmObjective:
         try:
 
             pruning_callback = optuna.integration.LightGBMPruningCallback(
-                trial, "auc", "validation"
+                trial, self.eval_metric_name, "validation"
             )
 
             gbm = lgb.train(

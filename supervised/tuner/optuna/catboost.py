@@ -66,9 +66,11 @@ class CatBoostObjective:
                 "iterations": self.rounds,
                 "learning_rate": self.learning_rate,
                 "depth": trial.suggest_int("depth", 2, 12),
-                "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", EPS, 10.0, log=True),
+                "l2_leaf_reg": trial.suggest_float(
+                    "l2_leaf_reg", 0.0001, 10.0, log=False
+                ),
                 "random_strength": trial.suggest_float(
-                    "random_strength", EPS, 10.0, log=True
+                    "random_strength", EPS, 10.0, log=False
                 ),
                 "rsm": trial.suggest_float("rsm", 0.1, 1),  # colsample_bylevel=rsm
                 "loss_function": self.objective,
@@ -77,6 +79,7 @@ class CatBoostObjective:
                 "allow_writing_files": False,
                 "thread_count": self.n_jobs,
                 "random_seed": self.seed,
+                "border_count": trial.suggest_int("border_count", 16, 2048),
                 "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
                 "bootstrap_type": trial.suggest_categorical(
                     "bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]
@@ -103,7 +106,7 @@ class CatBoostObjective:
                 verbose_eval=False,
                 cat_features=self.cat_features,
             )
-
+            print(model.best_iteration_)
             if self.ml_task == BINARY_CLASSIFICATION:
                 preds = model.predict_proba(
                     self.X_validation, ntree_end=model.best_iteration_ + 1
