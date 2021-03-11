@@ -98,6 +98,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = None
         self._mix_encoding = None
         self._max_single_prediction_time = None
+        self._optuna_time_budget = None
+        self._optuna_init_params = {}
         self._n_jobs = -1
 
     def _get_tuner_params(
@@ -412,7 +414,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         org_index = X.index.copy()
         X.reset_index(drop=True, inplace=True)
-        X_stacked = pd.concat(all_oofs + [X], axis=1)
+        X_stacked = pd.concat([X] + all_oofs, axis=1)
 
         X_stacked.index = org_index.copy()
         X.index = org_index.copy()
@@ -904,6 +906,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = self._get_kmeans_features()
         self._mix_encoding = self._get_mix_encoding()
         self._max_single_prediction_time = self._get_max_single_prediction_time()
+        self._optuna_time_budget = self._get_optuna_time_budget()
+        self._optuna_init_params = self._get_optuna_init_params()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
 
@@ -966,6 +970,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._boost_on_errors,
                 self._kmeans_features,
                 self._mix_encoding,
+                self._optuna_time_budget,
+                self._optuna_init_params,
                 self._n_jobs,
                 self._random_state,
             )
@@ -1417,6 +1423,14 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                     "Nearest Neighbors",
                 ]
+            if self._get_mode() == "Optuna":
+                return [
+                    "Random Forest",
+                    "Extra Trees",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                ]
         else:
             return deepcopy(self.algorithms)
 
@@ -1429,7 +1443,7 @@ class BaseAutoML(BaseEstimator, ABC):
         """ Gets the current stack_models"""
         self._validate_stack_models()
         if self.stack_models == "auto":
-            return True if self.mode == "Compete" else False
+            return True if self.mode in ["Compete", "Optuna"] else False
         else:
             return deepcopy(self.stack_models)
 
@@ -1465,7 +1479,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "shuffle": True,
                     "stratify": True,
                 }
-            elif self._get_mode() == "Compete":
+            elif self._get_mode() in ["Compete", "Optuna"]:
                 strat = {
                     "validation_type": "kfold",
                     "k_folds": 10,
@@ -1500,6 +1514,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return 1
             if self._get_mode() == "Compete":
                 return 0
+            if self._get_mode() == "Optuna":
+                return 0
         else:
             return deepcopy(self.explain_level)
 
@@ -1511,6 +1527,8 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Perform":
                 return True
             if self._get_mode() == "Compete":
+                return True
+            if self._get_mode() == "Optuna":
                 return True
         else:
             return deepcopy(self.golden_features)
@@ -1525,6 +1543,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return True
             if self._get_mode() == "Compete":
                 return True
+            if self._get_mode() == "Optuna":
+                return True
         else:
             return deepcopy(self.features_selection)
 
@@ -1538,6 +1558,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return 5
             if self._get_mode() == "Compete":
                 return 10
+            if self._get_mode() == "Optuna":
+                return 1  # just 1, because it will be tuned by Optuna
         else:
             return deepcopy(self.start_random_models)
 
@@ -1551,6 +1573,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return 2
             if self._get_mode() == "Compete":
                 return 2
+            if self._get_mode() == "Optuna":
+                return 0  # all tuning is done in Optuna
         else:
             return deepcopy(self.hill_climbing_steps)
 
@@ -1564,6 +1588,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return 2
             if self._get_mode() == "Compete":
                 return 3
+            if self._get_mode() == "Optuna":
+                return 0
         else:
             return deepcopy(self.top_models_to_improve)
 
@@ -1576,6 +1602,8 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Perform":
                 return False
             if self._get_mode() == "Compete":
+                return True
+            if self._get_mode() == "Optuna":
                 return True
         else:
             return deepcopy(self.boost_on_errors)
@@ -1590,6 +1618,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 return False
             if self._get_mode() == "Compete":
                 return True
+            if self._get_mode() == "Optuna":
+                return True
         else:
             return deepcopy(self.kmeans_features)
 
@@ -1602,6 +1632,8 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Perform":
                 return False
             if self._get_mode() == "Compete":
+                return True
+            if self._get_mode() == "Optuna":
                 return True
         else:
             return deepcopy(self.mix_encoding)
@@ -1616,6 +1648,28 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.max_single_prediction_time)
 
+    def _get_optuna_time_budget(self):
+        """ Gets the current optuna_time_budget"""
+        self._validate_optuna_time_budget()
+
+        if self.optuna_time_budget is None:
+            if self._get_mode() == "Optuna":
+                return 3600
+            return None
+        else:
+            if self._get_mode() != "Optuna":
+                # use only for mode Optuna
+                return None
+            return deepcopy(self.optuna_time_budget)
+
+    def _get_optuna_init_params(self):
+        """ Gets the current optuna_init_params"""
+        self._validate_optuna_init_params()
+        if self._get_mode() != "Optuna":
+            # use only for mode Optuna
+            return {}
+        return deepcopy(self.optuna_init_params)
+
     def _get_n_jobs(self):
         """ Gets the current n_jobs"""
         self._validate_n_jobs()
@@ -1628,7 +1682,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_mode(self):
         """ Validates mode parameter"""
-        valid_modes = ["Explain", "Perform", "Compete"]
+        valid_modes = ["Explain", "Perform", "Compete", "Optuna"]
         if self.mode not in valid_modes:
             raise ValueError(
                 f"Expected 'mode' to be {' or '.join(valid_modes)}, got '{self.mode}'"
@@ -1825,6 +1879,21 @@ class BaseAutoML(BaseEstimator, ABC):
         check_greater_than_zero_integer_or_float(
             self.max_single_prediction_time, "max_single_prediction_time"
         )
+
+    def _validate_optuna_time_budget(self):
+        """ Validates optuna_time_budget parameter"""
+        if self.optuna_time_budget is None:
+            return
+        check_greater_than_zero_integer(self.optuna_time_budget, "optuna_time_budget")
+
+    def _validate_optuna_init_params(self):
+        """ Validates optuna_init_params parameter"""
+        if self.optuna_init_params is None:
+            return
+        if type(self.optuna_init_params) is not dict:
+            raise ValueError(
+                f"Expected 'optuna_init_params' to be a dict, got '{type(self.optuna_init_params)}'"
+            )
 
     def _validate_n_jobs(self):
         """ Validates mix_encoding parameter"""

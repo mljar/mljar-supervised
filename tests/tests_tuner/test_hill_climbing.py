@@ -70,6 +70,8 @@ class TunerHillClimbingTest(unittest.TestCase):
             boost_on_errors=False,
             kmeans_features=False,
             mix_encoding=False,
+            optuna_time_budget=None,
+            optuna_init_params={},
             n_jobs=1,
             seed=12,
         )

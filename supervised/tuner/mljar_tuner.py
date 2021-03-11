@@ -41,6 +41,8 @@ class MljarTuner:
         boost_on_errors,
         kmeans_features,
         mix_encoding,
+        optuna_time_budget,
+        optuna_init_params,
         n_jobs,
         seed,
     ):
@@ -61,6 +63,8 @@ class MljarTuner:
         self._boost_on_errors = boost_on_errors
         self._kmeans_features = kmeans_features
         self._mix_encoding = mix_encoding
+        self._optuna_time_budget = optuna_time_budget
+        self._optuna_init_params = optuna_init_params
         self._n_jobs = n_jobs
         self._seed = seed
         self._unique_params_keys = []
@@ -288,6 +292,9 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] += "_stacked"
+            if self._optuna_time_budget is not None:
+                params["optuna_time_budget"] = self._optuna_time_budget
+                params["optuna_init_params"] = self._optuna_init_params
 
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
@@ -410,13 +417,17 @@ class MljarTuner:
             )
             if params is None:
                 continue
+            special = "Default_" if self._optuna_time_budget is None else "Optuna_"
             params["name"] = self.get_model_name(
-                model_type, models_cnt + 1, special="Default_"
+                model_type, models_cnt + 1, special=special
             )
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = "original"
+            if self._optuna_time_budget is not None:
+                params["optuna_time_budget"] = self._optuna_time_budget
+                params["optuna_init_params"] = self._optuna_init_params
 
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
@@ -459,6 +470,9 @@ class MljarTuner:
                 params["final_loss"] = None
                 params["train_time"] = None
                 params["data_type"] = "original"
+                if self._optuna_time_budget is not None:
+                    params["optuna_time_budget"] = self._optuna_time_budget
+                    params["optuna_init_params"] = self._optuna_init_params
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -645,7 +659,10 @@ class MljarTuner:
                 params["status"] = "initialized"
                 params["final_loss"] = None
                 params["train_time"] = None
-                params["data_type"] = strategy
+                params["data_type"] = params.get("data_type", "") + "_" + strategy
+                if self._optuna_time_budget is not None:
+                    params["optuna_time_budget"] = self._optuna_time_budget
+                    params["optuna_init_params"] = self._optuna_init_params
 
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
@@ -709,6 +726,9 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = params.get("data_type", "") + "_golden_features"
+            if self._optuna_time_budget is not None:
+                params["optuna_time_budget"] = self._optuna_time_budget
+                params["optuna_init_params"] = self._optuna_init_params
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -736,6 +756,9 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = params.get("data_type", "") + "_kmeans_features"
+            if self._optuna_time_budget is not None:
+                params["optuna_time_budget"] = self._optuna_time_budget
+                params["optuna_init_params"] = self._optuna_init_params
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -807,6 +830,11 @@ class MljarTuner:
         params["explain_level"] = 1
         if "model_architecture_json" in params["learner"]:
             del params["learner"]["model_architecture_json"]
+        if self._optuna_time_budget is not None:
+            # dont tune algorithm with random feature inserted
+            # algorithm will be tuned after feature selection
+            params["optuna_time_budget"] = None
+            params["optuna_init_params"] = {}
 
         unique_params_key = MljarTuner.get_params_key(params)
         if unique_params_key not in self._unique_params_keys:
@@ -859,6 +887,9 @@ class MljarTuner:
                 params["data_type"] = (
                     params.get("data_type", "") + "_features_selection"
                 )
+                if self._optuna_time_budget is not None:
+                    params["optuna_time_budget"] = self._optuna_time_budget
+                    params["optuna_init_params"] = self._optuna_init_params
 
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
@@ -987,6 +1018,9 @@ class MljarTuner:
         params["data_type"] = "boost_on_error"
         if "model_architecture_json" in params["learner"]:
             del params["learner"]["model_architecture_json"]
+        if self._optuna_time_budget is not None:
+            params["optuna_time_budget"] = self._optuna_time_budget
+            params["optuna_init_params"] = self._optuna_init_params
         unique_params_key = MljarTuner.get_params_key(params)
 
         if unique_params_key not in self._unique_params_keys:

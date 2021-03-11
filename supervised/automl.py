@@ -40,6 +40,8 @@ class AutoML(BaseAutoML):
         kmeans_features="auto",
         mix_encoding="auto",
         max_single_prediction_time=None,
+        optuna_time_budget=None,
+        optuna_init_params={},
         n_jobs=-1,
         verbose=1,
         random_state=1234,
@@ -190,6 +192,14 @@ class AutoML(BaseAutoML):
                 Ideal for creating ML pipelines used as REST API. Time is in seconds. By default (`max_single_prediction_time=None`) models are not optimized for fast predictions,
                 except the mode `Perform`. For the mode `Perform` the default is `0.5` seconds.
 
+            optuna_time_budget (int): The time in seconds which should be used by Optuna to tune each algorithm. It is time for tuning single algorithm.
+                If you select two algorithms: Xgboost and CatBoost, and set optuna_time_budget=1000, then Xgboost will be tuned for 1000 seconds and CatBoost will be tuned for 1000 seconds.
+                What is more, the tuning is made for each data type, for example for raw data and for data with inserted Golden Features.
+                This parameter is only used when `mode="Optuna"`. If you set `mode="Optuna"` and forget to set this parameter, it will be set to 3600 seconds.
+
+            optuna_init_params (dict): If you have already tuned parameters from Optuna you can reuse them by setting this parameter.
+                This parameter is only used when `mode="Optuna"`. The dict should have structure and params as specified in the MLJAR AutoML .
+
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 
             verbose (int): Controls the verbosity when fitting and predicting.
@@ -292,6 +302,8 @@ class AutoML(BaseAutoML):
         self.kmeans_features = kmeans_features
         self.mix_encoding = mix_encoding
         self.max_single_prediction_time = max_single_prediction_time
+        self.optuna_time_budget = optuna_time_budget
+        self.optuna_init_params = optuna_init_params
         self.n_jobs = n_jobs
         self.random_state = random_state
 

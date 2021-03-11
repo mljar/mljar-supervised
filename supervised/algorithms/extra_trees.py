@@ -44,6 +44,8 @@ class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),
         )
+        if "max_steps" in params:
+            self.max_steps = params["max_steps"]
 
     def file_extension(self):
         return "extra_trees"

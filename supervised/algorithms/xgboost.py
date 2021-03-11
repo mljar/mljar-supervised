@@ -21,7 +21,6 @@ logger.setLevel(LOG_LEVEL)
 import tempfile
 
 
-
 class XgbAlgorithmException(Exception):
     def __init__(self, message):
         super(XgbAlgorithmException, self).__init__(message)

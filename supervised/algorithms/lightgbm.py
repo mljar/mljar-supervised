@@ -61,6 +61,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             "cat_feature",
             "cat_l2",
             "cat_smooth",
+            "max_bin",
         ]:
             if extra_param in self.params:
                 self.learner_params[extra_param] = self.params[extra_param]
@@ -74,9 +75,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
             self.learner_params["num_class"] = self.params.get("num_class")
 
         logger.debug("LightgbmLearner __init__")
-
-        print("LightGBM")
-        print(self.learner_params)
 
     def file_extension(self):
         return "lightgbm"
@@ -119,7 +117,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
         max_time=None,
     ):
         lgb_train = lgb.Dataset(
-            X.to_numpy() if isinstance(X, pd.DataFrame) else X, y, weight=sample_weight
+            X.to_numpy() if isinstance(X, pd.DataFrame) else X,
+            y,
+            weight=sample_weight,
+            # params={"max_bin": self.learner_params.get("max_bin", 255)}
         )
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
@@ -141,6 +142,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                         else X_validation,
                         y_validation,
                         weight=sample_weight_validation,
+                        # params={"max_bin": self.learner_params.get("max_bin", 255)}
                     ),
                 ]
                 valid_names = ["train", "validation"]
