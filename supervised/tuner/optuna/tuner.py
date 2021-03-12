@@ -83,7 +83,7 @@ class OptunaTuner:
         learner_params,
     ):
         # only tune models with original data type
-        if "original" == data_type:
+        if data_type != "original":
             return learner_params
 
         key = f"{data_type}_{algorithm}"

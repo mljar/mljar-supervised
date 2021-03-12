@@ -87,17 +87,10 @@ init_params = {
     }
 }
 
-automl = AutoML(
-    results_path="AutoML_11",
-    mode="Optuna",
-    total_time_limit=8 * 3600,
-    algorithms=["LightGBM"],
-    eval_metric="auc",
-    random_state=42,
-    stack_models=False,
-    optuna_time_budget=3600,
-    optuna_init_params=init_params,
-)
+automl = AutoML(mode="Optuna", 
+                eval_metric="auc",
+                optuna_time_budget=1800,  # tune each algorithm for 30 minutes
+                total_time_limit=8*3600)  # total time limit
 automl.fit(X_train, y_train)
 
 preds = automl.predict_proba(X_test)
