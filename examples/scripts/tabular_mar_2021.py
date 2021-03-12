@@ -8,33 +8,54 @@ X_train = train.drop(["id", "target"], axis=1)
 y_train = train.target
 X_test = test.drop(["id"], axis=1)
 
-automl = (
-    AutoML(  # results_path="/media/piotr/2t/tabular-playground-mar-2021-catboost-3",
-        mode="Optuna",
-        total_time_limit=48*3600,
-        algorithms=[
-             "LightGBM", 
-             "Xgboost", 
-             "CatBoost"
-            ], #, "CatBoost" "LightGBM", "CatBoost"], 
-        #start_random_models=1,
-        #hill_climbing_steps=0,
-        eval_metric="auc",
-        validation_strategy={
-            "validation_type": "kfold",
-            "k_folds": 10,
-            "shuffle": True,
-            "stratify": True,
-        },
-        random_state=42,
-        #mix_encoding=True,
-        #kmeans_features=True,
-        #golden_features=True,
-        #features_selection=False,
-        #stack_models=False,
-        optuna_time_budget=1800,
-        #n_jobs = 18
-    )
+automl = AutoML(
+    mode="Optuna",
+    total_time_limit=8 * 3600,
+    algorithms=["LightGBM"],
+    eval_metric="auc",
+    random_state=42,
+    stack_models=False,
+    optuna_time_budget=3600,
+    optuna_init_params={
+        "original_LightGBM": {
+            "num_leaves": 1063,
+            "lambda_l1": 9.433292446693898,
+            "lambda_l2": 2.4718165404756194,
+            "feature_fraction": 0.3896871148317942,
+            "bagging_fraction": 0.9993283707173064,
+            "bagging_freq": 1,
+            "min_data_in_leaf": 17,
+            "cat_l2": 39.65807273563681,
+            "cat_smooth": 38.79107412232164,
+            "metric": "auc",
+            "num_boost_round": 1000,
+            "early_stopping_rounds": 50,
+            "learning_rate": 0.025,
+            "cat_feature": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+            ],
+            "feature_pre_filter": False,
+            "seed": 123,
+        }
+    },
 )
 automl.fit(X_train, y_train)
 

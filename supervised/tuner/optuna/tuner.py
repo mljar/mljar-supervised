@@ -41,7 +41,7 @@ class OptunaTuner:
         self.direction = (
             "maximize" if Metric.optimize_negative(eval_metric.name) else "minimize"
         )
-        self.n_warmup_steps = 50
+        self.n_warmup_steps = 500
         self.time_budget = time_budget
         self.verbose = verbose
         self.ml_task = ml_task
@@ -83,8 +83,8 @@ class OptunaTuner:
         learner_params,
     ):
         # dont tune stacked models
-        if "stacked" in data_type:
-            return self.learner_params
+        #if "stacked" in data_type:
+        #    return self.learner_params
 
         key = f"{data_type}_{algorithm}"
         if key in self.tuning:
@@ -92,7 +92,7 @@ class OptunaTuner:
 
         if self.verbose:
             print(
-                f"Optuna optimize {algorithm} with time budget {self.time_budget} seconds "
+                f"Optuna optimizes {algorithm} with time budget {self.time_budget} seconds "
                 f"eval_metric {self.eval_metric.name} ({self.direction})"
             )
 
@@ -175,7 +175,7 @@ class OptunaTuner:
             best["metric"] = objective.eval_metric_name
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
-            best["learning_rate"] = objective.learning_rate
+            #best["learning_rate"] = objective.learning_rate
             best["cat_feature"] = self.cat_features_indices
             best["feature_pre_filter"] = False
             best["seed"] = objective.seed
@@ -185,12 +185,12 @@ class OptunaTuner:
                 best["eval_metric"] = "AUC"
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
-            best["learning_rate"] = objective.learning_rate
+            #best["learning_rate"] = objective.learning_rate
             best["seed"] = objective.seed
         elif algorithm == "Xgboost":
             best["objective"] = objective.objective
             best["eval_metric"] = objective.eval_metric_name
-            best["eta"] = objective.learning_rate
+            #best["eta"] = objective.learning_rate
             best["max_rounds"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
             best["seed"] = objective.seed

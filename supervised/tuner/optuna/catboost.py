@@ -40,7 +40,7 @@ class CatBoostObjective:
         )
         self.n_jobs = n_jobs
         self.rounds = 1000
-        self.learning_rate = 0.05
+        self.learning_rate = 0.0125
         self.early_stopping_rounds = 50
         self.seed = 123
 
@@ -64,10 +64,11 @@ class CatBoostObjective:
         try:
             params = {
                 "iterations": self.rounds,
-                "learning_rate": self.learning_rate,
+                "learning_rate":  trial.suggest_categorical("learning_rate", 
+                    [0.0125, 0.025, 0.05, 0.1]),
                 "depth": trial.suggest_int("depth", 2, 12),
                 "l2_leaf_reg": trial.suggest_float(
-                    "l2_leaf_reg", 0.0001, 10.0, log=False
+                    "l2_leaf_reg", 0.0001, 10.0, log=True
                 ),
                 "random_strength": trial.suggest_float(
                     "random_strength", EPS, 10.0, log=False

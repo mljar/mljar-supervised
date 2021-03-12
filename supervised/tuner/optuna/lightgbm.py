@@ -40,7 +40,7 @@ class LightgbmObjective:
 
         self.cat_features_indices = cat_features_indices
         self.eval_metric = eval_metric
-        self.learning_rate = 0.05
+        self.learning_rate = 0.025
         self.rounds = 1000
         self.early_stopping_rounds = 50
         self.seed = 123
@@ -72,7 +72,8 @@ class LightgbmObjective:
             "metric": self.eval_metric_name,
             "verbosity": -1,
             "boosting_type": "gbdt",
-            "learning_rate": self.learning_rate,
+            "learning_rate": trial.suggest_categorical("learning_rate", 
+                [0.0125, 0.025, 0.05, 0.1]),
             "num_leaves": trial.suggest_int("num_leaves", 2, 2048),
             "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
             "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),

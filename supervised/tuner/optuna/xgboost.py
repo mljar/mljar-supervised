@@ -31,7 +31,7 @@ class XgboostObjective:
         self.eval_metric = eval_metric
         self.n_jobs = n_jobs
 
-        self.learning_rate = 0.05
+        self.learning_rate = 0.0125
         self.rounds = 1000
         self.early_stopping_rounds = 50
         self.seed = 123
@@ -59,7 +59,8 @@ class XgboostObjective:
             "eval_metric": self.eval_metric_name,
             "tree_method": "hist",
             "booster": "gbtree",
-            "eta": self.learning_rate,
+            "eta":  trial.suggest_categorical("eta", 
+                    [0.0125, 0.025, 0.05, 0.1]),
             "max_depth": trial.suggest_int("max_depth", 2, 12),
             "lambda": trial.suggest_float("lambda", EPS, 10.0, log=True),
             "alpha": trial.suggest_float("alpha", EPS, 10.0, log=True),
