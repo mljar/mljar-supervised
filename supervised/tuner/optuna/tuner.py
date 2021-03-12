@@ -82,9 +82,9 @@ class OptunaTuner:
         sample_weight_validation,
         learner_params,
     ):
-        # dont tune stacked models
-        #if "stacked" in data_type:
-        #    return self.learner_params
+        # only tune models with original data type
+        if "original" == data_type:
+            return self.learner_params
 
         key = f"{data_type}_{algorithm}"
         if key in self.tuning:
@@ -181,8 +181,6 @@ class OptunaTuner:
             best["seed"] = objective.seed
         elif algorithm == "CatBoost":
             best["eval_metric"] = objective.eval_metric_name
-            if best["eval_metric"] == "auc":
-                best["eval_metric"] = "AUC"
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
             #best["learning_rate"] = objective.learning_rate
