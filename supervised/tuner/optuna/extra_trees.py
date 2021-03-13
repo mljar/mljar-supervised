@@ -4,6 +4,9 @@ import catboost
 import optuna
 
 from supervised.utils.metric import Metric
+from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
+from supervised.algorithms.registry import REGRESSION
 
 EPS = 1e-8
 

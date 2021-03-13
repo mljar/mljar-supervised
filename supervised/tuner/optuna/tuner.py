@@ -183,6 +183,7 @@ class OptunaTuner:
             best["eval_metric"] = objective.eval_metric_name
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
+            #best["bootstrap_type"] = "Bernoulli"
             #best["learning_rate"] = objective.learning_rate
             best["seed"] = objective.seed
         elif algorithm == "Xgboost":

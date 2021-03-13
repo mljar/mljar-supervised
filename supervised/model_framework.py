@@ -131,13 +131,14 @@ class ModelFramework:
         if self._optuna_time_budget is not None and OptunaTuner.is_optimizable(
             self.learner_params.get("model_type", "")
         ):
+            print("** Optuna verbose ***")
             optuna_tuner = OptunaTuner(
                 results_path,
                 ml_task=self._ml_task,
                 eval_metric=self.get_metric(),
                 time_budget=self._optuna_time_budget,
                 init_params=self._optuna_init_params,
-                verbose=False,
+                verbose=True,#False,
                 n_jobs=self.learner_params.get("n_jobs", -1),
                 random_state=self.learner_params.get("seed", 42),
             )

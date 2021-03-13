@@ -65,10 +65,10 @@ class CatBoostObjective:
             params = {
                 "iterations": self.rounds,
                 "learning_rate":  trial.suggest_categorical("learning_rate", 
-                    [0.0125, 0.025, 0.05, 0.1]),
-                "depth": trial.suggest_int("depth", 2, 12),
+                    [0.05, 0.1, 0.2]),
+                "depth": trial.suggest_int("depth", 2, 9),
                 "l2_leaf_reg": trial.suggest_float(
-                    "l2_leaf_reg", 0.0001, 10.0, log=True
+                    "l2_leaf_reg", 0.0001, 10.0, log=False
                 ),
                 "random_strength": trial.suggest_float(
                     "random_strength", EPS, 10.0, log=False
@@ -80,18 +80,19 @@ class CatBoostObjective:
                 "allow_writing_files": False,
                 "thread_count": self.n_jobs,
                 "random_seed": self.seed,
-                "border_count": trial.suggest_int("border_count", 16, 2048),
-                "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 5, 100),
-                "bootstrap_type": trial.suggest_categorical(
-                    "bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]
-                ),
+                #"border_count": trial.suggest_int("border_count", 16, 2048),
+                "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 1, 100),
+                #"bootstrap_type": "Bernoulli"
+                #trial.suggest_categorical(
+                #    "bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]
+                #),
             }
-            if params["bootstrap_type"] == "Bayesian":
-                params["bagging_temperature"] = trial.suggest_float(
-                    "bagging_temperature", 0, 10
-                )
-            elif params["bootstrap_type"] in ["Bernoulli", "MVS"]:
-                params["subsample"] = trial.suggest_float("subsample", 0.1, 1)
+            #if params["bootstrap_type"] == "Bayesian":
+            #    params["bagging_temperature"] = trial.suggest_float(
+            #        "bagging_temperature", 0, 10
+            #    )
+            #elif params["bootstrap_type"] in ["Bernoulli", "MVS"]:
+            #params["subsample"] = trial.suggest_float("subsample", 0.1, 1)
 
             Algorithm = (
                 CatBoostRegressor if self.ml_task == REGRESSION else CatBoostClassifier

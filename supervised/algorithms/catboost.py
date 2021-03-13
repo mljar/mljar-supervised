@@ -74,7 +74,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
             if extra_param in self.params:
                 cat_params[extra_param] = self.params[extra_param]
 
-        print(cat_params)
         self.model = Algo(**cat_params)
         self.cat_features = None
         self.best_ntree_limit = 0
@@ -156,7 +155,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             early_stopping_rounds=self.early_stopping_rounds,
             verbose_eval=False,
         )
-        print(self.model.best_iteration_)
+        
         if self.model.best_iteration_ is not None:
             if model_init is not None:
                 self.best_ntree_limit = (
