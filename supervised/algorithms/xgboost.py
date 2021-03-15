@@ -74,12 +74,12 @@ class XgbAlgorithm(BaseAlgorithm):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
-        if "max_rounds" in self.learner_params:
-            self.boosting_rounds = self.learner_params["max_rounds"]
+        if "max_rounds" in self.params:
+            self.boosting_rounds = self.params["max_rounds"]
 
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
-
+        
     def get_boosting_rounds(self, dtrain, evals, esr, max_time):
         if max_time is None:
             return self.boosting_rounds

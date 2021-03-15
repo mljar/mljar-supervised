@@ -47,7 +47,7 @@ class XgboostObjective:
             self.eval_metric_name = self.eval_metric.name
 
         elif ml_task == MULTICLASS_CLASSIFICATION:
-            self.objective = "binary:logistic"
+            self.objective = "multi:softprob"
             self.eval_metric_name = "mlogloss"
             self.num_class = len(np.unique(y_train))
         else:  # ml_task == REGRESSION
