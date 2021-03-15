@@ -131,7 +131,6 @@ class ModelFramework:
         if self._optuna_time_budget is not None and OptunaTuner.is_optimizable(
             self.learner_params.get("model_type", "")
         ):
-            print("** Optuna verbose ***")
             optuna_tuner = OptunaTuner(
                 results_path,
                 ml_task=self._ml_task,

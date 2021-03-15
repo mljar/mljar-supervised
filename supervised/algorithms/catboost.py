@@ -80,7 +80,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         logger.debug("CatBoostAlgorithm.__init__")
 
-    def _assess_iterations(self, X, y, eval_set, max_time=None):
+    def _assess_iterations(self, X, y, sample_weight, eval_set, max_time=None):
         if max_time is None:
             max_time = 3600
         try:
@@ -90,6 +90,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             model.fit(
                 X,
                 y,
+                sample_weight=sample_weight,
                 cat_features=self.cat_features,
                 init_model=None if self.model.tree_count_ is None else self.model,
                 eval_set=eval_set,
@@ -137,7 +138,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         if self.params.get("num_boost_round") is None:
             model_init, new_iterations = self._assess_iterations(
-                X, y, eval_set, max_time
+                X, y, sample_weight, eval_set, max_time
             )
             self.model.set_params(iterations=new_iterations)
         else:

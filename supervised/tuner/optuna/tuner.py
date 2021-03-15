@@ -41,7 +41,7 @@ class OptunaTuner:
         self.direction = (
             "maximize" if Metric.optimize_negative(eval_metric.name) else "minimize"
         )
-        self.n_warmup_steps = 500
+        self.n_warmup_steps = 500 # set large enough to give small learning rates a chance
         self.time_budget = time_budget
         self.verbose = verbose
         self.ml_task = ml_task
