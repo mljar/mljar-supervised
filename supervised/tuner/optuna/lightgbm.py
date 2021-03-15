@@ -1,3 +1,4 @@
+import numpy as np
 import lightgbm as lgb
 import optuna
 
@@ -58,10 +59,12 @@ class LightgbmObjective:
             REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape"},
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
+        self.num_class = None
         if ml_task == BINARY_CLASSIFICATION:
             self.objective = "binary"
         elif ml_task == MULTICLASS_CLASSIFICATION:
             self.objective = "multiclass"
+            self.num_class = len(np.unique(y_train))
         else:  # ml_task == REGRESSION
             self.objective = "regression"
 
@@ -94,6 +97,9 @@ class LightgbmObjective:
             param["cat_feature"] = self.cat_features_indices
             param["cat_l2"] = trial.suggest_float("cat_l2", EPS, 100.0)
             param["cat_smooth"] = trial.suggest_float("cat_smooth", EPS, 100.0)
+
+        if self.num_class is not None:
+            param["num_class"] = self.num_class
 
         try:
 

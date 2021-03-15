@@ -1,3 +1,4 @@
+import numpy as np
 import xgboost as xgb
 import optuna
 
@@ -38,6 +39,7 @@ class XgboostObjective:
 
         self.objective = ""
         self.eval_metric_name = ""
+        self.num_class = None
         if ml_task == BINARY_CLASSIFICATION:
             self.objective = "binary:logistic"
             # the mapping is the same
@@ -47,6 +49,7 @@ class XgboostObjective:
         elif ml_task == MULTICLASS_CLASSIFICATION:
             self.objective = "binary:logistic"
             self.eval_metric_name = "mlogloss"
+            self.num_class = len(np.unique(y_train))
         else:  # ml_task == REGRESSION
             self.objective = "reg:squarederror"
             # the mapping is the same
@@ -72,6 +75,8 @@ class XgboostObjective:
             "n_jobs": self.n_jobs,
             "seed": self.seed,
         }
+        if self.num_class is not None:
+            param["num_class"] = self.num_class
         try:
             pruning_callback = optuna.integration.XGBoostPruningCallback(
                 trial, f"validation-{self.eval_metric_name}"
