@@ -41,10 +41,11 @@ The `mljar-supervised` will help you with:
  - creating Markdown reports from analysis with details about all models (Atomatic-Documentation),
  - saving, re-running and loading the analysis and ML models.
 
-It has three built-in modes of work:
+It has four built-in modes of work:
  - `Explain` mode, which is ideal for explaining and understanding the data, with many data explanations, like decision trees visualization, linear models coefficients display, permutation importances and SHAP explanations of data,
  - `Perform` for building ML pipelines to use in production,
  - `Compete` mode that trains highly-tuned ML models with ensembling and stacking, with a purpose to use in ML competitions.
+ - `Optuna` mode that can be used to search for highly-tuned ML models, should be used when the performance is the most important, and computation time is not limited (it is available from version `0.10.0`)
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
 
@@ -124,6 +125,18 @@ It should be used for machine learning competitions.
  - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: train/test split (80/20), 5-fold CV or 10-fold CV. 
  - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network` and `Nearest Neighbors`. It uses ensemble and **stacking**. 
  - It has only learning curves in the reports.
+
+### Optuna
+
+```py
+automl = AutoML(mode="Optuna", optuna_time_budget=3600)
+```
+
+It should be used when the performance is the most important and time is not limited.
+- It is using 10-fold CV
+- It is using: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, and `CatBoost`. Those algorithms are tuned by `Optuna` framework for `optuna_time_budget` seconds, each. Algorithms are tuned with original data, without advanced feature engineering.
+- It is using advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
+- It produces learning curves in the reports.
 
 # Examples
 
