@@ -13,6 +13,6 @@ matplotlib>=3.2.2
 dtreeviz==1.0
 shap==0.36.0
 seaborn==0.10.1
-wordcloud==1.7.0
+wordcloud==1.8.1
 category_encoders==2.2.2
 optuna==2.6.0
