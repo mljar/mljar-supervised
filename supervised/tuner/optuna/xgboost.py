@@ -3,6 +3,7 @@ import xgboost as xgb
 import optuna
 
 from supervised.utils.metric import Metric
+from supervised.utils.metric import xgboost_eval_metric_r2
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
@@ -56,6 +57,10 @@ class XgboostObjective:
             # allowed metrics: rmse, mae, mape
             self.eval_metric_name = self.eval_metric.name
 
+        self.custom_eval_metric = None
+        if self.eval_metric_name == "r2":
+            self.custom_eval_metric = xgboost_eval_metric_r2
+
     def __call__(self, trial):
         param = {
             "objective": self.objective,
@@ -75,6 +80,9 @@ class XgboostObjective:
             "n_jobs": self.n_jobs,
             "seed": self.seed,
         }
+        if self.custom_eval_metric is not None:
+            del param["eval_metric"]
+
         if self.num_class is not None:
             param["num_class"] = self.num_class
         try:
@@ -89,6 +97,7 @@ class XgboostObjective:
                 early_stopping_rounds=self.early_stopping_rounds,
                 callbacks=[pruning_callback],
                 verbose_eval=False,
+                feval = self.custom_eval_metric
             )
             preds = bst.predict(self.dvalidation, ntree_limit=bst.best_ntree_limit)
             score = self.eval_metric(self.y_validation, preds)
@@ -96,8 +105,8 @@ class XgboostObjective:
                 score *= -1.0
         except optuna.exceptions.TrialPruned as e:
             raise e
-        except Exception as e:
-            print("Exception in XgboostObjective", str(e))
-            return None
+        #except Exception as e:
+        #    print("Exception in XgboostObjective", str(e))
+        #    return None
 
         return score

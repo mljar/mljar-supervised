@@ -73,7 +73,7 @@ def predict_proba_function(estimator, X):
 class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
         super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
-        self.log_metric = Metric({"name": "logloss"})
+        self.log_metric = Metric({"name": self.params.get("eval_metric_name", "logloss")})
         self.max_iters = (
             1  # max iters is used by model_framework, max_steps is used internally
         )
@@ -133,10 +133,6 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                     sample_weight=sample_weight_validation,
                 )
 
-                result["iteration"] += [e]
-                result["train"] += [tr]
-                result["validation"] += [vd]
-
                 if vd < min_val:  # optimize direction
                     min_val = vd
                     min_e = e
@@ -144,6 +140,11 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 if e - min_e >= self.early_stopping_rounds:
                     stop = True
                     break
+
+                result["iteration"] += [e]
+                result["train"] += [tr]
+                result["validation"] += [vd]
+
 
             # disable for now ...
             # if max_time is not None and time.time()-start_time > max_time:
@@ -155,7 +156,11 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
             n_estimators = len(estimators)
 
         if log_to_file is not None:
-            pd.DataFrame(result).to_csv(log_to_file, index=False, header=False)
+            df_result = pd.DataFrame(result)
+            if self.log_metric.is_negative():
+                df_result["train"] *= -1.0
+                df_result["validation"] *= -1.0
+            df_result.to_csv(log_to_file, index=False, header=False)
 
 
 def predict_function(estimator, X):
@@ -165,5 +170,5 @@ def predict_function(estimator, X):
 class SklearnTreesEnsembleRegressorAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
     def __init__(self, params):
         super(SklearnTreesEnsembleRegressorAlgorithm, self).__init__(params)
-        self.log_metric = Metric({"name": "rmse"})
+        self.log_metric = Metric({"name": self.params.get("eval_metric_name", "rmse")})
         self.predict_function = predict_function

@@ -50,7 +50,7 @@ class CatBoostObjective:
         metric_name_mapping = {
             BINARY_CLASSIFICATION: {"auc": "AUC", "logloss": "Logloss"},
             MULTICLASS_CLASSIFICATION: {"logloss": "MultiClass"},
-            REGRESSION: {"rmse": "RMSE", "mae": "MAE", "mape": "MAPE"},
+            REGRESSION: {"rmse": "RMSE", "mae": "MAE", "mape": "MAPE", "r2": "R2"},
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
         if ml_task == BINARY_CLASSIFICATION:
@@ -59,6 +59,8 @@ class CatBoostObjective:
             self.objective = "MultiClass"
         else:  # ml_task == REGRESSION
             self.objective = metric_name_mapping[REGRESSION][self.eval_metric.name]
+            if self.objective == "R2": # cont optimize R2 directly
+                self.objective = "RMSE"
 
     def __call__(self, trial):
         try:
@@ -108,7 +110,7 @@ class CatBoostObjective:
                 verbose_eval=False,
                 cat_features=self.cat_features,
             )
-            print(model.best_iteration_)
+            
             if self.ml_task == BINARY_CLASSIFICATION:
                 preds = model.predict_proba(
                     self.X_validation, ntree_end=model.best_iteration_ + 1

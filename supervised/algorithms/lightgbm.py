@@ -14,6 +14,7 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
+from supervised.utils.metric import lightgbm_eval_metric_r2
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
+        if "custom_eval_metric_name" in self.params:
+            if self.params["custom_eval_metric_name"] == "r2":
+                self.custom_eval_metric = lightgbm_eval_metric_r2
+
         logger.debug("LightgbmLearner __init__")
 
     def file_extension(self):
@@ -82,6 +87,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
+    '''
     def get_boosting_rounds(self, lgb_train, valid_sets, esr, max_time):
         if max_time is None:
             max_time = 3600.0
@@ -104,6 +110,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         iters = max(iters, 100)
         iters = min(iters, 10000)
         return iters
+    '''
 
     def fit(
         self,
@@ -161,6 +168,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 early_stopping_rounds=esr,
                 evals_result=evals_result,
                 verbose_eval=False,
+                feval=self.custom_eval_metric
             )
 
             if log_to_file is not None:

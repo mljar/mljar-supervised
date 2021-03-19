@@ -45,9 +45,8 @@ class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),
         )
-        if "max_steps" in params:
-            self.max_steps = params["max_steps"]
-
+        self.max_steps = self.params.get("max_steps", self.max_steps)
+        
     def file_extension(self):
         return "random_forest"
 
@@ -81,6 +80,7 @@ class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),
         )
+        self.max_steps = self.params.get("max_steps", self.max_steps)
 
     def file_extension(self):
         return "random_forest"

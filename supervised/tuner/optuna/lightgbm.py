@@ -3,6 +3,8 @@ import lightgbm as lgb
 import optuna
 
 from supervised.utils.metric import Metric
+from supervised.utils.metric import lightgbm_eval_metric_r2
+
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
@@ -56,9 +58,15 @@ class LightgbmObjective:
         metric_name_mapping = {
             BINARY_CLASSIFICATION: {"auc": "auc", "logloss": "binary_logloss"},
             MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss"},
-            REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape"},
+            REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape", "r2": "custom"},
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
+        self.custom_eval_metric = None
+        self.custom_eval_metric_name = self.eval_metric_name
+        if self.eval_metric.name == "r2":
+            self.custom_eval_metric = lightgbm_eval_metric_r2
+            self.custom_eval_metric_name = "r2"
+
         self.num_class = None
         if ml_task == BINARY_CLASSIFICATION:
             self.objective = "binary"
@@ -93,6 +101,9 @@ class LightgbmObjective:
             "num_threads": self.n_jobs,
         }
 
+        
+        
+
         if self.cat_features_indices:
             param["cat_feature"] = self.cat_features_indices
             param["cat_l2"] = trial.suggest_float("cat_l2", EPS, 100.0)
@@ -104,7 +115,7 @@ class LightgbmObjective:
         try:
 
             pruning_callback = optuna.integration.LightGBMPruningCallback(
-                trial, self.eval_metric_name, "validation"
+                trial, self.custom_eval_metric_name, "validation"
             )
 
             gbm = lgb.train(
@@ -116,6 +127,7 @@ class LightgbmObjective:
                 callbacks=[pruning_callback],
                 num_boost_round=self.rounds,
                 early_stopping_rounds=self.early_stopping_rounds,
+                feval=self.custom_eval_metric
             )
 
             preds = gbm.predict(self.X_validation)

@@ -19,6 +19,21 @@ class MetricException(Exception):
         log.error(message)
 
 
+def xgboost_eval_metric_r2(preds, dtrain):
+    # Xgboost needs to minimize eval_metric
+    target = dtrain.get_label()    
+    weight = dtrain.get_weight()
+    if len(weight) == 0:
+        weight = None 
+    return 'r2', -r2_score(target, preds, sample_weight=weight)
+
+
+def lightgbm_eval_metric_r2(preds, dtrain):
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+    return 'r2', r2_score(target, preds, sample_weight=weight), True
+
+
 def logloss(y_true, y_predicted, sample_weight=None):
     epsilon = 1e-6
     y_predicted = sp.maximum(epsilon, y_predicted)
@@ -100,6 +115,9 @@ class Metric(object):
 
     def get_minimize_direction(self):
         return self.minimize_direction
+
+    def is_negative(self):
+        return self.name in ["auc", "r2"]
 
     @staticmethod
     def optimize_negative(metric_name):

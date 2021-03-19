@@ -25,7 +25,7 @@ class OptunaTuner:
         n_jobs=-1,
         random_state=42,
     ):
-        if eval_metric.name not in ["auc", "logloss", "rmse", "mae", "mape"]:
+        if eval_metric.name not in ["auc", "logloss", "rmse", "mae", "mape", "r2"]:
             raise AutoMLException(f"Metric {eval_metric.name} is not supported")
 
         self.study_dir = os.path.join(results_path, "optuna")
@@ -173,6 +173,7 @@ class OptunaTuner:
 
         if algorithm == "LightGBM":
             best["metric"] = objective.eval_metric_name
+            best["custom_eval_metric_name"] = objective.custom_eval_metric_name
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
             #best["learning_rate"] = objective.learning_rate
@@ -197,10 +198,12 @@ class OptunaTuner:
             # Extra Trees are not using early stopping
             best["max_steps"] = 1  # each step has 100 trees
             best["seed"] = 123
+            best["eval_metric_name"] = self.eval_metric.name
         elif algorithm == "Random Forest":
             # Random Forest is not using early stopping
             best["max_steps"] = 1  # each step has 100 trees
             best["seed"] = 123
+            best["eval_metric_name"] = self.eval_metric.name
 
         self.tuning[key] = best
         self.save()
