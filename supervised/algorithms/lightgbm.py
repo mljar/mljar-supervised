@@ -14,7 +14,11 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-from supervised.utils.metric import lightgbm_eval_metric_r2
+from supervised.utils.metric import (
+    lightgbm_eval_metric_r2,
+    lightgbm_eval_metric_spearman,
+    lightgbm_eval_metric_pearson
+)
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -78,6 +82,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
         if "custom_eval_metric_name" in self.params:
             if self.params["custom_eval_metric_name"] == "r2":
                 self.custom_eval_metric = lightgbm_eval_metric_r2
+            elif self.params["custom_eval_metric_name"] == "spearman":
+                self.custom_eval_metric = lightgbm_eval_metric_spearman
+            elif self.params["custom_eval_metric_name"] == "pearson":
+                self.custom_eval_metric = lightgbm_eval_metric_pearson
 
         logger.debug("LightgbmLearner __init__")
 

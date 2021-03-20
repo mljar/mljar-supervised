@@ -3,8 +3,11 @@ import lightgbm as lgb
 import optuna
 
 from supervised.utils.metric import Metric
-from supervised.utils.metric import lightgbm_eval_metric_r2
-
+from supervised.utils.metric import (
+    lightgbm_eval_metric_r2,
+    lightgbm_eval_metric_spearman,
+    lightgbm_eval_metric_pearson
+)
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
@@ -58,7 +61,7 @@ class LightgbmObjective:
         metric_name_mapping = {
             BINARY_CLASSIFICATION: {"auc": "auc", "logloss": "binary_logloss"},
             MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss"},
-            REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape", "r2": "custom"},
+            REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape", "r2": "custom", "spearman": "custom", "pearson": "custom"},
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
         self.custom_eval_metric = None
@@ -66,6 +69,13 @@ class LightgbmObjective:
         if self.eval_metric.name == "r2":
             self.custom_eval_metric = lightgbm_eval_metric_r2
             self.custom_eval_metric_name = "r2"
+        elif self.eval_metric.name == "spearman":
+            self.custom_eval_metric = lightgbm_eval_metric_spearman
+            self.custom_eval_metric_name = "spearman"
+        elif self.eval_metric.name == "pearson":
+            self.custom_eval_metric = lightgbm_eval_metric_pearson
+            self.custom_eval_metric_name = "pearson"
+
 
         self.num_class = None
         if ml_task == BINARY_CLASSIFICATION:

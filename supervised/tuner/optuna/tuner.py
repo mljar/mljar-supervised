@@ -25,7 +25,7 @@ class OptunaTuner:
         n_jobs=-1,
         random_state=42,
     ):
-        if eval_metric.name not in ["auc", "logloss", "rmse", "mae", "mape", "r2"]:
+        if eval_metric.name not in ["auc", "logloss", "rmse", "mae", "mape", "r2", "spearman", "pearson"]:
             raise AutoMLException(f"Metric {eval_metric.name} is not supported")
 
         self.study_dir = os.path.join(results_path, "optuna")

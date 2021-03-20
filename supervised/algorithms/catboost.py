@@ -13,6 +13,11 @@ from supervised.algorithms.registry import (
     REGRESSION,
 )
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.utils.metric import (
+    CatBoostEvalMetricSpearman,
+    CatBoostEvalMetricPearson
+)
+
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -57,7 +62,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "random_strength": self.params.get("random_strength", 1.0),
             "loss_function": loss_function,
             "eval_metric": self.params.get("eval_metric", loss_function),
-            "custom_metric": self.params.get("eval_metric", loss_function),
+            #"custom_metric": self.params.get("eval_metric", loss_function),
             "thread_count": self.params.get("n_jobs", -1),
             "verbose": False,
             "allow_writing_files": False,
@@ -74,9 +79,16 @@ class CatBoostAlgorithm(BaseAlgorithm):
             if extra_param in self.params:
                 cat_params[extra_param] = self.params[extra_param]
 
+        if cat_params["eval_metric"] == "spearman":
+            cat_params["eval_metric"] = CatBoostEvalMetricSpearman()
+        elif cat_params["eval_metric"] == "pearson":
+            cat_params["eval_metric"] = CatBoostEvalMetricPearson()
+
         self.model = Algo(**cat_params)
         self.cat_features = None
         self.best_ntree_limit = 0
+
+
 
         logger.debug("CatBoostAlgorithm.__init__")
 

@@ -2,7 +2,12 @@ from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost, Pool
 import catboost
 import optuna
 
-from supervised.utils.metric import Metric
+from supervised.utils.metric import (
+    Metric,
+    CatBoostEvalMetricSpearman,
+    CatBoostEvalMetricPearson
+)
+
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
@@ -50,7 +55,7 @@ class CatBoostObjective:
         metric_name_mapping = {
             BINARY_CLASSIFICATION: {"auc": "AUC", "logloss": "Logloss"},
             MULTICLASS_CLASSIFICATION: {"logloss": "MultiClass"},
-            REGRESSION: {"rmse": "RMSE", "mae": "MAE", "mape": "MAPE", "r2": "R2"},
+            REGRESSION: {"rmse": "RMSE", "mae": "MAE", "mape": "MAPE", "r2": "R2", "spearman": "spearman", "pearson": "pearson"},
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
         if ml_task == BINARY_CLASSIFICATION:
@@ -59,8 +64,17 @@ class CatBoostObjective:
             self.objective = "MultiClass"
         else:  # ml_task == REGRESSION
             self.objective = metric_name_mapping[REGRESSION][self.eval_metric.name]
-            if self.objective == "R2": # cont optimize R2 directly
+            if self.objective in ["R2", "spearman", "pearson"]: # cont optimize R2 directly
                 self.objective = "RMSE"
+
+        self.custom_eval_metric = None 
+        if self.eval_metric_name == "spearman":
+            self.custom_eval_metric = CatBoostEvalMetricSpearman()
+        if self.eval_metric_name == "pearson":
+            self.custom_eval_metric = CatBoostEvalMetricPearson()
+
+
+
 
     def __call__(self, trial):
         try:
@@ -99,6 +113,8 @@ class CatBoostObjective:
             Algorithm = (
                 CatBoostRegressor if self.ml_task == REGRESSION else CatBoostClassifier
             )
+            if self.custom_eval_metric is not None:
+                params["eval_metric"] = self.custom_eval_metric
             model = Algorithm(**params)
 
             model.fit(
@@ -108,7 +124,7 @@ class CatBoostObjective:
                 early_stopping_rounds=self.early_stopping_rounds,
                 eval_set=self.eval_set,
                 verbose_eval=False,
-                cat_features=self.cat_features,
+                cat_features=self.cat_features
             )
             
             if self.ml_task == BINARY_CLASSIFICATION:
@@ -130,8 +146,8 @@ class CatBoostObjective:
 
         except optuna.exceptions.TrialPruned as e:
             raise e
-        except Exception as e:
-            print("Exception in CatBoostObjective", str(e))
-            return None
+        #except Exception as e:
+        #    print("Exception in CatBoostObjective", str(e))
+        #    return None
 
         return score

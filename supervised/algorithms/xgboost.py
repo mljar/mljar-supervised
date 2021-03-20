@@ -13,7 +13,11 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-from supervised.utils.metric import xgboost_eval_metric_r2
+from supervised.utils.metric import (
+    xgboost_eval_metric_r2,
+    xgboost_eval_metric_spearman,
+    xgboost_eval_metric_pearson
+)
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -81,6 +85,10 @@ class XgbAlgorithm(BaseAlgorithm):
         self.custom_eval_metric = None
         if self.params.get("eval_metric", "") == "r2":
             self.custom_eval_metric = xgboost_eval_metric_r2
+        elif self.params.get("eval_metric", "") == "spearman":
+            self.custom_eval_metric = xgboost_eval_metric_spearman
+        elif self.params.get("eval_metric", "") == "pearson":
+            self.custom_eval_metric = xgboost_eval_metric_pearson
 
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
@@ -184,7 +192,7 @@ class XgbAlgorithm(BaseAlgorithm):
             # it a is custom metric
             # that is always minimized
             # we need to revert it
-            if metric_name in ["r2"]:
+            if metric_name in ["r2", "spearman", "pearson"]:
                 result["train"] *= -1.0
                 result["validation"] *= -1.0
             

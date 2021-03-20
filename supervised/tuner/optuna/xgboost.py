@@ -3,7 +3,11 @@ import xgboost as xgb
 import optuna
 
 from supervised.utils.metric import Metric
-from supervised.utils.metric import xgboost_eval_metric_r2
+from supervised.utils.metric import (
+    xgboost_eval_metric_r2,
+    xgboost_eval_metric_spearman,
+    xgboost_eval_metric_pearson
+)
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
@@ -60,6 +64,10 @@ class XgboostObjective:
         self.custom_eval_metric = None
         if self.eval_metric_name == "r2":
             self.custom_eval_metric = xgboost_eval_metric_r2
+        elif self.eval_metric_name == "spearman":
+            self.custom_eval_metric = xgboost_eval_metric_spearman
+        elif self.eval_metric_name == "pearson":
+            self.custom_eval_metric = xgboost_eval_metric_pearson
 
     def __call__(self, trial):
         param = {
