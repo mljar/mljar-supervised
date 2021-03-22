@@ -229,7 +229,6 @@ class Ensemble:
                         continue
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
                 score = self.metric(y, y_ens, sample_weight)
-
                 if self.metric.improvement(previous=min_score, current=score):
                     min_score = score
                     best_model = model_name

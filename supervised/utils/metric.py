@@ -3,6 +3,7 @@ import logging
 log = logging.getLogger(__name__)
 
 import numpy as np
+import pandas as pd
 import scipy as sp
 from sklearn.metrics import log_loss
 from sklearn.metrics import roc_auc_score
@@ -43,6 +44,10 @@ def negative_spearman(y_true, y_predicted, sample_weight=None):
 
 def negative_pearson(y_true, y_predicted, sample_weight=None):
     # sample weight is ignored
+    if isinstance(y_true, pd.DataFrame):
+        y_true = np.array(y_true).ravel()
+    if isinstance(y_predicted, pd.DataFrame):
+        y_predicted = np.array(y_predicted).ravel()
     return -np.corrcoef(y_true, y_predicted)[0,1]
 
 

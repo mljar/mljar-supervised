@@ -88,8 +88,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
         self.cat_features = None
         self.best_ntree_limit = 0
 
-
-
         logger.debug("CatBoostAlgorithm.__init__")
 
     def _assess_iterations(self, X, y, sample_weight, eval_set, max_time=None):
@@ -233,8 +231,11 @@ class CatBoostAlgorithm(BaseAlgorithm):
         if self.params["ml_task"] == REGRESSION:
             Algo = CatBoostRegressor
 
+        # loading might throw warnings in the case of custom eval_metric
+        # check https://github.com/catboost/catboost/issues/1169
         self.model = Algo().load_model(model_file_path)
         self.model_file_path = model_file_path
+
 
     def file_extension(self):
         return "catboost"
