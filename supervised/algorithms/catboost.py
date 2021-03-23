@@ -15,7 +15,8 @@ from supervised.algorithms.registry import (
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.utils.metric import (
     CatBoostEvalMetricSpearman,
-    CatBoostEvalMetricPearson
+    CatBoostEvalMetricPearson,
+    CatBoostEvalMetricAveragePrecision,
 )
 
 from supervised.utils.config import LOG_LEVEL
@@ -62,7 +63,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             "random_strength": self.params.get("random_strength", 1.0),
             "loss_function": loss_function,
             "eval_metric": self.params.get("eval_metric", loss_function),
-            #"custom_metric": self.params.get("eval_metric", loss_function),
+            # "custom_metric": self.params.get("eval_metric", loss_function),
             "thread_count": self.params.get("n_jobs", -1),
             "verbose": False,
             "allow_writing_files": False,
@@ -83,6 +84,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
             cat_params["eval_metric"] = CatBoostEvalMetricSpearman()
         elif cat_params["eval_metric"] == "pearson":
             cat_params["eval_metric"] = CatBoostEvalMetricPearson()
+        elif cat_params["eval_metric"] == "average_precision":
+            cat_params["eval_metric"] = CatBoostEvalMetricAveragePrecision()
 
         self.model = Algo(**cat_params)
         self.cat_features = None
@@ -166,7 +169,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             early_stopping_rounds=self.early_stopping_rounds,
             verbose_eval=False,
         )
-        
+
         if self.model.best_iteration_ is not None:
             if model_init is not None:
                 self.best_ntree_limit = (
@@ -182,7 +185,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
             self.best_ntree_limit = self.model.tree_count_
 
         if log_to_file is not None:
-            metric_name = list(self.model.evals_result_["learn"].keys())[0]
+            metric_name = list(self.model.evals_result_["learn"].keys())[-1]
             train_scores = self.model.evals_result_["learn"][metric_name]
             validation_scores = self.model.evals_result_["validation"][metric_name]
             if model_init is not None:
@@ -235,7 +238,6 @@ class CatBoostAlgorithm(BaseAlgorithm):
         # check https://github.com/catboost/catboost/issues/1169
         self.model = Algo().load_model(model_file_path)
         self.model_file_path = model_file_path
-
 
     def file_extension(self):
         return "catboost"

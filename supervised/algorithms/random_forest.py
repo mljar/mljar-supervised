@@ -46,7 +46,7 @@ class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
             random_state=params.get("seed", 1),
         )
         self.max_steps = self.params.get("max_steps", self.max_steps)
-        
+
     def file_extension(self):
         return "random_forest"
 

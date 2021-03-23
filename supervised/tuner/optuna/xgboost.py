@@ -6,7 +6,9 @@ from supervised.utils.metric import Metric
 from supervised.utils.metric import (
     xgboost_eval_metric_r2,
     xgboost_eval_metric_spearman,
-    xgboost_eval_metric_pearson
+    xgboost_eval_metric_pearson,
+    xgboost_eval_metric_f1,
+    xgboost_eval_metric_average_precision,
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -53,7 +55,10 @@ class XgboostObjective:
 
         elif ml_task == MULTICLASS_CLASSIFICATION:
             self.objective = "multi:softprob"
-            self.eval_metric_name = "mlogloss"
+            if self.eval_metric.name == "logloss":
+                self.eval_metric_name = "mlogloss"
+            elif self.eval_metric.name == "f1":
+                self.eval_metric_name = "f1"
             self.num_class = len(np.unique(y_train))
         else:  # ml_task == REGRESSION
             self.objective = "reg:squarederror"
@@ -68,6 +73,10 @@ class XgboostObjective:
             self.custom_eval_metric = xgboost_eval_metric_spearman
         elif self.eval_metric_name == "pearson":
             self.custom_eval_metric = xgboost_eval_metric_pearson
+        elif self.eval_metric_name == "f1":
+            self.custom_eval_metric = xgboost_eval_metric_f1
+        elif self.eval_metric_name == "average_precision":
+            self.custom_eval_metric = xgboost_eval_metric_average_precision
 
     def __call__(self, trial):
         param = {
@@ -75,8 +84,7 @@ class XgboostObjective:
             "eval_metric": self.eval_metric_name,
             "tree_method": "hist",
             "booster": "gbtree",
-            "eta":  trial.suggest_categorical("eta", 
-                    [0.0125, 0.025, 0.05, 0.1]),
+            "eta": trial.suggest_categorical("eta", [0.0125, 0.025, 0.05, 0.1]),
             "max_depth": trial.suggest_int("max_depth", 2, 12),
             "lambda": trial.suggest_float("lambda", EPS, 10.0, log=True),
             "alpha": trial.suggest_float("alpha", EPS, 10.0, log=True),
@@ -87,6 +95,7 @@ class XgboostObjective:
             "min_child_weight": trial.suggest_int("min_child_weight", 1, 100),
             "n_jobs": self.n_jobs,
             "seed": self.seed,
+            "verbosity": 0,
         }
         if self.custom_eval_metric is not None:
             del param["eval_metric"]
@@ -105,7 +114,7 @@ class XgboostObjective:
                 early_stopping_rounds=self.early_stopping_rounds,
                 callbacks=[pruning_callback],
                 verbose_eval=False,
-                feval = self.custom_eval_metric
+                feval=self.custom_eval_metric,
             )
             preds = bst.predict(self.dvalidation, ntree_limit=bst.best_ntree_limit)
             score = self.eval_metric(self.y_validation, preds)
@@ -113,8 +122,8 @@ class XgboostObjective:
                 score *= -1.0
         except optuna.exceptions.TrialPruned as e:
             raise e
-        #except Exception as e:
-        #    print("Exception in XgboostObjective", str(e))
-        #    return None
+        except Exception as e:
+            print("Exception in XgboostObjective", str(e))
+            return None
 
         return score

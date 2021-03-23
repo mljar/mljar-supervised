@@ -6,7 +6,9 @@ from supervised.utils.metric import Metric
 from supervised.utils.metric import (
     lightgbm_eval_metric_r2,
     lightgbm_eval_metric_spearman,
-    lightgbm_eval_metric_pearson
+    lightgbm_eval_metric_pearson,
+    lightgbm_eval_metric_f1,
+    lightgbm_eval_metric_average_precision,
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -59,9 +61,21 @@ class LightgbmObjective:
         self.eval_metric_name = ""
         # MLJAR -> LightGBM
         metric_name_mapping = {
-            BINARY_CLASSIFICATION: {"auc": "auc", "logloss": "binary_logloss"},
-            MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss"},
-            REGRESSION: {"rmse": "rmse", "mae": "mae", "mape": "mape", "r2": "custom", "spearman": "custom", "pearson": "custom"},
+            BINARY_CLASSIFICATION: {
+                "auc": "auc",
+                "logloss": "binary_logloss",
+                "f1": "custom",
+                "average_precision": "custom",
+            },
+            MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss", "f1": "custom"},
+            REGRESSION: {
+                "rmse": "rmse",
+                "mae": "mae",
+                "mape": "mape",
+                "r2": "custom",
+                "spearman": "custom",
+                "pearson": "custom",
+            },
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
         self.custom_eval_metric = None
@@ -75,7 +89,12 @@ class LightgbmObjective:
         elif self.eval_metric.name == "pearson":
             self.custom_eval_metric = lightgbm_eval_metric_pearson
             self.custom_eval_metric_name = "pearson"
-
+        elif self.eval_metric.name == "f1":
+            self.custom_eval_metric = lightgbm_eval_metric_f1
+            self.custom_eval_metric_name = "f1"
+        elif self.eval_metric.name == "average_precision":
+            self.custom_eval_metric = lightgbm_eval_metric_average_precision
+            self.custom_eval_metric_name = "average_precision"
 
         self.num_class = None
         if ml_task == BINARY_CLASSIFICATION:
@@ -88,13 +107,15 @@ class LightgbmObjective:
 
     def __call__(self, trial):
         # max_bin = trial.suggest_int("max_bin", 2, 1024)
+        print(self.objective, self.eval_metric_name)
         param = {
             "objective": self.objective,
             "metric": self.eval_metric_name,
             "verbosity": -1,
             "boosting_type": "gbdt",
-            "learning_rate": trial.suggest_categorical("learning_rate", 
-                [0.0125, 0.025, 0.05, 0.1]),
+            "learning_rate": trial.suggest_categorical(
+                "learning_rate", [0.0125, 0.025, 0.05, 0.1]
+            ),
             "num_leaves": trial.suggest_int("num_leaves", 2, 2048),
             "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
             "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),
@@ -110,9 +131,6 @@ class LightgbmObjective:
             "seed": self.seed,
             "num_threads": self.n_jobs,
         }
-
-        
-        
 
         if self.cat_features_indices:
             param["cat_feature"] = self.cat_features_indices
@@ -137,7 +155,7 @@ class LightgbmObjective:
                 callbacks=[pruning_callback],
                 num_boost_round=self.rounds,
                 early_stopping_rounds=self.early_stopping_rounds,
-                feval=self.custom_eval_metric
+                feval=self.custom_eval_metric,
             )
 
             preds = gbm.predict(self.X_validation)

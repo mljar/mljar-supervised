@@ -17,7 +17,9 @@ from supervised.algorithms.registry import (
 from supervised.utils.metric import (
     lightgbm_eval_metric_r2,
     lightgbm_eval_metric_spearman,
-    lightgbm_eval_metric_pearson
+    lightgbm_eval_metric_pearson,
+    lightgbm_eval_metric_f1,
+    lightgbm_eval_metric_average_precision,
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -79,6 +81,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         if "num_class" in self.params:  # multiclass classification
             self.learner_params["num_class"] = self.params.get("num_class")
 
+        self.custom_eval_metric = None
         if "custom_eval_metric_name" in self.params:
             if self.params["custom_eval_metric_name"] == "r2":
                 self.custom_eval_metric = lightgbm_eval_metric_r2
@@ -86,6 +89,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 self.custom_eval_metric = lightgbm_eval_metric_spearman
             elif self.params["custom_eval_metric_name"] == "pearson":
                 self.custom_eval_metric = lightgbm_eval_metric_pearson
+            elif self.params["custom_eval_metric_name"] == "f1":
+                self.custom_eval_metric = lightgbm_eval_metric_f1
+            elif self.params["custom_eval_metric_name"] == "average_precision":
+                self.custom_eval_metric = lightgbm_eval_metric_average_precision
 
         logger.debug("LightgbmLearner __init__")
 
@@ -95,7 +102,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
     def update(self, update_params):
         pass
 
-    '''
+    """
     def get_boosting_rounds(self, lgb_train, valid_sets, esr, max_time):
         if max_time is None:
             max_time = 3600.0
@@ -118,7 +125,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
         iters = max(iters, 100)
         iters = min(iters, 10000)
         return iters
-    '''
+    """
 
     def fit(
         self,
@@ -135,7 +142,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
             X.to_numpy() if isinstance(X, pd.DataFrame) else X,
             y,
             weight=sample_weight,
-            # params={"max_bin": self.learner_params.get("max_bin", 255)}
         )
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
@@ -157,7 +163,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
                         else X_validation,
                         y_validation,
                         weight=sample_weight_validation,
-                        # params={"max_bin": self.learner_params.get("max_bin", 255)}
                     ),
                 ]
                 valid_names = ["train", "validation"]
@@ -176,7 +181,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 early_stopping_rounds=esr,
                 evals_result=evals_result,
                 verbose_eval=False,
-                feval=self.custom_eval_metric
+                feval=self.custom_eval_metric,
             )
 
             if log_to_file is not None:

@@ -1749,6 +1749,8 @@ class BaseAutoML(BaseEstimator, ABC):
         if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
             "logloss",
             "auc",
+            "f1",
+            "average_precision",
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
@@ -1757,7 +1759,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         elif (
             self._get_ml_task() == MULTICLASS_CLASSIFICATION
-        ) and self.eval_metric != "logloss":
+        ) and self.eval_metric not in ["logloss", "f1"]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
                     Use 'logloss'"
@@ -1770,7 +1772,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "r2",
             "mape",
             "spearman",
-            "pearson"
+            "pearson",
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \

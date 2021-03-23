@@ -57,9 +57,9 @@ class KMeansTransformer(object):
         self._kmeans.fit(X)
         self._create_new_features_names()
 
-        #print(
+        # print(
         #    f"Created {len(self._new_features)} KMeans Features in {np.round(time.time() - start_time,2)} seconds."
-        #)
+        # )
 
     def _create_new_features_names(self):
         n_clusters = self._kmeans.cluster_centers_.shape[0]

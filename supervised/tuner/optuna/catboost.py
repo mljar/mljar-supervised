@@ -5,7 +5,8 @@ import optuna
 from supervised.utils.metric import (
     Metric,
     CatBoostEvalMetricSpearman,
-    CatBoostEvalMetricPearson
+    CatBoostEvalMetricPearson,
+    CatBoostEvalMetricAveragePrecision,
 )
 
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -53,9 +54,24 @@ class CatBoostObjective:
         self.eval_metric_name = ""
         # MLJAR -> CatBoost
         metric_name_mapping = {
-            BINARY_CLASSIFICATION: {"auc": "AUC", "logloss": "Logloss"},
-            MULTICLASS_CLASSIFICATION: {"logloss": "MultiClass"},
-            REGRESSION: {"rmse": "RMSE", "mae": "MAE", "mape": "MAPE", "r2": "R2", "spearman": "spearman", "pearson": "pearson"},
+            BINARY_CLASSIFICATION: {
+                "auc": "AUC",
+                "logloss": "Logloss",
+                "f1": "F1",
+                "average_precision": "average_precision",
+            },
+            MULTICLASS_CLASSIFICATION: {
+                "logloss": "MultiClass",
+                "f1": "TotalF1:average=Micro",
+            },
+            REGRESSION: {
+                "rmse": "RMSE",
+                "mae": "MAE",
+                "mape": "MAPE",
+                "r2": "R2",
+                "spearman": "spearman",
+                "pearson": "pearson",
+            },
         }
         self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
         if ml_task == BINARY_CLASSIFICATION:
@@ -64,24 +80,28 @@ class CatBoostObjective:
             self.objective = "MultiClass"
         else:  # ml_task == REGRESSION
             self.objective = metric_name_mapping[REGRESSION][self.eval_metric.name]
-            if self.objective in ["R2", "spearman", "pearson"]: # cont optimize R2 directly
+            if self.objective in [
+                "R2",
+                "spearman",
+                "pearson",
+            ]:  # cont optimize R2 directly
                 self.objective = "RMSE"
 
-        self.custom_eval_metric = None 
+        self.custom_eval_metric = None
         if self.eval_metric_name == "spearman":
             self.custom_eval_metric = CatBoostEvalMetricSpearman()
         if self.eval_metric_name == "pearson":
             self.custom_eval_metric = CatBoostEvalMetricPearson()
-
-
-
+        if self.eval_metric_name == "average_precision":
+            self.custom_eval_metric = CatBoostEvalMetricAveragePrecision()
 
     def __call__(self, trial):
         try:
             params = {
                 "iterations": self.rounds,
-                "learning_rate":  trial.suggest_categorical("learning_rate", 
-                    [0.05, 0.1, 0.2]),
+                "learning_rate": trial.suggest_categorical(
+                    "learning_rate", [0.05, 0.1, 0.2]
+                ),
                 "depth": trial.suggest_int("depth", 2, 9),
                 "l2_leaf_reg": trial.suggest_float(
                     "l2_leaf_reg", 0.0001, 10.0, log=False
@@ -96,19 +116,19 @@ class CatBoostObjective:
                 "allow_writing_files": False,
                 "thread_count": self.n_jobs,
                 "random_seed": self.seed,
-                #"border_count": trial.suggest_int("border_count", 16, 2048),
+                # "border_count": trial.suggest_int("border_count", 16, 2048),
                 "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 1, 100),
-                #"bootstrap_type": "Bernoulli"
-                #trial.suggest_categorical(
+                # "bootstrap_type": "Bernoulli"
+                # trial.suggest_categorical(
                 #    "bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]
-                #),
+                # ),
             }
-            #if params["bootstrap_type"] == "Bayesian":
+            # if params["bootstrap_type"] == "Bayesian":
             #    params["bagging_temperature"] = trial.suggest_float(
             #        "bagging_temperature", 0, 10
             #    )
-            #elif params["bootstrap_type"] in ["Bernoulli", "MVS"]:
-            #params["subsample"] = trial.suggest_float("subsample", 0.1, 1)
+            # elif params["bootstrap_type"] in ["Bernoulli", "MVS"]:
+            # params["subsample"] = trial.suggest_float("subsample", 0.1, 1)
 
             Algorithm = (
                 CatBoostRegressor if self.ml_task == REGRESSION else CatBoostClassifier
@@ -124,9 +144,9 @@ class CatBoostObjective:
                 early_stopping_rounds=self.early_stopping_rounds,
                 eval_set=self.eval_set,
                 verbose_eval=False,
-                cat_features=self.cat_features
+                cat_features=self.cat_features,
             )
-            
+
             if self.ml_task == BINARY_CLASSIFICATION:
                 preds = model.predict_proba(
                     self.X_validation, ntree_end=model.best_iteration_ + 1
@@ -146,7 +166,7 @@ class CatBoostObjective:
 
         except optuna.exceptions.TrialPruned as e:
             raise e
-        #except Exception as e:
+        # except Exception as e:
         #    print("Exception in CatBoostObjective", str(e))
         #    return None
 

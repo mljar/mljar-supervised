@@ -25,7 +25,18 @@ class OptunaTuner:
         n_jobs=-1,
         random_state=42,
     ):
-        if eval_metric.name not in ["auc", "logloss", "rmse", "mae", "mape", "r2", "spearman", "pearson"]:
+        if eval_metric.name not in [
+            "auc",
+            "logloss",
+            "rmse",
+            "mae",
+            "mape",
+            "r2",
+            "spearman",
+            "pearson",
+            "f1",
+            "average_precision",
+        ]:
             raise AutoMLException(f"Metric {eval_metric.name} is not supported")
 
         self.study_dir = os.path.join(results_path, "optuna")
@@ -41,7 +52,9 @@ class OptunaTuner:
         self.direction = (
             "maximize" if Metric.optimize_negative(eval_metric.name) else "minimize"
         )
-        self.n_warmup_steps = 500 # set large enough to give small learning rates a chance
+        self.n_warmup_steps = (
+            500  # set large enough to give small learning rates a chance
+        )
         self.time_budget = time_budget
         self.verbose = verbose
         self.ml_task = ml_task
@@ -176,7 +189,7 @@ class OptunaTuner:
             best["custom_eval_metric_name"] = objective.custom_eval_metric_name
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
-            #best["learning_rate"] = objective.learning_rate
+            # best["learning_rate"] = objective.learning_rate
             best["cat_feature"] = self.cat_features_indices
             best["feature_pre_filter"] = False
             best["seed"] = objective.seed
@@ -184,13 +197,13 @@ class OptunaTuner:
             best["eval_metric"] = objective.eval_metric_name
             best["num_boost_round"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
-            #best["bootstrap_type"] = "Bernoulli"
-            #best["learning_rate"] = objective.learning_rate
+            # best["bootstrap_type"] = "Bernoulli"
+            # best["learning_rate"] = objective.learning_rate
             best["seed"] = objective.seed
         elif algorithm == "Xgboost":
             best["objective"] = objective.objective
             best["eval_metric"] = objective.eval_metric_name
-            #best["eta"] = objective.learning_rate
+            # best["eta"] = objective.learning_rate
             best["max_rounds"] = objective.rounds
             best["early_stopping_rounds"] = objective.early_stopping_rounds
             best["seed"] = objective.seed

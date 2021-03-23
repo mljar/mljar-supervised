@@ -16,7 +16,9 @@ from supervised.algorithms.registry import (
 from supervised.utils.metric import (
     xgboost_eval_metric_r2,
     xgboost_eval_metric_spearman,
-    xgboost_eval_metric_pearson
+    xgboost_eval_metric_pearson,
+    xgboost_eval_metric_f1,
+    xgboost_eval_metric_average_precision,
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -66,6 +68,7 @@ class XgbAlgorithm(BaseAlgorithm):
             "n_jobs": self.params.get("n_jobs", -1),
             # "silent": self.params.get("silent", 1),
             "seed": self.params.get("seed", 1),
+            "verbosity": 0,
         }
 
         if "lambda" in self.params:
@@ -89,11 +92,15 @@ class XgbAlgorithm(BaseAlgorithm):
             self.custom_eval_metric = xgboost_eval_metric_spearman
         elif self.params.get("eval_metric", "") == "pearson":
             self.custom_eval_metric = xgboost_eval_metric_pearson
+        elif self.params.get("eval_metric", "") == "f1":
+            self.custom_eval_metric = xgboost_eval_metric_f1
+        elif self.params.get("eval_metric", "") == "average_precision":
+            self.custom_eval_metric = xgboost_eval_metric_average_precision
 
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
-        
-    '''
+
+    """
     def get_boosting_rounds(self, dtrain, evals, esr, max_time):
         if max_time is None:
             return self.boosting_rounds
@@ -117,7 +124,7 @@ class XgbAlgorithm(BaseAlgorithm):
         iters = max(iters, 100)
         iters = min(iters, 10000)
         return iters
-    '''
+    """
 
     def fit(
         self,
@@ -157,7 +164,6 @@ class XgbAlgorithm(BaseAlgorithm):
         # just wait till they converge ...
         # boosting_rounds = self.get_boosting_rounds(dtrain, evals, esr, max_time)
 
-        
         if self.custom_eval_metric is not None:
             del self.learner_params["eval_metric"]
 
@@ -169,7 +175,7 @@ class XgbAlgorithm(BaseAlgorithm):
             early_stopping_rounds=esr,
             evals_result=evals_result,
             verbose_eval=False,
-            feval = self.custom_eval_metric
+            feval=self.custom_eval_metric
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 
@@ -178,10 +184,9 @@ class XgbAlgorithm(BaseAlgorithm):
         # print(self.model.best_ntree_limit, num_trees)
 
         if log_to_file is not None:
-            
+
             metric_name = list(evals_result["train"].keys())[-1]
-            
-            
+
             result = pd.DataFrame(
                 {
                     "iteration": range(len(evals_result["train"][metric_name])),
@@ -192,10 +197,10 @@ class XgbAlgorithm(BaseAlgorithm):
             # it a is custom metric
             # that is always minimized
             # we need to revert it
-            if metric_name in ["r2", "spearman", "pearson"]:
+            if metric_name in ["r2", "spearman", "pearson", "f1", "average_precision"]:
                 result["train"] *= -1.0
                 result["validation"] *= -1.0
-            
+
             result.to_csv(log_to_file, index=False, header=False)
 
         # save best_ntree_limit because of:

@@ -73,7 +73,9 @@ def predict_proba_function(estimator, X):
 class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
     def __init__(self, params):
         super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
-        self.log_metric = Metric({"name": self.params.get("eval_metric_name", "logloss")})
+        self.log_metric = Metric(
+            {"name": self.params.get("eval_metric_name", "logloss")}
+        )
         self.max_iters = (
             1  # max iters is used by model_framework, max_steps is used internally
         )
@@ -144,7 +146,6 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 result["iteration"] += [e]
                 result["train"] += [tr]
                 result["validation"] += [vd]
-
 
             # disable for now ...
             # if max_time is not None and time.time()-start_time > max_time:
