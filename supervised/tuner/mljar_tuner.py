@@ -258,8 +258,6 @@ class MljarTuner:
             # didnt find anything matching the step, return empty array
             return []
         except Exception as e:
-            print("Dupa"*100)
-            print(str(e))
             return []
         
 
@@ -920,15 +918,9 @@ class MljarTuner:
             return None
 
 
-        print(model_params, self._ml_task, self._eval_metric)
-        print("***")
-        print( xgboost_eval_metric(self._ml_task, self._eval_metric))
-
         # set eval metric
         if model_info["class"].algorithm_short_name == "Xgboost":
             model_params["eval_metric"] = xgboost_eval_metric(self._ml_task, self._eval_metric)
-            print(model_params)
-            print("***")
         elif model_info["class"].algorithm_short_name in ["Random Forest", "Extra Trees"]:
             model_params["eval_metric_name"] = self._eval_metric
             model_params["ml_task"] = self._ml_task
