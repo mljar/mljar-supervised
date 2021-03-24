@@ -66,7 +66,10 @@ class SklearnAlgorithm(BaseAlgorithm):
 from supervised.utils.metric import Metric
 
 
-def predict_proba_function(estimator, X):
+def predict_proba_function_binary(estimator, X):
+    return estimator.predict_proba(X)[:,1]
+
+def predict_proba_function_multiclass(estimator, X):
     return estimator.predict_proba(X)
 
 
@@ -79,7 +82,10 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         self.max_iters = (
             1  # max iters is used by model_framework, max_steps is used internally
         )
-        self.predict_function = predict_proba_function
+        if params.get("ml_task") == BINARY_CLASSIFICATION:
+            self.predict_function = predict_proba_function_binary
+        else:
+            self.predict_function = predict_proba_function_multiclass
 
     def fit(
         self,
@@ -163,6 +169,8 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 df_result["validation"] *= -1.0
             df_result.to_csv(log_to_file, index=False, header=False)
 
+    def get_metric_name(self):
+        return self.params.get("eval_metric_name", "logloss")
 
 def predict_function(estimator, X):
     return estimator.predict(X)
@@ -173,3 +181,6 @@ class SklearnTreesEnsembleRegressorAlgorithm(SklearnTreesEnsembleClassifierAlgor
         super(SklearnTreesEnsembleRegressorAlgorithm, self).__init__(params)
         self.log_metric = Metric({"name": self.params.get("eval_metric_name", "rmse")})
         self.predict_function = predict_function
+
+    def get_metric_name(self):
+        return self.params.get("eval_metric_name", "rmse")

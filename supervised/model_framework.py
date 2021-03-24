@@ -197,7 +197,7 @@ class ModelFramework:
                         self.learner_params,
                     )
                     # exclude optuna optimize time from model training
-                    start_time += time.time()-optuna_start_time
+                    start_time += time.time() - optuna_start_time
 
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [

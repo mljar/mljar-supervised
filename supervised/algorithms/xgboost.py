@@ -39,6 +39,26 @@ def time_constraint(env):
     pass
 
 
+def xgboost_eval_metric(ml_task, automl_eval_metric):
+    # the mapping is almost the same
+    eval_metric_name = automl_eval_metric
+    if ml_task == MULTICLASS_CLASSIFICATION:
+        if automl_eval_metric == "logloss":
+            eval_metric_name = "mlogloss"
+    return eval_metric_name
+
+
+def xgboost_objective(ml_task, automl_eval_metric):
+    objective = "reg:squarederror"
+    if ml_task == BINARY_CLASSIFICATION:
+        objective = "binary:logistic"
+    elif ml_task == MULTICLASS_CLASSIFICATION:
+        objective = "multi:softprob"
+    else:  # ml_task == REGRESSION
+        objective = "reg:squarederror"
+    return objective
+
+
 class XgbAlgorithm(BaseAlgorithm):
     """
     This is a wrapper over xgboost algorithm.
@@ -254,26 +274,15 @@ class XgbAlgorithm(BaseAlgorithm):
         metric = self.params.get("eval_metric")
         if metric is None:
             return None
-        if metric == "logloss":
+        if metric == "mlogloss":
             return "logloss"
-        elif metric == "auc":
-            return "auc"
-        elif metric == "mlogloss":
-            return "logloss"
-        elif metric == "rmse":
-            return "rmse"
-        elif metric == "mae":
-            return "mae"
-        elif metric == "mape":
-            return "mape"
-
-        return None
+        return metric
 
 
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {
     "objective": ["binary:logistic"],
-    "eval_metric": ["logloss", "auc"],
+    # "eval_metric": ["logloss", "auc"],
     "eta": [0.05, 0.075, 0.1, 0.15],
     "max_depth": [4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 5, 10, 25, 50],
@@ -283,7 +292,7 @@ xgb_bin_class_params = {
 
 classification_bin_default_params = {
     "objective": "binary:logistic",
-    "eval_metric": "logloss",
+    # "eval_metric": "logloss",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
@@ -293,17 +302,17 @@ classification_bin_default_params = {
 
 xgb_regression_params = dict(xgb_bin_class_params)
 xgb_regression_params["objective"] = ["reg:squarederror"]
-xgb_regression_params["eval_metric"] = ["rmse", "mae", "mape"]
+# xgb_regression_params["eval_metric"] = ["rmse", "mae", "mape"]
 xgb_regression_params["max_depth"] = [4, 5, 6, 7, 8, 9]
 
 
 xgb_multi_class_params = dict(xgb_bin_class_params)
 xgb_multi_class_params["objective"] = ["multi:softprob"]
-xgb_multi_class_params["eval_metric"] = ["mlogloss"]
+# xgb_multi_class_params["eval_metric"] = ["mlogloss"]
 
 classification_multi_default_params = {
     "objective": "multi:softprob",
-    "eval_metric": "mlogloss",
+    # "eval_metric": "mlogloss",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
@@ -314,7 +323,7 @@ classification_multi_default_params = {
 
 regression_default_params = {
     "objective": "reg:squarederror",
-    "eval_metric": "rmse",
+    # "eval_metric": "rmse",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,

@@ -959,6 +959,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 ),
                 self._algorithms,
                 self._ml_task,
+                self._eval_metric,
                 self._validation_strategy,
                 self._explain_level,
                 self._data_info,

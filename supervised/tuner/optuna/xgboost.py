@@ -29,7 +29,7 @@ class XgboostObjective:
         sample_weight_validation,
         eval_metric,
         n_jobs,
-        random_state
+        random_state,
     ):
         self.dtrain = xgb.DMatrix(X_train, label=y_train, weight=sample_weight)
         self.dvalidation = xgb.DMatrix(
@@ -47,25 +47,12 @@ class XgboostObjective:
 
         self.objective = ""
         self.eval_metric_name = ""
-        self.num_class = None
-        if ml_task == BINARY_CLASSIFICATION:
-            self.objective = "binary:logistic"
-            # the mapping is the same
-            # allowed metrics: logloss, auc
-            self.eval_metric_name = self.eval_metric.name
+        self.num_class = (
+            len(np.unique(y_train)) if ml_task == MULTICLASS_CLASSIFICATION else None
+        )
 
-        elif ml_task == MULTICLASS_CLASSIFICATION:
-            self.objective = "multi:softprob"
-            if self.eval_metric.name == "logloss":
-                self.eval_metric_name = "mlogloss"
-            elif self.eval_metric.name == "f1":
-                self.eval_metric_name = "f1"
-            self.num_class = len(np.unique(y_train))
-        else:  # ml_task == REGRESSION
-            self.objective = "reg:squarederror"
-            # the mapping is the same
-            # allowed metrics: rmse, mae, mape
-            self.eval_metric_name = self.eval_metric.name
+        self.objective = xgboost_objective(ml_task, eval_metric.name)
+        self.eval_metric_name = xgboost_eval_metric(ml_task, eval_metric.name)
 
         self.custom_eval_metric = None
         if self.eval_metric_name == "r2":

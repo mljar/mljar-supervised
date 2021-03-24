@@ -30,7 +30,7 @@ class LightgbmObjective:
         eval_metric,
         cat_features_indices,
         n_jobs,
-        random_state
+        random_state,
     ):
         self.X_train = X_train
         self.y_train = y_train

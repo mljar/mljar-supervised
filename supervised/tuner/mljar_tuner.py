@@ -17,6 +17,8 @@ from supervised.algorithms.registry import (
     REGRESSION,
 )
 
+from supervised.algorithms.xgboost import xgboost_eval_metric
+
 import logging
 from supervised.utils.config import LOG_LEVEL
 
@@ -30,6 +32,7 @@ class MljarTuner:
         tuner_params,
         algorithms,
         ml_task,
+        eval_metric,
         validation_strategy,
         explain_level,
         data_info,
@@ -65,6 +68,7 @@ class MljarTuner:
         self._mix_encoding = mix_encoding
         self._optuna_time_budget = optuna_time_budget
         self._optuna_init_params = optuna_init_params
+        self._eval_metric = eval_metric
         self._n_jobs = n_jobs
         self._seed = seed
         self._unique_params_keys = []
@@ -254,7 +258,10 @@ class MljarTuner:
             # didnt find anything matching the step, return empty array
             return []
         except Exception as e:
+            print("Dupa"*100)
+            print(str(e))
             return []
+        
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -911,6 +918,21 @@ class MljarTuner:
             model_params = RandomParameters.get(model_info["params"], seed + self._seed)
         if model_params is None:
             return None
+
+
+        print(model_params, self._ml_task, self._eval_metric)
+        print("***")
+        print( xgboost_eval_metric(self._ml_task, self._eval_metric))
+
+        # set eval metric
+        if model_info["class"].algorithm_short_name == "Xgboost":
+            model_params["eval_metric"] = xgboost_eval_metric(self._ml_task, self._eval_metric)
+            print(model_params)
+            print("***")
+        elif model_info["class"].algorithm_short_name in ["Random Forest", "Extra Trees"]:
+            model_params["eval_metric_name"] = self._eval_metric
+            model_params["ml_task"] = self._ml_task
+
 
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]

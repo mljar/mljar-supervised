@@ -127,7 +127,7 @@ class OptunaTuner:
                 self.eval_metric,
                 self.cat_features_indices,
                 self.n_jobs,
-                self.random_state
+                self.random_state,
             )
         elif algorithm == "Xgboost":
             objective = XgboostObjective(
@@ -140,7 +140,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
-                self.random_state
+                self.random_state,
             )
         elif algorithm == "CatBoost":
             objective = CatBoostObjective(
@@ -154,7 +154,7 @@ class OptunaTuner:
                 self.eval_metric,
                 self.cat_features_indices,
                 self.n_jobs,
-                self.random_state
+                self.random_state,
             )
         elif algorithm == "Random Forest":
             objective = RandomForestObjective(
@@ -167,7 +167,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
-                self.random_state
+                self.random_state,
             )
         elif algorithm == "Extra Trees":
             objective = ExtraTreesObjective(
@@ -180,7 +180,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
-                self.random_state
+                self.random_state,
             )
 
         study.optimize(objective, n_trials=5000, timeout=self.time_budget)

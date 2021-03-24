@@ -21,7 +21,7 @@ class RandomForestObjective:
         sample_weight_validation,
         eval_metric,
         n_jobs,
-        random_state
+        random_state,
     ):
         self.ml_task = ml_task
         self.X_train = X_train

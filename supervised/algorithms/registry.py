@@ -58,6 +58,13 @@ class AlgorithmsRegistry:
             "max_cols_limit"
         ]
 
+    @staticmethod
+    def get_eval_metric(algorithm_name, ml_task, automl_eval_metric):
+        if algorithm_name == "Xgboost":
+            return xgboost_eval_metric(ml_task, automl_eval_metric)
+
+        return automl_eval_metric
+
 
 # Import algorithm to be registered
 import supervised.algorithms.random_forest
