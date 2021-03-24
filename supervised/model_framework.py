@@ -76,6 +76,8 @@ class ModelFramework:
         self._single_prediction_time = None  # prediction time on single sample
         self._optuna_time_budget = params.get("optuna_time_budget")
         self._optuna_init_params = params.get("optuna_init_params", {})
+        # the automl random state from AutoML constructor, used in Optuna optimizer
+        self._automl_random_state = params.get("automl_random_state", 42)
 
     def get_train_time(self):
         return self.train_time
@@ -139,7 +141,7 @@ class ModelFramework:
                 init_params=self._optuna_init_params,
                 verbose=True,  # False,
                 n_jobs=self.learner_params.get("n_jobs", -1),
-                random_state=self.learner_params.get("seed", 42),
+                random_state=self._automl_random_state,
             )
 
         self.validation = ValidationStep(self.validation_params)

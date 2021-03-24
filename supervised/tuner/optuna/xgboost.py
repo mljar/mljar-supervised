@@ -29,6 +29,7 @@ class XgboostObjective:
         sample_weight_validation,
         eval_metric,
         n_jobs,
+        random_state
     ):
         self.dtrain = xgb.DMatrix(X_train, label=y_train, weight=sample_weight)
         self.dvalidation = xgb.DMatrix(
@@ -42,7 +43,7 @@ class XgboostObjective:
         self.learning_rate = 0.0125
         self.rounds = 1000
         self.early_stopping_rounds = 50
-        self.seed = 123
+        self.seed = random_state
 
         self.objective = ""
         self.eval_metric_name = ""

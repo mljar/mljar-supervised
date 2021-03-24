@@ -127,6 +127,7 @@ class OptunaTuner:
                 self.eval_metric,
                 self.cat_features_indices,
                 self.n_jobs,
+                self.random_state
             )
         elif algorithm == "Xgboost":
             objective = XgboostObjective(
@@ -139,6 +140,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
+                self.random_state
             )
         elif algorithm == "CatBoost":
             objective = CatBoostObjective(
@@ -152,6 +154,7 @@ class OptunaTuner:
                 self.eval_metric,
                 self.cat_features_indices,
                 self.n_jobs,
+                self.random_state
             )
         elif algorithm == "Random Forest":
             objective = RandomForestObjective(
@@ -164,6 +167,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
+                self.random_state
             )
         elif algorithm == "Extra Trees":
             objective = ExtraTreesObjective(
@@ -176,6 +180,7 @@ class OptunaTuner:
                 sample_weight_validation,
                 self.eval_metric,
                 self.n_jobs,
+                self.random_state
             )
 
         study.optimize(objective, n_trials=5000, timeout=self.time_budget)
@@ -210,12 +215,12 @@ class OptunaTuner:
         elif algorithm == "Extra Trees":
             # Extra Trees are not using early stopping
             best["max_steps"] = 1  # each step has 100 trees
-            best["seed"] = 123
+            best["seed"] = objective.seed
             best["eval_metric_name"] = self.eval_metric.name
         elif algorithm == "Random Forest":
             # Random Forest is not using early stopping
             best["max_steps"] = 1  # each step has 100 trees
-            best["seed"] = 123
+            best["seed"] = objective.seed
             best["eval_metric_name"] = self.eval_metric.name
 
         self.tuning[key] = best

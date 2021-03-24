@@ -30,6 +30,7 @@ class LightgbmObjective:
         eval_metric,
         cat_features_indices,
         n_jobs,
+        random_state
     ):
         self.X_train = X_train
         self.y_train = y_train
@@ -51,7 +52,7 @@ class LightgbmObjective:
         self.learning_rate = 0.025
         self.rounds = 1000
         self.early_stopping_rounds = 50
-        self.seed = 123
+        self.seed = random_state
 
         self.n_jobs = n_jobs
         if n_jobs == -1:

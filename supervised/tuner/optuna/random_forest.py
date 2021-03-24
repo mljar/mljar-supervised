@@ -21,6 +21,7 @@ class RandomForestObjective:
         sample_weight_validation,
         eval_metric,
         n_jobs,
+        random_state
     ):
         self.ml_task = ml_task
         self.X_train = X_train
@@ -32,7 +33,7 @@ class RandomForestObjective:
         self.n_jobs = n_jobs
         self.objective = "mse" if ml_task == REGRESSION else "gini"
         self.max_steps = 1  # RF is trained in steps 100 trees each
-        self.seed = 123
+        self.seed = random_state
 
     def __call__(self, trial):
         try:

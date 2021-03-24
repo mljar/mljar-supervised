@@ -29,6 +29,7 @@ class CatBoostObjective:
         eval_metric,
         cat_features_indices,
         n_jobs,
+        random_state
     ):
         self.ml_task = ml_task
         self.X_train = X_train
@@ -48,7 +49,7 @@ class CatBoostObjective:
         self.rounds = 1000
         self.learning_rate = 0.0125
         self.early_stopping_rounds = 50
-        self.seed = 123
+        self.seed = random_state
 
         self.objective = ""
         self.eval_metric_name = ""

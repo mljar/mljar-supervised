@@ -928,6 +928,7 @@ class MljarTuner:
                 "n_jobs": self._n_jobs,
                 **model_params,
             },
+            "automl_random_state": self._seed
         }
 
         if self._data_info.get("num_class") is not None:
