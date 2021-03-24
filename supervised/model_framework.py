@@ -182,6 +182,7 @@ class ModelFramework:
                 )
 
                 if optuna_tuner is not None:
+                    optuna_start_time = time.time()
                     self.learner_params = optuna_tuner.optimize(
                         self.learner_params.get("model_type", ""),
                         self.params.get("data_type", ""),
@@ -193,6 +194,8 @@ class ModelFramework:
                         sample_weight_validation,
                         self.learner_params,
                     )
+                    # exclude optuna optimize time from model training
+                    start_time += time.time()-optuna_start_time
 
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [
