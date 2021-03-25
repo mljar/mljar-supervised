@@ -48,6 +48,7 @@ class MljarTuner:
         mix_encoding,
         optuna_time_budget,
         optuna_init_params,
+        optuna_verbose,
         n_jobs,
         seed,
     ):
@@ -70,6 +71,7 @@ class MljarTuner:
         self._mix_encoding = mix_encoding
         self._optuna_time_budget = optuna_time_budget
         self._optuna_init_params = optuna_init_params
+        self._optuna_verbose = optuna_verbose
         self._eval_metric = eval_metric
         self._n_jobs = n_jobs
         self._seed = seed
@@ -303,6 +305,7 @@ class MljarTuner:
             if self._optuna_time_budget is not None:
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
+                params["optuna_verbose"] = self._optuna_verbose
 
             if "model_architecture_json" in params["learner"]:
                 # the new model will be created with wider input size
@@ -436,6 +439,7 @@ class MljarTuner:
             if self._optuna_time_budget is not None:
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
+                params["optuna_verbose"] = self._optuna_verbose
 
             unique_params_key = MljarTuner.get_params_key(params)
             if unique_params_key not in self._unique_params_keys:
@@ -481,6 +485,7 @@ class MljarTuner:
                 if self._optuna_time_budget is not None:
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
+                    params["optuna_verbose"] = self._optuna_verbose
 
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
@@ -671,6 +676,7 @@ class MljarTuner:
                 if self._optuna_time_budget is not None:
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
+                    params["optuna_verbose"] = self._optuna_verbose
 
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
@@ -737,6 +743,7 @@ class MljarTuner:
             if self._optuna_time_budget is not None:
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
+                params["optuna_verbose"] = self._optuna_verbose
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -767,6 +774,7 @@ class MljarTuner:
             if self._optuna_time_budget is not None:
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
+                params["optuna_verbose"] = self._optuna_verbose
 
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
@@ -898,6 +906,7 @@ class MljarTuner:
                 if self._optuna_time_budget is not None:
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
+                    params["optuna_verbose"] = self._optuna_verbose
 
                 if "model_architecture_json" in params["learner"]:
                     del params["learner"]["model_architecture_json"]
@@ -1052,6 +1061,8 @@ class MljarTuner:
         if self._optuna_time_budget is not None:
             params["optuna_time_budget"] = self._optuna_time_budget
             params["optuna_init_params"] = self._optuna_init_params
+            params["optuna_verbose"] = self._optuna_verbose
+
         unique_params_key = MljarTuner.get_params_key(params)
 
         if unique_params_key not in self._unique_params_keys:

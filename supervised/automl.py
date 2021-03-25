@@ -42,6 +42,7 @@ class AutoML(BaseAutoML):
         max_single_prediction_time=None,
         optuna_time_budget=None,
         optuna_init_params={},
+        optuna_verbose=True,
         n_jobs=-1,
         verbose=1,
         random_state=1234,
@@ -200,6 +201,8 @@ class AutoML(BaseAutoML):
             optuna_init_params (dict): If you have already tuned parameters from Optuna you can reuse them by setting this parameter.
                 This parameter is only used when `mode="Optuna"`. The dict should have structure and params as specified in the MLJAR AutoML .
 
+            optuna_verbose (boolean): If true the Optuna tuning details are displayed. Set to `True` by default.
+
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 
             verbose (int): Controls the verbosity when fitting and predicting.
@@ -304,6 +307,7 @@ class AutoML(BaseAutoML):
         self.max_single_prediction_time = max_single_prediction_time
         self.optuna_time_budget = optuna_time_budget
         self.optuna_init_params = optuna_init_params
+        self.optuna_verbose = optuna_verbose
         self.n_jobs = n_jobs
         self.random_state = random_state
 

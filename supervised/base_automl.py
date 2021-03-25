@@ -100,6 +100,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._max_single_prediction_time = None
         self._optuna_time_budget = None
         self._optuna_init_params = {}
+        self._optuna_verbose = True
         self._n_jobs = -1
 
     def _get_tuner_params(
@@ -908,6 +909,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._max_single_prediction_time = self._get_max_single_prediction_time()
         self._optuna_time_budget = self._get_optuna_time_budget()
         self._optuna_init_params = self._get_optuna_init_params()
+        self._optuna_verbose = self._get_optuna_verbose()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
 
@@ -991,6 +993,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._mix_encoding,
                 self._optuna_time_budget,
                 self._optuna_init_params,
+                self._optuna_verbose,
                 self._n_jobs,
                 self._random_state,
             )
@@ -1689,6 +1692,14 @@ class BaseAutoML(BaseEstimator, ABC):
             return {}
         return deepcopy(self.optuna_init_params)
 
+    def _get_optuna_verbose(self):
+        """ Gets the current optuna_verbose"""
+        self._validate_optuna_verbose()
+        # use only for mode Optuna
+        if self._get_mode() != "Optuna":
+            return True
+        return deepcopy(self.optuna_verbose)
+
     def _get_n_jobs(self):
         """ Gets the current n_jobs"""
         self._validate_n_jobs()
@@ -1917,6 +1928,12 @@ class BaseAutoML(BaseEstimator, ABC):
             raise ValueError(
                 f"Expected 'optuna_init_params' to be a dict, got '{type(self.optuna_init_params)}'"
             )
+
+    def _validate_optuna_verbose(self):
+        """ Validates optuna_verbose parameter"""
+        if self.optuna_verbose is None:
+            return
+        check_bool(self.optuna_verbose, "optuna_verbose")
 
     def _validate_n_jobs(self):
         """ Validates mix_encoding parameter"""
