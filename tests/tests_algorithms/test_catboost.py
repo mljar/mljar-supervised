@@ -30,6 +30,7 @@ class CatBoostRegressorAlgorithmTest(unittest.TestCase):
             "seed": 1,
             "ml_task": "regression",
             "loss_function": "RMSE",
+            "eval_metric": "RMSE",
         }
 
     def test_reproduce_fit(self):
@@ -72,6 +73,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
             "seed": 1,
             "ml_task": "binary_classification",
             "loss_function": "Logloss",
+            "eval_metric": "Logloss",
         }
 
     def test_reproduce_fit(self):
@@ -142,6 +144,7 @@ class CatBoostAlgorithmTest(unittest.TestCase):
         self.assertEqual(model.get_metric_name(), "logloss")
         params = dict(self.params)
         params["loss_function"] = "MultiClass"
+        params["eval_metric"] = "MultiClass"
         model = CatBoostAlgorithm(params)
         self.assertEqual(model.get_metric_name(), "logloss")
 
