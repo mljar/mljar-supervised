@@ -13,6 +13,11 @@ from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
 
+from supervised.algorithms.catboost import (
+    catboost_objective,
+    catboost_eval_metric
+)
+
 EPS = 1e-8
 
 
@@ -51,43 +56,8 @@ class CatBoostObjective:
         self.early_stopping_rounds = 50
         self.seed = random_state
 
-        self.objective = ""
-        self.eval_metric_name = ""
-        # MLJAR -> CatBoost
-        metric_name_mapping = {
-            BINARY_CLASSIFICATION: {
-                "auc": "AUC",
-                "logloss": "Logloss",
-                "f1": "F1",
-                "average_precision": "average_precision",
-            },
-            MULTICLASS_CLASSIFICATION: {
-                "logloss": "MultiClass",
-                "f1": "TotalF1:average=Micro",
-            },
-            REGRESSION: {
-                "rmse": "RMSE",
-                "mae": "MAE",
-                "mape": "MAPE",
-                "r2": "R2",
-                "spearman": "spearman",
-                "pearson": "pearson",
-            },
-        }
-        self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
-        if ml_task == BINARY_CLASSIFICATION:
-            self.objective = "Logloss"
-        elif ml_task == MULTICLASS_CLASSIFICATION:
-            self.objective = "MultiClass"
-        else:  # ml_task == REGRESSION
-            self.objective = metric_name_mapping[REGRESSION][self.eval_metric.name]
-            if self.objective in [
-                "R2",
-                "spearman",
-                "pearson",
-            ]:  # cont optimize R2 directly
-                self.objective = "RMSE"
-
+        self.objective = catboost_objective(ml_task, self.eval_metric.name)
+        self.eval_metric_name = catboost_eval_metric(ml_task, self.eval_metric.name)
         self.custom_eval_metric = None
         if self.eval_metric_name == "spearman":
             self.custom_eval_metric = CatBoostEvalMetricSpearman()

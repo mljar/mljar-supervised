@@ -18,6 +18,8 @@ from supervised.algorithms.registry import (
 )
 
 from supervised.algorithms.xgboost import xgboost_eval_metric
+from supervised.algorithms.lightgbm import lightgbm_eval_metric
+from supervised.algorithms.catboost import catboost_eval_metric
 
 import logging
 from supervised.utils.config import LOG_LEVEL
@@ -259,7 +261,6 @@ class MljarTuner:
             return []
         except Exception as e:
             return []
-        
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:
@@ -917,14 +918,27 @@ class MljarTuner:
         if model_params is None:
             return None
 
-
         # set eval metric
         if model_info["class"].algorithm_short_name == "Xgboost":
-            model_params["eval_metric"] = xgboost_eval_metric(self._ml_task, self._eval_metric)
-        elif model_info["class"].algorithm_short_name in ["Random Forest", "Extra Trees"]:
+            model_params["eval_metric"] = xgboost_eval_metric(
+                self._ml_task, self._eval_metric
+            )
+        if model_info["class"].algorithm_short_name == "LightGBM":
+            metric, custom_metric = lightgbm_eval_metric(
+                self._ml_task, self._eval_metric
+            )
+            model_params["metric"] = metric
+            model_params["custom_eval_metric_name"] = custom_metric
+        if model_info["class"].algorithm_short_name == "CatBoost":
+            model_params["eval_metric"] = catboost_eval_metric(
+                self._ml_task, self._eval_metric
+            )
+        elif model_info["class"].algorithm_short_name in [
+            "Random Forest",
+            "Extra Trees",
+        ]:
             model_params["eval_metric_name"] = self._eval_metric
             model_params["ml_task"] = self._ml_task
-
 
         required_preprocessing = model_info["required_preprocessing"]
         model_additional = model_info["additional"]
@@ -942,7 +956,7 @@ class MljarTuner:
                 "n_jobs": self._n_jobs,
                 **model_params,
             },
-            "automl_random_state": self._seed
+            "automl_random_state": self._seed,
         }
 
         if self._data_info.get("num_class") is not None:

@@ -14,6 +14,12 @@ from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
 
+from supervised.algorithms.lightgbm import (
+    lightgbm_objective,
+    lightgbm_eval_metric,
+)
+
+
 EPS = 1e-8
 
 
@@ -60,51 +66,27 @@ class LightgbmObjective:
 
         self.objective = ""
         self.eval_metric_name = ""
-        # MLJAR -> LightGBM
-        metric_name_mapping = {
-            BINARY_CLASSIFICATION: {
-                "auc": "auc",
-                "logloss": "binary_logloss",
-                "f1": "custom",
-                "average_precision": "custom",
-            },
-            MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss", "f1": "custom"},
-            REGRESSION: {
-                "rmse": "rmse",
-                "mae": "mae",
-                "mape": "mape",
-                "r2": "custom",
-                "spearman": "custom",
-                "pearson": "custom",
-            },
-        }
-        self.eval_metric_name = metric_name_mapping[ml_task][self.eval_metric.name]
+
+        self.eval_metric_name, self.custom_eval_metric_name = lightgbm_eval_metric(
+            ml_task, eval_metric.name
+        )
+
         self.custom_eval_metric = None
-        self.custom_eval_metric_name = self.eval_metric_name
         if self.eval_metric.name == "r2":
             self.custom_eval_metric = lightgbm_eval_metric_r2
-            self.custom_eval_metric_name = "r2"
         elif self.eval_metric.name == "spearman":
             self.custom_eval_metric = lightgbm_eval_metric_spearman
-            self.custom_eval_metric_name = "spearman"
         elif self.eval_metric.name == "pearson":
             self.custom_eval_metric = lightgbm_eval_metric_pearson
-            self.custom_eval_metric_name = "pearson"
         elif self.eval_metric.name == "f1":
             self.custom_eval_metric = lightgbm_eval_metric_f1
-            self.custom_eval_metric_name = "f1"
         elif self.eval_metric.name == "average_precision":
             self.custom_eval_metric = lightgbm_eval_metric_average_precision
-            self.custom_eval_metric_name = "average_precision"
 
-        self.num_class = None
-        if ml_task == BINARY_CLASSIFICATION:
-            self.objective = "binary"
-        elif ml_task == MULTICLASS_CLASSIFICATION:
-            self.objective = "multiclass"
-            self.num_class = len(np.unique(y_train))
-        else:  # ml_task == REGRESSION
-            self.objective = "regression"
+        self.num_class = (
+            len(np.unique(y_train)) if ml_task == MULTICLASS_CLASSIFICATION else None
+        )
+        self.objective = lightgbm_objective(ml_task, eval_metric.name)
 
     def __call__(self, trial):
         # max_bin = trial.suggest_int("max_bin", 2, 1024)

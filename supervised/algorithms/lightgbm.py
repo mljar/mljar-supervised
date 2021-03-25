@@ -27,6 +27,45 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
+def lightgbm_objective(ml_task, automl_eval_metric):
+    objective = "regression"
+    if ml_task == BINARY_CLASSIFICATION:
+        objective = "binary"
+    elif ml_task == MULTICLASS_CLASSIFICATION:
+        objective = "multiclass"
+    else:  # ml_task == REGRESSION
+        objective = "regression"
+    return objective
+
+
+def lightgbm_eval_metric(ml_task, automl_eval_metric):
+    metric_name_mapping = {
+        BINARY_CLASSIFICATION: {
+            "auc": "auc",
+            "logloss": "binary_logloss",
+            "f1": "custom",
+            "average_precision": "custom",
+        },
+        MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss", "f1": "custom"},
+        REGRESSION: {
+            "rmse": "rmse",
+            "mae": "mae",
+            "mape": "mape",
+            "r2": "custom",
+            "spearman": "custom",
+            "pearson": "custom",
+        },
+    }
+
+    metric = metric_name_mapping[ml_task][automl_eval_metric]
+    custom_eval_metric = None
+
+    if automl_eval_metric in ["r2", "spearman", "pearson", "f1", "average_precision"]:
+        custom_eval_metric = automl_eval_metric
+
+    return metric, custom_eval_metric
+
+
 class LightgbmAlgorithm(BaseAlgorithm):
 
     algorithm_name = "LightGBM"
@@ -82,7 +121,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             self.learner_params["num_class"] = self.params.get("num_class")
 
         self.custom_eval_metric = None
-        if "custom_eval_metric_name" in self.params:
+        if self.params.get("custom_eval_metric_name") is not None:
             if self.params["custom_eval_metric_name"] == "r2":
                 self.custom_eval_metric = lightgbm_eval_metric_r2
             elif self.params["custom_eval_metric_name"] == "spearman":
@@ -218,22 +257,21 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def get_metric_name(self):
         metric = self.params.get("metric")
+        custom_metric = self.params.get("custom_eval_metric_name")
+
         if metric is None:
             return None
+        if metric == "custom":
+            return custom_metric
         if metric == "binary_logloss":
             return "logloss"
-        elif metric == "auc":
-            return "auc"
         elif metric == "multi_logloss":
             return "logloss"
-        elif metric == "rmse":
-            return "rmse"
-        return None
+        return metric
 
 
 lgbm_bin_params = {
     "objective": ["binary"],
-    "metric": ["binary_logloss", "auc"],
     "num_leaves": [15, 31, 63, 95, 127],
     "learning_rate": [0.05, 0.1, 0.2],
     "feature_fraction": [0.5, 0.8, 0.9, 1.0],
@@ -243,7 +281,6 @@ lgbm_bin_params = {
 
 classification_bin_default_params = {
     "objective": "binary",
-    "metric": "binary_logloss",
     "num_leaves": 63,
     "learning_rate": 0.05,
     "feature_fraction": 0.9,
@@ -269,11 +306,9 @@ required_preprocessing = [
 
 lgbm_multi_params = copy.deepcopy(lgbm_bin_params)
 lgbm_multi_params["objective"] = ["multiclass"]
-lgbm_multi_params["metric"] = ["multi_logloss"]
 
 classification_multi_default_params = {
     "objective": "multiclass",
-    "metric": "multi_logloss",
     "num_leaves": 63,
     "learning_rate": 0.05,
     "feature_fraction": 0.9,
@@ -283,7 +318,6 @@ classification_multi_default_params = {
 
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
-lgbr_params["metric"] = ["rmse", "mae", "mape"]
 
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
@@ -314,7 +348,6 @@ regression_required_preprocessing = [
 
 regression_default_params = {
     "objective": "regression",
-    "metric": "rmse",
     "num_leaves": 63,
     "learning_rate": 0.05,
     "feature_fraction": 0.9,

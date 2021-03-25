@@ -67,7 +67,8 @@ from supervised.utils.metric import Metric
 
 
 def predict_proba_function_binary(estimator, X):
-    return estimator.predict_proba(X)[:,1]
+    return estimator.predict_proba(X)[:, 1]
+
 
 def predict_proba_function_multiclass(estimator, X):
     return estimator.predict_proba(X)
@@ -171,6 +172,7 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
 
     def get_metric_name(self):
         return self.params.get("eval_metric_name", "logloss")
+
 
 def predict_function(estimator, X):
     return estimator.predict(X)

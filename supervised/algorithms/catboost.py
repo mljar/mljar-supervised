@@ -28,6 +28,48 @@ from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost, Pool
 import catboost
 
 
+def catboost_eval_metric(ml_task, eval_metric):
+    metric_name_mapping = {
+        BINARY_CLASSIFICATION: {
+            "auc": "AUC",
+            "logloss": "Logloss",
+            "f1": "F1",
+            "average_precision": "average_precision",
+        },
+        MULTICLASS_CLASSIFICATION: {
+            "logloss": "MultiClass",
+            "f1": "TotalF1:average=Micro",
+        },
+        REGRESSION: {
+            "rmse": "RMSE",
+            "mae": "MAE",
+            "mape": "MAPE",
+            "r2": "R2",
+            "spearman": "spearman",
+            "pearson": "pearson",
+        },
+    }
+    return metric_name_mapping[ml_task][eval_metric]
+
+
+def catboost_objective(ml_task, eval_metric):
+    objective = "RMSE"
+    if ml_task == BINARY_CLASSIFICATION:
+        objective = "Logloss"
+    elif ml_task == MULTICLASS_CLASSIFICATION:
+        objective = "MultiClass"
+    else:  # ml_task == REGRESSION
+        objective = catboost_eval_metric(REGRESSION, eval_metric)
+        if objective in [
+            "R2",
+            "spearman",
+            "pearson",
+        ]:  # cant optimize them directly
+            objective = "RMSE"
+    return objective
+
+
+
 class CatBoostAlgorithm(BaseAlgorithm):
 
     algorithm_name = "CatBoost"
@@ -80,12 +122,16 @@ class CatBoostAlgorithm(BaseAlgorithm):
             if extra_param in self.params:
                 cat_params[extra_param] = self.params[extra_param]
 
+        self.log_metric_name = cat_params["eval_metric"]
         if cat_params["eval_metric"] == "spearman":
             cat_params["eval_metric"] = CatBoostEvalMetricSpearman()
+            self.log_metric_name = "CatBoostEvalMetricSpearman"
         elif cat_params["eval_metric"] == "pearson":
             cat_params["eval_metric"] = CatBoostEvalMetricPearson()
+            self.log_metric_name = "CatBoostEvalMetricPearson"
         elif cat_params["eval_metric"] == "average_precision":
             cat_params["eval_metric"] = CatBoostEvalMetricAveragePrecision()
+            self.log_metric_name = "CatBoostEvalMetricAveragePrecision"
 
         self.model = Algo(**cat_params)
         self.cat_features = None
@@ -185,15 +231,14 @@ class CatBoostAlgorithm(BaseAlgorithm):
             self.best_ntree_limit = self.model.tree_count_
 
         if log_to_file is not None:
-            metric_name = list(self.model.evals_result_["learn"].keys())[-1]
-            train_scores = self.model.evals_result_["learn"][metric_name]
-            validation_scores = self.model.evals_result_["validation"][metric_name]
+            train_scores = self.model.evals_result_["learn"][self.log_metric_name]
+            validation_scores = self.model.evals_result_["validation"][self.log_metric_name]
             if model_init is not None:
                 train_scores = (
-                    model_init.evals_result_["learn"][metric_name] + train_scores
+                    model_init.evals_result_["learn"][self.log_metric_name] + train_scores
                 )
                 validation_scores = (
-                    model_init.evals_result_["validation"][metric_name]
+                    model_init.evals_result_["validation"][self.log_metric_name]
                     + validation_scores
                 )
 
@@ -243,7 +288,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         return "catboost"
 
     def get_metric_name(self):
-        metric = self.params.get("loss_function")
+        metric = self.params.get("eval_metric")
         if metric is None:
             return None
         if metric == "Logloss":
@@ -256,7 +301,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return "mae"
         elif metric == "MAPE":
             return "mape"
-        return None
+        elif metric in ["F1", "TotalF1:average=Micro"]:
+            return "f1"   
+        return metric
 
 
 classification_params = {

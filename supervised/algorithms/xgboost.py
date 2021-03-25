@@ -282,7 +282,6 @@ class XgbAlgorithm(BaseAlgorithm):
 # For binary classification target should be 0, 1. There should be no NaNs in target.
 xgb_bin_class_params = {
     "objective": ["binary:logistic"],
-    # "eval_metric": ["logloss", "auc"],
     "eta": [0.05, 0.075, 0.1, 0.15],
     "max_depth": [4, 5, 6, 7, 8, 9],
     "min_child_weight": [1, 5, 10, 25, 50],
@@ -292,7 +291,6 @@ xgb_bin_class_params = {
 
 classification_bin_default_params = {
     "objective": "binary:logistic",
-    # "eval_metric": "logloss",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
@@ -312,7 +310,6 @@ xgb_multi_class_params["objective"] = ["multi:softprob"]
 
 classification_multi_default_params = {
     "objective": "multi:softprob",
-    # "eval_metric": "mlogloss",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
@@ -323,7 +320,6 @@ classification_multi_default_params = {
 
 regression_default_params = {
     "objective": "reg:squarederror",
-    # "eval_metric": "rmse",
     "eta": 0.075,
     "max_depth": 6,
     "min_child_weight": 1,
