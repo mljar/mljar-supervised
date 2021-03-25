@@ -13,10 +13,7 @@ from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.algorithms.registry import REGRESSION
 
-from supervised.algorithms.catboost import (
-    catboost_objective,
-    catboost_eval_metric
-)
+from supervised.algorithms.catboost import catboost_objective, catboost_eval_metric
 
 EPS = 1e-8
 

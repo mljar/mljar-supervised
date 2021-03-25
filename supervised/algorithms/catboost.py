@@ -69,7 +69,6 @@ def catboost_objective(ml_task, eval_metric):
     return objective
 
 
-
 class CatBoostAlgorithm(BaseAlgorithm):
 
     algorithm_name = "CatBoost"
@@ -232,10 +231,13 @@ class CatBoostAlgorithm(BaseAlgorithm):
 
         if log_to_file is not None:
             train_scores = self.model.evals_result_["learn"][self.log_metric_name]
-            validation_scores = self.model.evals_result_["validation"][self.log_metric_name]
+            validation_scores = self.model.evals_result_["validation"][
+                self.log_metric_name
+            ]
             if model_init is not None:
                 train_scores = (
-                    model_init.evals_result_["learn"][self.log_metric_name] + train_scores
+                    model_init.evals_result_["learn"][self.log_metric_name]
+                    + train_scores
                 )
                 validation_scores = (
                     model_init.evals_result_["validation"][self.log_metric_name]
@@ -302,7 +304,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif metric == "MAPE":
             return "mape"
         elif metric in ["F1", "TotalF1:average=Micro"]:
-            return "f1"   
+            return "f1"
         return metric
 
 

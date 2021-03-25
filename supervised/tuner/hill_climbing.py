@@ -31,7 +31,7 @@ class HillClimbing:
             "metric",
             "eval_metric",
             "custom_eval_metric_name",
-            "eval_metric_name"
+            "eval_metric_name",
         ]:
             if k in keys:
                 keys.remove(k)
@@ -45,7 +45,7 @@ class HillClimbing:
         permuted_keys = np.random.permutation(keys)
         key_to_update = None
         values = None
-        
+
         for key_to_update in permuted_keys:
             if key_to_update not in model_params:
                 continue

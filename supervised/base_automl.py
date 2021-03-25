@@ -930,7 +930,25 @@ class BaseAutoML(BaseEstimator, ABC):
                 return
             self._check_can_load()
 
+            
             self.verbose_print(f"AutoML directory: {self._results_path}")
+            if self._mode == "Optuna" and self._total_time_limit is not None:
+                ttl = int(
+                    self._total_time_limit
+                    + len(self._algorithms) * self._optuna_time_budget
+                )
+                self.verbose_print("Expected computing time:")
+                self.verbose_print(
+                    f"Total training time: Optuna + ML training = {ttl} seconds"
+                )
+                self.verbose_print(
+                    f"Total Optuna time: len(algorithms) * optuna_time_budget = {int(len(self._algorithms) * self._optuna_time_budget)} seconds"
+                )
+                self.verbose_print(
+                    f"Total ML model training time: {int(self._total_time_limit)} seconds"
+                )
+
+
             self.verbose_print(
                 f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
             )
