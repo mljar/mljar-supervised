@@ -89,8 +89,6 @@ class LightgbmObjective:
         self.objective = lightgbm_objective(ml_task, eval_metric.name)
 
     def __call__(self, trial):
-        # max_bin = trial.suggest_int("max_bin", 2, 1024)
-        print(self.objective, self.eval_metric_name)
         param = {
             "objective": self.objective,
             "metric": self.eval_metric_name,
@@ -124,9 +122,12 @@ class LightgbmObjective:
             param["num_class"] = self.num_class
 
         try:
-
+            
+            metric_name = self.eval_metric_name
+            if metric_name == "custom":
+                metric_name = self.custom_eval_metric_name
             pruning_callback = optuna.integration.LightGBMPruningCallback(
-                trial, self.custom_eval_metric_name, "validation"
+                trial, metric_name, "validation"
             )
 
             gbm = lgb.train(
