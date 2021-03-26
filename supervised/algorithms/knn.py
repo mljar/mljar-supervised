@@ -22,6 +22,8 @@ logger.setLevel(LOG_LEVEL)
 
 from dtreeviz.trees import dtreeviz
 
+KNN_ROWS_LIMIT = 1000
+
 
 class KNNFit(SklearnAlgorithm):
     def file_extension(self):
@@ -45,9 +47,10 @@ class KNNFit(SklearnAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
-        if X.shape[0] > 1000:
+        rows_limit = self.params.get("rows_limit", KNN_ROWS_LIMIT)
+        if X.shape[0] > rows_limit:
             X1, _, y1, _ = train_test_split(
-                X, y, train_size=1000, stratify=y, random_state=1234
+                X, y, train_size=rows_limit, stratify=y, random_state=1234
             )
             self.model.fit(X1, y1)
         else:

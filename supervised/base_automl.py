@@ -932,7 +932,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 return
             self._check_can_load()
 
-            
             self.verbose_print(f"AutoML directory: {self._results_path}")
             if self._mode == "Optuna" and self._total_time_limit is not None:
                 ttl = int(
@@ -949,7 +948,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 self.verbose_print(
                     f"Total ML model training time: {int(self._total_time_limit)} seconds"
                 )
-
 
             self.verbose_print(
                 f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
@@ -1452,6 +1450,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "LightGBM",
                     "Xgboost",
                     "CatBoost",
+                    "Nearest Neighbors"
                 ]
         else:
             return deepcopy(self.algorithms)
