@@ -1,11 +1,8 @@
-# from sklearn.ensemble import RandomForestClassifier
-# from sklearn.ensemble import RandomForestRegressor
-
 from supervised.algorithms.random_forest import (
     RandomForestAlgorithm,
     RandomForestRegressorAlgorithm,
 )
-import catboost
+
 import optuna
 
 from supervised.utils.metric import Metric
@@ -65,15 +62,7 @@ class RandomForestObjective:
             }
             model = Algorithm(params)
             model.fit(self.X_train, self.y_train, sample_weight=self.sample_weight)
-            print(len(model.model.estimators_), "<<<<<<")
-            """
-            if self.ml_task == BINARY_CLASSIFICATION:
-                preds = model.predict_proba(self.X_validation)[:, 1]
-            elif self.ml_task == MULTICLASS_CLASSIFICATION:
-                preds = model.predict_proba(self.X_validation)
-            else:  # REGRESSION
-                preds = model.predict(self.X_validation)
-            """
+            
             preds = model.predict(self.X_validation)
 
             score = self.eval_metric(self.y_validation, preds)

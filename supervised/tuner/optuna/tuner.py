@@ -244,12 +244,12 @@ class OptunaTuner:
             best["seed"] = objective.seed
         elif algorithm == "Extra Trees":
             # Extra Trees are not using early stopping
-            best["max_steps"] = 1  # each step has 100 trees
+            best["max_steps"] = objective.max_steps  # each step has 100 trees
             best["seed"] = objective.seed
             best["eval_metric_name"] = self.eval_metric.name
         elif algorithm == "Random Forest":
             # Random Forest is not using early stopping
-            best["max_steps"] = 1  # each step has 100 trees
+            best["max_steps"] = objective.max_steps  # each step has 100 trees
             best["seed"] = objective.seed
             best["eval_metric_name"] = self.eval_metric.name
         elif algorithm == "Nearest Neighbors":

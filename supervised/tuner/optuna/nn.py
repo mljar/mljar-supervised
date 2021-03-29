@@ -31,9 +31,6 @@ class NeuralNetworkObjective:
         self.X_validation = X_validation
         self.y_validation = y_validation
         self.eval_metric = eval_metric
-        self.n_jobs = n_jobs
-        self.objective = "mse" if ml_task == REGRESSION else "gini"
-        self.max_steps = 10  # RF is trained in steps 100 trees each
         self.seed = random_state
 
     def __call__(self, trial):
