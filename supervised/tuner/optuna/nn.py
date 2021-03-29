@@ -36,9 +36,7 @@ class NeuralNetworkObjective:
     def __call__(self, trial):
         try:
             Algorithm = (
-                MLPRegressorAlgorithm
-                if self.ml_task == REGRESSION
-                else MLPAlgorithm
+                MLPRegressorAlgorithm if self.ml_task == REGRESSION else MLPAlgorithm
             )
             params = {
                 "dense_1_size": trial.suggest_int("dense_1_size", 4, 100),
@@ -55,7 +53,7 @@ class NeuralNetworkObjective:
             }
             model = Algorithm(params)
             model.fit(self.X_train, self.y_train, sample_weight=self.sample_weight)
-            
+
             preds = model.predict(self.X_validation)
 
             score = self.eval_metric(self.y_validation, preds)
@@ -65,7 +63,7 @@ class NeuralNetworkObjective:
         except optuna.exceptions.TrialPruned as e:
             raise e
         except Exception as e:
-           print("Exception in NeuralNetworkObjective", str(e))
-           return None
+            print("Exception in NeuralNetworkObjective", str(e))
+            return None
 
         return score

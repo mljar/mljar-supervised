@@ -14,7 +14,6 @@ from supervised.tuner.optuna.nn import NeuralNetworkObjective
 from supervised.exceptions import AutoMLException
 
 
-
 class OptunaTuner:
     def __init__(
         self,
@@ -84,7 +83,7 @@ class OptunaTuner:
             "Xgboost",
             "LightGBM",
             "Nearest Neighbors",
-            "Neural Network"
+            "Neural Network",
         ]
 
     def optimize(

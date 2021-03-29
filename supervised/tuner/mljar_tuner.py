@@ -273,10 +273,15 @@ class MljarTuner:
         X_train_stacked_path = ""
         added_columns = []
 
-        print("Stack ALL!!!!!!!!!!!!!!")
-        #model_types = ["Xgboost", "LightGBM", "CatBoost"]
-        model_types = ["Xgboost", "LightGBM", "CatBoost", "Random Forest", 
-                "Extra Trees","Nearest Neighbors", "Neural Network"]
+        # model_types = ["Xgboost", "LightGBM", "CatBoost"]
+        model_types = [
+            "Xgboost",
+            "LightGBM",
+            "CatBoost",
+            "Random Forest",
+            "Extra Trees",
+            "Neural Network",
+        ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
         # resue old params

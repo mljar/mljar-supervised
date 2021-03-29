@@ -1450,7 +1450,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     "LightGBM",
                     "Xgboost",
                     "CatBoost",
-                    "Nearest Neighbors",
+                    "Neural Network",
                 ]
         else:
             return deepcopy(self.algorithms)

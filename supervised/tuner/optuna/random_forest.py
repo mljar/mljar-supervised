@@ -62,7 +62,7 @@ class RandomForestObjective:
             }
             model = Algorithm(params)
             model.fit(self.X_train, self.y_train, sample_weight=self.sample_weight)
-            
+
             preds = model.predict(self.X_validation)
 
             score = self.eval_metric(self.y_validation, preds)
@@ -72,7 +72,7 @@ class RandomForestObjective:
         except optuna.exceptions.TrialPruned as e:
             raise e
         except Exception as e:
-           print("Exception in RandomForestObjective", str(e))
-           return None
+            print("Exception in RandomForestObjective", str(e))
+            return None
 
         return score
