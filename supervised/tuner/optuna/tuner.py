@@ -10,7 +10,9 @@ from supervised.tuner.optuna.catboost import CatBoostObjective
 from supervised.tuner.optuna.random_forest import RandomForestObjective
 from supervised.tuner.optuna.extra_trees import ExtraTreesObjective
 from supervised.tuner.optuna.knn import KNNObjective
+from supervised.tuner.optuna.nn import NeuralNetworkObjective
 from supervised.exceptions import AutoMLException
+
 
 
 class OptunaTuner:
@@ -82,6 +84,7 @@ class OptunaTuner:
             "Xgboost",
             "LightGBM",
             "Nearest Neighbors",
+            "Neural Network"
         ]
 
     def optimize(
@@ -196,6 +199,19 @@ class OptunaTuner:
                 self.n_jobs,
                 self.random_state,
             )
+        elif algorithm == "Neural Network":
+            objective = NeuralNetworkObjective(
+                self.ml_task,
+                X_train,
+                y_train,
+                sample_weight,
+                X_validation,
+                y_validation,
+                sample_weight_validation,
+                self.eval_metric,
+                self.n_jobs,
+                self.random_state,
+            )
 
         study.optimize(objective, n_trials=5000, timeout=self.time_budget)
 
@@ -238,6 +254,8 @@ class OptunaTuner:
             best["eval_metric_name"] = self.eval_metric.name
         elif algorithm == "Nearest Neighbors":
             best["rows_limit"] = 100000
+        elif algorithm == "Neural Network":
+            pass
 
         self.tuning[key] = best
         self.save()

@@ -41,7 +41,7 @@ class KNNObjective:
                 ),
                 "n_jobs": self.n_jobs,
                 "rows_limit": 100000,
-                "ml_task": self.ml_task
+                "ml_task": self.ml_task,
             }
             Algorithm = (
                 KNeighborsRegressorAlgorithm
@@ -51,7 +51,6 @@ class KNNObjective:
             model = Algorithm(params)
             model.fit(self.X_train, self.y_train, sample_weight=self.sample_weight)
             preds = model.predict(self.X_validation)
-
 
             score = self.eval_metric(self.y_validation, preds)
             if Metric.optimize_negative(self.eval_metric.name):

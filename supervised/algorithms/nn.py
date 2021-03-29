@@ -73,18 +73,20 @@ class MLPAlgorithm(NNFit):
         h1 = params.get("dense_1_size", 32)
         h2 = params.get("dense_2_size", 16)
         learning_rate = params.get("learning_rate", 0.05)
-        momentum = params.get("momentum", 0.9)
-        early_stopping = True
+        
+        
         max_iter = 500
         self.model = MLPClassifier(
             hidden_layer_sizes=(h1, h2),
             activation="relu",
             solver="adam",
-            learning_rate="constant",
+            learning_rate=params.get("learning_rate_type", "constant"),
             learning_rate_init=learning_rate,
-            momentum=momentum,
-            early_stopping=early_stopping,
+            alpha=params.get("alpha", 0.0001),
+            early_stopping=True,
+            n_iter_no_change=50,
             max_iter=max_iter,
+            random_state=params.get("seed",123)
         )
 
     def get_metric_name(self):
