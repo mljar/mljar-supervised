@@ -111,6 +111,7 @@ class LightgbmObjective:
             "feature_pre_filter": False,
             "seed": self.seed,
             "num_threads": self.n_jobs,
+            "extra_trees": trial.suggest_categorical("extra_trees", [True, False]),
         }
 
         if self.cat_features_indices:

@@ -453,6 +453,7 @@ class MljarTuner:
             if unique_params_key not in self._unique_params_keys:
                 generated_params += [params]
                 models_cnt += 1
+
         return generated_params
 
     def get_not_so_random_params(self, models_cnt):

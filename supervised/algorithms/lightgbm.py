@@ -97,6 +97,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
             "num_threads": n_jobs,
             "verbose": -1,
             "seed": self.params.get("seed", 1),
+            "extra_trees": self.params.get("extra_trees", False),
         }
 
         for extra_param in [
