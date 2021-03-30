@@ -1550,7 +1550,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
             if self._get_mode() == "Optuna":
-                return True
+                return False
         else:
             return deepcopy(self.golden_features)
 
@@ -1565,7 +1565,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
             if self._get_mode() == "Optuna":
-                return True
+                return False
         else:
             return deepcopy(self.features_selection)
 
@@ -1640,7 +1640,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
             if self._get_mode() == "Optuna":
-                return True
+                return False
         else:
             return deepcopy(self.kmeans_features)
 
@@ -1655,7 +1655,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
             if self._get_mode() == "Optuna":
-                return True
+                return False
         else:
             return deepcopy(self.mix_encoding)
 
