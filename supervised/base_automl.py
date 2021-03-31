@@ -1783,7 +1783,7 @@ class BaseAutoML(BaseEstimator, ABC):
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss'"
+                    Use 'logloss', 'auc', 'f1', or 'average_precision'"
             )
 
         elif (
@@ -1791,7 +1791,7 @@ class BaseAutoML(BaseEstimator, ABC):
         ) and self.eval_metric not in ["logloss", "f1"]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss'"
+                    Use 'logloss', or 'f1'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric not in [
@@ -1805,7 +1805,7 @@ class BaseAutoML(BaseEstimator, ABC):
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                Use 'rmse'"
+                Use 'rmse', 'mse', 'mae', 'r2', 'mape', 'spearman', or 'pearson'"
             )
 
     def _validate_validation_strategy(self):
