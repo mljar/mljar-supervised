@@ -88,13 +88,15 @@ class LearningCurves:
             repeat_str = f" Reapeat {repeat+1}," if repeat is not None else ""
             # if trees_in_iteration is not None:
             #    df.iteration = df.iteration * trees_in_iteration
-            plt.plot(
-                df.iteration,
-                df.train,
-                "--",
-                color=colors[fold],
-                label=f"Fold {fold+1},{repeat_str} train",
-            )
+            any_none = np.sum(pd.isnull(df.train))
+            if any_none == 0:
+                plt.plot(
+                    df.iteration,
+                    df.train,
+                    "--",
+                    color=colors[fold],
+                    label=f"Fold {fold+1},{repeat_str} train",
+                )
             any_none = np.sum(pd.isnull(df.test))
             if any_none == 0:
                 plt.plot(

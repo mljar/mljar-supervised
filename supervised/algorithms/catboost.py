@@ -230,23 +230,30 @@ class CatBoostAlgorithm(BaseAlgorithm):
             self.best_ntree_limit = self.model.tree_count_
 
         if log_to_file is not None:
-            train_scores = self.model.evals_result_["learn"][self.log_metric_name]
-            validation_scores = self.model.evals_result_["validation"][
+            train_scores = self.model.evals_result_["learn"].get(self.log_metric_name)
+            validation_scores = self.model.evals_result_["validation"].get(
                 self.log_metric_name
-            ]
+            )
             if model_init is not None:
-                train_scores = (
-                    model_init.evals_result_["learn"][self.log_metric_name]
-                    + train_scores
-                )
-                validation_scores = (
-                    model_init.evals_result_["validation"][self.log_metric_name]
-                    + validation_scores
-                )
+                if train_scores is not None:
+                    train_scores = (
+                        model_init.evals_result_["learn"].get(self.log_metric_name)
+                        + train_scores
+                    )
+                if validation_scores is not None:
+                    validation_scores = (
+                        model_init.evals_result_["validation"].get(self.log_metric_name)
+                        + validation_scores
+                    )
+            iteration = None 
+            if train_scores is not None:
+                iteration = range(len(validation_scores))
+            elif validation_scores is not None:
+                iteration = range(len(validation_scores))
 
             result = pd.DataFrame(
                 {
-                    "iteration": range(len(train_scores)),
+                    "iteration": iteration,
                     "train": train_scores,
                     "validation": validation_scores,
                 }
@@ -295,6 +302,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return None
         if metric == "Logloss":
             return "logloss"
+        elif metric == "AUC":
+            return "auc"
         elif metric == "MultiClass":
             return "logloss"
         elif metric == "RMSE":
