@@ -15,6 +15,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import mean_squared_log_error
 from sklearn.metrics import f1_score
 from sklearn.metrics import average_precision_score
+from sklearn.metrics import accuracy_score
 
 
 def logloss(y_true, y_predicted, sample_weight=None):
@@ -52,8 +53,11 @@ def negative_f1(y_true, y_predicted, sample_weight=None):
     if isinstance(y_predicted, pd.DataFrame):
         y_predicted = np.array(y_predicted)
 
+    if len(y_predicted.shape) == 2 and y_predicted.shape[1] == 1:
+        y_predicted = y_predicted.ravel()
+
     average = None
-    if len(y_predicted.shape) == 1:
+    if len(y_predicted.shape) == 1 or (len(y_predicted.shape) == 2 and y_predicted.shape[1] == 1):
         y_predicted = (y_predicted > 0.5).astype(int)
         average = "binary"
     else:
@@ -61,6 +65,26 @@ def negative_f1(y_true, y_predicted, sample_weight=None):
         average = "micro"
 
     val = f1_score(y_true, y_predicted, sample_weight=sample_weight, average=average)
+
+    return -val
+
+
+def negative_accuracy(y_true, y_predicted, sample_weight=None):
+
+    if isinstance(y_true, pd.DataFrame):
+        y_true = np.array(y_true)
+    if isinstance(y_predicted, pd.DataFrame):
+        y_predicted = np.array(y_predicted)
+
+    if len(y_predicted.shape) == 2 and y_predicted.shape[1] == 1:
+        y_predicted = y_predicted.ravel()
+
+    if len(y_predicted.shape) == 1:
+        y_predicted = (y_predicted > 0.5).astype(int)
+    else:
+        y_predicted = np.argmax(y_predicted, axis=1)
+    
+    val = accuracy_score(y_true, y_predicted, sample_weight=sample_weight)
 
     return -val
 
@@ -137,6 +161,15 @@ def xgboost_eval_metric_average_precision(preds, dtrain):
     return "average_precision", negative_average_precision(target, preds, weight)
 
 
+def xgboost_eval_metric_accuracy(preds, dtrain):
+    # Xgboost needs to minimize eval_metric
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+    if len(weight) == 0:
+        weight = None
+    return "accuracy", negative_accuracy(target, preds, weight)
+
+
 def lightgbm_eval_metric_r2(preds, dtrain):
     target = dtrain.get_label()
     weight = dtrain.get_weight()
@@ -159,8 +192,10 @@ def lightgbm_eval_metric_f1(preds, dtrain):
 
     unique_targets = np.unique(target)
     if len(unique_targets) > 2:
-        preds = preds.reshape(-1, len(unique_targets))
-
+        cols = len(unique_targets)
+        rows = int(preds.shape[0] / len(unique_targets))
+        preds = np.reshape(preds, (rows, cols), order="F")
+        
     return "f1", -negative_f1(target, preds, weight), True
 
 
@@ -169,6 +204,19 @@ def lightgbm_eval_metric_average_precision(preds, dtrain):
     weight = dtrain.get_weight()
 
     return "average_precision", -negative_average_precision(target, preds, weight), True
+
+
+def lightgbm_eval_metric_accuracy(preds, dtrain):
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+
+    unique_targets = np.unique(target)
+    if len(unique_targets) > 2:
+        cols = len(unique_targets)
+        rows = int(preds.shape[0] / len(unique_targets))
+        preds = np.reshape(preds, (rows, cols), order="F")
+        
+    return "accuracy", -negative_accuracy(target, preds, weight), True
 
 
 class CatBoostEvalMetricSpearman(object):
@@ -244,6 +292,7 @@ class Metric(object):
             "pearson",  # negative
             "f1",  # negative
             "average_precision",  # negative
+            "accuracy",  # negative
         ]
         if self.name == "logloss":
             self.metric = logloss
@@ -269,6 +318,8 @@ class Metric(object):
             self.metric = negative_f1
         elif self.name == "average_precision":
             self.metric = negative_average_precision
+        elif self.name == "accuracy":
+            self.metric = negative_accuracy
         # elif self.name == "rmsle": # need to update target preprocessing
         #    self.metric = rmsle     # to assure that target is not negative ...
         else:
@@ -304,6 +355,7 @@ class Metric(object):
             "pearson",
             "f1",
             "average_precision",
+            "accuracy",
         ]
 
     @staticmethod
@@ -315,4 +367,5 @@ class Metric(object):
             "pearson",
             "f1",
             "average_precision",
+            "accuracy",
         ]

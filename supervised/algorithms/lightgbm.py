@@ -20,6 +20,7 @@ from supervised.utils.metric import (
     lightgbm_eval_metric_pearson,
     lightgbm_eval_metric_f1,
     lightgbm_eval_metric_average_precision,
+    lightgbm_eval_metric_accuracy,
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -45,8 +46,13 @@ def lightgbm_eval_metric(ml_task, automl_eval_metric):
             "logloss": "binary_logloss",
             "f1": "custom",
             "average_precision": "custom",
+            "accuracy": "custom",
         },
-        MULTICLASS_CLASSIFICATION: {"logloss": "multi_logloss", "f1": "custom"},
+        MULTICLASS_CLASSIFICATION: {
+            "logloss": "multi_logloss",
+            "f1": "custom",
+            "accuracy": "custom",
+        },
         REGRESSION: {
             "rmse": "rmse",
             "mae": "mae",
@@ -60,7 +66,14 @@ def lightgbm_eval_metric(ml_task, automl_eval_metric):
     metric = metric_name_mapping[ml_task][automl_eval_metric]
     custom_eval_metric = None
 
-    if automl_eval_metric in ["r2", "spearman", "pearson", "f1", "average_precision"]:
+    if automl_eval_metric in [
+        "r2",
+        "spearman",
+        "pearson",
+        "f1",
+        "average_precision",
+        "accuracy",
+    ]:
         custom_eval_metric = automl_eval_metric
 
     return metric, custom_eval_metric
@@ -133,6 +146,8 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 self.custom_eval_metric = lightgbm_eval_metric_f1
             elif self.params["custom_eval_metric_name"] == "average_precision":
                 self.custom_eval_metric = lightgbm_eval_metric_average_precision
+            elif self.params["custom_eval_metric_name"] == "accuracy":
+                self.custom_eval_metric = lightgbm_eval_metric_accuracy
 
         logger.debug("LightgbmLearner __init__")
 

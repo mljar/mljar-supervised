@@ -9,6 +9,7 @@ from supervised.utils.metric import (
     xgboost_eval_metric_pearson,
     xgboost_eval_metric_f1,
     xgboost_eval_metric_average_precision,
+    xgboost_eval_metric_accuracy
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -67,6 +68,8 @@ class XgboostObjective:
             self.custom_eval_metric = xgboost_eval_metric_f1
         elif self.eval_metric_name == "average_precision":
             self.custom_eval_metric = xgboost_eval_metric_average_precision
+        elif self.eval_metric_name == "accuracy":
+            self.custom_eval_metric = xgboost_eval_metric_accuracy
 
     def __call__(self, trial):
         param = {

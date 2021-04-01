@@ -35,10 +35,12 @@ def catboost_eval_metric(ml_task, eval_metric):
             "logloss": "Logloss",
             "f1": "F1",
             "average_precision": "average_precision",
+            "accuracy": "Accuracy",
         },
         MULTICLASS_CLASSIFICATION: {
             "logloss": "MultiClass",
             "f1": "TotalF1:average=Micro",
+            "accuracy": "Accuracy",
         },
         REGRESSION: {
             "rmse": "RMSE",
@@ -245,7 +247,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
                         model_init.evals_result_["validation"].get(self.log_metric_name)
                         + validation_scores
                     )
-            iteration = None 
+            iteration = None
             if train_scores is not None:
                 iteration = range(len(validation_scores))
             elif validation_scores is not None:
@@ -314,6 +316,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return "mape"
         elif metric in ["F1", "TotalF1:average=Micro"]:
             return "f1"
+        elif metric == "Accuracy":
+            return "accuracy"
         return metric
 
 

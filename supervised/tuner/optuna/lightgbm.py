@@ -9,6 +9,7 @@ from supervised.utils.metric import (
     lightgbm_eval_metric_pearson,
     lightgbm_eval_metric_f1,
     lightgbm_eval_metric_average_precision,
+    lightgbm_eval_metric_accuracy
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
@@ -82,6 +83,8 @@ class LightgbmObjective:
             self.custom_eval_metric = lightgbm_eval_metric_f1
         elif self.eval_metric.name == "average_precision":
             self.custom_eval_metric = lightgbm_eval_metric_average_precision
+        elif self.eval_metric.name == "accuracy":
+            self.custom_eval_metric = lightgbm_eval_metric_accuracy
 
         self.num_class = (
             len(np.unique(y_train)) if ml_task == MULTICLASS_CLASSIFICATION else None

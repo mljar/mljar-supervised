@@ -1780,18 +1780,19 @@ class BaseAutoML(BaseEstimator, ABC):
             "auc",
             "f1",
             "average_precision",
+            "accuracy"
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss', 'auc', 'f1', or 'average_precision'"
+                    Use 'logloss', 'auc', 'f1', 'average_precision', or 'accuracy'"
             )
 
         elif (
             self._get_ml_task() == MULTICLASS_CLASSIFICATION
-        ) and self.eval_metric not in ["logloss", "f1"]:
+        ) and self.eval_metric not in ["logloss", "f1", "accuracy"]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss', or 'f1'"
+                    Use 'logloss', 'f1', or 'accuracy'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric not in [
