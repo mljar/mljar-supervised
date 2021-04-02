@@ -108,15 +108,12 @@ class AutoML(BaseAutoML):
 
             stack_models (boolean): Whether a models stack gets created at the end of the training. Stack level is 1.
 
-            eval_metric (str): The metric to be optimized.
-                If "auto", then:
-
-                - `logloss` is used for classifications taks.
-                - `rmse` is used for regression taks.
-
-                Note:
-                    Still not implemented, please left `None`
-
+            eval_metric (str): The metric to be used in early stopping and to compare models.
+                
+                - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
+                - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
+                - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+                
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
 
                 Example:
