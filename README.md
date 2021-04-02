@@ -138,6 +138,35 @@ It should be used when the performance is the most important and time is not lim
 - It is using advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
 - It produces learning curves in the reports.
 
+## How to save and load AutoML?
+
+All models in the AutoML are saved and loaded automatically. No need to call `save()` or `load()`.
+
+### Example:
+
+#### Train AutoML
+
+```python
+automl = AutoML(results_path="AutoML_classifier")
+automl.fit(X, y)
+```
+
+You will have all models saved in the `AutoML_classifier` directory. Each model will have a separate directory with the `README.md` file with all details from the training.
+
+#### Compute predictions
+```python
+automl = AutoML(results_path="AutoML_classifier")
+automl.predict(X)
+```
+
+The  AutoML automatically loads models from the `results_path` directory. If you will call `fit()` on already trained AutoML then you will get a warning message that AutoML is already fitted.
+
+
+### Why do you automatically save all models?
+
+All models are automatically saved to be able to restore the training after interruption. For example, you are training AutoML for 48 hours, and after 47 hours there is some unexpected interruption. In MLJAR AutoML you just call the same training code after the interruption and AutoML reloads already trained models and finish the training.
+
+
 # Examples
 
 ## :point_right: Binary Classification Example
