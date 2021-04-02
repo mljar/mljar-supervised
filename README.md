@@ -166,11 +166,11 @@ The  AutoML automatically loads models from the `results_path` directory. If you
 
 All models are automatically saved to be able to restore the training after interruption. For example, you are training AutoML for 48 hours, and after 47 hours there is some unexpected interruption. In MLJAR AutoML you just call the same training code after the interruption and AutoML reloads already trained models and finish the training.
 
-## Suported evaluation metrics (`eval_metric` argument in `AutoML()`)
+## Supported evaluation metrics (`eval_metric` argument in `AutoML()`)
 
-- for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`,
-- for mutliclass classification: `logloss`, `f1`, `accuracy`,
-- for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson`.
+- for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`- default is `logloss`
+- for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
+- for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
 
 If you don't find `eval_metric` that you need, please add a new issue. We will add it.
 
