@@ -1991,7 +1991,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
 body {
     font-family: Arial;
-    font-size: 1.1em;
+    font-size: 1.0em;
     background-color: rgba(236, 243, 249, 0.15);
 }
 
