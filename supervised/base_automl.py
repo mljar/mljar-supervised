@@ -2098,9 +2098,9 @@ margin-right: auto;display: block;"/>\n\n"""
 
         main_readme_html = os.path.join(self._results_path, "README.html")
 
-        # if os.path.exists(main_readme_html):
-        #    with open(main_readme_html) as fin:
-        #        return HTML(fin.read())
+        if os.path.exists(main_readme_html):
+            with open(main_readme_html) as fin:
+                return HTML(fin.read())
 
         body = ""
         fname = os.path.join(self._results_path, "README.md")
