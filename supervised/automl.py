@@ -78,7 +78,7 @@ class AutoML(BaseAutoML):
                     - Uses 10-fold CV (Cross-Validation).
                     - It tunes with Optuna the following algorithms: `Random Forest`, `Extra Trees`, `LightGBM`, `XGBoost`, `CatBoost`, `Neural Network`.
                     - It applies `Ensemble` and `Stacking` for trained models.
-                    - It has only learning curves in the reports.               
+                    - It has only learning curves in the reports.
 
             ml_task (str): Can be {"auto", "binary_classification", "multiclass_classification", "regression"}.
 
@@ -114,11 +114,11 @@ class AutoML(BaseAutoML):
             stack_models (boolean): Whether a models stack gets created at the end of the training. Stack level is 1.
 
             eval_metric (str): The metric to be used in early stopping and to compare models.
-                
+
                 - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
                 - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
                 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
-                
+
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
 
                 Example:

@@ -83,7 +83,7 @@ def negative_accuracy(y_true, y_predicted, sample_weight=None):
         y_predicted = (y_predicted > 0.5).astype(int)
     else:
         y_predicted = np.argmax(y_predicted, axis=1)
-    
+
     val = accuracy_score(y_true, y_predicted, sample_weight=sample_weight)
 
     return -val
@@ -195,7 +195,7 @@ def lightgbm_eval_metric_f1(preds, dtrain):
         cols = len(unique_targets)
         rows = int(preds.shape[0] / len(unique_targets))
         preds = np.reshape(preds, (rows, cols), order="F")
-        
+
     return "f1", -negative_f1(target, preds, weight), True
 
 
@@ -215,7 +215,7 @@ def lightgbm_eval_metric_accuracy(preds, dtrain):
         cols = len(unique_targets)
         rows = int(preds.shape[0] / len(unique_targets))
         preds = np.reshape(preds, (rows, cols), order="F")
-        
+
     return "accuracy", -negative_accuracy(target, preds, weight), True
 
 

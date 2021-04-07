@@ -9,7 +9,7 @@ from supervised.utils.metric import (
     lightgbm_eval_metric_pearson,
     lightgbm_eval_metric_f1,
     lightgbm_eval_metric_average_precision,
-    lightgbm_eval_metric_accuracy
+    lightgbm_eval_metric_accuracy,
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION

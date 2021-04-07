@@ -1780,7 +1780,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "auc",
             "f1",
             "average_precision",
-            "accuracy"
+            "accuracy",
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
@@ -1965,57 +1965,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._ml_task = json_data.get("ml_task")
 
-    def _md_to_html(self, md_fname, page_type):
-        import markdown
-
-        if not os.path.exists(md_fname):
-            return None
-        content = ""
-        with open(md_fname) as fin:
-            content = fin.read()
-
-        content = content.replace("README.md", "README.html")
-        content_html = markdown.markdown(
-            content, extensions=["markdown.extensions.tables"]
-        )
-        content_html = content_html.replace("<img ", '<img style="width:80%" ')
-        content_html = content_html.replace("<table>", '<table class="styled-table">')
-        content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
-
-        styles = '<link rel="stylesheet" href="style.css">\n\n'
-        if page_type == "sub":
-            styles = '<link rel="stylesheet" href="../style.css">\n\n'
-        beginning = styles
-
-        if page_type == "main":
-            beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
-margin-right: auto;display: block;"/>\n\n"""
-            if os.path.exists(os.path.join(self._results_path, "EDA")):
-                beginning += '<a href="EDA/README.html">Automatic Exploratory Data Analysis Report</a>'
-
-        content_html = beginning + content_html
-
-        html_fname = md_fname.replace("README.md", "README.html")
-        with open(html_fname, "w") as fout:
-            fout.write(content_html)
-
-        return html_fname
-
-    def _report(self, width=900, height=1200):
-
-        from IPython.display import IFrame
-
-        main_readme_html = os.path.join(self._results_path, "README.html")
-        if not os.path.exists(main_readme_html) or 1:
-            fname = os.path.join(self._results_path, "README.md")
-            main_readme_html = self._md_to_html(fname, "main")
-            for f in os.listdir(self._results_path):
-                fname = os.path.join(self._results_path, f, "README.md")
-                if os.path.exists(fname):
-                    self._md_to_html(fname, "sub")
-            with open(os.path.join(self._results_path, "style.css"), "w") as fout:
-                fout.write(
-                    """
+    report_style = """
 .styled-table {
     border-collapse: collapse;
     font-size: 0.9em;
@@ -2069,10 +2019,146 @@ h3 {
 }
 
 """
+
+    def _md_to_html(self, md_fname, page_type, dir_path, me=None):
+        import markdown
+        import base64
+
+        if not os.path.exists(md_fname):
+            return None
+        content = ""
+        with open(md_fname) as fin:
+            content = fin.read()
+
+        content = content.replace("README.md", "README.html")
+        content_html = markdown.markdown(
+            content, extensions=["markdown.extensions.tables"]
+        )
+        content_html = content_html.replace("<img ", '<img style="width:750px" ')
+        content_html = content_html.replace("<table>", '<table class="styled-table">')
+        content_html = content_html.replace("<tr>", '<tr style="text-align: right;">')
+
+        # replace png figures to base64
+        for f in os.listdir(dir_path):
+            if ".png" in f:
+                encoded_string = ""
+                with open(os.path.join(dir_path, f), "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read())
+                    encoded_string = encoded_string.decode("utf-8")
+                encoded_figure = f"data:image/png;base64, {encoded_string}"
+                content_html = content_html.replace(f, encoded_figure)
+
+        # insert svg figures
+        for f in os.listdir(dir_path):
+            if ".svg" in f:
+                with open(os.path.join(dir_path, f), "rb") as image_file:
+                    svg_plot = image_file.read()
+                    svg_plot = svg_plot.decode("utf-8")
+
+                arr = content_html.split("\n")
+                new_content = []
+                for i in arr:
+                    if f in i:
+                        new_content += [f"<p>{svg_plot}</p>"]
+                    else:
+                        new_content += [i]
+                content_html = "\n".join(new_content)
+
+        # change links
+        if page_type == "main":
+            hrefs = []
+            for f in os.listdir(dir_path):
+                if os.path.exists(os.path.join(dir_path, f, "README.md")):
+                    hrefs += [f]
+                    old = f'href="{f}/README.html"'
+                    new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" href=\"javascript:void(0);\""
+                    content_html = content_html.replace(old, new)
+
+        # other links
+        if me is not None:
+            old = 'href="../README.html"'
+            new = f"onclick=\"toggleShow('{me}');toggleShow('main')\" href=\"javascript:void(0);\""
+            content_html = content_html.replace(old, new)
+
+        beginning = ""
+
+        if page_type == "main":
+            beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
+margin-right: auto;display: block;"/>\n\n"""
+            if os.path.exists(os.path.join(self._results_path, "EDA")):
+                beginning += '<a href="EDA/README.html">Automatic Exploratory Data Analysis Report</a>'
+
+        content_html = beginning + content_html
+
+        return content_html
+
+    def _report(self, width=900, height=1200):
+
+        from IPython.display import HTML
+
+        main_readme_html = os.path.join(self._results_path, "README.html")
+
+        body = ""
+        fname = os.path.join(self._results_path, "README.md")
+        body += (
+            '<div id="main">\n'
+            + self._md_to_html(fname, "main", self._results_path)
+            + "\n\n</div>\n\n"
+        )
+
+        for f in os.listdir(self._results_path):
+            fname = os.path.join(self._results_path, f, "README.md")
+            if os.path.exists(fname):
+                body += (
+                    f'<div id="{f}" style="display: none">\n'
+                    + self._md_to_html(
+                        fname, "sub", os.path.join(self._results_path, f), f
+                    )
+                    + "\n\n</div>\n\n"
                 )
 
-        if main_readme_html is not None:
-            return IFrame(main_readme_html, width, height)
+        """
+        
+        if not os.path.exists(main_readme_html) or 1:
+            fname = os.path.join(self._results_path, "README.md")
+            main_readme_html = self._md_to_html(fname, "main")
+            for f in os.listdir(self._results_path):
+                fname = os.path.join(self._results_path, f, "README.md")
+                if os.path.exists(fname):
+                    self._md_to_html(fname, "sub")
+        """
+
+        body += """
+    <script>
+        function toggleShow(elementId) {
+            var x = document.getElementById(elementId);
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+            }
+        }
+    </script>
+        """
+
+        report_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+    {self.report_style}
+    </style>
+</head>
+<body>
+    {body}
+</body>
+</html>
+"""
+        with open(main_readme_html, "w") as fout:
+            fout.write(report_content)
+
+        if report_content is not None:
+            return HTML(report_content)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
 

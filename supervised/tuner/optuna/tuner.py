@@ -37,7 +37,7 @@ class OptunaTuner:
             "pearson",
             "f1",
             "average_precision",
-            "accuracy"
+            "accuracy",
         ]:
             raise AutoMLException(f"Metric {eval_metric.name} is not supported")
 
