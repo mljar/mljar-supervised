@@ -1991,6 +1991,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
 body {
     font-family: Arial;
+    font-size: 1.1em;
     background-color: rgba(236, 243, 249, 0.15);
 }
 
@@ -2069,7 +2070,6 @@ h3 {
             hrefs = []
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
-                    hrefs += [f]
                     old = f'href="{f}/README.html"'
                     new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" href=\"javascript:void(0);\""
                     content_html = content_html.replace(old, new)
@@ -2086,7 +2086,7 @@ h3 {
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "EDA")):
-                beginning += '<a href="EDA/README.html">Automatic Exploratory Data Analysis Report</a>'
+                beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" href=\"javascript:void(0);\">Automatic Exploratory Data Analysis Report</a>"
 
         content_html = beginning + content_html
 
@@ -2097,6 +2097,10 @@ margin-right: auto;display: block;"/>\n\n"""
         from IPython.display import HTML
 
         main_readme_html = os.path.join(self._results_path, "README.html")
+
+        # if os.path.exists(main_readme_html):
+        #    with open(main_readme_html) as fin:
+        #        return HTML(fin.read())
 
         body = ""
         fname = os.path.join(self._results_path, "README.md")
@@ -2116,17 +2120,6 @@ margin-right: auto;display: block;"/>\n\n"""
                     )
                     + "\n\n</div>\n\n"
                 )
-
-        """
-        
-        if not os.path.exists(main_readme_html) or 1:
-            fname = os.path.join(self._results_path, "README.md")
-            main_readme_html = self._md_to_html(fname, "main")
-            for f in os.listdir(self._results_path):
-                fname = os.path.join(self._results_path, f, "README.md")
-                if os.path.exists(fname):
-                    self._md_to_html(fname, "sub")
-        """
 
         body += """
     <script>
