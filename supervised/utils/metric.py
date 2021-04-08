@@ -169,6 +169,13 @@ def xgboost_eval_metric_accuracy(preds, dtrain):
         weight = None
     return "accuracy", negative_accuracy(target, preds, weight)
 
+def xgboost_eval_metric_mse(preds, dtrain):
+    # Xgboost needs to minimize eval_metric
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+    if len(weight) == 0:
+        weight = None
+    return "mse", mean_squared_error(target, preds, sample_weight=weight)
 
 def lightgbm_eval_metric_r2(preds, dtrain):
     target = dtrain.get_label()
@@ -269,6 +276,24 @@ class CatBoostEvalMetricAveragePrecision(object):
         weight = None  # np.array(weight)
 
         return -negative_average_precision(target, preds, weight), 0
+
+class CatBoostEvalMetricMSE(object):
+    def get_final_error(self, error, weight):
+        return error
+
+    def is_max_optimal(self):
+        return False
+
+    def evaluate(self, approxes, target, weight):
+        assert len(approxes) == 1
+        assert len(target) == len(approxes[0])
+
+        preds = np.array(approxes[0])
+        target = np.array(target)
+        if weight is not None:
+            weight = np.array(weight)
+
+        return mean_squared_error(target, preds, sample_weight=weight), 0
 
 
 class Metric(object):

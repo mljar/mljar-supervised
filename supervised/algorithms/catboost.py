@@ -17,6 +17,7 @@ from supervised.utils.metric import (
     CatBoostEvalMetricSpearman,
     CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
+    CatBoostEvalMetricMSE
 )
 
 from supervised.utils.config import LOG_LEVEL
@@ -44,7 +45,7 @@ def catboost_eval_metric(ml_task, eval_metric):
         },
         REGRESSION: {
             "rmse": "RMSE",
-            "mse": "RMSE",
+            "mse": "mse",
             "mae": "MAE",
             "mape": "MAPE",
             "r2": "R2",
@@ -64,6 +65,7 @@ def catboost_objective(ml_task, eval_metric):
     else:  # ml_task == REGRESSION
         objective = catboost_eval_metric(REGRESSION, eval_metric)
         if objective in [
+            "mse",
             "R2",
             "spearman",
             "pearson",
@@ -134,6 +136,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif cat_params["eval_metric"] == "average_precision":
             cat_params["eval_metric"] = CatBoostEvalMetricAveragePrecision()
             self.log_metric_name = "CatBoostEvalMetricAveragePrecision"
+        elif cat_params["eval_metric"] == "mse":
+            cat_params["eval_metric"] = CatBoostEvalMetricMSE()
+            self.log_metric_name = "CatBoostEvalMetricMSE"
 
         self.model = Algo(**cat_params)
         self.cat_features = None
@@ -312,7 +317,7 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif metric == "RMSE":
             return "rmse"
         elif metric == "MSE":
-            return "rmse"
+            return "mse"
         elif metric == "MAE":
             return "mae"
         elif metric == "MAPE":

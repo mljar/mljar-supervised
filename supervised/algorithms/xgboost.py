@@ -20,6 +20,7 @@ from supervised.utils.metric import (
     xgboost_eval_metric_f1,
     xgboost_eval_metric_average_precision,
     xgboost_eval_metric_accuracy,
+    xgboost_eval_metric_mse
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -119,6 +120,8 @@ class XgbAlgorithm(BaseAlgorithm):
             self.custom_eval_metric = xgboost_eval_metric_average_precision
         elif self.params.get("eval_metric", "") == "accuracy":
             self.custom_eval_metric = xgboost_eval_metric_accuracy
+        elif self.params.get("eval_metric", "") == "mse":
+            self.custom_eval_metric = xgboost_eval_metric_mse
 
         self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
