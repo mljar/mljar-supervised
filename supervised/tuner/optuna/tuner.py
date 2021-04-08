@@ -30,6 +30,7 @@ class OptunaTuner:
             "auc",
             "logloss",
             "rmse",
+            "mse",
             "mae",
             "mape",
             "r2",

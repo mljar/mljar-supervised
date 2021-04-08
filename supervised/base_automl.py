@@ -6,7 +6,6 @@ import time
 import numpy as np
 import pandas as pd
 import logging
-import traceback
 import shutil
 from tabulate import tabulate
 from abc import ABC
@@ -1089,6 +1088,7 @@ class BaseAutoML(BaseEstimator, ABC):
                             params.get("name") + " not trained. " + str(e)
                         )
                     except Exception as e:
+                        import traceback
                         self._update_errors_report(
                             params.get("name"), str(e) + "\n" + traceback.format_exc()
                         )

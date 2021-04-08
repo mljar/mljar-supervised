@@ -44,6 +44,7 @@ def catboost_eval_metric(ml_task, eval_metric):
         },
         REGRESSION: {
             "rmse": "RMSE",
+            "mse": "RMSE",
             "mae": "MAE",
             "mape": "MAPE",
             "r2": "R2",
@@ -309,6 +310,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif metric == "MultiClass":
             return "logloss"
         elif metric == "RMSE":
+            return "rmse"
+        elif metric == "MSE":
             return "rmse"
         elif metric == "MAE":
             return "mae"

@@ -262,8 +262,6 @@ class MljarTuner:
             # didnt find anything matching the step, return empty array
             return []
         except Exception as e:
-            # import traceback
-            # print(traceback.format_exc())
             return []
 
     def get_params_stack_models(self, stacked_models):
