@@ -273,7 +273,8 @@ class CatBoostEvalMetricAveragePrecision(object):
 
         preds = np.array(approxes[0])
         target = np.array(target)
-        weight = None  # np.array(weight)
+        if weight is not None:
+            weight = np.array(weight)
 
         return -negative_average_precision(target, preds, weight), 0
 
