@@ -2018,6 +2018,14 @@ h3 {
     padding-bottom: 5px;
     margin-bottom: 0px;
 }
+a {
+    font-weight: bold;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
 
 """
 
@@ -2067,17 +2075,16 @@ h3 {
 
         # change links
         if page_type == "main":
-            hrefs = []
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
                     old = f'href="{f}/README.html"'
-                    new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" href=\"javascript:void(0);\""
+                    new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" "
                     content_html = content_html.replace(old, new)
 
         # other links
         if me is not None:
             old = 'href="../README.html"'
-            new = f"onclick=\"toggleShow('{me}');toggleShow('main')\" href=\"javascript:void(0);\""
+            new = f"onclick=\"toggleShow('{me}');toggleShow('main')\" "
             content_html = content_html.replace(old, new)
 
         beginning = ""
@@ -2086,7 +2093,7 @@ h3 {
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "EDA")):
-                beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" href=\"javascript:void(0);\">Automatic Exploratory Data Analysis Report</a>"
+                beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
 
         content_html = beginning + content_html
 
