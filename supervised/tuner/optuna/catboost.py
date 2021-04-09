@@ -7,7 +7,7 @@ from supervised.utils.metric import (
     CatBoostEvalMetricSpearman,
     CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
-    CatBoostEvalMetricMSE
+    CatBoostEvalMetricMSE,
 )
 
 from supervised.algorithms.registry import BINARY_CLASSIFICATION

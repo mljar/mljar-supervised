@@ -10,7 +10,7 @@ from supervised.utils.metric import (
     xgboost_eval_metric_f1,
     xgboost_eval_metric_average_precision,
     xgboost_eval_metric_accuracy,
-    xgboost_eval_metric_mse
+    xgboost_eval_metric_mse,
 )
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION

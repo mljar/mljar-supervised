@@ -17,7 +17,7 @@ from supervised.utils.metric import (
     CatBoostEvalMetricSpearman,
     CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
-    CatBoostEvalMetricMSE
+    CatBoostEvalMetricMSE,
 )
 
 from supervised.utils.config import LOG_LEVEL

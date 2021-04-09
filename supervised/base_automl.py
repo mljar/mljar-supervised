@@ -1089,6 +1089,7 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
                     except Exception as e:
                         import traceback
+
                         self._update_errors_report(
                             params.get("name"), str(e) + "\n" + traceback.format_exc()
                         )
@@ -2101,15 +2102,21 @@ margin-right: auto;display: block;"/>\n\n"""
 
         return content_html
 
-    def _report(self, width=900, height=1200):
+    def _show_report(self, main_readme_html, width=900, height=1200):
+        from IPython.display import HTML, IFrame
 
-        from IPython.display import HTML
+        if os.environ.get("KAGGLE_KERNEL_RUN_TYPE") is None:
+            with open(main_readme_html) as fin:
+                return HTML(fin.read())
+        else:
+            return IFrame(main_readme_html, width=width, height=height)
+
+    def _report(self, width=900, height=1200):
 
         main_readme_html = os.path.join(self._results_path, "README.html")
 
         if os.path.exists(main_readme_html):
-            with open(main_readme_html) as fin:
-                return HTML(fin.read())
+            return self._show_report(main_readme_html, width, height)
 
         body = ""
         fname = os.path.join(self._results_path, "README.md")
@@ -2159,8 +2166,7 @@ margin-right: auto;display: block;"/>\n\n"""
         with open(main_readme_html, "w") as fout:
             fout.write(report_content)
 
-        if report_content is not None:
-            return HTML(report_content)
+        return self._show_report(main_readme_html, width, height)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
 
