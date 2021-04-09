@@ -1981,7 +1981,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
 .styled-table tr:hover {background-color: #e0ecf5;}
 
-.styled-table th {
+.styled-table thead {
     padding-top: 6px;
     padding-bottom: 6px;
     text-align: left;
@@ -2020,10 +2020,12 @@ h3 {
 }
 a {
     font-weight: bold;
+    color: #004666;
 }
 
 a:hover {
     cursor: pointer;
+    color: #0099CC;
 }
 
 
