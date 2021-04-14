@@ -413,9 +413,14 @@ class ModelFramework:
                 oof_preds = self.preprocessings[0].prepare_target_labels(
                     oof_predictions[prediction_cols].values
                 )
-
             else:
                 oof_preds = oof_predictions[prediction_cols]
+
+            # original_target = None
+            # if self._ml_task == BINARY_CLASSIFICATION:
+            #    original_target = self.preprocessings[0].inverse_categorical_target(
+            #        target["target"].values.ravel()
+            #    )
 
             sample_weight = None
             if "sample_weight" in oof_predictions.columns:

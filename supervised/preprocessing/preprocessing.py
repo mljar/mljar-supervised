@@ -434,9 +434,7 @@ class Preprocessing(object):
 
     def inverse_categorical_target(self, y):
         if self._categorical_y is not None:
-            y = self._categorical_y.inverse_transform(
-                pd.DataFrame({"target": np.array(y)})
-            )
+            y = self._categorical_y.inverse_transform(y)
             y = y.astype(str)
         return y
 

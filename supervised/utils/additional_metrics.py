@@ -35,13 +35,13 @@ from supervised.utils.config import LOG_LEVEL
 logger.setLevel(LOG_LEVEL)
 from supervised.utils.learning_curves import LearningCurves
 from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
+from supervised.utils.additional_plots import AdditionalPlots
 from tabulate import tabulate
 
 
 class AdditionalMetrics:
     @staticmethod
     def binary_classification(target, predictions, sample_weight=None):
-
         predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
         STEPS = 100  # can go lower for speed increase ???
@@ -142,17 +142,29 @@ class AdditionalMetrics:
             index=["Labeled as negative", "Labeled as positive"],
         )
 
+        predicted_labels = (predictions > threshold).astype(int)
+        predicted_probas = pd.DataFrame(
+            {
+                "proba_0": 1 - predictions.ravel(),
+                "proba_1": predictions.ravel(),
+            }
+        )
+
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
             "confusion_matrix": conf_matrix,
             "threshold": threshold,
+            "additional_plots": AdditionalPlots.plots_binary(
+                target, predicted_labels, predicted_probas
+            ),
         }
 
     @staticmethod
     def multiclass_classification(target, predictions, sample_weight=None):
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
+        predicted_probas = predictions[predictions.columns[:-1]]
         ll = logloss(
             target, predictions[predictions.columns[:-1]], sample_weight=sample_weight
         )
@@ -171,6 +183,7 @@ class AdditionalMetrics:
             target = pd.DataFrame({"target": t})
 
         # Print the confusion matrix
+        predicted_labels = predictions["label"]
         predictions = predictions["label"]
         if not pd.api.types.is_string_dtype(predictions):
             predictions = predictions.astype(str)
@@ -200,6 +213,9 @@ class AdditionalMetrics:
         return {
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
+            "additional_plots": AdditionalPlots.plots_multiclass(
+                target, predicted_labels, predicted_probas
+            ),
         }
 
     @staticmethod
@@ -223,7 +239,8 @@ class AdditionalMetrics:
                     "Metric": list(max_metrics.keys()),
                     "Score": list(max_metrics.values()),
                 }
-            )
+            ),
+            "additional_plots": AdditionalPlots.plots_regression(target, predictions),
         }
 
     @staticmethod
@@ -293,6 +310,11 @@ class AdditionalMetrics:
                 fout, model_path, fold_cnt, repeat_cnt
             )
             AdditionalMetrics.add_shap_binary(fout, model_path, fold_cnt, repeat_cnt)
+
+            plots = additional_metrics.get("additional_plots")
+            if plots is not None:
+                AdditionalPlots.append(fout, model_path, plots)
+
             fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
@@ -320,6 +342,11 @@ class AdditionalMetrics:
             AdditionalMetrics.add_shap_multiclass(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+
+            plots = additional_metrics.get("additional_plots")
+            if plots is not None:
+                AdditionalPlots.append(fout, model_path, plots)
+
             fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
@@ -346,6 +373,11 @@ class AdditionalMetrics:
             AdditionalMetrics.add_shap_regression(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+
+            plots = additional_metrics.get("additional_plots")
+            if plots is not None:
+                AdditionalPlots.append(fout, model_path, plots)
+
             fout.write("\n\n[<< Go back](../README.md)\n")
 
     @staticmethod
