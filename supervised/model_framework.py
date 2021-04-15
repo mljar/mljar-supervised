@@ -113,6 +113,15 @@ class ModelFramework:
             y_validation_columns = preproces.prepare_target_labels(
                 y_validation_predicted
             ).columns.tolist()[:-1]
+        elif self._ml_task == BINARY_CLASSIFICATION:
+            class_names = self.preprocessings[-1].get_target_class_names()
+            y_validation_columns = "prediction"
+            if not ("0" in class_names and "1" in class_names):
+                y_validation_columns = f"prediction_0_for_{class_names[0]}_1_for_{class_names[1]}"
+        else:
+            y_validation_columns = "prediction"
+        
+
 
         return {
             "y_train_true": y_train_true,
@@ -320,7 +329,7 @@ class ModelFramework:
         self.oof_predictions = early_stopping.best_y_oof
 
         ###############################################################
-        # in case of Neural Network and one-hot coded multiclass target
+        # in case of one-hot coded multiclass target
         target_cols = [
             c for c in self.oof_predictions.columns.tolist() if "target" in c
         ]

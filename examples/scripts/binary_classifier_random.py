@@ -8,8 +8,8 @@ nrows = 100
 ncols = 3
 X = np.random.rand(nrows, ncols)
 X = pd.DataFrame(X, columns=[f"f{i}" for i in range(ncols)])
-#y = np.random.randint(0, 2, nrows)
-y = np.random.permutation(["a", "B"] * 50) 
+y = np.random.randint(0, 2, nrows)
+#y = np.random.permutation(["a", "B"] * 50) 
 
 automl = AutoML(model_time_limit=10) #, algorithms=["Decision Tree"])
 automl.fit(X, y)

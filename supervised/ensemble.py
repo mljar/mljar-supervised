@@ -107,17 +107,9 @@ class Ensemble:
             self.oof_predictions = pd.read_csv(self._oof_predictions_fname)
             return self.oof_predictions.copy(deep=True)
 
-        if self.total_best_sum.shape[1] == 1:
-            tmp_df = pd.DataFrame({"prediction": self.total_best_sum["prediction"]})
-            tmp_df["target"] = self.target[self.target_columns]
-            return tmp_df
-
         ensemble_oof = pd.DataFrame(
             data=self.total_best_sum,
             columns=self.total_best_sum.columns
-            # [
-            # "prediction_{}".format(i) for i in range(self.total_best_sum.shape[1])
-            # ]
         )
         ensemble_oof["target"] = self.target
         if self.sample_weight is not None:

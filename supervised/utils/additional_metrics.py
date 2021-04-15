@@ -42,6 +42,19 @@ from tabulate import tabulate
 class AdditionalMetrics:
     @staticmethod
     def binary_classification(target, predictions, sample_weight=None):
+
+        negative_label, positive_label = "0", "1"
+        mapping = None
+        try:
+            pred_col = predictions.columns[0]
+            if "_0_for_" in pred_col and "_1_for_" in pred_col:
+                t = pred_col.split("_0_for_")[1]
+                t = t.split("_1_for_")
+                negative_label, positive_label = t[0], t[1]
+                mapping = {0: negative_label, 1: positive_label}
+        except Exception as e:
+            pass
+
         predictions = np.array(predictions)
         sorted_predictions = np.sort(predictions)
         STEPS = 100  # can go lower for speed increase ???
@@ -138,25 +151,31 @@ class AdditionalMetrics:
 
         conf_matrix = pd.DataFrame(
             conf_matrix,
-            columns=["Predicted as negative", "Predicted as positive"],
-            index=["Labeled as negative", "Labeled as positive"],
+            columns=[f"Predicted as {negative_label}", f"Predicted as {positive_label}"],
+            index=[f"Labeled as {negative_label}", f"Labeled as {positive_label}"],
         )
 
-        predicted_labels = (predictions > threshold).astype(int)
+        predicted_labels = pd.Series((predictions.ravel() > threshold).astype(int))
         predicted_probas = pd.DataFrame(
             {
                 "proba_0": 1 - predictions.ravel(),
                 "proba_1": predictions.ravel(),
             }
         )
-
+        
+        if mapping is not None:
+            labeled_target = target["target"].map(mapping)
+            predicted_labels = predicted_labels.map(mapping)
+        else:
+            labeled_target = target
+        
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
             "confusion_matrix": conf_matrix,
             "threshold": threshold,
             "additional_plots": AdditionalPlots.plots_binary(
-                target, predicted_labels, predicted_probas
+                labeled_target, predicted_labels, predicted_probas
             ),
         }
 

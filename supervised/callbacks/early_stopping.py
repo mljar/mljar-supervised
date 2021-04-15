@@ -142,7 +142,8 @@ class EarlyStopping(Callback):
 
             if len(y_validation_predicted.shape) == 1:
                 # only one prediction column (binary classification or regression)
-                self.best_y_predicted[self.learner.uid]["prediction"] = np.array(
+                col = predictions.get("validation_columns", "prediction")
+                self.best_y_predicted[self.learner.uid][col] = np.array(
                     y_validation_predicted
                 )
             else:
