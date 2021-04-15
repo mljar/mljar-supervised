@@ -151,7 +151,10 @@ class AdditionalMetrics:
 
         conf_matrix = pd.DataFrame(
             conf_matrix,
-            columns=[f"Predicted as {negative_label}", f"Predicted as {positive_label}"],
+            columns=[
+                f"Predicted as {negative_label}",
+                f"Predicted as {positive_label}",
+            ],
             index=[f"Labeled as {negative_label}", f"Labeled as {positive_label}"],
         )
 
@@ -162,13 +165,13 @@ class AdditionalMetrics:
                 "proba_1": predictions.ravel(),
             }
         )
-        
+
         if mapping is not None:
             labeled_target = target["target"].map(mapping)
             predicted_labels = predicted_labels.map(mapping)
         else:
             labeled_target = target
-        
+
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
@@ -392,7 +395,7 @@ class AdditionalMetrics:
             plots = additional_metrics.get("additional_plots")
             if plots is not None:
                 AdditionalPlots.append(fout, model_path, plots)
-                
+
             AdditionalMetrics.add_shap_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )

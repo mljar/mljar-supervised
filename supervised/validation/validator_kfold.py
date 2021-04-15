@@ -12,7 +12,7 @@ from sklearn.model_selection import KFold
 
 from supervised.validation.validator_base import BaseValidator
 from supervised.exceptions import AutoMLException
-
+from supervised.utils.utils import load_data
 from supervised.utils.config import mem
 import time
 
@@ -75,8 +75,8 @@ class KFoldValidator(BaseValidator):
 
             os.mkdir(folds_path)
 
-            X = pd.read_parquet(self._X_path)
-            y = pd.read_parquet(self._y_path)
+            X = load_data(self._X_path)
+            y = load_data(self._y_path)
             y = y["target"]
 
             if isinstance(y[0], bytes):
@@ -123,13 +123,13 @@ class KFoldValidator(BaseValidator):
         train_index = np.load(train_index_file)
         validation_index = np.load(validation_index_file)
 
-        X = pd.read_parquet(self._X_path)
-        y = pd.read_parquet(self._y_path)
+        X = load_data(self._X_path)
+        y = load_data(self._y_path)
         y = y["target"]
 
         sample_weight = None
         if self._sample_weight_path is not None:
-            sample_weight = pd.read_parquet(self._sample_weight_path)
+            sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
 
         train_data = {"X": X.loc[train_index], "y": y.loc[train_index]}

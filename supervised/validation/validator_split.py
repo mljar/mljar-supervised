@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 from sklearn.model_selection import train_test_split
 from supervised.validation.validator_base import BaseValidator
 from supervised.exceptions import AutoMLException
-
+from supervised.utils.utils import load_data
 from supervised.utils.config import mem
 import time
 
@@ -39,13 +39,13 @@ class SplitValidator(BaseValidator):
 
     def get_split(self, k=0, repeat=0):
 
-        X = pd.read_parquet(self._X_path)
-        y = pd.read_parquet(self._y_path)
+        X = load_data(self._X_path)
+        y = load_data(self._y_path)
         y = y["target"]
 
         sample_weight = None
         if self._sample_weight_path is not None:
-            sample_weight = pd.read_parquet(self._sample_weight_path)
+            sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
 
         stratify = None

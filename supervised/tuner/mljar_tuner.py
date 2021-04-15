@@ -20,7 +20,7 @@ from supervised.algorithms.registry import (
 from supervised.algorithms.xgboost import xgboost_eval_metric
 from supervised.algorithms.lightgbm import lightgbm_eval_metric
 from supervised.algorithms.catboost import catboost_eval_metric
-
+from supervised.utils.utils import dump_data
 import logging
 from supervised.utils.config import LOG_LEVEL
 
@@ -300,7 +300,7 @@ class MljarTuner:
 
             params["validation_strategy"]["X_path"] = params["validation_strategy"][
                 "X_path"
-            ].replace("X.parquet", "X_stacked.parquet")
+            ].replace("X.data", "X_stacked.data")
 
             params["name"] = params["name"] + "_Stacked"
             params["is_stacked"] = True
@@ -1046,10 +1046,10 @@ class MljarTuner:
         df_preds = df_preds.sort_values(by="lp", ascending=True)
 
         sample_weight_path = os.path.join(
-            results_path, best_model.get_name() + "_sample_weight.parquet"
+            results_path, best_model.get_name() + "_sample_weight.data"
         )
-        pd.DataFrame({"sample_weight": df_preds["order"]}).to_parquet(
-            sample_weight_path, index=False
+        dump_data(
+            sample_weight_path, pd.DataFrame({"sample_weight": df_preds["order"]})
         )
 
         generated_params = []

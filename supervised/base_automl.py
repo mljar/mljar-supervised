@@ -44,6 +44,7 @@ from supervised.utils.data_validation import (
     check_greater_than_zero_integer_or_float,
     check_integer,
 )
+from supervised.utils.utils import dump_data, load_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -474,18 +475,18 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._perform_model_stacking()
 
-        X_stacked_path = os.path.join(self._results_path, "X_stacked.parquet")
+        X_stacked_path = os.path.join(self._results_path, "X_stacked.data")
         if os.path.exists(X_stacked_path):
             return
 
-        X = pd.read_parquet(self._X_path)
+        X = load_data(self._X_path)
         org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
         new_columns = X_stacked.columns.tolist()
         added_columns = [c for c in new_columns if c not in org_columns]
 
         # save stacked train data
-        X_stacked.to_parquet(X_stacked_path, index=False)
+        dump_data(X_stacked_path, X_stacked)
 
         """
         # resue old params
@@ -527,23 +528,23 @@ class BaseAutoML(BaseEstimator, ABC):
         self._handle_drastic_imbalance(X, y, sample_weight)
 
         # prepare path for saving files
-        self._X_path = os.path.join(self._results_path, "X.parquet")
-        self._y_path = os.path.join(self._results_path, "y.parquet")
+        self._X_path = os.path.join(self._results_path, "X.data")
+        self._y_path = os.path.join(self._results_path, "y.data")
         self._sample_weight_path = None
         if sample_weight is not None:
             self._sample_weight_path = os.path.join(
-                self._results_path, "sample_weight.parquet"
+                self._results_path, "sample_weight.data"
             )
-            pd.DataFrame({"sample_weight": sample_weight}).to_parquet(
-                self._sample_weight_path, index=False
+            dump_data(
+                self._sample_weight_path, pd.DataFrame({"sample_weight": sample_weight})
             )
 
-        X.to_parquet(self._X_path, index=False)
+        dump_data(self._X_path, X)
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
-        pd.DataFrame({"target": y}).to_parquet(self._y_path, index=False)
+        dump_data(self._y_path, pd.DataFrame({"target": y}))
 
         # set paths in validation parameters
         self._validation_strategy["X_path"] = self._X_path
@@ -625,7 +626,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _load_data_variables(self, X_train):
         if X_train.shape[1] == 0:
-            X = pd.read_parquet(self._X_path)
+            X = load_data(self._X_path)
             for c in X.columns:
                 X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
 

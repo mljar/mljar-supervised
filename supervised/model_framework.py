@@ -117,11 +117,11 @@ class ModelFramework:
             class_names = self.preprocessings[-1].get_target_class_names()
             y_validation_columns = "prediction"
             if not ("0" in class_names and "1" in class_names):
-                y_validation_columns = f"prediction_0_for_{class_names[0]}_1_for_{class_names[1]}"
+                y_validation_columns = (
+                    f"prediction_0_for_{class_names[0]}_1_for_{class_names[1]}"
+                )
         else:
             y_validation_columns = "prediction"
-        
-
 
         return {
             "y_train_true": y_train_true,

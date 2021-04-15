@@ -97,7 +97,9 @@ class EDA:
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        x=X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
+                        x=X[col],
+                        order=X[col].value_counts().iloc[:10].index,
+                        color=BLUE,
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")

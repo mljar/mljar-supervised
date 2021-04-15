@@ -108,8 +108,7 @@ class Ensemble:
             return self.oof_predictions.copy(deep=True)
 
         ensemble_oof = pd.DataFrame(
-            data=self.total_best_sum,
-            columns=self.total_best_sum.columns
+            data=self.total_best_sum, columns=self.total_best_sum.columns
         )
         ensemble_oof["target"] = self.target
         if self.sample_weight is not None:
