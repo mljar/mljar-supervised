@@ -78,7 +78,7 @@ class EDA:
                 if PreprocessingUtils.get_type(y) in ("categorical"):
                     sns.countplot(y, color=BLUE)
                 else:
-                    sns.distplot(y, color=BLUE)
+                    sns.displot(y, color=BLUE)
                 plt.title("Target class distribution")
                 plt.tight_layout(pad=2.0)
                 plt.savefig(EDA.plot_path(eda_path, "target"))
@@ -97,7 +97,7 @@ class EDA:
 
                     plt.figure(figsize=(5, 5))
                     chart = sns.countplot(
-                        X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
+                        x=X[col], order=X[col].value_counts().iloc[:10].index, color=BLUE
                     )
                     chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
                     plt.title(f"{col} class distribution")
@@ -106,7 +106,7 @@ class EDA:
                 elif PreprocessingUtils.get_type(X[col]) in ("continous", "discrete"):
 
                     plt.figure(figsize=(5, 5))
-                    sns.distplot(X[col], color=BLUE)
+                    sns.displot(X[col], color=BLUE)
                     plt.title(f"{col} value distribution")
                     plt.tight_layout(pad=2.0)
 
