@@ -325,14 +325,15 @@ class AdditionalMetrics:
             AdditionalMetrics.add_permutation_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )
-            AdditionalMetrics.add_shap_importance(
-                fout, model_path, fold_cnt, repeat_cnt
-            )
-            AdditionalMetrics.add_shap_binary(fout, model_path, fold_cnt, repeat_cnt)
 
             plots = additional_metrics.get("additional_plots")
             if plots is not None:
                 AdditionalPlots.append(fout, model_path, plots)
+
+            AdditionalMetrics.add_shap_importance(
+                fout, model_path, fold_cnt, repeat_cnt
+            )
+            AdditionalMetrics.add_shap_binary(fout, model_path, fold_cnt, repeat_cnt)
 
             fout.write("\n\n[<< Go back](../README.md)\n")
 
@@ -355,16 +356,17 @@ class AdditionalMetrics:
             AdditionalMetrics.add_permutation_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+
+            plots = additional_metrics.get("additional_plots")
+            if plots is not None:
+                AdditionalPlots.append(fout, model_path, plots)
+
             AdditionalMetrics.add_shap_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )
             AdditionalMetrics.add_shap_multiclass(
                 fout, model_path, fold_cnt, repeat_cnt
             )
-
-            plots = additional_metrics.get("additional_plots")
-            if plots is not None:
-                AdditionalPlots.append(fout, model_path, plots)
 
             fout.write("\n\n[<< Go back](../README.md)\n")
 
@@ -386,16 +388,17 @@ class AdditionalMetrics:
             AdditionalMetrics.add_permutation_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )
+
+            plots = additional_metrics.get("additional_plots")
+            if plots is not None:
+                AdditionalPlots.append(fout, model_path, plots)
+                
             AdditionalMetrics.add_shap_importance(
                 fout, model_path, fold_cnt, repeat_cnt
             )
             AdditionalMetrics.add_shap_regression(
                 fout, model_path, fold_cnt, repeat_cnt
             )
-
-            plots = additional_metrics.get("additional_plots")
-            if plots is not None:
-                AdditionalPlots.append(fout, model_path, plots)
 
             fout.write("\n\n[<< Go back](../README.md)\n")
 
