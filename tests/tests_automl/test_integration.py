@@ -126,3 +126,29 @@ class AutoMLIntegrationTest(unittest.TestCase):
 
         self.assertIsInstance(pred_list, np.ndarray)
         self.assertEqual(len(pred_list), X.shape[0])
+
+    def test_integration_float16_data(self):
+        a = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            explain_level=0,
+            start_random_models=1,
+        )
+
+        X, y = datasets.make_classification(
+            n_samples=100,
+            n_features=5,
+            n_informative=4,
+            n_redundant=1,
+            n_classes=2,
+            n_clusters_per_class=3,
+            n_repeated=0,
+            shuffle=False,
+            random_state=0,
+        )
+        X = pd.DataFrame(X)
+        X = X.astype(np.float16)
+        a.fit(X, y)
+        p = a.predict(X)
+        self.assertIsInstance(p, np.ndarray)
+        self.assertEqual(len(p), X.shape[0])
