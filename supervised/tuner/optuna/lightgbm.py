@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import lightgbm as lgb
 import optuna
 
@@ -46,10 +47,11 @@ class LightgbmObjective:
         self.y_validation = y_validation
         self.sample_weight_validation = sample_weight_validation
         self.dtrain = lgb.Dataset(
-            self.X_train, label=self.y_train, weight=self.sample_weight
+            self.X_train.to_numpy() if isinstance(self.X_train, pd.DataFrame) else self.X_train, 
+            label=self.y_train, weight=self.sample_weight
         )
         self.dvalid = lgb.Dataset(
-            self.X_validation,
+            self.X_validation.to_numpy() if isinstance(self.X_validation, pd.DataFrame) else self.X_validation, 
             label=self.y_validation,
             weight=self.sample_weight_validation,
         )
@@ -152,8 +154,8 @@ class LightgbmObjective:
                 score *= -1.0
         except optuna.exceptions.TrialPruned as e:
             raise e
-        except Exception as e:
-            print("Exception in LightgbmObjective", str(e))
-            return None
+        #except Exception as e:
+        #    print("Exception in LightgbmObjective", str(e))
+        #    return None
 
         return score

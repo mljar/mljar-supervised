@@ -2,6 +2,9 @@ import os
 import json
 import joblib
 import optuna
+import warnings
+import matplotlib
+from matplotlib import pyplot as plt
 
 from supervised.utils.metric import Metric
 from supervised.tuner.optuna.lightgbm import LightgbmObjective
@@ -216,6 +219,8 @@ class OptunaTuner:
 
         study.optimize(objective, n_trials=5000, timeout=self.time_budget)
 
+        self.plot_study(algorithm, data_type, study)
+
         joblib.dump(study, os.path.join(self.study_dir, key + ".joblib"))
 
         best = study.best_params
@@ -277,3 +282,51 @@ class OptunaTuner:
             params = json.loads(open(self.tuning_fname).read())
             for k, v in params.items():
                 self.tuning[k] = v
+
+    def plot_study(self, algorithm, data_type, study):
+
+        key = f"{data_type}_{algorithm}"
+
+        plots = [
+            (
+                optuna.visualization.matplotlib.plot_optimization_history,
+                "optimization_history",
+            ),
+            (
+                optuna.visualization.matplotlib.plot_parallel_coordinate,
+                "parallel_coordinate",
+            ),
+            (
+                optuna.visualization.matplotlib.plot_param_importances,
+                "param_importances",
+            ),
+            # (optuna.visualization.matplotlib.plot_slice, "slice"),
+        ]
+
+        matplotlib_default_figsize = matplotlib.rcParams["figure.figsize"]
+        matplotlib.rcParams["figure.figsize"] = (11, 7)
+
+        md = f"# Optuna tuning for {algorithm} on {data_type} data\n\n"
+        for plot, title in plots:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    plt.figure()
+                    plot(study)
+                    plt.tight_layout(pad=2.0)
+                    fname = f"{key}_{title}.png"
+                    plt.savefig(os.path.join(self.study_dir, fname))
+                    plt.close("all")
+
+                    md += f'## {algorithm} {title.replace("_", " ").title()}\n\n'
+                    md += f"![{algorithm} {data_type} {title}]({fname})\n\n"
+
+            except Exception as e:
+                print(str(e))
+
+        matplotlib.rcParams["figure.figsize"] = matplotlib_default_figsize
+        plt.style.use("default")
+
+        with open(os.path.join(self.study_dir, "README.md"), "a") as fout:
+            fout.write(md)
+            fout.write("\n\n[<< Go back](../README.md)\n")

@@ -2098,6 +2098,9 @@ a:hover {
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "EDA")):
                 beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
+            if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
+                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('main')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                
 
         content_html = beginning + content_html
 
