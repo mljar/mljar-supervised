@@ -25,13 +25,14 @@
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-books)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
+ - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
  - [Installation](https://github.com/mljar/mljar-supervised#installation-package)
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
  - [License](https://github.com/mljar/mljar-supervised#license-necktie)
  - [MLJAR](https://github.com/mljar/mljar-supervised#mljar-heart)
 
-## Automated Machine Learning :rocket: 
+# Automated Machine Learning 
 
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
@@ -49,7 +50,7 @@ It has four built-in modes of work:
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
 
-## What's good in it? :boom:
+## What's good in it? 
 
 - It is using many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
 - It can compute Ensemble based on greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
@@ -286,6 +287,31 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
+# FAQ
+
+<details><summary>How to save and load AutoML?</summary>
+
+The save and load of AutoML models are automatic. The all models created during AutoML training are saved in the directory set in `results_path` argument (of `AutoML()` constructor). If there is no `results_path` set, then the directory is created based on following name convention: `AutoML_{number}` the `number` will be number from 1 to 1000 (depends which directory name will be free).
+
+Example save and load:
+
+```python
+automl = AutoML(results_path='AutoML_1')
+automl.fit(X, y)
+```
+
+The all models from AutoML are saved in `AutoML_1` directory.
+
+To load models:
+
+```python
+automl = AutoML(results_path='AutoML_1')
+automl.predict(X)
+```
+
+</details>
+
+
 # Documentation :books:
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
@@ -333,7 +359,6 @@ To get started take a look at our [Contribution Guide](https://supervised.mljar.
 <a href="https://github.com/mljar/mljar-supervised/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
 </a>
-
 
 # License :necktie:
 
