@@ -291,7 +291,7 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 
 <details><summary>How to save and load AutoML?</summary>
 
-The save and load of AutoML models are automatic. The all models created during AutoML training are saved in the directory set in `results_path` argument (of `AutoML()` constructor). If there is no `results_path` set, then the directory is created based on following name convention: `AutoML_{number}` the `number` will be number from 1 to 1000 (depends which directory name will be free).
+The save and load of AutoML models is automatic. All models created during AutoML training are saved in the directory set in `results_path` (argument of `AutoML()` constructor). If there is no `results_path` set, then the directory is created based on following name convention: `AutoML_{number}` the `number` will be number from 1 to 1000 (depends which directory name will be free).
 
 Example save and load:
 
@@ -311,6 +311,44 @@ automl.predict(X)
 
 </details>
 
+<details><summary>How to set ML task (select between classification or regression)?</summary>
+
+The MLJAR AutoML can work with:
+- binary classification
+- multi-class classification
+- regression
+
+The ML task detection is automatic based on target values. There can be situation if you want to manually force AutoML to select the ML task, then you need to set `ml_task` parameter. It can be set to `'binary_classification'`, `'multiclass_classification'`, `'regression'`.
+
+Example:
+```python
+automl = AutoML(ml_task='regression')
+automl.fit(X, y)
+```
+In the above example the regression model will be fitted.
+
+</details>
+
+<details><summary>How to reuse Optuna hyperparameters?</summary>
+  
+  You can reuse Optuna hyperparameters that were found in other AutoML training. You need to pass them in `optuna_init_params` argument. All hyperparameters found during Optuna tuning are saved in the `optuna/optuna.json` file (inside `results_path` directory).
+  
+ Example:
+ 
+ ```python
+ optuna_init = json.loads(open('previous_AutoML_training/optuna/optuna.json').read())
+ 
+ automl = AutoML(
+     mode='Optuna',
+     optuna_init_params=optuna_init
+ )
+ automl.fit(X, y)
+ ```
+  
+ When reusing Optuna hyperparameters the Optuna tuning is simply skipped. The model will be trained with hyperparameters set in `optuna_init_params`. Right now there is no option to continue Optuna tuning with seed parameters.
+  
+  
+</details>
 
 # Documentation :books:
 
