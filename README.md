@@ -350,11 +350,11 @@ In the above example the regression model will be fitted.
   
 </details>
 
-# Documentation :books:
+# Documentation  
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
 
-# Installation :package: 
+# Installation  
 
 From PyPi repository:
 
@@ -398,11 +398,11 @@ To get started take a look at our [Contribution Guide](https://supervised.mljar.
   <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
 </a>
 
-# License :necktie:
+# License  
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
 
-# MLJAR :heart:
+# MLJAR 
 <p align="center">
   <img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
 </p>
