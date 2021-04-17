@@ -312,6 +312,7 @@ class OptunaTuner:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     plt.figure()
+                    plt.rcParams["axes.grid"] = title != "parallel_coordinate"
                     plot(study)
                     plt.tight_layout(pad=2.0)
                     fname = f"{key}_{title}.png"
