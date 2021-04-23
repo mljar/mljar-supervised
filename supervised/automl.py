@@ -313,7 +313,7 @@ class AutoML(BaseAutoML):
         self.n_jobs = n_jobs
         self.random_state = random_state
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y, sample_weight=None, cv=None):
         """Fit the AutoML model.
 
         Arguments:
@@ -323,10 +323,13 @@ class AutoML(BaseAutoML):
 
             sample_weight (numpy.ndarray or pandas.Series): Training sample weights
 
+            cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
+            It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
+            
         Returns:
             AutoML object: Returns `self`
         """
-        return self._fit(X, y, sample_weight)
+        return self._fit(X, y, sample_weight, cv)
 
     def predict(self, X):
         """

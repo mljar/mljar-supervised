@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 import shutil
+import joblib
 from tabulate import tabulate
 from abc import ABC
 from copy import deepcopy
@@ -518,7 +519,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.train_model(params)
         """
 
-    def _save_data(self, X, y, sample_weight=None):
+    def _save_data(self, X, y, sample_weight=None, cv=None):
         # save information about original data
         self._save_data_info(X, y, sample_weight)
 
@@ -552,6 +553,13 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validation_strategy["results_path"] = self._results_path
         if sample_weight is not None:
             self._validation_strategy["sample_weight_path"] = self._sample_weight_path
+
+        if cv is not None:
+            self._validation_strategy["cv_path"] = os.path.join(self._results_path, "cv.data")
+            joblib.dump(
+                cv,
+                self._validation_strategy["cv_path"]
+            )
 
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
@@ -871,7 +879,7 @@ class BaseAutoML(BaseEstimator, ABC):
             ):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
-    def _fit(self, X, y, sample_weight=None):
+    def _fit(self, X, y, sample_weight=None, cv=None):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(
@@ -967,7 +975,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            self._save_data(X.copy(deep=False), y, sample_weight)
+            self._save_data(X.copy(deep=False), y, sample_weight, cv)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -1466,6 +1474,9 @@ class BaseAutoML(BaseEstimator, ABC):
         """ Gets the current stack_models"""
         self._validate_stack_models()
         if self.stack_models == "auto":
+            val = self._get_validation_strategy()
+            if val.get("validation_type", "") == "custom":
+                return False
             return True if self.mode in ["Compete", "Optuna"] else False
         else:
             return deepcopy(self.stack_models)
@@ -1620,6 +1631,9 @@ class BaseAutoML(BaseEstimator, ABC):
         """ Gets the current boost_on_errors"""
         self._validate_boost_on_errors()
         if self.boost_on_errors == "auto":
+            val = self._get_validation_strategy()
+            if val.get("validation_type", "") == "custom":
+                return False
             if self._get_mode() == "Explain":
                 return False
             if self._get_mode() == "Perform":
@@ -2100,7 +2114,6 @@ margin-right: auto;display: block;"/>\n\n"""
                 beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
                 beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('main')\" >&#187; Optuna Params Tuning Report</a></h2>"
-                
 
         content_html = beginning + content_html
 
