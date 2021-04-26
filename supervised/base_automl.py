@@ -555,11 +555,10 @@ class BaseAutoML(BaseEstimator, ABC):
             self._validation_strategy["sample_weight_path"] = self._sample_weight_path
 
         if cv is not None:
-            self._validation_strategy["cv_path"] = os.path.join(self._results_path, "cv.data")
-            joblib.dump(
-                cv,
-                self._validation_strategy["cv_path"]
+            self._validation_strategy["cv_path"] = os.path.join(
+                self._results_path, "cv.data"
             )
+            joblib.dump(cv, self._validation_strategy["cv_path"])
 
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
@@ -1865,6 +1864,8 @@ class BaseAutoML(BaseEstimator, ABC):
     def _validate_golden_features(self):
         """ Validates golden_features parameter"""
         if isinstance(self.golden_features, str) and self.golden_features == "auto":
+            return
+        if isinstance(self.golden_features, int):
             return
         check_bool(self.golden_features, "golden_features")
 

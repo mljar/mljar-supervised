@@ -25,7 +25,7 @@ class ValidationStep:
             raise AutoMLException(
                 f"The validation type ({self.validation_type}) is not implemented."
             )
-        
+
     def get_split(self, k, repeat=0):
         return self.validator.get_split(k, repeat)
 

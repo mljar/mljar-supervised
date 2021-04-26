@@ -148,12 +148,17 @@ class AutoML(BaseAutoML):
 
                 If left `auto` AutoML will produce explanations based on the selected `mode`.
 
-            golden_features (boolean): Whether to use golden features
+            golden_features (boolean or int): Whether to use golden features (and how many should be added)
                 If left `auto` AutoML will use golden features based on the selected `mode`:
 
                 - If `mode` is "Explain", `golden_features` = False.
                 - If `mode` is "Perform", `golden_features` = True.
                 - If `mode` is "Compete", `golden_features` = True.
+
+                If `boolean` value is set then the number of Golden Features is set automatically. 
+                It is set to min(100, max(10, 0.1*number_of_input_features)).
+
+                If `int` value is set, the number of Golden Features is set to this value.
 
             features_selection (boolean): Whether to do features_selection
                 If left `auto` AutoML will do feature selection based on the selected `mode`:
@@ -325,7 +330,7 @@ class AutoML(BaseAutoML):
 
             cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
             It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
-            
+
         Returns:
             AutoML object: Returns `self`
         """

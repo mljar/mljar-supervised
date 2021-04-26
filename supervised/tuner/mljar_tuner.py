@@ -742,6 +742,15 @@ class MljarTuner:
                 "results_path": results_path,
                 "ml_task": self._ml_task,
             }
+            if (
+                self._golden_features is not None
+                and not isinstance(self._golden_features, bool)
+                and isinstance(self._golden_features, int)
+            ):
+                params["preprocessing"]["golden_features"][
+                    "features_count"
+                ] = self._golden_features
+
             params["name"] += "_GoldenFeatures"
             params["status"] = "initialized"
             params["final_loss"] = None

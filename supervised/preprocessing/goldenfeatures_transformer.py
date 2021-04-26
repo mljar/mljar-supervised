@@ -104,10 +104,11 @@ def get_score(item):
 
 
 class GoldenFeaturesTransformer(object):
-    def __init__(self, results_path=None, ml_task=None):
+    def __init__(self, results_path=None, ml_task=None, features_count=None):
         self._new_features = []
         self._new_columns = []
         self._ml_task = ml_task
+        self._features_count = features_count
         self._scorer = None
         if self._ml_task == BINARY_CLASSIFICATION:
             self._scorer = get_binary_score
@@ -184,6 +185,14 @@ class GoldenFeaturesTransformer(object):
 
         new_cols_cnt = np.min([100, np.max([10, int(0.1 * X.shape[1])])])
 
+        if (
+            self._features_count is not None
+            and self._features_count > 0
+            and self._features_count < df.shape[0]
+        ):
+            new_cols_cnt = self._features_count
+
+        print(self._features_count, new_cols_cnt)
         self._new_features = json.loads(df.head(new_cols_cnt).to_json(orient="records"))
 
         for new_feature in self._new_features:

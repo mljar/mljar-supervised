@@ -36,7 +36,6 @@ class PreprocessingUtils(object):
             # treat it as categorical
             return PreprocessingUtils.CATEGORICAL
 
-
         if data_type == PreprocessingUtils.CATEGORICAL:
             # check maybe this categorical is a text
             # it is a text, if:

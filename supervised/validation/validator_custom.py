@@ -23,11 +23,9 @@ class CustomValidator(BaseValidator):
         BaseValidator.__init__(self, params)
 
         cv_path = self.params.get("cv_path")
-        
+
         if cv_path is None:
-            raise AutoMLException(
-                "You need to specify `cv` as list or iterable"
-            )
+            raise AutoMLException("You need to specify `cv` as list or iterable")
 
         self.cv = joblib.load(cv_path)
         self.cv = list(self.cv)
@@ -48,14 +46,10 @@ class CustomValidator(BaseValidator):
 
             print("Custom validation strategy")
             for fold_cnt, (train_index, validation_index) in enumerate(self.cv):
-                
+
                 print(f"Split {fold_cnt}.")
-                print(
-                    f"Train {train_index.shape[0]} samples."
-                )
-                print(
-                    f"Validation {validation_index.shape[0]} samples."
-                )
+                print(f"Train {train_index.shape[0]} samples.")
+                print(f"Validation {validation_index.shape[0]} samples.")
                 train_index_file = os.path.join(
                     self._results_path,
                     "folds",
@@ -88,19 +82,23 @@ class CustomValidator(BaseValidator):
             X = load_data(self._X_path)
             y = load_data(self._y_path)
             y = y["target"]
-            
+
             sample_weight = None
             if self._sample_weight_path is not None:
                 sample_weight = load_data(self._sample_weight_path)
                 sample_weight = sample_weight["sample_weight"]
 
             train_data = {"X": X.iloc[train_index], "y": y.iloc[train_index]}
-            validation_data = {"X": X.iloc[validation_index], "y": y.iloc[validation_index]}
+            validation_data = {
+                "X": X.iloc[validation_index],
+                "y": y.iloc[validation_index],
+            }
             if sample_weight is not None:
                 train_data["sample_weight"] = sample_weight.iloc[train_index]
                 validation_data["sample_weight"] = sample_weight.iloc[validation_index]
         except Exception as e:
             import traceback
+
             print(traceback.format_exc())
             raise AutoMLException("Problem with custom validation. " + str(e))
         return (train_data, validation_data)

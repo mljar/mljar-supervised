@@ -38,16 +38,12 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
         )
 
         df = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
-        print(df)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             gft = GoldenFeaturesTransformer(tmpdir, "binary_classification")
             gft.fit(df, y)
 
             df = gft.transform(df)
-            print(df)
-
-            print(gft.to_json())
 
             gft3 = GoldenFeaturesTransformer(tmpdir, "binary_classification")
             gft3.from_json(gft.to_json(), tmpdir)
@@ -138,3 +134,36 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
         for uni in [np.unique(y_train), np.unique(y_test)]:
             for i in range(2):
                 self.assertTrue(i in uni)
+
+
+    def test_features_count(self):
+
+        N_COLS = 10
+        X, y = datasets.make_classification(
+            n_samples=100,
+            n_features=N_COLS,
+            n_informative=6,
+            n_redundant=1,
+            n_classes=2,
+            n_clusters_per_class=3,
+            n_repeated=0,
+            shuffle=False,
+            random_state=0,
+        )
+
+        df = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
+        
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            FEATURES_COUNT = 42
+            gft = GoldenFeaturesTransformer(tmpdir, "binary_classification", features_count = FEATURES_COUNT)
+            gft.fit(df, y)
+
+            self.assertEqual(len(gft._new_features), FEATURES_COUNT)
+            
+            gft3 = GoldenFeaturesTransformer(tmpdir, "binary_classification")
+            gft3.from_json(gft.to_json(), tmpdir)
+
+            df = gft3.transform(df)
+            self.assertEqual(df.shape[1], N_COLS + FEATURES_COUNT)
+
