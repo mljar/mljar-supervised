@@ -31,6 +31,11 @@ class PreprocessingUtils(object):
             data_type = PreprocessingUtils.DISCRETE
         elif col_type.startswith("datetime"):
             data_type = PreprocessingUtils.DATETIME
+        elif col_type.startswith("category"):
+            # do not check the additional condition for text feature
+            # treat it as categorical
+            return PreprocessingUtils.CATEGORICAL
+
 
         if data_type == PreprocessingUtils.CATEGORICAL:
             # check maybe this categorical is a text
