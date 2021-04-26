@@ -2130,6 +2130,7 @@ margin-right: auto;display: block;"/>\n\n"""
 
     def _report(self, width=900, height=1200):
 
+        self._results_path = self._get_results_path()
         main_readme_html = os.path.join(self._results_path, "README.html")
 
         if os.path.exists(main_readme_html):
