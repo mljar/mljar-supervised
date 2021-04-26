@@ -10,6 +10,7 @@ from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from supervised.exceptions import AutoMLException
 
+
 class AutoMLGoldenFeaturesTest(unittest.TestCase):
 
     automl_dir = "automl_tests"
@@ -34,7 +35,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         )
 
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
-        
+
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=1,
@@ -47,7 +48,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         automl.fit(X, y)
 
         self.assertEqual(len(automl._models), 1)
-    
+
     def test_golden_features(self):
 
         N_COLS = 10
@@ -64,7 +65,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         )
 
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
-        
+
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=10,
@@ -83,7 +84,6 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
             d = json.loads(fin.read())
             self.assertEqual(len(d["new_features"]), 10)
 
-
     def test_golden_features_count(self):
 
         N_COLS = 10
@@ -100,7 +100,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         )
 
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
-        
+
         automl = AutoML(
             results_path=self.automl_dir,
             total_time_limit=10,

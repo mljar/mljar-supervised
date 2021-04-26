@@ -40,13 +40,11 @@ class AutoMLReportDirChangeTest(unittest.TestCase):
         X = np.random.uniform(size=(30, 2))
         y = np.random.randint(0, 2, size=(30,))
 
-        automl = AutoML(
-            results_path=path_a, algorithms=["Baseline"], explain_level=0
-        )
+        automl = AutoML(results_path=path_a, algorithms=["Baseline"], explain_level=0)
         automl.fit(X, y)
-        
+
         shutil.move(path_a, path_b)
-        
+
         automl2 = AutoML(
             results_path=path_b,
         )

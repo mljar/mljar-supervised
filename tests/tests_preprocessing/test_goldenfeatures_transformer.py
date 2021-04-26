@@ -135,7 +135,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
             for i in range(2):
                 self.assertTrue(i in uni)
 
-
     def test_features_count(self):
 
         N_COLS = 10
@@ -152,18 +151,18 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
         )
 
         df = pd.DataFrame(X, columns=[f"f{i}" for i in range(X.shape[1])])
-        
 
         with tempfile.TemporaryDirectory() as tmpdir:
             FEATURES_COUNT = 42
-            gft = GoldenFeaturesTransformer(tmpdir, "binary_classification", features_count = FEATURES_COUNT)
+            gft = GoldenFeaturesTransformer(
+                tmpdir, "binary_classification", features_count=FEATURES_COUNT
+            )
             gft.fit(df, y)
 
             self.assertEqual(len(gft._new_features), FEATURES_COUNT)
-            
+
             gft3 = GoldenFeaturesTransformer(tmpdir, "binary_classification")
             gft3.from_json(gft.to_json(), tmpdir)
 
             df = gft3.transform(df)
             self.assertEqual(df.shape[1], N_COLS + FEATURES_COUNT)
-

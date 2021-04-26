@@ -155,7 +155,7 @@ class AutoML(BaseAutoML):
                 - If `mode` is "Perform", `golden_features` = True.
                 - If `mode` is "Compete", `golden_features` = True.
 
-                If `boolean` value is set then the number of Golden Features is set automatically. 
+                If `boolean` value is set then the number of Golden Features is set automatically.
                 It is set to min(100, max(10, 0.1*number_of_input_features)).
 
                 If `int` value is set, the number of Golden Features is set to this value.

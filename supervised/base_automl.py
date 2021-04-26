@@ -828,7 +828,10 @@ class BaseAutoML(BaseEstimator, ABC):
             del self._validation_strategy["train_ratio"]
             self._validation_strategy["k_folds"] = k_folds
             self.tuner._validation_strategy = self._validation_strategy
-            shutil.rmtree(self._model_subpaths[0], ignore_errors=True)
+            shutil.rmtree(
+                os.path.join(self._results_path, self._model_subpaths[0]),
+                ignore_errors=True,
+            )
             del self._models[0]
             del self._model_subpaths[0]
             del self.tuner._unique_params_keys[0]
