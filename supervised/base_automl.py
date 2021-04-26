@@ -1641,7 +1641,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._get_mode() == "Compete":
                 return True
             if self._get_mode() == "Optuna":
-                return True
+                return False
         else:
             return deepcopy(self.boost_on_errors)
 
