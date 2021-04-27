@@ -314,7 +314,7 @@ class AdditionalMetrics:
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
 
-        with open(os.path.join(model_path, "README.md"), "w") as fout:
+        with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
@@ -347,7 +347,7 @@ class AdditionalMetrics:
         max_metrics = additional_metrics["max_metrics"].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
 
-        with open(os.path.join(model_path, "README.md"), "w") as fout:
+        with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n### Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
@@ -378,7 +378,7 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"]
-        with open(os.path.join(model_path, "README.md"), "w") as fout:
+        with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write(
                 "\n### Metric details:\n{}\n\n".format(
