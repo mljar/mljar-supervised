@@ -38,7 +38,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
 
         automl = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
+            total_time_limit=50,
             algorithms=["Xgboost"],
             train_ensemble=False,
             golden_features=False,
@@ -68,7 +68,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
 
         automl = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=10,
+            total_time_limit=50,
             algorithms=["Xgboost"],
             train_ensemble=False,
             golden_features=True,
@@ -103,7 +103,7 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
 
         automl = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=10,
+            total_time_limit=50,
             algorithms=["Xgboost"],
             train_ensemble=False,
             golden_features=50,
