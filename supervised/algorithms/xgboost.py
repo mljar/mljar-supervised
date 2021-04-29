@@ -164,13 +164,13 @@ class XgbAlgorithm(BaseAlgorithm):
         max_time=None,
     ):
         dtrain = xgb.DMatrix(
-            X.to_numpy() if isinstance(X, pd.DataFrame) else X,
+            X.values if isinstance(X, pd.DataFrame) else X,
             label=y,
             missing=np.NaN,
             weight=sample_weight,
         )
         dvalidation = xgb.DMatrix(
-            X_validation.to_numpy()
+            X_validation.values
             if isinstance(X_validation, pd.DataFrame)
             else X_validation,
             label=y_validation,
@@ -204,6 +204,9 @@ class XgbAlgorithm(BaseAlgorithm):
             feval=self.custom_eval_metric
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
+
+        del dtrain
+        del dvalidation
 
         # dump_list = self.model.get_dump()
         # num_trees = len(dump_list)
@@ -261,7 +264,7 @@ class XgbAlgorithm(BaseAlgorithm):
             raise XgbAlgorithmException("Xgboost model is None")
 
         dtrain = xgb.DMatrix(
-            X.to_numpy() if isinstance(X, pd.DataFrame) else X, missing=np.NaN
+            X.values if isinstance(X, pd.DataFrame) else X, missing=np.NaN
         )
         a = self.model.predict(dtrain, ntree_limit=self.best_ntree_limit)
         return a

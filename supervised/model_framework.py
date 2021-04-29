@@ -7,6 +7,8 @@ import os
 import copy
 import logging
 import json
+import gc
+import sys
 
 from supervised.callbacks.callback_list import CallbackList
 from supervised.validation.validation_step import ValidationStep
@@ -285,6 +287,28 @@ class ModelFramework:
                 del learner.model
                 learner.model = None
                 # end of learner training
+
+                # clear data
+                del X_train
+                del y_train
+                del X_validation
+                del y_validation
+
+                if sample_weight is not None:
+                    del sample_weight
+                    del train_data["sample_weight"]
+                if sample_weight_validation is not None:
+                    del sample_weight_validation
+                    del validation_data["sample_weight"]
+
+                del train_data["X"]
+                del train_data["y"]
+                del validation_data["X"]
+                del validation_data["y"]
+                del train_data
+                del validation_data
+
+                gc.collect()
 
         # end of validation loop
         self.callbacks.on_framework_train_end()

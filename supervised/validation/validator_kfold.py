@@ -74,7 +74,6 @@ class KFoldValidator(BaseValidator):
         if not os.path.exists(folds_path):
 
             os.mkdir(folds_path)
-
             X = load_data(self._X_path)
             y = load_data(self._y_path)
             y = y["target"]
@@ -101,7 +100,6 @@ class KFoldValidator(BaseValidator):
 
                     np.save(train_index_file, train_index)
                     np.save(validation_index_file, validation_index)
-
             del X
             del y
             gc.collect()

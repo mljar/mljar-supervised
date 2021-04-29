@@ -1,4 +1,5 @@
 import os
+import gc
 import sys
 import json
 import copy
@@ -563,7 +564,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
 
-        self._drop_data_variables(X)
+        # self._drop_data_variables(X)
 
     def _handle_drastic_imbalance(self, X, y, sample_weight=None):
         if self._ml_task == REGRESSION:
@@ -1121,9 +1122,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         except Exception as e:
             raise e
-        finally:
-            if self._X_path is not None:
-                self._load_data_variables(X)
+        # finally:
+        #    if self._X_path is not None:
+        #        self._load_data_variables(X)
 
         return self
 

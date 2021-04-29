@@ -195,10 +195,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
         max_time=None,
     ):
         lgb_train = lgb.Dataset(
-            X.to_numpy() if isinstance(X, pd.DataFrame) else X,
+            X.values if isinstance(X, pd.DataFrame) else X,
             y,
             weight=sample_weight,
         )
+        valid_sets = None
         if self.early_stopping_rounds == 0:
             self.model = lgb.train(
                 self.learner_params,
@@ -207,14 +208,14 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 init_model=self.model,
             )
         else:
-            valid_sets = None
+
             valid_names = None
             esr = None
             if X_validation is not None and y_validation is not None:
                 valid_sets = [
                     lgb_train,
                     lgb.Dataset(
-                        X_validation.to_numpy()
+                        X_validation.values
                         if isinstance(X_validation, pd.DataFrame)
                         else X_validation,
                         y_validation,
@@ -240,6 +241,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 feval=self.custom_eval_metric,
             )
 
+            del lgb_train
+            if valid_sets is not None:
+                del valid_sets[0]
+                del valid_sets
+
             if log_to_file is not None:
                 metric_name = list(evals_result["train"].keys())[0]
                 result = pd.DataFrame(
@@ -256,7 +262,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
 
     def predict(self, X):
         self.reload()
-        return self.model.predict(X.to_numpy() if isinstance(X, pd.DataFrame) else X)
+        return self.model.predict(X.values if isinstance(X, pd.DataFrame) else X)
 
     def copy(self):
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
