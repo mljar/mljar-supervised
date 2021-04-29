@@ -90,7 +90,7 @@ The example for `LightGBM` summary:
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
-## Available Modes :books:
+## Available Modes
 
 In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes are presented in the table .
 
@@ -288,6 +288,11 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
 
 # FAQ
+
+<details><summary>What method is used for hyperparameters optimization?</summary>
+  - For modes: `Explain`, `Perform` and `Compete` there is used a random search method combined with hill climbing. In this approach all checked models are saved and used for building Ensemble.
+  - For mode: `Optuna` the Optuna framework is used. It is using TPE sampler for tuning. Models checked during Optuna hyperparameters search are not saved, only the best model is saved (final model from tuning). You can check the details about checked hyperparameters from optuna by checking study files in `optuna` directory in your AutoML `results_path`.
+</details>
 
 <details><summary>How to save and load AutoML?</summary>
 
