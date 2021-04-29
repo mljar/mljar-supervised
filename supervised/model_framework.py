@@ -496,6 +496,8 @@ class ModelFramework:
             }
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
+            if self._single_prediction_time is not None:
+                desc["single_prediction_time"] = self._single_prediction_time
             fout.write(json.dumps(desc, indent=4))
 
         learning_curve_metric = self.learners[0].get_metric_name()
@@ -563,6 +565,9 @@ class ModelFramework:
         mf.final_loss = json_desc.get("final_loss", mf.final_loss)
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
+        mf._single_prediction_time = json_desc.get(
+            "single_prediction_time", mf._single_prediction_time
+        )
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
             mf._oof_predictions_fname = os.path.join(results_path, predictions_fname)

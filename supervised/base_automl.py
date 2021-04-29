@@ -237,9 +237,12 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
             if self._max_single_prediction_time is not None:
-                ldb["single_prediction_time"] += [
-                    np.round(m._single_prediction_time, 4)
-                ]
+                if m._single_prediction_time is not None:
+                    ldb["single_prediction_time"] += [
+                        np.round(m._single_prediction_time, 4)
+                    ]
+                else:
+                    ldb["single_prediction_time"] += [None]
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
@@ -358,11 +361,12 @@ class BaseAutoML(BaseEstimator, ABC):
         )
         mf.train(results_path, model_subpath)
 
+        # keep info about the model
+        self.keep_model(mf, model_subpath)
+
         # save the model
         mf.save(results_path, model_subpath)
 
-        # and keep info about the model
-        self.keep_model(mf, model_subpath)
         return True
 
     def verbose_print(self, msg):
@@ -385,8 +389,8 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
             self.ensemble.fit(oofs, target, sample_weight)
-            self.ensemble.save(self._results_path, ensemble_subpath)
             self.keep_model(self.ensemble, ensemble_subpath)
+            self.ensemble.save(self._results_path, ensemble_subpath)
             return True
         return False
 
