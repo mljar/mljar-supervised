@@ -389,6 +389,12 @@ RUN pip3 install mljar-supervised jupyter
 CMD ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
 ```
 
+Install from GitHub with pip:
+```
+pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
+```
+
+
 # Contributing
 
 To get started take a look at our [Contribution Guide](https://supervised.mljar.com/contributing/) for information about our process and where you can fit in!
