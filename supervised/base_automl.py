@@ -36,6 +36,7 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+from supervised.utils.automl_plots import AutoMLPlots
 from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.tuner.time_controller import TimeController
@@ -1241,6 +1242,9 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 LeaderboardPlots.compute(ldb, self._results_path, fout)
+
+                if self._fit_level == "finished":
+                    AutoMLPlots.add(self._results_path, self._models, fout)
 
     def _base_predict(self, X, model=None):
 
