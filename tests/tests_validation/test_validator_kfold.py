@@ -1,10 +1,10 @@
+import os
+import shutil
 import unittest
 import numpy as np
 import pandas as pd
+from supervised.utils.utils import dump_data
 from supervised.validation.validator_kfold import KFoldValidator
-
-import os
-import shutil
 
 
 class KFoldValidatorTest(unittest.TestCase):
@@ -24,11 +24,11 @@ class KFoldValidatorTest(unittest.TestCase):
             "y": pd.DataFrame(np.array([0, 0, 1, 1]), columns=["target"]),
         }
 
-        X_path = os.path.join(self._results_path, "X.parquet")
-        y_path = os.path.join(self._results_path, "y.parquet")
+        X_path = os.path.join(self._results_path, "X.data")
+        y_path = os.path.join(self._results_path, "y.data")
 
-        data["X"].to_parquet(X_path, index=False)
-        data["y"].to_parquet(y_path, index=False)
+        dump_data(X_path, data["X"])
+        dump_data(y_path, data["y"])
 
         params = {
             "shuffle": False,
@@ -65,11 +65,11 @@ class KFoldValidatorTest(unittest.TestCase):
             ),
         }
 
-        X_path = os.path.join(self._results_path, "X.parquet")
-        y_path = os.path.join(self._results_path, "y.parquet")
+        X_path = os.path.join(self._results_path, "X.data")
+        y_path = os.path.join(self._results_path, "y.data")
 
-        data["X"].to_parquet(X_path, index=False)
-        data["y"].to_parquet(y_path, index=False)
+        dump_data(X_path, data["X"])
+        dump_data(y_path, data["y"])
 
         params = {
             "shuffle": False,
@@ -102,11 +102,11 @@ class KFoldValidatorTest(unittest.TestCase):
             "y": pd.DataFrame(np.array(["a", "b", "a", "b"]), columns=["target"]),
         }
 
-        X_path = os.path.join(self._results_path, "X.parquet")
-        y_path = os.path.join(self._results_path, "y.parquet")
+        X_path = os.path.join(self._results_path, "X.data")
+        y_path = os.path.join(self._results_path, "y.data")
 
-        data["X"].to_parquet(X_path, index=False)
-        data["y"].to_parquet(y_path, index=False)
+        dump_data(X_path, data["X"])
+        dump_data(y_path, data["y"])
 
         params = {
             "shuffle": True,
@@ -139,11 +139,11 @@ class KFoldValidatorTest(unittest.TestCase):
             "y": pd.DataFrame(np.array([0, 0, 1, 1]), columns=["target"]),
         }
 
-        X_path = os.path.join(self._results_path, "X.parquet")
-        y_path = os.path.join(self._results_path, "y.parquet")
+        X_path = os.path.join(self._results_path, "X.data")
+        y_path = os.path.join(self._results_path, "y.data")
 
-        data["X"].to_parquet(X_path, index=False)
-        data["y"].to_parquet(y_path, index=False)
+        dump_data(X_path, data["X"])
+        dump_data(y_path, data["y"])
 
         params = {
             "shuffle": True,
@@ -181,11 +181,11 @@ class KFoldValidatorTest(unittest.TestCase):
             "y": pd.DataFrame(np.array([0, 0, 1, 1]), columns=["target"]),
         }
 
-        X_path = os.path.join(self._results_path, "X.parquet")
-        y_path = os.path.join(self._results_path, "y.parquet")
+        X_path = os.path.join(self._results_path, "X.data")
+        y_path = os.path.join(self._results_path, "y.data")
 
-        data["X"].to_parquet(X_path, index=False)
-        data["y"].to_parquet(y_path, index=False)
+        dump_data(X_path, data["X"])
+        dump_data(y_path, data["y"])
 
         params = {
             "shuffle": False,

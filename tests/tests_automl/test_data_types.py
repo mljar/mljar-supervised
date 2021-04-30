@@ -52,4 +52,3 @@ class AutoMLDataTypesTest(unittest.TestCase):
             start_random_models=1,
         )
         automl.fit(X, y)
-
