@@ -21,6 +21,7 @@ from supervised.utils.metric import (
     lightgbm_eval_metric_f1,
     lightgbm_eval_metric_average_precision,
     lightgbm_eval_metric_accuracy,
+    lightgbm_eval_metric_user_defined
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -40,6 +41,8 @@ def lightgbm_objective(ml_task, automl_eval_metric):
 
 
 def lightgbm_eval_metric(ml_task, automl_eval_metric):
+    if automl_eval_metric == "user_defined_metric":
+        return "custom", automl_eval_metric
     metric_name_mapping = {
         BINARY_CLASSIFICATION: {
             "auc": "auc",
@@ -149,6 +152,9 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 self.custom_eval_metric = lightgbm_eval_metric_average_precision
             elif self.params["custom_eval_metric_name"] == "accuracy":
                 self.custom_eval_metric = lightgbm_eval_metric_accuracy
+            elif self.params["custom_eval_metric_name"] == "user_defined_metric":
+                self.custom_eval_metric = lightgbm_eval_metric_user_defined
+
 
         logger.debug("LightgbmLearner __init__")
 

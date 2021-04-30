@@ -4,6 +4,7 @@ import pandas as pd
 from numpy.testing import assert_almost_equal
 
 from supervised.utils.metric import Metric
+from supervised.utils.metric import UserDefinedEvalMetric
 
 
 class MetricTest(unittest.TestCase):
@@ -57,3 +58,21 @@ class MetricTest(unittest.TestCase):
         y_predicted = np.array([0, 0, 1, 1])
         score = m(y_true, y_predicted)
         self.assertEqual(score, 0.0)
+
+
+    def test_user_defined_metric(self):
+        
+        def custom(x,y,sample_weight=None):
+            return np.sum(x+y)
+
+        UserDefinedEvalMetric().set_metric(custom)
+
+        params = {"name": "user_defined_metric"}
+        m = Metric(params)
+
+        a = np.array([1,1,1])
+
+        score = m(a,a)
+        self.assertEqual(score, 6)
+
+        

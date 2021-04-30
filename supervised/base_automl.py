@@ -4,6 +4,7 @@ import sys
 import json
 import copy
 import time
+import types
 import numpy as np
 import pandas as pd
 import logging
@@ -36,6 +37,7 @@ from supervised.utils.config import mem
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
+from supervised.utils.metric import UserDefinedEvalMetric
 from supervised.utils.automl_plots import AutoMLPlots
 from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -1495,6 +1497,10 @@ class BaseAutoML(BaseEstimator, ABC):
     def _get_eval_metric(self):
         """ Gets the current eval_metric"""
         self._validate_eval_metric()
+        if isinstance(self.eval_metric, types.FunctionType):
+            UserDefinedEvalMetric().set_metric(self.eval_metric)
+            return "user_defined_metric"
+
         if self.eval_metric == "auto":
             if self._get_ml_task() == BINARY_CLASSIFICATION:
                 return "logloss"
@@ -1798,7 +1804,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_eval_metric(self):
         """ Validates eval_metric parameter"""
-        # `stack_models` defaults to "auto". If not "auto", check if is valid bool
+        if isinstance(self.eval_metric, types.FunctionType):
+            return
+
         if isinstance(self.eval_metric, str) and self.eval_metric == "auto":
             return
 

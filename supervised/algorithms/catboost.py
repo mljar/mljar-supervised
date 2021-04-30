@@ -18,6 +18,7 @@ from supervised.utils.metric import (
     CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
     CatBoostEvalMetricMSE,
+    CatBoostEvalMetricUserDefined,
 )
 
 from supervised.utils.config import LOG_LEVEL
@@ -30,6 +31,8 @@ import catboost
 
 
 def catboost_eval_metric(ml_task, eval_metric):
+    if eval_metric == "user_defined_metric":
+        return eval_metric
     metric_name_mapping = {
         BINARY_CLASSIFICATION: {
             "auc": "AUC",
@@ -69,6 +72,7 @@ def catboost_objective(ml_task, eval_metric):
             "R2",
             "spearman",
             "pearson",
+            "user_defined_metric"
         ]:  # cant optimize them directly
             objective = "RMSE"
     return objective
@@ -139,6 +143,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
         elif cat_params["eval_metric"] == "mse":
             cat_params["eval_metric"] = CatBoostEvalMetricMSE()
             self.log_metric_name = "CatBoostEvalMetricMSE"
+        elif cat_params["eval_metric"] == "user_defined_metric":
+            cat_params["eval_metric"] = CatBoostEvalMetricUserDefined()
+            self.log_metric_name = "CatBoostEvalMetricUserDefined"
 
         self.model = Algo(**cat_params)
         self.cat_features = None

@@ -8,6 +8,7 @@ from supervised.utils.metric import (
     CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
     CatBoostEvalMetricMSE,
+    CatBoostEvalMetricUserDefined,
 )
 
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
@@ -59,12 +60,14 @@ class CatBoostObjective:
         self.custom_eval_metric = None
         if self.eval_metric_name == "spearman":
             self.custom_eval_metric = CatBoostEvalMetricSpearman()
-        if self.eval_metric_name == "pearson":
+        elif self.eval_metric_name == "pearson":
             self.custom_eval_metric = CatBoostEvalMetricPearson()
-        if self.eval_metric_name == "average_precision":
+        elif self.eval_metric_name == "average_precision":
             self.custom_eval_metric = CatBoostEvalMetricAveragePrecision()
-        if self.eval_metric_name == "mse":
+        elif self.eval_metric_name == "mse":
             self.custom_eval_metric = CatBoostEvalMetricMSE()
+        elif self.eval_metric_name == "user_defined_metric":
+            self.custom_eval_metric = CatBoostEvalMetricUserDefined()
 
     def __call__(self, trial):
         try:
@@ -139,6 +142,8 @@ class CatBoostObjective:
             raise e
         except Exception as e:
             print("Exception in CatBoostObjective", str(e))
+            # import traceback
+            # print(traceback.format_exc())
             return None
 
         return score

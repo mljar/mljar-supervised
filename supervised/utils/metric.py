@@ -300,6 +300,53 @@ class CatBoostEvalMetricMSE(object):
         return mean_squared_error(target, preds, sample_weight=weight), 0
 
 
+class UserDefinedEvalMetric:
+    # should always minimize
+    eval_metric = mean_squared_error  # set the default
+
+    def set_metric(self, feval):
+        UserDefinedEvalMetric.eval_metric = feval
+
+    def __call__(self, y_true, y_predicted, sample_weight=None):
+        return UserDefinedEvalMetric.eval_metric(y_true, y_predicted, sample_weight)
+
+
+def xgboost_eval_metric_user_defined(preds, dtrain):
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+    if len(weight) == 0:
+        weight = None
+    metric = UserDefinedEvalMetric()
+    return "user_defined_metric", metric(target, preds, sample_weight=weight)
+
+
+def lightgbm_eval_metric_user_defined(preds, dtrain):
+    target = dtrain.get_label()
+    weight = dtrain.get_weight()
+    metric = UserDefinedEvalMetric()
+    return "user_defined_metric", metric(target, preds, sample_weight=weight), False
+
+
+class CatBoostEvalMetricUserDefined(object):
+    def get_final_error(self, error, weight):
+        return error
+
+    def is_max_optimal(self):
+        return False
+
+    def evaluate(self, approxes, target, weight):
+        assert len(approxes) == 1
+        assert len(target) == len(approxes[0])
+
+        preds = np.array(approxes[0])
+        target = np.array(target)
+        if weight is not None:
+            weight = np.array(weight)
+
+        metric = UserDefinedEvalMetric()
+        return metric(target, preds, sample_weight=weight), 0
+
+
 class Metric(object):
     def __init__(self, params):
         if params is None:
@@ -322,6 +369,7 @@ class Metric(object):
             "f1",  # negative
             "average_precision",  # negative
             "accuracy",  # negative
+            "user_defined_metric",
         ]
         if self.name == "logloss":
             self.metric = logloss
@@ -349,6 +397,8 @@ class Metric(object):
             self.metric = negative_average_precision
         elif self.name == "accuracy":
             self.metric = negative_accuracy
+        elif self.name == "user_defined_metric":
+            self.metric = UserDefinedEvalMetric.eval_metric
         # elif self.name == "rmsle": # need to update target preprocessing
         #    self.metric = rmsle     # to assure that target is not negative ...
         else:
