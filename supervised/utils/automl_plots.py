@@ -139,7 +139,8 @@ class AutoMLPlots:
                         oofs[i], oofs[j]
                     )
 
-            fig, ax = plt.subplots(1, 1, figsize=(10, 9))
+            figsize = (15,15) if len(names) > 25 else (10,10)
+            fig, ax = plt.subplots(1, 1, figsize=figsize)
 
             image = ax.imshow(
                 corrs,
