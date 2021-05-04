@@ -153,6 +153,7 @@ class AdditionalPlots:
                     "figure": fig,
                 }
             ]
+            plt.close("all")
         except Exception as e:
             print(str(e))
 
@@ -162,7 +163,7 @@ class AdditionalPlots:
     def plots_regression(target, predictions):
         figures = []
         try:
-            MAX_SAMPLES = 1000
+            MAX_SAMPLES = 5000
             fig = plt.figure(figsize=(10, 7))
             ax1 = fig.add_subplot(1, 1, 1)
             samples = target.shape[0]
@@ -174,6 +175,7 @@ class AdditionalPlots:
             plt.xlabel("True values")
             plt.ylabel("Predicted values")
             plt.title(f"Target values vs Predicted values (samples={samples})")
+            plt.tight_layout(pad=5.0)
             figures += [
                 {
                     "title": "True vs Predicted",
@@ -181,6 +183,33 @@ class AdditionalPlots:
                     "figure": fig,
                 }
             ]
+
+            # residual plot
+            fig = plt.figure(figsize=(10, 7))
+            ax1 = fig.add_subplot(1, 1, 1)
+            residuals = target[:samples].values - predictions[:samples].values
+            ax1.scatter(predictions[:samples], residuals, c="tab:blue", alpha=0.2)
+            plt.xlabel("Predicted values")
+            plt.ylabel("Residuals")
+            plt.title(f"Predicted values vs Residuals (samples={samples})")
+            plt.tight_layout(pad=5.0)
+            bb = ax1.get_position()
+
+            ax2 = fig.add_axes((bb.x0 + bb.size[0], bb.y0, 0.05, bb.size[1]))
+            ax2.set_xticklabels([])
+            ax2.set_yticklabels([])
+            ax2.hist(residuals, 50, orientation="horizontal", alpha=0.5)
+            ax2.axis("off")
+
+            figures += [
+                {
+                    "title": "Predicted vs Residuals",
+                    "fname": "predicted_vs_residuals.png",
+                    "figure": fig,
+                }
+            ]
+            plt.close("all")
+
         except Exception as e:
             print(str(e))
         return figures

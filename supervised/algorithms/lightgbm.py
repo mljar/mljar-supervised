@@ -21,7 +21,7 @@ from supervised.utils.metric import (
     lightgbm_eval_metric_f1,
     lightgbm_eval_metric_average_precision,
     lightgbm_eval_metric_accuracy,
-    lightgbm_eval_metric_user_defined
+    lightgbm_eval_metric_user_defined,
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -154,7 +154,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 self.custom_eval_metric = lightgbm_eval_metric_accuracy
             elif self.params["custom_eval_metric_name"] == "user_defined_metric":
                 self.custom_eval_metric = lightgbm_eval_metric_user_defined
-
 
         logger.debug("LightgbmLearner __init__")
 

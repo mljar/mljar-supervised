@@ -72,7 +72,7 @@ def catboost_objective(ml_task, eval_metric):
             "R2",
             "spearman",
             "pearson",
-            "user_defined_metric"
+            "user_defined_metric",
         ]:  # cant optimize them directly
             objective = "RMSE"
     return objective

@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 import scipy as sp
+
 logger = logging.getLogger(__name__)
 from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
@@ -44,7 +45,6 @@ class AutoMLPlots:
             fout.write(
                 f"![models spearman correlation]({AutoMLPlots.correlation_heatmap_fname})\n\n"
             )
-
 
     @staticmethod
     def models_feature_importance(results_path, models):
@@ -109,7 +109,6 @@ class AutoMLPlots:
         except Exception as e:
             pass
 
-
     @staticmethod
     def correlation(oof1, oof2):
         cols = [c for c in oof1.columns if "prediction" in c]
@@ -135,9 +134,11 @@ class AutoMLPlots:
 
             corrs = np.ones((len(names), len(names)))
             for i in range(len(names)):
-                for j in range(i+1, len(names)):
-                    corrs[i,j] = corrs[j,i] = AutoMLPlots.correlation(oofs[i], oofs[j])
-            
+                for j in range(i + 1, len(names)):
+                    corrs[i, j] = corrs[j, i] = AutoMLPlots.correlation(
+                        oofs[i], oofs[j]
+                    )
+
             fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 
             image = ax.imshow(
@@ -157,7 +158,9 @@ class AutoMLPlots:
             ax.set_title("Spearman Correlation of Models")
 
             plt.tight_layout(pad=2.0)
-            plot_path = os.path.join(results_path, AutoMLPlots.correlation_heatmap_fname)
+            plot_path = os.path.join(
+                results_path, AutoMLPlots.correlation_heatmap_fname
+            )
             plt.savefig(plot_path)
             plt.close("all")
         except Exception as e:

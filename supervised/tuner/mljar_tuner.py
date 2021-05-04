@@ -263,6 +263,7 @@ class MljarTuner:
             return []
         except Exception as e:
             import traceback
+
             print(str(e), traceback.format_exc())
             return []
 
