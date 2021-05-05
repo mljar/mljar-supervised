@@ -59,20 +59,16 @@ class MetricTest(unittest.TestCase):
         score = m(y_true, y_predicted)
         self.assertEqual(score, 0.0)
 
-
     def test_user_defined_metric(self):
-        
-        def custom(x,y,sample_weight=None):
-            return np.sum(x+y)
+        def custom(x, y, sample_weight=None):
+            return np.sum(x + y)
 
         UserDefinedEvalMetric().set_metric(custom)
 
         params = {"name": "user_defined_metric"}
         m = Metric(params)
 
-        a = np.array([1,1,1])
+        a = np.array([1, 1, 1])
 
-        score = m(a,a)
+        score = m(a, a)
         self.assertEqual(score, 6)
-
-        
