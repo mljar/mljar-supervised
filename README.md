@@ -409,6 +409,28 @@ To get started take a look at our [Contribution Guide](https://supervised.mljar.
   <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
 </a>
 
+# Cite
+
+Would you like to cite MLJAR? Great! :)
+
+You can cite MLJAR as following:
+
+```
+@misc{mljar,
+  author    = {Aleksandra P\l{}o\'{n}ska and Piotr P\l{}o\'{n}ski},
+  year      = {2021},
+  publisher = {MLJAR},
+  address   = {\L{}apy, Poland},
+  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.9.1},
+  url       = {https://github.com/mljar/mljar-supervised}
+}
+```
+
+Would love to hear from you how have you used MLJAR AutoML in your project. 
+Please feel free to let us know at 
+![image](https://user-images.githubusercontent.com/6959032/118103228-f5ea9a00-b3d9-11eb-87ed-8cfb1f873f91.png)
+
+
 # License  
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
