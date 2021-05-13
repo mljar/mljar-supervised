@@ -421,7 +421,7 @@ You can cite MLJAR as following:
   year      = {2021},
   publisher = {MLJAR},
   address   = {\L{}apy, Poland},
-  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.9.1},
+  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.10.3},
   url       = {https://github.com/mljar/mljar-supervised}
 }
 ```
