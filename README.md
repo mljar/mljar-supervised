@@ -90,7 +90,7 @@ The example for `LightGBM` summary:
 ![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
 
 
-## Available Modes :books:
+## Available Modes
 
 In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes are presented in the table .
 
@@ -289,6 +289,11 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 
 # FAQ
 
+<details><summary>What method is used for hyperparameters optimization?</summary>
+  - For modes: `Explain`, `Perform` and `Compete` there is used a random search method combined with hill climbing. In this approach all checked models are saved and used for building Ensemble.
+  - For mode: `Optuna` the Optuna framework is used. It is using TPE sampler for tuning. Models checked during Optuna hyperparameters search are not saved, only the best model is saved (final model from tuning). You can check the details about checked hyperparameters from optuna by checking study files in `optuna` directory in your AutoML `results_path`.
+</details>
+
 <details><summary>How to save and load AutoML?</summary>
 
 The save and load of AutoML models is automatic. All models created during AutoML training are saved in the directory set in `results_path` (argument of `AutoML()` constructor). If there is no `results_path` set, then the directory is created based on following name convention: `AutoML_{number}` the `number` will be number from 1 to 1000 (depends which directory name will be free).
@@ -389,6 +394,12 @@ RUN pip3 install mljar-supervised jupyter
 CMD ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
 ```
 
+Install from GitHub with pip:
+```
+pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
+```
+
+
 # Contributing
 
 To get started take a look at our [Contribution Guide](https://supervised.mljar.com/contributing/) for information about our process and where you can fit in!
@@ -397,6 +408,28 @@ To get started take a look at our [Contribution Guide](https://supervised.mljar.
 <a href="https://github.com/mljar/mljar-supervised/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
 </a>
+
+# Cite
+
+Would you like to cite MLJAR? Great! :)
+
+You can cite MLJAR as following:
+
+```
+@misc{mljar,
+  author    = {Aleksandra P\l{}o\'{n}ska and Piotr P\l{}o\'{n}ski},
+  year      = {2021},
+  publisher = {MLJAR},
+  address   = {\L{}apy, Poland},
+  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.10.3},
+  url       = {https://github.com/mljar/mljar-supervised}
+}
+```
+
+Would love to hear from you how have you used MLJAR AutoML in your project. 
+Please feel free to let us know at 
+![image](https://user-images.githubusercontent.com/6959032/118103228-f5ea9a00-b3d9-11eb-87ed-8cfb1f873f91.png)
+
 
 # License  
 
