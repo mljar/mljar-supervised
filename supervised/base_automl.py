@@ -571,8 +571,6 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
 
-        # self._drop_data_variables(X)
-
     def _handle_drastic_imbalance(self, X, y, sample_weight=None):
         if self._ml_task == REGRESSION:
             return
@@ -634,19 +632,6 @@ class BaseAutoML(BaseEstimator, ABC):
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4))
-
-    def _drop_data_variables(self, X):
-
-        X.drop(X.columns, axis=1, inplace=True)
-
-    def _load_data_variables(self, X_train):
-        if X_train.shape[1] == 0:
-            X = load_data(self._X_path)
-            for c in X.columns:
-                X_train.insert(loc=X_train.shape[1], column=c, value=X[c])
-
-        os.remove(self._X_path)
-        os.remove(self._y_path)
 
     def save_progress(self, step=None, generated_params=None):
         if step is not None and generated_params is not None:
@@ -941,7 +926,6 @@ class BaseAutoML(BaseEstimator, ABC):
             self._apply_constraints_stack_models()
 
         try:
-
             self.load_progress()
             if self._fit_level == "finished":
                 print(
@@ -985,7 +969,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            self._save_data(X.copy(deep=False), y, sample_weight, cv)
+            if sample_weight is not None:
+                self._save_data(
+                    X.copy(deep=False),
+                    y.copy(deep=False),
+                    sample_weight.copy(deep=False),
+                    cv,
+                )
+            else:
+                self._save_data(X.copy(deep=False), y.copy(deep=False), None, cv)
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -1129,9 +1121,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
         except Exception as e:
             raise e
-        # finally:
-        #    if self._X_path is not None:
-        #        self._load_data_variables(X)
 
         return self
 

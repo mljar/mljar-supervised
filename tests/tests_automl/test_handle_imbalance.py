@@ -100,3 +100,39 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
 
         self.assertEqual(np.sum(sample_weight[100:119]), 0)
         self.assertEqual(np.sum(sample_weight[119:138]), 19 * 10)
+
+    def test_imbalance_dont_change_data_after_fit(self):
+        a = AutoML(
+            results_path=self.automl_dir,
+            total_time_limit=1,
+            # algorithms=["Random Forest"],
+            train_ensemble=False,
+            validation_strategy={
+                "validation_type": "kfold",
+                "k_folds": 10,
+                "shuffle": True,
+                "stratify": True,
+            },
+            start_random_models=1,
+        )
+
+        rows = 100
+        X = pd.DataFrame(
+            {
+                "f1": np.random.rand(rows),
+                "f2": np.random.rand(rows),
+                "f3": np.random.rand(rows),
+            }
+        )
+        y = np.ones(rows)
+
+        y[:8] = 0
+        y[10:12] = 2
+        sample_weight = np.ones(rows)
+
+        a.fit(X, y, sample_weight=sample_weight)
+
+        # original data **without** inserted samples to handle imbalance
+        self.assertEqual(X.shape[0], rows)
+        self.assertEqual(y.shape[0], rows)
+        self.assertEqual(sample_weight.shape[0], rows)
