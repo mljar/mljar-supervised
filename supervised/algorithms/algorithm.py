@@ -99,6 +99,7 @@ class BaseAlgorithm:
                 learner_name,
                 metric_name,
                 ml_task,
+                self.params.get("n_jobs", -1)
             )
         if explain_level > 1:
             PlotSHAP.compute(

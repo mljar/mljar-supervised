@@ -40,6 +40,7 @@ class PermutationImportance:
         learner_name,
         metric_name=None,
         ml_task=None,
+        n_jobs=-1
     ):
         # for scoring check https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
         if ml_task == BINARY_CLASSIFICATION:
@@ -74,7 +75,7 @@ class PermutationImportance:
                     X_vald,
                     y_vald,
                     scoring=scoring,
-                    n_jobs=-1,  # all cores
+                    n_jobs=n_jobs,  
                     random_state=12,
                     n_repeats=5,  # default
                 )
