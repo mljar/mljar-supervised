@@ -8,7 +8,7 @@ before_install:
   - sudo apt-get -y install graphviz 
 install:
   - pip install --upgrade setuptools
-  - pip install importlib-metadata>=1.7.0
+  - pip install -U importlib-metadata>=1.7.0
   - pip install -U -r requirements.txt
   - pip install -U -r requirements_dev.txt
   - pip install ipython
