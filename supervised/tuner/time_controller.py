@@ -60,7 +60,7 @@ class TimeController:
     def time_should_use(self, fit_level):
 
         if self._total_time_limit is None:
-            return 7*24*3600 # 7 days
+            return 7 * 24 * 3600  # 7 days
 
         ratios = {
             "default_algorithms": 0.3,
@@ -213,7 +213,7 @@ class TimeController:
     def learner_time_limit(self, model_type, fit_level, k_folds):
 
         if self._total_time_limit is None:
-            return 7*24*3600
+            return 7 * 24 * 3600
 
         if self._model_time_limit is not None:
             return self._model_time_limit / k_folds

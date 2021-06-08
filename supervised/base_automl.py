@@ -936,9 +936,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
             if self._mode == "Optuna":
-                ttl = int(
-                    len(self._algorithms) * self._optuna_time_budget
-                )
+                ttl = int(len(self._algorithms) * self._optuna_time_budget)
                 self.verbose_print("Expected computing time:")
                 self.verbose_print(
                     f"Time for tuning with Optuna: len(algorithms) * optuna_time_budget = {int(len(self._algorithms) * self._optuna_time_budget)} seconds"
@@ -1411,8 +1409,8 @@ class BaseAutoML(BaseEstimator, ABC):
         """ Gets the current total_time_limit"""
         self._validate_total_time_limit()
         if self._get_mode() == "Optuna":
-            return None # there no training limit for model in the Optuna mode
-                        # just train and be happy with super models :)
+            return None  # there no training limit for model in the Optuna mode
+            # just train and be happy with super models :)
         return deepcopy(self.total_time_limit)
 
     def _get_model_time_limit(self):

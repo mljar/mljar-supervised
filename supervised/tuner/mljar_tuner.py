@@ -613,8 +613,11 @@ class MljarTuner:
 
     def get_categorical_strategy(self, current_models, strategy, total_time_limit):
 
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
         generated_params = []
         for m_type in algorithms:
@@ -731,9 +734,11 @@ class MljarTuner:
     def get_golden_features_params(
         self, current_models, results_path, total_time_limit
     ):
-
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
 
         generated_params = []
@@ -774,9 +779,11 @@ class MljarTuner:
     def get_kmeans_features_params(
         self, current_models, results_path, total_time_limit
     ):
-
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit, exclude_golden=True
+            current_models, time_limit=model_selection_time_limit, exclude_golden=True
         )
 
         generated_params = []
@@ -803,9 +810,11 @@ class MljarTuner:
         return generated_params
 
     def time_features_selection(self, current_models, total_time_limit):
-
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
 
         time_needed = 0
@@ -838,7 +847,7 @@ class MljarTuner:
 
         time_needed = self.time_features_selection(current_models, total_time_limit)
 
-        if time_needed > 0.1 * total_time_limit:
+        if total_time_limit is not None and time_needed > 0.1 * total_time_limit:
             print("Not enough time to perform features selection. Skip")
             print(
                 "Time needed for features selection ~", np.round(time_needed), "seconds"
@@ -848,8 +857,11 @@ class MljarTuner:
             )
             return None
 
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
         if df_models.shape[0] == 0:
             return None
@@ -892,8 +904,11 @@ class MljarTuner:
         if len(drop_features) <= 1:
             return None
 
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
 
         generated_params = []
@@ -1015,8 +1030,11 @@ class MljarTuner:
 
     def boost_params(self, current_models, results_path, total_time_limit):
 
+        model_selection_time_limit = (
+            None if total_time_limit is None else 0.1 * total_time_limit
+        )
         df_models, algorithms = self.df_models_algorithms(
-            current_models, time_limit=0.1 * total_time_limit
+            current_models, time_limit=model_selection_time_limit
         )
         best_model = None
         for i in range(df_models.shape[0]):
