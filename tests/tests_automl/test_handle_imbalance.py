@@ -104,8 +104,7 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
     def test_imbalance_dont_change_data_after_fit(self):
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=1,
-            # algorithms=["Random Forest"],
+            total_time_limit=5,
             train_ensemble=False,
             validation_strategy={
                 "validation_type": "kfold",
@@ -114,6 +113,7 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
                 "stratify": True,
             },
             start_random_models=1,
+            explain_level=0
         )
 
         rows = 100

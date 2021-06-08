@@ -935,20 +935,16 @@ class BaseAutoML(BaseEstimator, ABC):
             self._check_can_load()
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
-            if self._mode == "Optuna" and self._total_time_limit is not None:
+            if self._mode == "Optuna":
                 ttl = int(
-                    self._total_time_limit
-                    + len(self._algorithms) * self._optuna_time_budget
+                    len(self._algorithms) * self._optuna_time_budget
                 )
                 self.verbose_print("Expected computing time:")
                 self.verbose_print(
-                    f"Total training time: Optuna + ML training = {ttl} seconds"
+                    f"Time for tuning with Optuna: len(algorithms) * optuna_time_budget = {int(len(self._algorithms) * self._optuna_time_budget)} seconds"
                 )
                 self.verbose_print(
-                    f"Total Optuna time: len(algorithms) * optuna_time_budget = {int(len(self._algorithms) * self._optuna_time_budget)} seconds"
-                )
-                self.verbose_print(
-                    f"Total ML model training time: {int(self._total_time_limit)} seconds"
+                    f"There is no time limit for ML model training after Optuna tuning (total_time_limit parameter is ignored)."
                 )
 
             self.verbose_print(
@@ -1414,6 +1410,9 @@ class BaseAutoML(BaseEstimator, ABC):
     def _get_total_time_limit(self):
         """ Gets the current total_time_limit"""
         self._validate_total_time_limit()
+        if self._get_mode() == "Optuna":
+            return None # there no training limit for model in the Optuna mode
+                        # just train and be happy with super models :)
         return deepcopy(self.total_time_limit)
 
     def _get_model_time_limit(self):
@@ -1760,7 +1759,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_total_time_limit(self):
         """ Validates total_time_limit parameter"""
-        check_greater_than_zero_integer(self.total_time_limit, "total_time_limit")
+        if self.total_time_limit is None:
+            return
+        if self.total_time_limit is not None:
+            check_greater_than_zero_integer(self.total_time_limit, "total_time_limit")
 
     def _validate_model_time_limit(self):
         """ Validates model_time_limit parameter"""
