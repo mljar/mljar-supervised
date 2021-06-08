@@ -355,6 +355,13 @@ In the above example the regression model will be fitted.
   
 </details>
 
+
+<details><summary>How to know the order of classes for binary or multiclass problem when using predict_proba?</summary>
+
+To get predicted probabilites with information about class label please use the `predict_all()` method. It returns the pandas DataFrame with class names in the columns. The order of predicted columns is the same in the `predict_proba()` and `predict_all()` methods. The `predict_all()` method will additionaly have the column with the predicted class label.
+
+</details>
+
 # Documentation  
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
