@@ -203,6 +203,9 @@ class CatBoostAlgorithm(BaseAlgorithm):
                     if X_validation is not None:
                         X_validation.iloc[:, i] = X_validation.iloc[:, i].astype(str)
 
+        print(X.head())
+        print(self.cat_features)
+
         eval_set = None
         if X_validation is not None and y_validation is not None:
             eval_set = Pool(

@@ -7,6 +7,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 from supervised.utils.metric import Metric
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.tuner.optuna.lightgbm import LightgbmObjective
 from supervised.tuner.optuna.xgboost import XgboostObjective
 from supervised.tuner.optuna.catboost import CatBoostObjective
@@ -67,15 +68,7 @@ class OptunaTuner:
         self.ml_task = ml_task
         self.n_jobs = n_jobs
         self.random_state = random_state
-
         self.cat_features_indices = []
-        data_info_fname = os.path.join(results_path, "data_info.json")
-        if os.path.exists(data_info_fname):
-            data_info = json.loads(open(data_info_fname).read())
-            for i, (k, v) in enumerate(data_info["columns_info"].items()):
-                if "categorical" in v:
-                    self.cat_features_indices += [i]
-
         self.load()
         if not self.verbose:
             optuna.logging.set_verbosity(optuna.logging.CRITICAL)
@@ -117,6 +110,11 @@ class OptunaTuner:
                 f"Optuna optimizes {algorithm} with time budget {self.time_budget} seconds "
                 f"eval_metric {self.eval_metric.name} ({self.direction})"
             )
+
+        self.cat_features_indices = []
+        for i in range(X_train.shape[1]):
+            if PreprocessingUtils.is_categorical(X_train.iloc[:, i]):
+                self.cat_features_indices += [i]
 
         study = optuna.create_study(
             direction=self.direction,
