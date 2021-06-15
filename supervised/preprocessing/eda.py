@@ -150,7 +150,7 @@ class EDA:
                 fout.write("# Exploratory Data Analysis\n")
                 fout.write("\n\n[<< Go back](../README.md)\n")
 
-                for row in df.to_dict(orient="records"):
+                for row in df.to_dict(orient='records'):
 
                     fout.write(f"## Feature : {row['feature']}\n")
                     fout.write(f"- **Feature type** : {row['feature_type']}\n")
