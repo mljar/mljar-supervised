@@ -59,7 +59,7 @@ def lightgbm_eval_metric(ml_task, automl_eval_metric):
         REGRESSION: {
             "rmse": "rmse",
             "mse": "l2",
-            "mae": "mae",
+            "mae": "l1",
             "mape": "mape",
             "r2": "custom",
             "spearman": "custom",
