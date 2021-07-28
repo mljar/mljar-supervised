@@ -952,7 +952,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._stack_models:
                 self.verbose_print("AutoML will stack models")
             if self._train_ensemble:
-                self.verbose_print("AutoML will ensemble availabe models")
+                self.verbose_print("AutoML will ensemble available models")
 
             self._start_time = time.time()
             if self._time_ctrl is not None:
