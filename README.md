@@ -29,10 +29,11 @@
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
- - [Installation](https://github.com/mljar/mljar-supervised#installation-package)
+ - [Installation](https://github.com/mljar/mljar-supervised#installation)
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
- - [License](https://github.com/mljar/mljar-supervised#license-necktie)
- - [MLJAR](https://github.com/mljar/mljar-supervised#mljar-heart)
+ - [Cite](https://github.com/mljar/mljar-supervised#cite)
+ - [License](https://github.com/mljar/mljar-supervised#license)
+ - [MLJAR](https://github.com/mljar/mljar-supervised#mljar)
 
 # Automated Machine Learning 
 
