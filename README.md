@@ -100,6 +100,10 @@ The example for `LightGBM` summary:
 
 In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes are presented in the table .
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_modes.png" width="100%" />
+</p>
+
 ### Explain 
 
 ```py
