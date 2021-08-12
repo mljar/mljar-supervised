@@ -22,7 +22,7 @@
 
 ## Table of Contents
 
- - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket)
+ - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
