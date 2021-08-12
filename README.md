@@ -25,7 +25,7 @@
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
- - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-books)
+ - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
