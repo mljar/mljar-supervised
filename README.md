@@ -30,6 +30,7 @@
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
  - [Installation](https://github.com/mljar/mljar-supervised#installation)
+ - [Demo](https://github.com/mljar/mljar-supervised#demo)
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
  - [Cite](https://github.com/mljar/mljar-supervised#cite)
  - [License](https://github.com/mljar/mljar-supervised#license)
@@ -421,7 +422,15 @@ Install from GitHub with pip:
 ```
 pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
 ```
+# Demo
 
+In the below demo GIF you will see:
+- MLJAR AutoML trained in Jupyter Notebook
+- overview of created files
+- showcase of selected plots created during AutoML training
+- example of README file and csv file with results
+
+![](https://github.com/mljar/mljar-examples/raw/master/media/mljar_files.gif)
 
 # Contributing
 
