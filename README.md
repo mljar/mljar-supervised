@@ -293,6 +293,7 @@ The example for `Titanic Dataset` summary with visualization. For classification
 - Ensemble
 - Leaderboard
 - Readme
+
 ![Files by MLJAR](https://github.com/aakarsh1011/mljar-examples/blob/master/media/mljar_files.gif)
 
 ## :point_right: More Examples
