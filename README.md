@@ -282,6 +282,17 @@ automl.fit(X_train, y_train)
 predictions = automl.predict(X_test)
 print("Test MSE:", mean_squared_error(y_test, predictions))
 ```
+## :point_right: Files created by MLJAR for explanation
+
+The example for `Titanic Dataset` summary with visualization. For classification tasks via various algorithms and their metrics:
+- Decision Tree
+- Linear
+- Default Xgboost
+- Neural Network
+- EDA
+- Ensemble
+- Leaderboard
+- Readme
 
 ## :point_right: More Examples
 
