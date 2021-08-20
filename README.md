@@ -292,19 +292,6 @@ automl.fit(X_train, y_train)
 predictions = automl.predict(X_test)
 print("Test MSE:", mean_squared_error(y_test, predictions))
 ```
-## :point_right: Files created by MLJAR for explanation
-
-The example for `Titanic Dataset` summary with visualization. For classification tasks via various algorithms and their metrics:
-- Decision Tree
-- Linear
-- Default Xgboost
-- Neural Network
-- EDA
-- Ensemble
-- Leaderboard
-- Readme
-
-![Files by MLJAR](https://github.com/aakarsh1011/mljar-examples/blob/master/media/mljar_files.gif)
 
 ## :point_right: More Examples
 
@@ -438,9 +425,10 @@ pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
 # Demo
 
 In the below demo GIF you will see:
-- MLJAR AutoML trained in Jupyter Notebook
+- MLJAR AutoML trained in Jupyter Notebook on titanic dataset
 - overview of created files
 - showcase of selected plots created during AutoML training
+- algorithm comparison report along with their plots
 - example of README file and csv file with results
 
 ![](https://github.com/mljar/mljar-examples/raw/master/media/mljar_files.gif)
