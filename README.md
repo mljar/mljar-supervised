@@ -22,17 +22,19 @@
 
 ## Table of Contents
 
- - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning-rocket)
- - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it-boom)
+ - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
+ - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
- - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes-books)
+ - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
- - [Installation](https://github.com/mljar/mljar-supervised#installation-package)
+ - [Installation](https://github.com/mljar/mljar-supervised#installation)
+ - [Demo](https://github.com/mljar/mljar-supervised#demo)
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
- - [License](https://github.com/mljar/mljar-supervised#license-necktie)
- - [MLJAR](https://github.com/mljar/mljar-supervised#mljar-heart)
+ - [Cite](https://github.com/mljar/mljar-supervised#cite)
+ - [License](https://github.com/mljar/mljar-supervised#license)
+ - [MLJAR](https://github.com/mljar/mljar-supervised#mljar)
 
 # Automated Machine Learning 
 
@@ -66,6 +68,10 @@ Of course, you can further customize the details of each `mode` to meet the requ
 - It cares about explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with `explain_level` parameter).
 - There is automatic documnetation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics and charts. 
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
+</p>
+
 # Automatic Documentation
 
 ## The AutoML Report
@@ -95,6 +101,10 @@ The example for `LightGBM` summary:
 ## Available Modes
 
 In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes are presented in the table .
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_modes.png" width="100%" />
+</p>
 
 ### Explain 
 
@@ -425,7 +435,15 @@ Install from GitHub with pip:
 ```
 pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
 ```
+# Demo
 
+In the below demo GIF you will see:
+- MLJAR AutoML trained in Jupyter Notebook
+- overview of created files
+- showcase of selected plots created during AutoML training
+- example of README file and csv file with results
+
+![](https://github.com/mljar/mljar-examples/raw/master/media/mljar_files.gif)
 
 # Contributing
 
