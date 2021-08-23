@@ -1301,9 +1301,19 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X):
+    def _predict(self, X, modelname=None):
 
-        predictions = self._base_predict(X)
+        model = None
+        if modelname != None:
+            for i in self._models:
+                if modelname == i.get_name():
+                    model = i
+                    
+
+        if modelname != None and model == None:
+            raise AutoMLException("invaild model")
+
+        predictions = self._base_predict(X, model)
         # Return predictions
         # If classification task the result is in column 'label'
         # If regression task the result is in column 'prediction'
