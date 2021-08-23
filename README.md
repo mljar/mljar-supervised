@@ -425,9 +425,10 @@ pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
 # Demo
 
 In the below demo GIF you will see:
-- MLJAR AutoML trained in Jupyter Notebook
+- MLJAR AutoML trained in Jupyter Notebook on titanic dataset
 - overview of created files
 - showcase of selected plots created during AutoML training
+- algorithm comparison report along with their plots
 - example of README file and csv file with results
 
 ![](https://github.com/mljar/mljar-examples/raw/master/media/mljar_files.gif)
