@@ -336,7 +336,7 @@ class AutoML(BaseAutoML):
         """
         return self._fit(X, y, sample_weight, cv)
 
-    def predict(self, X, model=None): 
+    def predict(self, X, modelname=None): 
         """
         Computes predictions from AutoML best model.
 
@@ -353,7 +353,7 @@ class AutoML(BaseAutoML):
         Raises:
             AutoMLException: Model has not yet been fitted.
         """
-        return self._predict(X, model)
+        return self._predict(X, modelname)
 
     def predict_proba(self, X):
         """

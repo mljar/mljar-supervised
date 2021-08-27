@@ -1305,6 +1305,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
         model = None
         if modelname != None:
+            if not self._models:
+                self.load(self.results_path)
             for i in self._models:
                 if modelname == i.get_name():
                     model = i
