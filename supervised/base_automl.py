@@ -1361,7 +1361,7 @@ class BaseAutoML(BaseEstimator, ABC):
             raise AutoMLException("invaild model")
 
         # Make and return predictions
-        return self._base_predict(X)
+        return self._base_predict(X,model)
 
     def _score(self, X, y=None, sample_weight=None):
         # y default must be None for scikit-learn compatibility
