@@ -1301,18 +1301,18 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X, modelname=None):
+    def _predict(self, X, model_name=None):
 
         model = None
-        if modelname != None:
+        if model_name != None:
             if not self._models:
                 self.load(self.results_path)
             for i in self._models:
-                if modelname == i.get_name():
+                if model_name == i.get_name():
                     model = i
                     
 
-        if modelname != None and model == None:
+        if model_name != None and model == None:
             raise AutoMLException("invaild model")
 
         predictions = self._base_predict(X, model)
