@@ -355,7 +355,7 @@ class AutoML(BaseAutoML):
         """
         return self._predict(X, model_name)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X,model_name=None):
         """
         Computes class probabilities from AutoML best model.
         This method can only be used for classification tasks.
@@ -372,7 +372,7 @@ class AutoML(BaseAutoML):
             AutoMLException: Model has not yet been fitted.
 
         """
-        return self._predict_proba(X)
+        return self._predict_proba(X,model_name)
 
     def predict_all(self, X):
         """
