@@ -1347,7 +1347,19 @@ class BaseAutoML(BaseEstimator, ABC):
         # Need to drop `label` column.
         return self._base_predict(X,model).drop(["label"], axis=1).to_numpy()
 
-    def _predict_all(self, X):
+    def _predict_all(self, X, model_name=None):
+
+         # Check given modelname is valid or not
+        model = None
+        if model_name != None:
+            if not self._models:
+                self.load(self.results_path)
+            for i in self._models:
+                if model_name == i.get_name():
+                    model = i            
+        if model_name != None and model == None:
+            raise AutoMLException("invaild model")
+
         # Make and return predictions
         return self._base_predict(X)
 

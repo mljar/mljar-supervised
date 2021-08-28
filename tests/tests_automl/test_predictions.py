@@ -32,4 +32,6 @@ class PredictionsText(unittest.TestCase):
             open(os.path.join(self.automl_dir, "params.json"), "r")
         )["load_on_predict"]
         for m in load_on_predict:
-            p = automl.predict(test, m)
+            automl.predict(test, m)
+            automl.predict_proba(test,m)
+            automl.predict_all(test,m)

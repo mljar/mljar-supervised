@@ -343,6 +343,8 @@ class AutoML(BaseAutoML):
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (String):
+                name of model used to make predictions
 
         Returns:
             numpy.ndarray:
@@ -355,7 +357,7 @@ class AutoML(BaseAutoML):
         """
         return self._predict(X, model_name)
 
-    def predict_proba(self, X,model_name=None):
+    def predict_proba(self, X, model_name=None):
         """
         Computes class probabilities from AutoML best model.
         This method can only be used for classification tasks.
@@ -363,6 +365,8 @@ class AutoML(BaseAutoML):
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (String):
+                name of model used to make predictions
 
         Returns:
             numpy.ndarray of shape (n_samples, n_classes):
@@ -372,9 +376,9 @@ class AutoML(BaseAutoML):
             AutoMLException: Model has not yet been fitted.
 
         """
-        return self._predict_proba(X,model_name)
+        return self._predict_proba(X, model_name)
 
-    def predict_all(self, X):
+    def predict_all(self, X, model_name=None):
         """
         Computes both class probabilities and class labels for classification tasks.
         Computes predictions for regression tasks.
@@ -382,6 +386,8 @@ class AutoML(BaseAutoML):
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (String):
+                name of model used to make predictions
 
         Returns:
             pandas.Dataframe:
@@ -393,7 +399,7 @@ class AutoML(BaseAutoML):
             AutoMLException: Model has not yet been fitted.
 
         """
-        return self._predict_all(X)
+        return self._predict_all(X, model_name)
 
     def score(self, X, y=None, sample_weight=None):
         """Calculates a goodness of `fit` for an AutoML instance.
