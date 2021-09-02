@@ -20,6 +20,7 @@ logger.setLevel(LOG_LEVEL)
 
 from sklearn.tree import _tree
 from dtreeviz.trees import dtreeviz
+from supervised.utils.subsample import subsample
 
 
 def get_rules(tree, feature_names, class_names):
@@ -204,14 +205,25 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
         if explain_level == 0:
             return
         try:
-
-            viz = dtreeviz(
-                self.model,
-                X_train,
-                y_train,
-                target_name="target",
-                feature_names=X_train.columns,
-            )
+            # 250 is hard limit for number of points used in visualization
+            # if too many points are used then final SVG plot is very large (can be > 100MB)
+            if X_train.shape[0] > 250:
+                x, _, y, _ = subsample(X_train, y_train, REGRESSION, 250)
+                viz = dtreeviz(
+                    self.model,
+                    x,
+                    y,
+                    target_name="target",
+                    feature_names=x.columns,
+                )
+            else:
+                viz = dtreeviz(
+                    self.model,
+                    X_train,
+                    y_train,
+                    target_name="target",
+                    feature_names=X_train.columns,
+                )
             tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
             viz.save(tree_file_plot)
         except Exception as e:
