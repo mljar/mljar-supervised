@@ -749,6 +749,7 @@ class MljarTuner:
             params["preprocessing"]["golden_features"] = {
                 "results_path": results_path,
                 "ml_task": self._ml_task,
+                "n_jobs": self._n_jobs,
             }
             if (
                 self._golden_features is not None

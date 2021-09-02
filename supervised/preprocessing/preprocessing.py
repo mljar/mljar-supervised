@@ -186,8 +186,9 @@ class Preprocessing(object):
             results_path = self._params["golden_features"]["results_path"]
             ml_task = self._params["golden_features"]["ml_task"]
             features_count = self._params["golden_features"].get("features_count")
+            n_jobs = self._params["golden_features"].get("n_jobs", -1)
             self._golden_features = GoldenFeaturesTransformer(
-                results_path, ml_task, features_count
+                results_path, ml_task, features_count, n_jobs
             )
             self._golden_features.fit(X_train[numeric_cols], y_train)
             X_train = self._golden_features.transform(X_train)

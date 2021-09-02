@@ -5,7 +5,7 @@ import datetime
 import json
 import time
 import itertools
-from multiprocessing import Pool
+from joblib import Parallel, delayed
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.metrics import log_loss, mean_squared_error
@@ -104,11 +104,12 @@ def get_score(item):
 
 
 class GoldenFeaturesTransformer(object):
-    def __init__(self, results_path=None, ml_task=None, features_count=None):
+    def __init__(self, results_path=None, ml_task=None, features_count=None, n_jobs=-1):
         self._new_features = []
         self._new_columns = []
         self._ml_task = ml_task
         self._features_count = features_count
+        self._n_jobs = n_jobs
         self._scorer = None
         if self._ml_task == BINARY_CLASSIFICATION:
             self._scorer = get_binary_score
@@ -154,8 +155,10 @@ class GoldenFeaturesTransformer(object):
 
         scores = []
         # parallel version
-        with Pool() as p:
-            scores = p.map(get_score, items)
+        scores = Parallel(n_jobs=self._n_jobs, backend="loky")(
+            delayed(get_score)(i) for i in items
+        )
+
         # single process version
         # for item in items:
         #    scores += [get_score(item)]
