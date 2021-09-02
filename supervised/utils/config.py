@@ -11,7 +11,7 @@ import time
 
 
 def mem(msg=""):
-    """ Memory usage in MB """
+    """Memory usage in MB"""
 
     time.sleep(5)
 

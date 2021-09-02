@@ -28,11 +28,11 @@ import base64
 
 
 class EDA:
-    """ Creates plots for Automated Exploratory Data Analysis. """
+    """Creates plots for Automated Exploratory Data Analysis."""
 
     @staticmethod
     def prepare(column):
-        """ Prepare the column to be used as file name. """
+        """Prepare the column to be used as file name."""
         valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         valid_chars = frozenset(valid_chars)
         col = "".join(c for c in column if c in valid_chars)
@@ -43,12 +43,12 @@ class EDA:
 
     @staticmethod
     def plot_fname(column):
-        """ Returns file name for the plot based on the column name. """
+        """Returns file name for the plot based on the column name."""
         return EDA.prepare(column) + ".png"
 
     @staticmethod
     def plot_path(eda_path, column):
-        """ Returns full path for the plot based on the column name. """
+        """Returns full path for the plot based on the column name."""
         fname = os.path.join(eda_path, EDA.plot_fname(column))
         return fname
 
@@ -269,7 +269,9 @@ class EDA:
                         plt.figure(figsize=(5, 5))
                         for i in X[col].value_counts().index[:7]:
                             sns.kdeplot(
-                                x=y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                                x=y[X[X[col] == i].index],
+                                shade=True,
+                                label=f"{col}_{i}",
                             )
                         plt.gca().set_title(
                             f"Distribution of target for each {col}",
