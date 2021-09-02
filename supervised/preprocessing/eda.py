@@ -76,9 +76,9 @@ class EDA:
 
                 plt.figure(figsize=(5, 5))
                 if PreprocessingUtils.get_type(y) in ("categorical"):
-                    sns.countplot(y, color=BLUE)
+                    sns.countplot(data=y, color=BLUE)
                 else:
-                    sns.displot(y, color=BLUE)
+                    sns.displot(data=y, color=BLUE)
                 plt.title("Target class distribution")
                 plt.tight_layout(pad=2.0)
                 plt.savefig(EDA.plot_path(eda_path, "target"))
@@ -108,7 +108,7 @@ class EDA:
                 elif PreprocessingUtils.get_type(X[col]) in ("continous", "discrete"):
 
                     plt.figure(figsize=(5, 5))
-                    sns.displot(X[col], color=BLUE)
+                    sns.displot(data=X[col], color=BLUE)
                     plt.title(f"{col} value distribution")
                     plt.tight_layout(pad=2.0)
 
@@ -207,7 +207,7 @@ class EDA:
                         plt.figure(figsize=(5, 5))
                         for i in np.unique(y):
                             sns.kdeplot(
-                                X.iloc[np.where(y == i)[0]][col],
+                                x=X.iloc[np.where(y == i)[0]][col],
                                 label=f"class {i}",
                                 shade=True,
                             )
@@ -269,7 +269,7 @@ class EDA:
                         plt.figure(figsize=(5, 5))
                         for i in X[col].value_counts().index[:7]:
                             sns.kdeplot(
-                                y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
+                                x=y[X[X[col] == i].index], shade=True, label=f"{col}_{i}"
                             )
                         plt.gca().set_title(
                             f"Distribution of target for each {col}",
