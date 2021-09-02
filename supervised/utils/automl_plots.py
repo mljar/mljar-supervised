@@ -1,5 +1,6 @@
 import os
 import logging
+import warnings
 import numpy as np
 import pandas as pd
 import scipy as sp
@@ -112,11 +113,12 @@ class AutoMLPlots:
     @staticmethod
     def correlation(oof1, oof2):
         cols = [c for c in oof1.columns if "prediction" in c]
-
-        v = []
-        for c in cols:
-            c, _ = sp.stats.spearmanr(oof1[c], oof2[c])
-            v += [c]
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")
+            v = []
+            for c in cols:
+                c, _ = sp.stats.spearmanr(oof1[c], oof2[c])
+                v += [c]
 
         return np.mean(v)
 
