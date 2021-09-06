@@ -10,12 +10,12 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="mljar-supervised",
-    version="0.10.6",
+    version="0.11.0",
     description="Automated Machine Learning for Humans",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/mljar/mljar-supervised",
-    author="MLJAR, Inc.",
+    author="MLJAR, Sp. z o.o.",
     author_email="contact@mljar.com",
     license="MIT",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
