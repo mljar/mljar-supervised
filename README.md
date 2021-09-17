@@ -43,7 +43,7 @@ The `mljar-supervised` is an Automated Machine Learning Python package that work
 The `mljar-supervised` will help you with:
  - explaining and understanding your data (Automatic Exploratory Data Analysis),
  - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
- - creating Markdown reports from analysis with details about all models (Atomatic-Documentation),
+ - creating Markdown reports from analysis with details about all models (Automatic-Documentation),
  - saving, re-running and loading the analysis and ML models.
 
 It has four built-in modes of work:
