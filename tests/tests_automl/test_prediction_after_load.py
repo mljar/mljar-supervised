@@ -49,11 +49,9 @@ class AutoMLPredictionAfterLoadTest(unittest.TestCase):
 
         a.fit(X_train, y_train)
         p = a.predict_all(X_test)
-        print(p)
 
         a2 = AutoML(results_path=self.automl_dir)
         p2 = a2.predict_all(X_test)
-        print(p2)
-
+        
         assert_almost_equal(p["prediction_0"].iloc[0], p2["prediction_0"].iloc[0])
         assert_almost_equal(p["prediction_7"].iloc[0], p2["prediction_7"].iloc[0])
