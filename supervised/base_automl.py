@@ -174,6 +174,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
 
+            best_model_name = params.get("best_model")
             load_on_predict = params.get("load_on_predict")
             self._fit_level = params.get("fit_level")
             lazy_load = not (
@@ -182,6 +183,12 @@ class BaseAutoML(BaseEstimator, ABC):
             load_models = self._model_subpaths
             if load_on_predict is not None and self._fit_level == "finished":
                 load_models = load_on_predict
+                # just in case there is check for which models should be loaded
+                # fix https://github.com/mljar/mljar-supervised/issues/395
+                models_needed = self.models_needed_on_predict(best_model_name)
+                # join them and return unique list
+                load_models = list(np.unique(load_models + models_needed))
+
             models_map = {}
 
             for model_subpath in load_models:
@@ -196,7 +203,6 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._models += [m]
                     models_map[m.get_name()] = m
 
-            best_model_name = params.get("best_model")
             self._best_model = None
             if best_model_name is not None:
                 self._best_model = models_map.get(best_model_name)
@@ -1198,14 +1204,10 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._best_model is not None:
                 params["best_model"] = self._best_model.get_name()
                 load_on_predict = []
+                load_on_predict += self._best_model.involved_model_names()
                 if self._best_model._is_stacked and self._stacked_models is not None:
-                    load_on_predict += [m.get_name() for m in self._stacked_models]
-                if "Ensemble" in self._best_model.get_type():
-                    load_on_predict += [
-                        ens["model"].get_name()
-                        for ens in self._best_model.selected_models
-                    ]
-                load_on_predict += [self._best_model.get_name()]
+                    for m in self._stacked_models:
+                        load_on_predict += m.involved_model_names()
                 params["load_on_predict"] = list(np.unique(load_on_predict))
 
             if self._stacked_models is not None:
@@ -1230,6 +1232,56 @@ class BaseAutoML(BaseEstimator, ABC):
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
+
+    def get_ensemble_models(self, ensemble_name="Ensemble"):
+        try:
+            params = json.load(
+                open(os.path.join(self.results_path, ensemble_name, "ensemble.json"))
+            )
+            return [m["model"] for m in params["selected_models"]]
+        except Exception as e:
+            return []
+
+    def models_needed_on_predict(self, required_model_name):
+        params = json.load(open(os.path.join(self.results_path, "params.json")))
+        saved_models = params.get("saved", [])
+        stacked_models = params.get("stacked", [])
+
+        if required_model_name not in saved_models:
+            raise AutoMLException(
+                f"Can't load model {required_model_name}. Please check if the model's name is correct."
+            )
+        # single model needed
+        if (
+            "Stacked" not in required_model_name
+            and "Ensemble" not in required_model_name
+        ):
+            return [required_model_name]
+        ensemble_models = self.get_ensemble_models("Ensemble")
+        # ensemble of single models
+        if required_model_name == "Ensemble":
+            return ensemble_models + [required_model_name]
+        # single model on stacked data
+        if required_model_name != "Stacked_Ensemble":
+            return list(
+                np.unique(
+                    ensemble_models
+                    + ["Ensemble"]
+                    + stacked_models
+                    + [required_model_name]
+                )
+            )
+        # must be stacked ensemble
+        stacked_ensemble_models = self.get_ensemble_models("Stacked_Ensemble")
+        return list(
+            np.unique(
+                ensemble_models
+                + ["Ensemble"]
+                + stacked_models
+                + stacked_ensemble_models
+                + [required_model_name]
+            )
+        )
 
     def _base_predict(self, X, model=None):
 

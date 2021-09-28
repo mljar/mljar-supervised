@@ -391,6 +391,15 @@ class ModelFramework:
     def get_name(self):
         return self._name
 
+    def involved_model_names(self):
+        """Returns the list of all models involved in the current model.
+        For single model, it returns the list with the name of the model.
+        For ensemble model, it returns the list with the name of the ensemble and all internal models
+        (used to build ensemble).
+        For single model but trained on stacked data, it returns the list with the name of the model
+        (names of models used in stacking are not included)."""
+        return [self._name]
+
     def is_valid(self):
         """is_valid is used in Ensemble to check if it has more than 1 model in it.
         If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model"""

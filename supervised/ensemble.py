@@ -91,6 +91,20 @@ class Ensemble:
     def get_name(self):
         return self._name
 
+    def involved_model_names(self):
+        """Returns the list of all models involved in the current model.
+        For single model, it returns the list with the name of the model.
+        For ensemble model, it returns the list with the name of the ensemble and all internal models
+        (used to build ensemble).
+        For single model but trained on stacked data, it returns the list with the name of the model
+        (names of models used in stacking are not included)."""
+        if self.selected_models is None or not self.selected_models:
+            return [self._name]
+        l = []
+        for m in self.selected_models:
+            l += m["model"].involved_model_names()
+        return [self._name] + l
+
     def get_metric_name(self):
         return self.metric.name
 
