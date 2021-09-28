@@ -146,9 +146,16 @@ class AdditionalMetrics:
         }
 
         for i in range(STEPS):
-            if (np.sum(predictions > details["threshold"][np.argmax(details["accuracy"])]) < 1):
+            if (
+                np.sum(
+                    predictions > details["threshold"][np.argmax(details["accuracy"])]
+                )
+                < 1
+            ):
                 break
-            response = (predictions > details["threshold"][np.argmax(details["accuracy"])]).astype(int)
+            response = (
+                predictions > details["threshold"][np.argmax(details["accuracy"])]
+            ).astype(int)
 
             accu_threshold_details["f1"] += [
                 f1_score(target, response, sample_weight=sample_weight)
@@ -238,7 +245,9 @@ class AdditionalMetrics:
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
-            "accuracy_threshold_max_metric": pd.DataFrame(accuracy_threshold_max_metric),
+            "accuracy_threshold_max_metric": pd.DataFrame(
+                accuracy_threshold_max_metric
+            ),
             "confusion_matrix": conf_matrix,
             "threshold": threshold,
             "additional_plots": AdditionalPlots.plots_binary(
@@ -375,14 +384,20 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"].transpose()
-        accuracy_threshold_max_metric = additional_metrics["accuracy_threshold_max_metric"].transpose()
+        accuracy_threshold_max_metric = additional_metrics[
+            "accuracy_threshold_max_metric"
+        ].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
 
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
-            fout.write("\n## Metric details with same threshold value (Accuracy threshold)\n{}\n\n".format(accuracy_threshold_max_metric.to_markdown()))
+            fout.write(
+                "\n## Metric details with same threshold value (Accuracy threshold)\n{}\n\n".format(
+                    accuracy_threshold_max_metric.to_markdown()
+                )
+            )
             fout.write(
                 "\n## Confusion matrix (at threshold={})\n{}".format(
                     np.round(threshold, 6), confusion_matrix.to_markdown()
