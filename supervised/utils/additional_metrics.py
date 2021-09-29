@@ -137,7 +137,7 @@ class AdditionalMetrics:
 
         threshold = float(max_metrics["accuracy"]["threshold"])
 
-        accu_threshold_details = {
+        metrics_at_accuracy_threshold = {
             "f1": [],
             "accuracy": [],
             "precision": [],
@@ -145,36 +145,28 @@ class AdditionalMetrics:
             "mcc": [],
         }
 
-        for i in range(STEPS):
-            if (
-                np.sum(
-                    predictions > details["threshold"][np.argmax(details["accuracy"])]
-                )
-                < 1
-            ):
-                break
-            response = (
-                predictions > details["threshold"][np.argmax(details["accuracy"])]
-            ).astype(int)
+        accuracy_threshold = details["threshold"][np.argmax(details["accuracy"])]
 
-            accu_threshold_details["f1"] += [
-                f1_score(target, response, sample_weight=sample_weight)
+        response = (predictions > accuracy_threshold).astype(int)
+
+        metrics_at_accuracy_threshold["f1"] += [
+            f1_score(target, response, sample_weight=sample_weight)
+        ]
+        metrics_at_accuracy_threshold["accuracy"] += [
+            accuracy_score(target, response, sample_weight=sample_weight)
+        ]
+        metrics_at_accuracy_threshold["precision"] += [
+            precision_score(target, response, sample_weight=sample_weight)
+        ]
+        metrics_at_accuracy_threshold["recall"] += [
+            recall_score(target, response, sample_weight=sample_weight)
+        ]
+        if STEPS == 0:
+            metrics_at_accuracy_threshold["mcc"] += [0.0]
+        else:
+            metrics_at_accuracy_threshold["mcc"] += [
+                matthews_corrcoef(target, response, sample_weight=sample_weight)
             ]
-            accu_threshold_details["accuracy"] += [
-                accuracy_score(target, response, sample_weight=sample_weight)
-            ]
-            accu_threshold_details["precision"] += [
-                precision_score(target, response, sample_weight=sample_weight)
-            ]
-            accu_threshold_details["recall"] += [
-                recall_score(target, response, sample_weight=sample_weight)
-            ]
-            if i == 0:
-                accu_threshold_details["mcc"] += [0.0]
-            else:
-                accu_threshold_details["mcc"] += [
-                    matthews_corrcoef(target, response, sample_weight=sample_weight)
-                ]
 
         # accuracy_threshold_max_metric metrics
         accuracy_threshold_max_metric = {
@@ -189,24 +181,24 @@ class AdditionalMetrics:
                 "threshold": None,
             },  # there is no threshold for AUC
             "f1": {
-                "score": np.max(accu_threshold_details["f1"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "score": np.max(metrics_at_accuracy_threshold["f1"]),
+                "threshold": accuracy_threshold,
             },
             "accuracy": {
-                "score": np.max(accu_threshold_details["accuracy"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "score": np.max(metrics_at_accuracy_threshold["accuracy"]),
+                "threshold": accuracy_threshold,
             },
             "precision": {
-                "score": np.max(accu_threshold_details["precision"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "score": np.max(metrics_at_accuracy_threshold["precision"]),
+                "threshold": accuracy_threshold,
             },
             "recall": {
-                "score": np.max(accu_threshold_details["recall"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "score": np.max(metrics_at_accuracy_threshold["recall"]),
+                "threshold": accuracy_threshold,
             },
             "mcc": {
-                "score": np.max(accu_threshold_details["mcc"]),
-                "threshold": details["threshold"][np.argmax(details["accuracy"])],
+                "score": np.max(metrics_at_accuracy_threshold["mcc"]),
+                "threshold": accuracy_threshold,
             },
         }
 
