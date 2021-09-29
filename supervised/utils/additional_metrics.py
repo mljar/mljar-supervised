@@ -394,7 +394,7 @@ class AdditionalMetrics:
             fout.write(model_desc)
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
-                "\n## Metric details with same threshold value (Accuracy threshold)\n{}\n\n".format(
+                "\n## Metric details with threshold from accuracy metric\n{}\n\n".format(
                     accuracy_threshold_max_metric.to_markdown()
                 )
             )
