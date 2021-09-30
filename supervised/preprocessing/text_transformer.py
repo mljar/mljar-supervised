@@ -24,7 +24,7 @@ class TextTransformer(object):
 
         x = X[column][~pd.isnull(X[column])]
         self._vectorizer.fit(x)
-        for f in self._vectorizer.get_feature_names():
+        for f in list(self._vectorizer.get_feature_names_out()):
             new_col = self._old_column + "_" + f
             self._new_columns += [new_col]
 
