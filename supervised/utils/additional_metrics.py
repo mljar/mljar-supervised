@@ -137,39 +137,11 @@ class AdditionalMetrics:
 
         threshold = float(max_metrics["accuracy"]["threshold"])
 
-        metrics_at_accuracy_threshold = {
-            "f1": [],
-            "accuracy": [],
-            "precision": [],
-            "recall": [],
-            "mcc": [],
-        }
+        # updating resopnse variable for accuracy metric
+        response = (predictions > threshold).astype(int)
 
-        accuracy_threshold = details["threshold"][np.argmax(details["accuracy"])]
-
-        response = (predictions > accuracy_threshold).astype(int)
-
-        metrics_at_accuracy_threshold["f1"] += [
-            f1_score(target, response, sample_weight=sample_weight)
-        ]
-        metrics_at_accuracy_threshold["accuracy"] += [
-            accuracy_score(target, response, sample_weight=sample_weight)
-        ]
-        metrics_at_accuracy_threshold["precision"] += [
-            precision_score(target, response, sample_weight=sample_weight)
-        ]
-        metrics_at_accuracy_threshold["recall"] += [
-            recall_score(target, response, sample_weight=sample_weight)
-        ]
-        if STEPS == 0:
-            metrics_at_accuracy_threshold["mcc"] += [0.0]
-        else:
-            metrics_at_accuracy_threshold["mcc"] += [
-                matthews_corrcoef(target, response, sample_weight=sample_weight)
-            ]
-
-        # accuracy_threshold_max_metric metrics
-        accuracy_threshold_max_metric = {
+        # accuracy threshold metrics
+        accuracy_threshold_metrics = {
             "logloss": {
                 "score": logloss(target, predictions, sample_weight=sample_weight),
                 "threshold": None,
@@ -181,24 +153,26 @@ class AdditionalMetrics:
                 "threshold": None,
             },  # there is no threshold for AUC
             "f1": {
-                "score": np.max(metrics_at_accuracy_threshold["f1"]),
-                "threshold": accuracy_threshold,
+                "score": f1_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
             },
             "accuracy": {
-                "score": np.max(metrics_at_accuracy_threshold["accuracy"]),
-                "threshold": accuracy_threshold,
+                "score": accuracy_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
             },
             "precision": {
-                "score": np.max(metrics_at_accuracy_threshold["precision"]),
-                "threshold": accuracy_threshold,
+                "score": precision_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
             },
             "recall": {
-                "score": np.max(metrics_at_accuracy_threshold["recall"]),
-                "threshold": accuracy_threshold,
+                "score": recall_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
             },
             "mcc": {
-                "score": np.max(metrics_at_accuracy_threshold["mcc"]),
-                "threshold": accuracy_threshold,
+                "score": matthews_corrcoef(
+                    target, response, sample_weight=sample_weight
+                ),
+                "threshold": threshold,
             },
         }
 
@@ -237,9 +211,7 @@ class AdditionalMetrics:
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
-            "accuracy_threshold_max_metric": pd.DataFrame(
-                accuracy_threshold_max_metric
-            ),
+            "accuracy_threshold_metrics": pd.DataFrame(accuracy_threshold_metrics),
             "confusion_matrix": conf_matrix,
             "threshold": threshold,
             "additional_plots": AdditionalPlots.plots_binary(
@@ -376,8 +348,8 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"].transpose()
-        accuracy_threshold_max_metric = additional_metrics[
-            "accuracy_threshold_max_metric"
+        accuracy_threshold_metrics = additional_metrics[
+            "accuracy_threshold_metrics"
         ].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
@@ -387,7 +359,7 @@ class AdditionalMetrics:
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
                 "\n## Metric details with threshold from accuracy metric\n{}\n\n".format(
-                    accuracy_threshold_max_metric.to_markdown()
+                    accuracy_threshold_metrics.to_markdown()
                 )
             )
             fout.write(
