@@ -1,9 +1,7 @@
-import logging
-import copy
 import numpy as np
 import pandas as pd
-import os
-import json
+import warnings
+import logging
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.sklearn import SklearnAlgorithm
@@ -46,8 +44,12 @@ class NNFit(SklearnAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
-        self.model.fit(X, y)
-
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")
+            # filter 
+            # X does not have valid feature names, but MLPClassifier was fitted with feature names
+            self.model.fit(X, y)
+        
         if log_to_file is not None:
             loss_curve = self.model.loss_curve_
             result = pd.DataFrame(

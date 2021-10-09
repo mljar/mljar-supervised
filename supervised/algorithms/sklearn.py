@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import time
 import joblib
+import warnings
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
@@ -32,7 +33,9 @@ class SklearnAlgorithm(BaseAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
-        self.model.fit(X, y, sample_weight=sample_weight)
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")
+            self.model.fit(X, y, sample_weight=sample_weight)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -49,9 +52,9 @@ class SklearnAlgorithm(BaseAlgorithm):
 
     def is_fitted(self):
         return (
-            hasattr(self.model, "n_features_")
-            and self.model.n_features_ is not None
-            and self.model.n_features_ > 0
+            hasattr(self.model, "n_features_in_")
+            and self.model.n_features_in_ is not None
+            and self.model.n_features_in_ > 0
         )
 
     def predict(self, X):
@@ -109,59 +112,60 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         result = {"iteration": [], "train": [], "validation": []}
 
         start_time = time.time()
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")    
+            
+            for i in range(max_steps):
+                self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
+                self.model.n_estimators += self.trees_in_step
 
-        for i in range(max_steps):
+                if X_validation is None or y_validation is None:
+                    continue
+                estimators = self.model.estimators_
 
-            self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
-            self.model.n_estimators += self.trees_in_step
+                stop = False
+                for e in range(n_estimators, len(estimators)):
+                    p = self.predict_function(estimators[e], X)
+                    if p_tr is None:
+                        p_tr = p
+                    else:
+                        p_tr += p
 
-            if X_validation is None or y_validation is None:
-                continue
-            estimators = self.model.estimators_
+                    p = self.predict_function(estimators[e], X_validation)
+                    if p_vd is None:
+                        p_vd = p
+                    else:
+                        p_vd += p
 
-            stop = False
-            for e in range(n_estimators, len(estimators)):
-                p = self.predict_function(estimators[e], X)
-                if p_tr is None:
-                    p_tr = p
-                else:
-                    p_tr += p
+                    tr = self.log_metric(
+                        y, p_tr / float(e + 1), sample_weight=sample_weight
+                    )
+                    vd = self.log_metric(
+                        y_validation,
+                        p_vd / float(e + 1),
+                        sample_weight=sample_weight_validation,
+                    )
 
-                p = self.predict_function(estimators[e], X_validation)
-                if p_vd is None:
-                    p_vd = p
-                else:
-                    p_vd += p
+                    if vd < min_val:  # optimize direction
+                        min_val = vd
+                        min_e = e
 
-                tr = self.log_metric(
-                    y, p_tr / float(e + 1), sample_weight=sample_weight
-                )
-                vd = self.log_metric(
-                    y_validation,
-                    p_vd / float(e + 1),
-                    sample_weight=sample_weight_validation,
-                )
+                    if e - min_e >= self.early_stopping_rounds:
+                        stop = True
+                        break
 
-                if vd < min_val:  # optimize direction
-                    min_val = vd
-                    min_e = e
+                    result["iteration"] += [e]
+                    result["train"] += [tr]
+                    result["validation"] += [vd]
 
-                if e - min_e >= self.early_stopping_rounds:
-                    stop = True
+                # disable for now ...
+                # if max_time is not None and time.time()-start_time > max_time:
+                #    stop = True
+
+                if stop:
+                    self.model.estimators_ = estimators[: (min_e + 1)]
                     break
-
-                result["iteration"] += [e]
-                result["train"] += [tr]
-                result["validation"] += [vd]
-
-            # disable for now ...
-            # if max_time is not None and time.time()-start_time > max_time:
-            #    stop = True
-
-            if stop:
-                self.model.estimators_ = estimators[: (min_e + 1)]
-                break
-            n_estimators = len(estimators)
+                n_estimators = len(estimators)
 
         if log_to_file is not None:
             df_result = pd.DataFrame(result)

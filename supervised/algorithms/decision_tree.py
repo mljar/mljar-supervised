@@ -1,6 +1,7 @@
 import logging
 import os
 import sklearn
+import warnings
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeRegressor
@@ -134,26 +135,28 @@ class DecisionTreeAlgorithm(SklearnAlgorithm):
         )
         if explain_level == 0:
             return
-        try:
-            if len(class_names) > 10:
-                # dtreeviz does not support more than 10 classes
-                return
-            viz = dtreeviz(
-                self.model,
-                X_train,
-                y_train,
-                target_name="target",
-                feature_names=X_train.columns,
-                class_names=class_names,
-            )
-            tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
-            viz.save(tree_file_plot)
-        except Exception as e:
-            logger.info(f"Problem when visualizing decision tree. {str(e)}")
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")
+            try:
+                if len(class_names) > 10:
+                    # dtreeviz does not support more than 10 classes
+                    return
+                viz = dtreeviz(
+                    self.model,
+                    X_train,
+                    y_train,
+                    target_name="target",
+                    feature_names=X_train.columns,
+                    class_names=class_names,
+                )
+                tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+                viz.save(tree_file_plot)
+            except Exception as e:
+                logger.info(f"Problem when visualizing decision tree. {str(e)}")
 
-        save_rules(
-            self.model, X_train.columns, class_names, model_file_path, learner_name
-        )
+            save_rules(
+                self.model, X_train.columns, class_names, model_file_path, learner_name
+            )
 
 
 class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
@@ -204,32 +207,34 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
         )
         if explain_level == 0:
             return
-        try:
-            # 250 is hard limit for number of points used in visualization
-            # if too many points are used then final SVG plot is very large (can be > 100MB)
-            if X_train.shape[0] > 250:
-                x, _, y, _ = subsample(X_train, y_train, REGRESSION, 250)
-                viz = dtreeviz(
-                    self.model,
-                    x,
-                    y,
-                    target_name="target",
-                    feature_names=x.columns,
-                )
-            else:
-                viz = dtreeviz(
-                    self.model,
-                    X_train,
-                    y_train,
-                    target_name="target",
-                    feature_names=X_train.columns,
-                )
-            tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
-            viz.save(tree_file_plot)
-        except Exception as e:
-            logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore")
+            try:
+                # 250 is hard limit for number of points used in visualization
+                # if too many points are used then final SVG plot is very large (can be > 100MB)
+                if X_train.shape[0] > 250:
+                    x, _, y, _ = subsample(X_train, y_train, REGRESSION, 250)
+                    viz = dtreeviz(
+                        self.model,
+                        x,
+                        y,
+                        target_name="target",
+                        feature_names=x.columns,
+                    )
+                else:
+                    viz = dtreeviz(
+                        self.model,
+                        X_train,
+                        y_train,
+                        target_name="target",
+                        feature_names=X_train.columns,
+                    )
+                tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+                viz.save(tree_file_plot)
+            except Exception as e:
+                logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")
 
-        save_rules(self.model, X_train.columns, None, model_file_path, learner_name)
+            save_rules(self.model, X_train.columns, None, model_file_path, learner_name)
 
 
 dt_params = {"criterion": ["gini", "entropy"], "max_depth": [2, 3, 4]}
