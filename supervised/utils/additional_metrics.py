@@ -137,6 +137,45 @@ class AdditionalMetrics:
 
         threshold = float(max_metrics["accuracy"]["threshold"])
 
+        # updating resopnse variable for accuracy metric
+        response = (predictions > threshold).astype(int)
+
+        # accuracy threshold metrics
+        accuracy_threshold_metrics = {
+            "logloss": {
+                "score": logloss(target, predictions, sample_weight=sample_weight),
+                "threshold": None,
+            },  # there is no threshold for LogLoss
+            "auc": {
+                "score": roc_auc_score(
+                    target, predictions, sample_weight=sample_weight
+                ),
+                "threshold": None,
+            },  # there is no threshold for AUC
+            "f1": {
+                "score": f1_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
+            },
+            "accuracy": {
+                "score": accuracy_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
+            },
+            "precision": {
+                "score": precision_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
+            },
+            "recall": {
+                "score": recall_score(target, response, sample_weight=sample_weight),
+                "threshold": threshold,
+            },
+            "mcc": {
+                "score": matthews_corrcoef(
+                    target, response, sample_weight=sample_weight
+                ),
+                "threshold": threshold,
+            },
+        }
+
         # if sample_weight is not None:
         #    new_max_metrics = {}
         #    for k, v in max_metrics.items():
@@ -160,10 +199,7 @@ class AdditionalMetrics:
 
         predicted_labels = pd.Series((predictions.ravel() > threshold).astype(int))
         predicted_probas = pd.DataFrame(
-            {
-                "proba_0": 1 - predictions.ravel(),
-                "proba_1": predictions.ravel(),
-            }
+            {"proba_0": 1 - predictions.ravel(), "proba_1": predictions.ravel()}
         )
 
         if mapping is not None:
@@ -175,6 +211,7 @@ class AdditionalMetrics:
         return {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
+            "accuracy_threshold_metrics": pd.DataFrame(accuracy_threshold_metrics),
             "confusion_matrix": conf_matrix,
             "threshold": threshold,
             "additional_plots": AdditionalPlots.plots_binary(
@@ -311,12 +348,20 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"].transpose()
+        accuracy_threshold_metrics = additional_metrics[
+            "accuracy_threshold_metrics"
+        ].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
 
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
+            fout.write(
+                "\n## Metric details with threshold from accuracy metric\n{}\n\n".format(
+                    accuracy_threshold_metrics.to_markdown()
+                )
+            )
             fout.write(
                 "\n## Confusion matrix (at threshold={})\n{}".format(
                     np.round(threshold, 6), confusion_matrix.to_markdown()
