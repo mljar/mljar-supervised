@@ -1,4 +1,4 @@
-name: mljar-supervised Python package
+name: Tests
 
 on: [push]
 
