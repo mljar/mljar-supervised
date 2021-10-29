@@ -1,0 +1,32 @@
+name: mljar-supervised Python package
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install graphviz 
+          python -m pip install --upgrade pip
+          pip install --upgrade setuptools
+          pip install -U importlib-metadata>=1.7.0
+          pip install -U -r requirements.txt
+          pip install -U -r requirements_dev.txt
+          pip install ipython
+          python setup.py install
+      - name: Test with pytest
+        run: |
+          pytest tests --cov=supervised/
