@@ -6,21 +6,26 @@ on:
   
 jobs:
   build:
+    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest] # ubuntu-latest, macos-latest, 
         python-version: ['3.8']
     
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-      - name: Display Python version
-        run: python -c "import sys; print(sys.version)"
-      - name: Install dependencies
-        run: |
-          conda --version
-  
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+      - name: Conda list
+        shell: pwsh
+        run: conda list
+      - name: Install MLJAR AutoML
+        run: conda install -c conda-forge mljar-supervised
+      - name: Try to import
+        run: python -c "from supervised.automl import AutoML"
