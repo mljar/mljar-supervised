@@ -1,0 +1,8 @@
+@misc{mljar,
+  author    = {Aleksandra P\l{}o\'{n}ska and Piotr P\l{}o\'{n}ski},
+  year      = {2021},
+  publisher = {MLJAR Sp. z o.o.},
+  address   = {\L{}apy, Poland},
+  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.10.3},
+  url       = {https://github.com/mljar/mljar-supervised}
+}
