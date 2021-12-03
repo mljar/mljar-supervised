@@ -1,6 +1,8 @@
 name: Test installation with conda
 
 on: 
+  schedule:
+    - cron:  '0 8 * * 1'
   # run workflow manually
   workflow_dispatch:
   
@@ -11,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest] # ubuntu-latest, macos-latest, 
+        os: [windows-latest, ubuntu-latest, macos-latest] 
         python-version: ['3.8']
     
     steps:
@@ -20,22 +22,12 @@ jobs:
           activate-environment: test
           auto-update-conda: false
           python-version: ${{ matrix.python-version }}
-      - name: Check envs
-        run: conda info --envs
-      - name: Activate conda
+      - name: Activate conda and check versions
         run: |
           conda activate test
           conda --version
           python --version
-      - name: Check envs 2
-        run: conda info --envs
-      - name: Conda info
-        shell: bash -l {0}
-        run: conda info
-      - name: Conda list
-        shell: pwsh
-        run: conda list
       - name: Install MLJAR AutoML
         run: conda install -c conda-forge mljar-supervised
       - name: Try to import
-        run: python -c "from supervised.automl import AutoML"
+        run: python -c "import supervised;print(supervied.__version__)"
