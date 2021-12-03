@@ -6,7 +6,7 @@ on:
   
 jobs:
   build:
-    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+    name: Run (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -17,8 +17,15 @@ jobs:
     steps:
       - uses: conda-incubator/setup-miniconda@v2
         with:
+          activate-environment: test
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+      - name: Check envs
+        run: conda info --envs
+      - name: Activate conda
+        run: conda activate test
+      - name: Check envs 2
+        run: conda info --envs
       - name: Conda info
         shell: bash -l {0}
         run: conda info
