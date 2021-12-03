@@ -22,11 +22,5 @@ jobs:
         run: python -c "import sys; print(sys.version)"
       - name: Install dependencies
         run: |
-          $CONDA/bin/conda activate base
-          conda install -c conda-forge mljar-supervised
-      - name: Try to load MLJAR AutoML
-        run: |
-          python -c "from supervised.automl import AutoML"
-
-    
+          conda --version
   
