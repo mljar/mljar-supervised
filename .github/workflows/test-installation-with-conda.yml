@@ -30,4 +30,4 @@ jobs:
       - name: Install MLJAR AutoML
         run: conda install -c conda-forge mljar-supervised
       - name: Try to import
-        run: python -c "import supervised;print(supervied.__version__)"
+        run: python -c "import supervised;print(supervised.__version__)"
