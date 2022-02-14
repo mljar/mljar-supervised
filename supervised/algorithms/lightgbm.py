@@ -240,10 +240,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 num_boost_round=self.rounds,
                 valid_sets=valid_sets,
                 valid_names=valid_names,
-                early_stopping_rounds=esr,
-                evals_result=evals_result,
-                verbose_eval=False,
                 feval=self.custom_eval_metric,
+                callbacks = [
+                    lgb.early_stopping(esr, verbose = False), 
+                    lgb.record_evaluation(evals_result)
+                ]
             )
 
             del lgb_train
