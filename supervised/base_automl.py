@@ -39,7 +39,8 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.utils.metric import UserDefinedEvalMetric
 from supervised.utils.automl_plots import AutoMLPlots
-from supervised.preprocessing.eda import EDA
+# disable EDA
+# from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.tuner.time_controller import TimeController
 from supervised.utils.data_validation import (
@@ -965,8 +966,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._start_time -= self._time_ctrl.already_spend()
 
             # Automatic Exloratory Data Analysis
-            if self._explain_level == 2:
-                EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
+            # I disabled EDA, because it won't be supported
+            # I recomend use pandas_profiling or Sweetviz
+            # if self._explain_level == 2:
+            #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
             if sample_weight is not None:
@@ -2172,8 +2175,9 @@ a:hover {
         if page_type == "main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
-            if os.path.exists(os.path.join(self._results_path, "EDA")):
-                beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
+            # disable EDA
+            # if os.path.exists(os.path.join(self._results_path, "EDA")):
+            #     beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
                 beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('main')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
