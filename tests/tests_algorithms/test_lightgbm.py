@@ -37,6 +37,7 @@ class LightgbmAlgorithmTest(unittest.TestCase):
             "bagging_fraction": 0.8,
             "bagging_freq": 1,
             "seed": 1,
+            "early_stopping_rounds": 0,
         }
 
     def test_reproduce_fit(self):
