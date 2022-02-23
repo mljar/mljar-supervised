@@ -88,6 +88,18 @@ class SplitValidator(BaseValidator):
             train_data["sample_weight"] = sample_weight_train
             validation_data["sample_weight"] = sample_weight_validation
 
+        repeat_str = f"_repeat_{repeat}" if self.repeats > 1 else ""
+
+        train_data_file = os.path.join(
+            self._results_path, f"split_{repeat_str}_train_indices.npy"
+        )
+        validation_data_file = os.path.join(
+            self._results_path, f"split_{repeat_str}_validation_indices.npy"
+        )
+
+        np.save(train_data_file, train_index)
+        np.save(validation_data_file, validation_index)
+
         return train_data, validation_data
 
     def get_n_splits(self):
