@@ -16,3 +16,4 @@ category_encoders>=2.2.2
 optuna>=2.7.0
 scikit-plot==0.3.7
 markdown
+typing-extensions
