@@ -1,9 +1,16 @@
 import logging
-
 from supervised.base_automl import BaseAutoML
-
 from supervised.utils.config import LOG_LEVEL
 
+# libraries for type hints
+from typing import Optional, Union, List
+from typing_extensions import (
+    Literal,
+)  # typing_extensions is used for using Literal from python 3.7
+from re import U
+import numpy
+import pandas
+from collections.abc import Iterable
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -20,32 +27,50 @@ class AutoML(BaseAutoML):
 
     def __init__(
         self,
-        results_path=None,
-        total_time_limit=60 * 60,
-        mode="Explain",
-        ml_task="auto",
-        model_time_limit=None,
-        algorithms="auto",
-        train_ensemble=True,
-        stack_models="auto",
-        eval_metric="auto",
-        validation_strategy="auto",
-        explain_level="auto",
-        golden_features="auto",
-        features_selection="auto",
-        start_random_models="auto",
-        hill_climbing_steps="auto",
-        top_models_to_improve="auto",
-        boost_on_errors="auto",
-        kmeans_features="auto",
-        mix_encoding="auto",
-        max_single_prediction_time=None,
-        optuna_time_budget=None,
-        optuna_init_params={},
-        optuna_verbose=True,
-        n_jobs=-1,
-        verbose=1,
-        random_state=1234,
+        results_path: Optional[str] = None,
+        total_time_limit: int = 60 * 60,
+        mode: Literal["Explain", "Perform", "Compete", "Optuna"] = "Explain",
+        ml_task: Literal[
+            "auto", "binary_classification", "multiclass_classification", "regression"
+        ] = "auto",
+        model_time_limit: Optional[int] = None,
+        algorithms: Union[
+            Literal["auto"],
+            List[
+                Literal[
+                    "Baseline",
+                    "Linear",
+                    "Decicion Tree",
+                    "Random Forest",
+                    "Extra Trees",
+                    "LightGBM",
+                    "Xgboost",
+                    "CatBoost",
+                    "Neural Network",
+                    "Nearest Neighbors",
+                ]
+            ],
+        ] = "auto",
+        train_ensemble: bool = True,
+        stack_models: Union[Literal["auto"], bool] = "auto",
+        eval_metric: str = "auto",
+        validation_strategy: Union[Literal["auto"], dict] = "auto",
+        explain_level: Union[Literal["auto"], Literal[0, 1, 2]] = "auto",
+        golden_features: Union[Literal["auto"], bool, int] = "auto",
+        features_selection: Union[Literal["auto"], bool] = "auto",
+        start_random_models: Union[Literal["auto"], int] = "auto",
+        hill_climbing_steps: Union[Literal["auto"], int] = "auto",
+        top_models_to_improve: Union[Literal["auto"], int] = "auto",
+        boost_on_errors: Union[Literal["auto"], bool] = "auto",
+        kmeans_features: Union[Literal["auto"], bool] = "auto",
+        mix_encoding: Union[Literal["auto"], bool] = "auto",
+        max_single_prediction_time: Optional[Union[int, float]] = None,
+        optuna_time_budget: Optional[int] = None,
+        optuna_init_params: dict = {},
+        optuna_verbose: bool = True,
+        n_jobs: int = -1,
+        verbose: int = 1,
+        random_state: int = 1234,
     ):
         """
         Initialize `AutoML` object.
@@ -318,7 +343,13 @@ class AutoML(BaseAutoML):
         self.n_jobs = n_jobs
         self.random_state = random_state
 
-    def fit(self, X, y, sample_weight=None, cv=None):
+    def fit(
+        self,
+        X: Union[numpy.ndarray, pandas.DataFrame],
+        y: Union[numpy.ndarray, pandas.DataFrame],
+        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
+        cv: Optional[Union[Iterable, List]] = None,
+    ):
         """Fit the AutoML model.
 
         Arguments:
@@ -336,7 +367,7 @@ class AutoML(BaseAutoML):
         """
         return self._fit(X, y, sample_weight, cv)
 
-    def predict(self, X):
+    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """
         Computes predictions from AutoML best model.
 
@@ -355,7 +386,9 @@ class AutoML(BaseAutoML):
         """
         return self._predict(X)
 
-    def predict_proba(self, X):
+    def predict_proba(
+        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
+    ) -> numpy.ndarray:
         """
         Computes class probabilities from AutoML best model.
         This method can only be used for classification tasks.
@@ -374,7 +407,9 @@ class AutoML(BaseAutoML):
         """
         return self._predict_proba(X)
 
-    def predict_all(self, X):
+    def predict_all(
+        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
+    ) -> pandas.DataFrame:
         """
         Computes both class probabilities and class labels for classification tasks.
         Computes predictions for regression tasks.
@@ -395,7 +430,12 @@ class AutoML(BaseAutoML):
         """
         return self._predict_all(X)
 
-    def score(self, X, y=None, sample_weight=None):
+    def score(
+        self,
+        X: Union[numpy.ndarray, pandas.DataFrame],
+        y: Optional[Union[numpy.ndarray, pandas.Series]] = None,
+        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
+    ) -> float:
         """Calculates a goodness of `fit` for an AutoML instance.
 
         Arguments:
@@ -418,7 +458,13 @@ class AutoML(BaseAutoML):
     def report(self, width=900, height=1200):
         return self._report(width, height)
 
-    def need_retrain(self, X, y, sample_weight=None, decrease=0.1):
+    def need_retrain(
+        self,
+        X: Union[numpy.ndarray, pandas.DataFrame],
+        y: Union[numpy.ndarray, pandas.Series],
+        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
+        decrease: float = 0.1,
+    ) -> bool:
         """Decides about model retraining based on new data.
 
         Arguments:
