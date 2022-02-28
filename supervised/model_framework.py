@@ -503,6 +503,8 @@ class ModelFramework:
                 "train_time": self.get_train_time(),
                 "is_stacked": self._is_stacked,
             }
+            if type(desc["final_loss"]) == np.float32:
+                desc["final_loss"] = str(desc["final_loss"])
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:
