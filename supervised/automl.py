@@ -346,7 +346,7 @@ class AutoML(BaseAutoML):
     def fit(
         self,
         X: Union[numpy.ndarray, pandas.DataFrame],
-        y: Union[numpy.ndarray, pandas.DataFrame],
+        y: Union[numpy.ndarray, pandas.Series],
         sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
         cv: Optional[Union[Iterable, List]] = None,
     ):
