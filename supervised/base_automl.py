@@ -1356,9 +1356,21 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X):
+    def _predict(self, X, model_name=None):
 
-        predictions = self._base_predict(X)
+        model = None
+        if model_name != None:
+            if not self._models:
+                self.load(self.results_path)
+            for i in self._models:
+                if model_name == i.get_name():
+                    model = i
+                    
+
+        if model_name != None and model == None:
+            raise AutoMLException("invaild model")
+
+        predictions = self._base_predict(X, model)
         # Return predictions
         # If classification task the result is in column 'label'
         # If regression task the result is in column 'prediction'
@@ -1368,21 +1380,43 @@ class BaseAutoML(BaseEstimator, ABC):
             else predictions["prediction"].to_numpy()
         )
 
-    def _predict_proba(self, X):
+    def _predict_proba(self, X,model_name=None):
         # Check is task type is correct
         if self._ml_task == REGRESSION:
             raise AutoMLException(
                 f"Method `predict_proba()` can only be used when in classification tasks. Current task: '{self._ml_task}'."
             )
+        # Check given modelname is valid or not
+        model = None
+        if model_name != None:
+            if not self._models:
+                self.load(self.results_path)
+            for i in self._models:
+                if model_name == i.get_name():
+                    model = i            
+        if model_name != None and model == None:
+            raise AutoMLException("invaild model")
 
         # Make and return predictions
         # If classification task the result is in column 'label'
         # Need to drop `label` column.
-        return self._base_predict(X).drop(["label"], axis=1).to_numpy()
+        return self._base_predict(X,model).drop(["label"], axis=1).to_numpy()
 
-    def _predict_all(self, X):
+    def _predict_all(self, X, model_name=None):
+
+         # Check given modelname is valid or not
+        model = None
+        if model_name != None:
+            if not self._models:
+                self.load(self.results_path)
+            for i in self._models:
+                if model_name == i.get_name():
+                    model = i            
+        if model_name != None and model == None:
+            raise AutoMLException("invaild model")
+
         # Make and return predictions
-        return self._base_predict(X)
+        return self._base_predict(X,model)
 
     def _score(self, X, y=None, sample_weight=None):
         # y default must be None for scikit-learn compatibility
