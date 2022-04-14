@@ -18,6 +18,8 @@
 
 **Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
 
+**Looking for commercial support**: Please contact us by [email](https://mljar.com/contact/) for details
+
 ---
 
 ## Table of Contents
@@ -34,7 +36,9 @@
  - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
  - [Cite](https://github.com/mljar/mljar-supervised#cite)
  - [License](https://github.com/mljar/mljar-supervised#license)
+ - [Commercial support](https://github.com/mljar/mljar-supervised#commercial-support)
  - [MLJAR](https://github.com/mljar/mljar-supervised#mljar)
+ 
 
 # Automated Machine Learning 
 
@@ -467,6 +471,10 @@ Please feel free to let us know at
 # License  
 
 The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
+
+# Commercial support
+
+Looking for commercial support? Do you need new feature implementation? Please contact us by [email](https://mljar.com/contact/) for details.
 
 # MLJAR 
 <p align="center">
