@@ -154,7 +154,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
             self._features_selection = params.get(
-                "features_selectiom", self._features_selection
+                "features_selection", self._features_selection
             )
             self._start_random_models = params.get(
                 "start_random_models", self._start_random_models
