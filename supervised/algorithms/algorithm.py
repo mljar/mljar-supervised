@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import uuid
 import numpy as np
 from supervised.utils.importance import PermutationImportance
@@ -5,7 +6,7 @@ from supervised.utils.shap import PlotSHAP
 from supervised.utils.common import construct_learner_name
 
 
-class BaseAlgorithm:
+class BaseAlgorithm(ABC):
     """
     This is an abstract class.
     All algorithms inherit from BaseAlgorithm.
@@ -35,6 +36,7 @@ class BaseAlgorithm:
         if not self.is_fitted() and self.model_file_path is not None:
             self.load(self.model_file_path)
 
+    @abstractmethod
     def fit(
         self,
         X,
@@ -46,10 +48,11 @@ class BaseAlgorithm:
         log_to_file=None,
         max_time=None,
     ):
-        pass
+        ...
 
+    @abstractmethod
     def predict(self, X):
-        pass
+        ...
 
     # needed for feature importance
     def predict_proba(self, X):
@@ -58,17 +61,21 @@ class BaseAlgorithm:
             return y
         return np.column_stack((1 - y, y))
 
+    @abstractmethod
     def update(self, update_params):
-        pass
+        ...
 
+    @abstractmethod
     def copy(self):
-        pass
+        ...
 
+    @abstractmethod
     def save(self, model_file_path):
-        pass
+        ...
 
+    @abstractmethod
     def load(self, model_file_path):
-        pass
+        ...
 
     def get_fname(self):
         return f"{self.name}.{self.file_extension()}"
@@ -114,8 +121,9 @@ class BaseAlgorithm:
                 ml_task,
             )
 
+    @abstractmethod
     def get_metric_name(self):
-        return None
+        ....
 
     def get_params(self):
         params = {

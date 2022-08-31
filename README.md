@@ -406,7 +406,7 @@ python setup.py install
 Installation for development
 ```
 git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.6
+virtualenv venv --python=python3.7
 source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
