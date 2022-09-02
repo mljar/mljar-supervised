@@ -367,13 +367,15 @@ class AutoML(BaseAutoML):
         """
         return self._fit(X, y, sample_weight, cv)
 
-    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
+    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame], model_name=None) -> numpy.ndarray:
         """
         Computes predictions from AutoML best model.
 
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (str):
+                Name of the model that must be loaded
 
         Returns:
             numpy.ndarray:
@@ -384,10 +386,11 @@ class AutoML(BaseAutoML):
         Raises:
             AutoMLException: Model has not yet been fitted.
         """
-        return self._predict(X)
+
+        return self._predict(X,model_name)
 
     def predict_proba(
-        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
+        self, X: Union[List, numpy.ndarray, pandas.DataFrame], model_name=None
     ) -> numpy.ndarray:
         """
         Computes class probabilities from AutoML best model.
@@ -396,6 +399,8 @@ class AutoML(BaseAutoML):
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (str):
+                Name of the model that must be loaded
 
         Returns:
             numpy.ndarray of shape (n_samples, n_classes):
@@ -405,10 +410,10 @@ class AutoML(BaseAutoML):
             AutoMLException: Model has not yet been fitted.
 
         """
-        return self._predict_proba(X)
+        return self._predict_proba(X,model_name)
 
     def predict_all(
-        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
+        self, X: Union[List, numpy.ndarray, pandas.DataFrame], model_name=None
     ) -> pandas.DataFrame:
         """
         Computes both class probabilities and class labels for classification tasks.
@@ -417,6 +422,8 @@ class AutoML(BaseAutoML):
         Arguments:
             X (list or numpy.ndarray or pandas.DataFrame):
                 Input values to make predictions on.
+            model_name (str):
+                Name of the model that must be loaded
 
         Returns:
             pandas.Dataframe:
@@ -428,7 +435,7 @@ class AutoML(BaseAutoML):
             AutoMLException: Model has not yet been fitted.
 
         """
-        return self._predict_all(X)
+        return self._predict_all(X,model_name)
 
     def score(
         self,

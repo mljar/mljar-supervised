@@ -83,7 +83,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._top_models_to_improve = None
         self._random_state = 1234
         self._models = []  # instances of iterative learner framework or ensemble
-        self._best_model = None
+        self._model = None
         self._verbose = True
         self._threshold = None  # used only in classification
         self._metrics_details = None
@@ -128,7 +128,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self.load(self.results_path)
                 self._results_path = self.results_path
 
-    def load(self, path):
+    def load(self, path, model_name=None):
         logger.info("Loading AutoML models ...")
         try:
             params = json.load(open(os.path.join(path, "params.json")))
@@ -174,9 +174,10 @@ class BaseAutoML(BaseEstimator, ABC):
             self._n_jobs = params.get("n_jobs", self._n_jobs)
             self._random_state = params.get("random_state", self._random_state)
             stacked_models = params.get("stacked")
-
-            best_model_name = params.get("best_model")
-            load_on_predict = params.get("load_on_predict")
+            load_on_predict = None
+            if model_name is None:
+                model_name = params.get("best_model")
+                load_on_predict = params.get("load_on_predict")
             self._fit_level = params.get("fit_level")
             lazy_load = not (
                 self._fit_level is not None and self._fit_level == "finished"
@@ -186,7 +187,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 load_models = load_on_predict
                 # just in case there is check for which models should be loaded
                 # fix https://github.com/mljar/mljar-supervised/issues/395
-                models_needed = self.models_needed_on_predict(best_model_name)
+                models_needed = self.models_needed_on_predict(model_name)
                 # join them and return unique list
                 load_models = list(np.unique(load_models + models_needed))
 
@@ -204,12 +205,14 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._models += [m]
                     models_map[m.get_name()] = m
 
-            self._best_model = None
-            if best_model_name is not None:
-                self._best_model = models_map.get(best_model_name)
+            self._model = None
+            if model_name is not None:
+                if model_name not in models_map:
+                    raise ValueError(f"model name {model_name} does not exist in file")
+                self._model = models_map[model_name]
 
             if stacked_models is not None and (
-                self._best_model._is_stacked or self._fit_level != "finished"
+                    self._model._is_stacked or self._fit_level != "finished"
             ):
                 self._stacked_models = []
                 for stacked_model_name in stacked_models:
@@ -1120,7 +1123,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.verbose_print(
                 f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
             )
-            self.verbose_print(f"AutoML best model: {self._best_model.get_name()}")
+            self.verbose_print(f"AutoML best model: {self._model.get_name()}")
 
         except Exception as e:
             raise e
@@ -1143,7 +1146,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def select_and_save_best(self, show_warnings=False):
         # Select best model based on the lowest loss
-        self._best_model = None
+        self._model = None
         if self._models:
             model_list = [
                 m
@@ -1151,14 +1154,14 @@ class BaseAutoML(BaseEstimator, ABC):
                 if m.is_valid() and m.is_fast_enough(self._max_single_prediction_time)
             ]
             if model_list:
-                self._best_model = min(
+                self._model = min(
                     model_list,
                     key=lambda x: x.get_final_loss(),
                 )
         # if none selected please select again and warn the user
         if (
             len(self._models)
-            and self._best_model is None
+            and self._model is None
             and self._max_single_prediction_time is not None
         ):
             if show_warnings:
@@ -1171,7 +1174,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 )
                 self.verbose_print(msg)
 
-            self._best_model = min(
+            self._model = min(
                 [m for m in self._models if m.is_valid()],
                 key=lambda x: x.get_final_loss(),
             )
@@ -1204,11 +1207,11 @@ class BaseAutoML(BaseEstimator, ABC):
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
             }
-            if self._best_model is not None:
-                params["best_model"] = self._best_model.get_name()
+            if self._model is not None:
+                params["best_model"] = self._model.get_name()
                 load_on_predict = []
-                load_on_predict += self._best_model.involved_model_names()
-                if self._best_model._is_stacked and self._stacked_models is not None:
+                load_on_predict += self._model.involved_model_names()
+                if self._model._is_stacked and self._stacked_models is not None:
                     for m in self._stacked_models:
                         load_on_predict += m.involved_model_names()
                 params["load_on_predict"] = list(np.unique(load_on_predict))
@@ -1224,7 +1227,7 @@ class BaseAutoML(BaseEstimator, ABC):
             # save report
             ldb.insert(loc=0, column="Best model", value="")
             ldb.loc[
-                ldb.name == self._best_model.get_name(), "Best model"
+                ldb.name == self._model.get_name(), "Best model"
             ] = "**the best**"
             ldb["name"] = [f"[{m}]({m}/README.md)" for m in ldb["name"].values]
 
@@ -1287,11 +1290,10 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
     def _base_predict(self, X, model=None):
-
         if model is None:
-            if self._best_model is None:
+            if self._model is None:
                 self.load(self.results_path)
-            model = self._best_model
+            model = self._model
 
         if model is None:
             raise AutoMLException(
@@ -1356,9 +1358,10 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X):
-
-        predictions = self._base_predict(X)
+    def _predict(self, X,model_name=None):
+        if model_name is not None:
+            self.load(self._results_path,model_name)
+        predictions = self._base_predict(X,self._model)
         # Return predictions
         # If classification task the result is in column 'label'
         # If regression task the result is in column 'prediction'
@@ -1368,7 +1371,7 @@ class BaseAutoML(BaseEstimator, ABC):
             else predictions["prediction"].to_numpy()
         )
 
-    def _predict_proba(self, X):
+    def _predict_proba(self, X,model_name):
         # Check is task type is correct
         if self._ml_task == REGRESSION:
             raise AutoMLException(
@@ -1378,11 +1381,17 @@ class BaseAutoML(BaseEstimator, ABC):
         # Make and return predictions
         # If classification task the result is in column 'label'
         # Need to drop `label` column.
-        return self._base_predict(X).drop(["label"], axis=1).to_numpy()
+        model=None
+        if model_name is not None:
+            model = self.load(self._results_path,model_name)
+        return self._base_predict(X,model).drop(["label"], axis=1).to_numpy()
 
-    def _predict_all(self, X):
+    def _predict_all(self, X,model_name):
+        model = None
+        if model_name is not None:
+            model = self.load(self.results_path, model_name)
         # Make and return predictions
-        return self._base_predict(X)
+        return self._base_predict(X,model)
 
     def _score(self, X, y=None, sample_weight=None):
         # y default must be None for scikit-learn compatibility
@@ -2025,11 +2034,11 @@ class BaseAutoML(BaseEstimator, ABC):
         check_positive_integer(self.random_state, "random_state")
 
     def to_json(self):
-        if self._best_model is None:
+        if self._model is None:
             return None
 
         return {
-            "best_model": self._best_model.to_json(),
+            "best_model": self._model.to_json(),
             "threshold": self._threshold,
             "ml_task": self._ml_task,
         }
@@ -2037,11 +2046,11 @@ class BaseAutoML(BaseEstimator, ABC):
     def from_json(self, json_data):
 
         if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
-            self._best_model = Ensemble()
-            self._best_model.from_json(json_data["best_model"])
+            self._model = Ensemble()
+            self._model.from_json(json_data["best_model"])
         else:
-            self._best_model = ModelFramework(json_data["best_model"].get("params"))
-            self._best_model.from_json(json_data["best_model"])
+            self._model = ModelFramework(json_data["best_model"].get("params"))
+            self._model.from_json(json_data["best_model"])
         self._threshold = json_data.get("threshold")
 
         self._ml_task = json_data.get("ml_task")
@@ -2254,7 +2263,7 @@ margin-right: auto;display: block;"/>\n\n"""
 
     def _need_retrain(self, X, y, sample_weight, decrease):
 
-        metric = self._best_model.get_metric()
+        metric = self._model.get_metric()
 
         X, y, sample_weight = ExcludeRowsMissingTarget.transform(
             X, y, sample_weight, warn=True
@@ -2270,7 +2279,7 @@ margin-right: auto;display: block;"/>\n\n"""
         sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
 
         new_score = metric(y, prediction, sample_weight)
-        old_score = self._best_model.get_final_loss()
+        old_score = self._model.get_final_loss()
 
         change = np.abs((old_score - new_score) / old_score)
 
