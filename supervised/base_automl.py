@@ -51,6 +51,14 @@ from supervised.utils.data_validation import (
     check_integer,
 )
 from supervised.utils.utils import dump_data, load_data
+import matplotlib.font_manager as font_manager
+
+# Get a list of all font families available on the system
+font_families = font_manager.findSystemFonts()
+
+# Load the font file for the first font family in the list and get the name of the first font family
+REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -2046,68 +2054,68 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._ml_task = json_data.get("ml_task")
 
-    report_style = """
-.styled-table {
+    report_style = f"""
+.styled-table {{
     border-collapse: collapse;
     font-size: 0.9em;
     font-family:Courier New;
-}
+}}
 
-.styled-table td, .styled-table th {
+.styled-table td, .styled-table th {{
     border: 1px solid #ddd;
     padding: 8px;
-}
+{{
 
-.styled-table tr:nth-child(even){background-color: #f2f2f2;}
+.styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
 
-.styled-table tr:hover {background-color: #e0ecf5;}
+.styled-table tr:hover {{background-color: #e0ecf5;}}
 
-.styled-table thead {
+.styled-table thead {{
     padding-top: 6px;
     padding-bottom: 6px;
     text-align: left;
     background-color: #0099cc;
     color: white;
-}
+}}
 
-body {
-    font-family: Arial;
+body {{
+    font-family: {REPORT_FONT};
     font-size: 1.0em;
     background-color: rgba(236, 243, 249, 0.15);
-}
+}}
 
-h1 {
+h1 {{
     color: #004666;
     border-bottom: 1px solid rgba(0,70,102,0.3)
-}
-h2 {
+}}
+h2 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
-}
+}}
 
-ul {
+ul {{
     margin-top: 0px;
-}
+}}
 
-p {
+p {{
     margin-top: 5px;
-}
+}}
 
-h3 {
+h3 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
-}
-a {
+}}
+a {{
     font-weight: bold;
     color: #004666;
-}
+}}
 
-a:hover {
+a:hover {{
     cursor: pointer;
     color: #0099CC;
-}
+}}
 
 
 """
