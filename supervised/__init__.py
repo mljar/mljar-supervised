@@ -1,3 +1,3 @@
-__version__ = "0.11.3"
+__version__ = "0.11.4"
 
 from supervised.automl import AutoML
