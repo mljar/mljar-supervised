@@ -20,8 +20,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-from dtreeviz.trees import dtreeviz
-
 KNN_ROWS_LIMIT = 1000
 
 

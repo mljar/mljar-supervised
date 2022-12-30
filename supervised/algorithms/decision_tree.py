@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 from sklearn.tree import _tree
-from dtreeviz.trees import dtreeviz
+from dtreeviz import * 
 from supervised.utils.subsample import subsample
 
 
