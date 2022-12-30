@@ -34,7 +34,7 @@ class ExtraTreesObjective:
         self.y_validation = y_validation
         self.eval_metric = eval_metric
         self.n_jobs = n_jobs
-        self.objective = "mse" if ml_task == REGRESSION else "gini"
+        self.objective = "squared_error" if ml_task == REGRESSION else "gini"
         self.max_steps = 10  # ET is trained in steps 100 trees each
         self.seed = random_state
 
@@ -46,7 +46,7 @@ class ExtraTreesObjective:
                 else ExtraTreesAlgorithm
             )
             self.objective = (
-                "mse"
+                "squared_error"
                 if self.ml_task == REGRESSION
                 else trial.suggest_categorical("criterion", ["gini", "entropy"])
             )

@@ -286,11 +286,11 @@ class AutoML(BaseAutoML):
             Regression Example:
 
             >>> import pandas as pd
-            >>> from sklearn.datasets import load_boston
+            >>> from sklearn.datasets import fetch_california_housing
             >>> from sklearn.model_selection import train_test_split
             >>> from sklearn.metrics import mean_squared_error
             >>> from supervised import AutoML
-            >>> housing = load_boston()
+            >>> housing = fetch_california_housing()
             >>> X_train, X_test, y_train, y_test = train_test_split(
             ...       pd.DataFrame(housing.data, columns=housing.feature_names),
             ...       housing.target,

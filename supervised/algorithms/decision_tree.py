@@ -170,7 +170,7 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
         self.library_version = sklearn.__version__
         self.max_iters = additional.get("max_steps", 1)
         self.model = DecisionTreeRegressor(
-            criterion=params.get("criterion", "mse"),
+            criterion=params.get("criterion", "squared_error"),
             max_depth=params.get("max_depth", 3),
             random_state=params.get("seed", 1),
         )
@@ -276,7 +276,7 @@ AlgorithmsRegistry.add(
 
 dt_regression_params = {
     "criterion": [
-        "mse",
+        "squared_error",
         "friedman_mse",
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_depth": [2, 3, 4],
@@ -288,7 +288,7 @@ regression_required_preprocessing = [
     "text_transform",
 ]
 
-regression_default_params = {"criterion": "mse", "max_depth": 3}
+regression_default_params = {"criterion": "squared_error", "max_depth": 3}
 
 AlgorithmsRegistry.add(
     REGRESSION,

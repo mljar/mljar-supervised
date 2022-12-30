@@ -68,7 +68,7 @@ class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
         )
         self.model = RandomForestRegressor(
             n_estimators=self.trees_in_step,
-            criterion=params.get("criterion", "mse"),
+            criterion=params.get("criterion", "squared_error"),
             max_features=params.get("max_features", 0.8),
             max_depth=params.get("max_depth", 6),
             min_samples_split=params.get("min_samples_split", 4),
@@ -141,7 +141,7 @@ AlgorithmsRegistry.add(
 
 regression_rf_params = {
     "criterion": [
-        "mse"
+        "squared_error"
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_features": [0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     "min_samples_split": [10, 20, 30, 40, 50],
@@ -149,7 +149,7 @@ regression_rf_params = {
 }
 
 regression_default_params = {
-    "criterion": "mse",
+    "criterion": "squared_error",
     "max_features": 0.9,
     "min_samples_split": 30,
     "max_depth": 4,
