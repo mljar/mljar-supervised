@@ -86,7 +86,7 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            X_train, y_train, sample_weight = ExcludeRowsMissingTarget.transform(
+            X_train, y_train, sample_weight, _ = ExcludeRowsMissingTarget.transform(
                 X_train, y_train, sample_weight
             )
 
@@ -322,6 +322,7 @@ class Preprocessing(object):
                 X_validation,
                 y_validation,
                 sample_weight_validation,
+                _
             ) = ExcludeRowsMissingTarget.transform(
                 X_validation, y_validation, sample_weight_validation
             )

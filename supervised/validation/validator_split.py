@@ -18,6 +18,7 @@ import time
 class SplitValidator(BaseValidator):
     def __init__(self, params):
         BaseValidator.__init__(self, params)
+        print(params)
 
         self.train_ratio = self.params.get("train_ratio", 0.8)
         self.shuffle = self.params.get("shuffle", True)
@@ -33,6 +34,7 @@ class SplitValidator(BaseValidator):
         self._X_path = self.params.get("X_path")
         self._y_path = self.params.get("y_path")
         self._sample_weight_path = self.params.get("sample_weight_path")
+        self._sensitive_features_path = self.params.get("sensitive_features_path")
 
         if self._X_path is None or self._y_path is None:
             raise AutoMLException("No data path set in SplitValidator params")
@@ -47,6 +49,12 @@ class SplitValidator(BaseValidator):
         if self._sample_weight_path is not None:
             sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
+        print("get_split")
+        print(self._sensitive_features_path)
+        sensitive_features = None
+        if self._sensitive_features_path is not None:
+            sensitive_features = load_data(self._sensitive_features_path)
+            print(sensitive_features)
 
         stratify = None
         if self.stratify:
@@ -54,7 +62,25 @@ class SplitValidator(BaseValidator):
         if self.shuffle == False:
             stratify = None
 
-        if sample_weight is not None:
+        if sensitive_features is not None:
+            (
+                X_train,
+                X_validation,
+                y_train,
+                y_validation,
+                sensitive_features_train,
+                sensitive_features_validation,
+            ) = train_test_split(
+                X,
+                y,
+                sensitive_features,
+                train_size=self.train_ratio,
+                test_size=1.0 - self.train_ratio,
+                shuffle=self.shuffle,
+                stratify=stratify,
+                random_state=self.random_seed + repeat,
+            )
+        elif sample_weight is not None: 
             (
                 X_train,
                 X_validation,
@@ -87,6 +113,9 @@ class SplitValidator(BaseValidator):
         if sample_weight is not None:
             train_data["sample_weight"] = sample_weight_train
             validation_data["sample_weight"] = sample_weight_validation
+        if sensitive_features is not None:
+            train_data["sensitive_features"] = sensitive_features_train
+            validation_data["sensitive_features"] = sensitive_features_validation
 
         repeat_str = f"repeat_{repeat}_" if self.repeats > 1 else ""
 

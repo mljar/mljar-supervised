@@ -1021,7 +1021,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 y.copy(deep=False),
                 None if sample_weight is None else sample_weight.copy(deep=False),
                 cv,
-                None is sensitive_features is None else sensitive_features.copy(deep=False)
+                None if sensitive_features is None else sensitive_features.copy(deep=False)
             )
         
 
@@ -2299,7 +2299,7 @@ margin-right: auto;display: block;"/>\n\n"""
 
         metric = self._best_model.get_metric()
 
-        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
+        X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(
             X, y, sample_weight, warn=True
         )
 
