@@ -542,14 +542,14 @@ class BaseAutoML(BaseEstimator, ABC):
             self.train_model(params)
         """
 
-    def _save_data(self, X, y, sample_weight=None, cv=None):
+    def _save_data(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
         # save information about original data
-        self._save_data_info(X, y, sample_weight)
+        self._save_data_info(X, y, sample_weight, sensitive_features)
 
         # handle drastic imbalance
         # assure at least 20 samples of each class
         # for binary and multiclass classification
-        self._handle_drastic_imbalance(X, y, sample_weight)
+        self._handle_drastic_imbalance(X, y, sample_weight, sensitive_features)
 
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.data")
@@ -562,6 +562,15 @@ class BaseAutoML(BaseEstimator, ABC):
             dump_data(
                 self._sample_weight_path, pd.DataFrame({"sample_weight": sample_weight})
             )
+        self._sensitive_features_path = None
+        if sensitive_features is not None:
+            self._sensitive_features_path = os.path.join(
+                self._results_path, "sensitive_features.data"
+            )
+            dump_data(
+                self._sensitive_features_path, sensitive_features
+            )
+
 
         dump_data(self._X_path, X)
 
@@ -576,6 +585,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validation_strategy["results_path"] = self._results_path
         if sample_weight is not None:
             self._validation_strategy["sample_weight_path"] = self._sample_weight_path
+        if sensitive_features is not None:
+            self._validation_strategy["sensitive_features_path"] = self._sensitive_features_path
 
         if cv is not None:
             self._validation_strategy["cv_path"] = os.path.join(
@@ -586,7 +597,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
 
-    def _handle_drastic_imbalance(self, X, y, sample_weight=None):
+    def _handle_drastic_imbalance(self, X, y, sample_weight=None, sensitive_features=None):
         if self._ml_task == REGRESSION:
             return
         classes, cnts = np.unique(y, return_counts=True)
@@ -609,6 +620,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         .sample(n=append_samples, replace=True, random_state=1)
                         .reset_index(drop=True)
                     )
+                if sensitive_features is not None:
+                    new_sensitive_features = (
+                        sensitive_features[y == classes[i]]
+                        .sample(n=append_samples, replace=True, random_state=1)
+                        .reset_index(drop=True)
+                    )
                 for j in range(new_X.shape[0]):
                     X.loc[X.shape[0]] = new_X.loc[j]
                     y.loc[y.shape[0]] = classes[i]
@@ -616,8 +633,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         sample_weight.loc[
                             sample_weight.shape[0]
                         ] = new_sample_weight.loc[j]
+                    if sensitive_features is not None:
+                        sensitive_features.loc[
+                            sensitive_features.shape[0]
+                        ] = new_sensitive_features.loc[j]
 
-    def _save_data_info(self, X, y, sample_weight=None):
+    def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
 
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
@@ -637,6 +658,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features_in_,
             "is_sample_weighted": sample_weight is not None,
+            "is_fairness_applied": sensitive_features is not None
         }
         # Add n_classes if not regression
         if self._ml_task != REGRESSION:
@@ -686,7 +708,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
     # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
-    def _build_dataframe(self, X, y=None, sample_weight=None):
+    def _build_dataframe(self, X, y=None, sample_weight=None, sensitive_features=None):
         if X is None or X.shape[0] == 0:
             raise AutoMLException("Empty input dataset")
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
@@ -731,8 +753,18 @@ class BaseAutoML(BaseEstimator, ABC):
                 sample_weight = check_array(sample_weight, ensure_2d=False)
                 sample_weight = pd.Series(np.array(sample_weight), name="sample_weight")
 
-        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
-            X, y, sample_weight, warn=True
+        if sensitive_features is not None:
+            if isinstance(sensitive_features, np.ndarray):
+                sensitive_features = check_array(sensitive_features, ensure_2d=False)
+                sensitive_features = pd.DataFrame(
+                    sensitive_features, columns=["sensitive_" + str(i) for i in range(1, len(sensitive_features[0]) + 1)]
+                )
+            elif isinstance(sensitive_features, pd.Series):
+                sensitive_features = pd.DataFrame(sensitive_features)
+            
+
+        X, y, sample_weight, sensitive_features = ExcludeRowsMissingTarget.transform(
+            X, y, sample_weight, sensitive_features, warn=True
         )
 
         X.reset_index(drop=True, inplace=True)
@@ -740,8 +772,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
         if sample_weight is not None:
             sample_weight.reset_index(drop=True, inplace=True)
+        
+        if sensitive_features is not None:
+            sensitive_features.reset_index(drop=True, inplace=True)
 
-        return X, y, sample_weight
+        return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):
 
@@ -897,7 +932,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             return
         # Validate input and build dataframes
-        X, y, sample_weight = self._build_dataframe(X, y, sample_weight)
+        X, y, sample_weight, sensitive_features = self._build_dataframe(X, y, sample_weight, sensitive_features)
 
         self.n_rows_in_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -980,15 +1015,15 @@ class BaseAutoML(BaseEstimator, ABC):
             #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            if sample_weight is not None:
-                self._save_data(
-                    X.copy(deep=False),
-                    y.copy(deep=False),
-                    sample_weight.copy(deep=False),
-                    cv,
-                )
-            else:
-                self._save_data(X.copy(deep=False), y.copy(deep=False), None, cv)
+            
+            self._save_data(
+                X.copy(deep=False),
+                y.copy(deep=False),
+                None if sample_weight is None else sample_weight.copy(deep=False),
+                cv,
+                None is sensitive_features is None else sensitive_features.copy(deep=False)
+            )
+        
 
             tuner = MljarTuner(
                 self._get_tuner_params(
