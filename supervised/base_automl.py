@@ -889,7 +889,7 @@ class BaseAutoML(BaseEstimator, ABC):
             ):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
-    def _fit(self, X, y, sample_weight=None, cv=None):
+    def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(

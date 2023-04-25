@@ -349,6 +349,7 @@ class AutoML(BaseAutoML):
         y: Union[numpy.ndarray, pandas.Series],
         sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
         cv: Optional[Union[Iterable, List]] = None,
+        sensitive_features: Optional[Union[numpy.ndarray, pandas.Series, pandas.DataFrame]] = None,
     ):
         """Fit the AutoML model.
 
@@ -362,10 +363,12 @@ class AutoML(BaseAutoML):
             cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
             It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
 
+            sensitive_features (numpy.ndarray or pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
+
         Returns:
             AutoML object: Returns `self`
         """
-        return self._fit(X, y, sample_weight, cv)
+        return self._fit(X, y, sample_weight, cv, sensitive_features)
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """
