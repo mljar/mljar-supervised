@@ -930,6 +930,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_verbose = self._get_optuna_verbose()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
+        self._chosen_fold = self._get_chosen_fold()
 
         self._adjust_validation = False
         self._apply_constraints()
@@ -1788,6 +1789,11 @@ class BaseAutoML(BaseEstimator, ABC):
         """Gets the current random_state"""
         self._validate_random_state()
         return deepcopy(self.random_state)
+    
+    def _get_chosen_fold(self):
+        """Gets the current chosen_fold"""
+        self._validate_chosen_fold()
+        return deepcopy(self.chosen_fold)
 
     def _validate_mode(self):
         """Validates mode parameter"""
@@ -2029,6 +2035,12 @@ class BaseAutoML(BaseEstimator, ABC):
     def _validate_random_state(self):
         """Validates random_state parameter"""
         check_positive_integer(self.random_state, "random_state")
+    
+    def _validate_chosen_fold(self):
+        """Validates chosen_fold parameter"""
+        if self.chosen_fold is None:
+            return
+        check_integer(self.chosen_fold, "chosen_fold")
 
     def to_json(self):
         if self._best_model is None:
