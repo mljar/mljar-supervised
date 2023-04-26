@@ -416,26 +416,40 @@ class ModelFramework:
 
         return self._single_prediction_time < max_single_prediction_time
 
-    def predict(self, X):
+    def predict(self, X, chosen_fold=None):
         logger.debug("ModelFramework.predict")
 
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average
         y_predicted = None  # np.zeros((X.shape[0],))
-        for ind, learner in enumerate(self.learners):
+
+        # If no specific fold is chosen, return the average prediction across all folds
+        if chosen_fold is None:
+            for ind, learner in enumerate(self.learners):
+                # preprocessing goes here
+                X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
+                y_p = learner.predict(X_data)
+                y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+
+                y_predicted = y_p if y_predicted is None else y_predicted + y_p
+
+            y_predicted_average = y_predicted / float(len(self.learners))
+
+            y_predicted_final = self.preprocessings[0].prepare_target_labels(
+                y_predicted_average
+            )
+        else:
+            ind = chosen_fold
+            learner = self.learners[ind]
             # preprocessing goes here
             X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
             y_p = learner.predict(X_data)
-            y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+            y_predicted = self.preprocessings[ind].inverse_scale_target(y_p)
 
-            y_predicted = y_p if y_predicted is None else y_predicted + y_p
-
-        y_predicted_average = y_predicted / float(len(self.learners))
-
-        y_predicted_final = self.preprocessings[0].prepare_target_labels(
-            y_predicted_average
-        )
+            y_predicted_final = self.preprocessings[0].prepare_target_labels(
+                y_predicted
+            )
 
         return y_predicted_final
 
