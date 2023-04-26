@@ -93,9 +93,11 @@ class ModelFramework:
         X_train,
         y_train,
         sample_weight,
+        sensitive_features,
         X_validation,
         y_validation,
         sample_weight_validation,
+        sensitive_features_validation,
     ):
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
@@ -129,9 +131,11 @@ class ModelFramework:
             "y_train_true": y_train_true,
             "y_train_predicted": y_train_predicted,
             "sample_weight": sample_weight,
+            "sensitive_features": sensitive_features,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
             "sample_weight_validation": sample_weight_validation,
+            "sensitive_features_validation": sensitive_features_validation,
             "validation_index": X_validation.index,
             "validation_columns": y_validation_columns,
         }
@@ -196,6 +200,17 @@ class ModelFramework:
                     validation_data.get("sample_weight"),
                 )
 
+                # skip preprocessing for sensitive features
+                # TODO: need to add sensitive features in preprocessing because some rows might be skipped (missing target)
+                # then we need to skip some rows in sensitive features as well
+                # TODO: drop rows if there is missing data in sensitive feature?
+
+                # get sensitive features from data split
+                sensitive_features = train_data.get("sensitive_features")
+                sensitive_features_validation = validation_data.get(
+                    "sensitive_features"
+                )
+
                 if optuna_tuner is not None:
                     optuna_start_time = time.time()
                     self.learner_params = optuna_tuner.optimize(
@@ -254,9 +269,11 @@ class ModelFramework:
                             X_train,
                             y_train,
                             sample_weight,
+                            sensitive_features,
                             X_validation,
                             y_validation,
                             sample_weight_validation,
+                            sensitive_features_validation,
                         ),
                     )
 
@@ -462,8 +479,13 @@ class ModelFramework:
             if "sample_weight" in oof_predictions.columns:
                 sample_weight = oof_predictions["sample_weight"]
 
+            sensitive_features = None
+            sensitive_cols = [c for c in oof_predictions.columns if "sensitive" in c]
+            if sensitive_cols:
+                sensitive_features = oof_predictions[sensitive_cols]
+
             self._additional_metrics = AdditionalMetrics.compute(
-                target, oof_preds, sample_weight, self._ml_task
+                target, oof_preds, sample_weight, self._ml_task, sensitive_features
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])

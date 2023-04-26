@@ -18,7 +18,6 @@ import time
 class SplitValidator(BaseValidator):
     def __init__(self, params):
         BaseValidator.__init__(self, params)
-        print(params)
 
         self.train_ratio = self.params.get("train_ratio", 0.8)
         self.shuffle = self.params.get("shuffle", True)
@@ -49,18 +48,20 @@ class SplitValidator(BaseValidator):
         if self._sample_weight_path is not None:
             sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
-        print("get_split")
-        print(self._sensitive_features_path)
+        
         sensitive_features = None
         if self._sensitive_features_path is not None:
             sensitive_features = load_data(self._sensitive_features_path)
-            print(sensitive_features)
 
         stratify = None
         if self.stratify:
             stratify = y
         if self.shuffle == False:
             stratify = None
+
+
+        # TODO: we split without considering sample_weight
+        # we should consider all arrays (maybe use dynamic arguments?)
 
         if sensitive_features is not None:
             (
