@@ -290,7 +290,7 @@ class Ensemble:
 
         self.train_time = time.time() - start_time
 
-    def predict(self, X, X_stacked=None):
+    def predict(self, X, X_stacked=None, chosen_fold=None):
         logger.debug(
             "Ensemble.predict with {} models".format(len(self.selected_models))
         )
@@ -303,9 +303,11 @@ class Ensemble:
             total_repeat += repeat
 
             if model._is_stacked:
-                y_predicted_from_model = model.predict(X_stacked)
+                y_predicted_from_model = model.predict(
+                    X_stacked, chosen_fold=chosen_fold
+                )
             else:
-                y_predicted_from_model = model.predict(X)
+                y_predicted_from_model = model.predict(X, chosen_fold=chosen_fold)
 
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
