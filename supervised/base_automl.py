@@ -114,6 +114,9 @@ class BaseAutoML(BaseEstimator, ABC):
         self._max_single_prediction_time = None
         self._optuna_time_budget = None
         self._optuna_init_params = {}
+        self._fairness_metric = None
+        self._fairness_threshold = None
+        self._protected_groups = []
         self._optuna_verbose = True
         self._n_jobs = -1
 
@@ -963,6 +966,9 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_time_budget = self._get_optuna_time_budget()
         self._optuna_init_params = self._get_optuna_init_params()
         self._optuna_verbose = self._get_optuna_verbose()
+        self._fairness_metric = self._get_fairness_metric()
+        self._fairness_threshold = self._get_fairness_threshold()
+        self._protected_groups = self._get_protected_groups()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
 
@@ -2066,6 +2072,53 @@ class BaseAutoML(BaseEstimator, ABC):
     def _validate_random_state(self):
         """Validates random_state parameter"""
         check_positive_integer(self.random_state, "random_state")
+
+
+
+    def _validate_fairness_metric(self):
+        """Validates fariness_metric parameter"""
+        if isinstance(self.fairness_metric, str) and self.eval_metric == "auto":
+            return
+
+        if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
+            "demographic_parity_difference",
+            "demographic_parity_ratio",
+            "equalized_odds_difference",
+            "equalized_odds_ratio"
+        ]:
+            raise ValueError(
+                f"Metric {self.fairness_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use `demographic_parity_difference`, `demographic_parity_ratio`, `equalized_odds_difference` or `equalized_odds_ratio`"
+            )
+
+
+    def _get_fairness_metric(self):
+        """Gets the fairness metric"""
+        if self._get_ml_task() != BINARY_CLASSIFICATION:
+            raise ValueError(f"Fairness training is not implemented for {self._get_ml_task()}")
+        
+        self._validate_fairness_metric()
+        if self.eval_metric == "auto":
+            if self._get_ml_task() == BINARY_CLASSIFICATION:
+                return "demographic_parity_ratio"
+            
+        else:
+            return deepcopy(self.fairness_metric)
+
+    def _get_fairness_threshold(self):
+        """Gets the fairness threshold"""
+        if self.fairness_threshold == "auto":
+            if self._get_ml_task() == BINARY_CLASSIFICATION:
+                return 0.8
+        else:
+            return deepcopy(self.fairness_threshold)
+
+    def _get_protected_groups(self):
+        """Gets protected groups for fair training"""
+        if self.protected_groups == "auto":
+            return []
+        else:
+            return deepcopy(self._protected_groups)
 
     def to_json(self):
         if self._best_model is None:

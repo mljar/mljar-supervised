@@ -68,6 +68,9 @@ class AutoML(BaseAutoML):
         optuna_time_budget: Optional[int] = None,
         optuna_init_params: dict = {},
         optuna_verbose: bool = True,
+        fairness_metric: str = "auto",
+        fairness_threshold: Union[Literal["auto"], float] = "auto",
+        protected_groups: Union[Literal["auto"], list] = "auto",
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
@@ -235,6 +238,29 @@ class AutoML(BaseAutoML):
 
             optuna_verbose (boolean): If true the Optuna tuning details are displayed. Set to `True` by default.
 
+            fairness_metric (string): Name of fairness metric to be fulfilled. 
+                Available metrics for binary classification: 
+                
+                - `demographic_parity_difference`, 
+                - `demographic_parity_ratio`, 
+                - `equalized_odds_difference`, 
+                - `equalized_odds_ratio`.
+
+            fairness_threshold (float): The treshold value for fairness metric. 
+                The direction optimization (below or above threshold) of fairness metric is determined automatically.
+
+                Default values:
+                
+                - for `demographic_parity_difference` the metric value should be below 0.1, 
+                - for `demographic_parity_ratio` the metric value should be above 0.8, 
+                - for `equalized_odds_difference` the metric value should be below 0.1, 
+                - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
+
+            protected_groups (list): The list of protected groups. 
+                By default, list of protected groups are automatically detected based on fairness metrics. 
+                For example, in binary classification task protected group is the one with the lowest selection rate. 
+                Example value: [{"sex": "Female"}]
+
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 
             verbose (int): Controls the verbosity when fitting and predicting.
@@ -340,6 +366,9 @@ class AutoML(BaseAutoML):
         self.optuna_time_budget = optuna_time_budget
         self.optuna_init_params = optuna_init_params
         self.optuna_verbose = optuna_verbose
+        self.fairness_metric = fairness_metric
+        self.fairness_threshold = fairness_threshold
+        self.protected_groups = protected_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
 
