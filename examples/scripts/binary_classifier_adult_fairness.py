@@ -29,10 +29,11 @@ X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
 )
 
 
-automl = AutoML(algorithms=["Xgboost", "LightGBM"], 
+automl = AutoML(algorithms=["Xgboost"], 
                 fairness_metric="demographic_parity_ratio", 
                 fairness_threshold=0.8,
-                protected_groups = [{"sex": "Female"}, {"race": "Black" }])
+                protected_groups = [{"sex": "Male"}, {"race": "White" }]
+            )
 
 automl.fit(X_train, y_train, sensitive_features=S_train)
 

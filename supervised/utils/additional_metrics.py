@@ -40,9 +40,18 @@ from tabulate import tabulate
 
 from supervised.fairness.metrics import FairnessMetrics
 
+
 class AdditionalMetrics:
     @staticmethod
-    def binary_classification(target, predictions, sample_weight=None, sensitive_features=None):
+    def binary_classification(
+        target,
+        predictions,
+        sample_weight=None,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        protected_groups=[],
+    ):
 
         negative_label, positive_label = "0", "1"
         mapping = None
@@ -217,14 +226,20 @@ class AdditionalMetrics:
             "threshold": threshold,
             "additional_plots": AdditionalPlots.plots_binary(
                 labeled_target, predicted_labels, predicted_probas
-            )
+            ),
         }
 
         if sensitive_features is not None:
-            metrics["fairness_metrics"] = FairnessMetrics.binary_classification(target, predicted_labels, sensitive_features)
+            metrics["fairness_metrics"] = FairnessMetrics.binary_classification(
+                target,
+                predicted_labels,
+                sensitive_features,
+                fairness_metric,
+                fairness_threshold,
+                protected_groups,
+            )
 
         return metrics
-
 
     @staticmethod
     def multiclass_classification(target, predictions, sample_weight=None):
@@ -310,12 +325,27 @@ class AdditionalMetrics:
         }
 
     @staticmethod
-    def compute(target, predictions, sample_weight, ml_task, sensitive_features=None):
+    def compute(
+        target,
+        predictions,
+        sample_weight,
+        ml_task,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        protected_groups=[],
+    ):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if ml_task == BINARY_CLASSIFICATION:
                 return AdditionalMetrics.binary_classification(
-                    target, predictions, sample_weight, sensitive_features
+                    target,
+                    predictions,
+                    sample_weight,
+                    sensitive_features,
+                    fairness_metric,
+                    fairness_threshold,
+                    protected_groups,
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 return AdditionalMetrics.multiclass_classification(
@@ -378,7 +408,9 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
-                FairnessMetrics.save_binary_classification(fairness_metrics, fout, model_path)
+                FairnessMetrics.save_binary_classification(
+                    fairness_metrics, fout, model_path
+                )
 
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)

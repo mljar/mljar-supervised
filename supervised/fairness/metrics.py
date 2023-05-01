@@ -5,47 +5,54 @@ from matplotlib import pyplot as plt
 
 
 def accuracy(t, y):
-    return np.round(100.0 * np.sum(t == y) / t.shape[0], 2)
+    return np.round(np.sum(t == y) / t.shape[0], 4)
 
 
 def selection_rate(y):
     return np.round(
-        100.0 * np.sum((y == 1)) / y.shape[0],
-        2,
+        np.sum((y == 1)) / y.shape[0],
+        4,
     )
 
 
 def true_positive_rate(t, y):
     return np.round(
-        100.0 * np.sum((y == 1) & (t == 1)) / np.sum((t == 1)),
-        2,
+        np.sum((y == 1) & (t == 1)) / np.sum((t == 1)),
+        4,
     )
 
 
 def false_positive_rate(t, y):
     return np.round(
-        100.0 * np.sum((y == 1) & (t == 0)) / np.sum((t == 0)),
-        2,
+        np.sum((y == 1) & (t == 0)) / np.sum((t == 0)),
+        4,
     )
 
 
 def true_negative_rate(t, y):
     return np.round(
-        100.0 * np.sum((y == 0) & (t == 0)) / np.sum((t == 0)),
-        2,
+        np.sum((y == 0) & (t == 0)) / np.sum((t == 0)),
+        4,
     )
 
 
 def false_negative_rate(t, y):
     return np.round(
-        100.0 * np.sum((y == 0) & (t == 1)) / np.sum((t == 1)),
-        2,
+        np.sum((y == 0) & (t == 1)) / np.sum((t == 1)),
+        4,
     )
 
 
 class FairnessMetrics:
     @staticmethod
-    def binary_classification(target, predicted_labels, sensitive_features):
+    def binary_classification(
+        target,
+        predicted_labels,
+        sensitive_features,
+        fairness_metric,
+        fairness_threshold,
+        protected_groups=[],
+    ):
 
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
@@ -53,6 +60,8 @@ class FairnessMetrics:
         fairness_metrics = {}
 
         for col in sensitive_features.columns:
+
+            col_name = col[10:]  # skip 'senstive_'
 
             accuracies = []
             selection_rates = []
@@ -128,9 +137,21 @@ class FairnessMetrics:
 
             max_selection_rate = np.max(selection_rates[1:])
             min_selection_rate = np.min(selection_rates[1:])
-            demographic_parity_diff = max_selection_rate - min_selection_rate
+
+            protected_value = None
+            for pg in protected_groups:
+                if col_name in pg:
+                    protected_value = pg.get(col_name)
+
+            if protected_value is not None:
+                for i, v in enumerate(values):
+                    if v == protected_value:
+                        # starting from 1 because first selection rate is for all samples
+                        min_selection_rate = selection_rates[i+1]
+
+            demographic_parity_diff = np.round(max_selection_rate - min_selection_rate, 4)
             demographic_parity_ratio = np.round(
-                100.0 * min_selection_rate / max_selection_rate, 2
+                min_selection_rate / max_selection_rate, 4
             )
 
             tpr_min = np.min(tprs[1:])
@@ -139,9 +160,16 @@ class FairnessMetrics:
             fpr_min = np.min(fprs[1:])
             fpr_max = np.max(fprs[1:])
 
-            equalized_odds_diff = np.round(max(tpr_max - tpr_min, fpr_max - fpr_min), 2)
+            if protected_value is not None:
+                for i, v in enumerate(values):
+                    if v == protected_value:
+                        # starting from 1 because first value is for all samples
+                        tpr_min = tprs[i+1]
+                        fpr_min = fprs[i+1]
+
+            equalized_odds_diff = np.round(max(tpr_max - tpr_min, fpr_max - fpr_min), 4)
             equalized_odds_ratio = np.round(
-                100.0 * min(tpr_min / tpr_max, fpr_min / fpr_max), 2
+                min(tpr_min / tpr_max, fpr_min / fpr_max), 4
             )
 
             stats = pd.DataFrame(
@@ -161,28 +189,48 @@ class FairnessMetrics:
                 ],
             )
 
-            col_name = col[10:]  # skip 'senstive_'
-
+            fairness_metric_name = ""
+            fairness_metric_value = 0
+            is_fair = False
+            if fairness_metric == "demographic_parity_difference":
+                fairness_metric_name = "Demographic Parity Difference"
+                fairness_metric_value = demographic_parity_diff
+                is_fair = demographic_parity_diff < fairness_threshold
+            elif fairness_metric == "demographic_parity_ratio":
+                fairness_metric_name = "Demographic Parity Ratio"
+                fairness_metric_value = demographic_parity_ratio
+                is_fair = demographic_parity_ratio > fairness_threshold
+            elif fairness_metric == "equalized_odds_difference":
+                fairness_metric_name = "Equalized Odds Difference"
+                fairness_metric_value = equalized_odds_diff
+                is_fair = equalized_odds_diff < fairness_threshold
+            elif fairness_metric == "equalized_odds_ratio":
+                fairness_metric_name = "Equalized Odds Ratio"
+                fairness_metric_value = equalized_odds_ratio
+                is_fair = equalized_odds_ratio > fairness_threshold
+                
+            
             figures = []
             # selection rate figure
-            fair_selection_rate = max_selection_rate * 0.8
+            fair_selection_rate = max_selection_rate * fairness_threshold
 
             fig = plt.figure(figsize=(10, 7))
             ax1 = fig.add_subplot(1, 1, 1)
-            bars = ax1.barh(metrics.index[1:], metrics["Selection Rate"][1:])
+            bars = ax1.bar(metrics.index[1:], metrics["Selection Rate"][1:])
 
-            ax1.spines[["right", "top", "bottom"]].set_visible(False)
-            ax1.xaxis.set_visible(False)
+            ax1.spines[["right", "top", "left"]].set_visible(False)
+            ax1.yaxis.set_visible(False)
             _ = ax1.bar_label(bars, padding=5)
-            ax1.axvline(x=fair_selection_rate, zorder=1, color="grey", ls="--", lw=1.5)
+            ax1.axhline(y=fair_selection_rate, zorder=0, color="grey", ls="--", lw=1.5)
             _ = ax1.text(
-                x=fair_selection_rate,
-                y=-0.6,
+                y=fair_selection_rate,
+                x=-0.6,
                 s="Fairness threshold",
                 ha="center",
-                fontsize=14,
+                fontsize=12,
                 bbox=dict(facecolor="white", edgecolor="grey", ls="--"),
             )
+            ax1.axhspan(fairness_threshold*max_selection_rate, 1.25*max_selection_rate, facecolor='0.2', alpha=0.2)
 
             figures += [
                 {
@@ -192,23 +240,36 @@ class FairnessMetrics:
                 }
             ]
 
-
-            fig, axes = plt.subplots(figsize=(10,5), ncols=2, sharey=True)
+            fig, axes = plt.subplots(figsize=(10, 5), ncols=2, sharey=True)
             fig.tight_layout()
-            bars = axes[0].barh(metrics.index[1:], metrics["False Negative Rate"][1:], zorder=10, color="tab:orange")
-            xmax = 1.2*max(metrics["False Negative Rate"][1:].max(), metrics["False Positive Rate"][1:].max())
+            bars = axes[0].barh(
+                metrics.index[1:],
+                metrics["False Negative Rate"][1:],
+                zorder=10,
+                color="tab:orange",
+            )
+            xmax = 1.2 * max(
+                metrics["False Negative Rate"][1:].max(),
+                metrics["False Positive Rate"][1:].max(),
+            )
             axes[0].set_xlim(0, xmax)
-            axes[0].invert_xaxis() 
+            axes[0].invert_xaxis()
             axes[0].set_title("False Negative Rate")
             _ = axes[0].bar_label(bars, padding=5)
 
-
-            bars = axes[1].barh(metrics.index[1:], metrics["False Positive Rate"][1:], zorder=10, color="tab:blue")
-            axes[1].tick_params(axis='y', colors='tab:orange') # tick color
+            bars = axes[1].barh(
+                metrics.index[1:],
+                metrics["False Positive Rate"][1:],
+                zorder=10,
+                color="tab:blue",
+            )
+            axes[1].tick_params(axis="y", colors="tab:orange")  # tick color
             axes[1].set_xlim(0, xmax)
             axes[1].set_title("False Positive Rate")
             _ = axes[1].bar_label(bars, padding=5)
-            _=plt.subplots_adjust(wspace=0, top=0.85, bottom=0.1, left=0.18, right=0.95)
+            _ = plt.subplots_adjust(
+                wspace=0, top=0.85, bottom=0.1, left=0.18, right=0.95
+            )
 
             figures += [
                 {
@@ -218,8 +279,15 @@ class FairnessMetrics:
                 }
             ]
 
-            fairness_metrics[col_name] = {"metrics": metrics, "stats": stats, "figures": figures}
-            
+            fairness_metrics[col_name] = {
+                "metrics": metrics,
+                "stats": stats,
+                "figures": figures,
+                "fairness_metric_name": fairness_metric_name,
+                "fairness_metric_value": fairness_metric_value,
+                "is_fair": is_fair
+            }
+        
 
         return fairness_metrics
 
@@ -227,15 +295,17 @@ class FairnessMetrics:
     def save_binary_classification(fairness_metrics, fout, model_path):
 
         for k, v in fairness_metrics.items():
-            fout.write(f"\n\n## Fairness metrics for {k}\n\n")
+            fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
             fout.write(v["metrics"].to_markdown())
             fout.write("\n\n")
             fout.write(v["stats"].to_markdown())
             fout.write("\n\n")
 
+            fout.write(f"\n\n## Is model fair for {k} feature?\n")
+            fair_str = "fair" if v["is_fair"] else "unfair"
+            fout.write(f'Model is {fair_str} for {k} feature because {v["fairness_metric_name"]} is {v["fairness_metric_value"]}.\n\n')
+
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
-                
-                

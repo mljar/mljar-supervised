@@ -49,6 +49,9 @@ class MljarTuner:
         optuna_time_budget,
         optuna_init_params,
         optuna_verbose,
+        fairness_metric,
+        fairness_threshold,
+        protected_groups,
         n_jobs,
         seed,
     ):
@@ -74,6 +77,9 @@ class MljarTuner:
         self._optuna_verbose = optuna_verbose
         self._eval_metric = eval_metric
         self._n_jobs = n_jobs
+        self._fairness_metric = fairness_metric
+        self._fairness_threshold = fairness_threshold
+        self._protected_groups = protected_groups
         self._seed = seed
         self._unique_params_keys = []
 
@@ -1010,6 +1016,11 @@ class MljarTuner:
 
         model_params["ml_task"] = self._ml_task
         model_params["explain_level"] = self._explain_level
+
+        if self._fairness_metric is not None:
+            model_params["fairness_metric"] = self._fairness_metric
+            model_params["fairness_threshold"] = self._fairness_threshold
+            model_params["protected_groups"] = self._protected_groups
 
         return model_params
 
