@@ -157,6 +157,9 @@ class MljarTuner:
 
         all_steps += ["simple_algorithms", "default_algorithms"]
 
+        if self._fairness_metric is not None:
+            all_steps += ["fairness"]
+
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
 
@@ -201,6 +204,8 @@ class MljarTuner:
                 return self.simple_algorithms_params(models_cnt)
             elif step == "default_algorithms":
                 return self.default_params(models_cnt)
+            elif step == "fairness":
+                return self.fairness_optimization(models, total_time_limit)
             elif step == "not_so_random":
                 return self.get_not_so_random_params(models_cnt)
             elif step == "mix_encoding":
@@ -272,6 +277,37 @@ class MljarTuner:
 
             print(str(e), traceback.format_exc())
             return []
+
+
+    def fairness_optimization(self, current_models, total_time_limit):
+        print("fairness_optimization()")
+        df_models, algorithms = self.df_models_algorithms(current_models)
+
+        print(df_models)
+        print(algorithms)
+
+        generated_params = []
+        counts = {model_type: 0 for model_type in algorithms}
+
+        for i in range(df_models.shape[0]):
+            
+            model_type = df_models["model_type"].iloc[i]
+            
+            if df_models["model_type"].iloc[i] in ["Baseline"]:
+                continue
+
+            m = df_models["model"].iloc[i]
+
+            print(m.get_name(), m.get_type(), model_type)
+
+            print(m.get_fairness_optimization())
+
+
+
+        return generated_params
+
+
+
 
     def get_params_stack_models(self, stacked_models):
         if stacked_models is None or len(stacked_models) == 0:

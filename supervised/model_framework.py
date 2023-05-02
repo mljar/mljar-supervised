@@ -83,6 +83,7 @@ class ModelFramework:
         self._fairness_metric = params.get("fairness_metric")
         self._fairness_threshold = params.get("fairness_threshold")
         self._protected_groups = params.get("protected_groups", [])
+        self._fairness_optimization = params.get("fairness_optimization")
 
         # the automl random state from AutoML constructor, used in Optuna optimizer
         self._automl_random_state = params.get("automl_random_state", 42)
@@ -505,13 +506,17 @@ class ModelFramework:
     def get_sensitive_features_names(self):
         metrics = self.get_additional_metrics()
         fm = metrics.get("fairness_metrics", {})
-        return list(fm.keys())
+        return [i for i in list(fm.keys()) if i != "fairness_optimization"]
 
     def get_fairness_metric(self, col_name):
         metrics = self.get_additional_metrics()
         fm = metrics.get("fairness_metrics", {})
         return fm.get(col_name, {}).get("fairness_metric_value")
 
+    def get_fairness_optimization(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get("fairness_optimization", {})
 
     def save(self, results_path, model_subpath):
         start_time = time.time()

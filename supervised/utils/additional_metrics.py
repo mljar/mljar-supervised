@@ -371,9 +371,10 @@ class AdditionalMetrics:
                     additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
                 )
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Exception while saving additional metrics. {str(e)}\nContinuing ..."
             )
+            
 
     @staticmethod
     def add_learning_curves(fout):

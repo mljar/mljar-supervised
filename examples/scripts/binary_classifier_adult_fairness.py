@@ -17,7 +17,9 @@ y = (data.target == ">50K") * 1
 X = data.data
 y = (data.target == ">50K") * 1
 
-sensitive_features = X[["sex", "race"]]  # , "race", "age"]]
+X["is_young"] = (X["age"] < 50) * 1 # < 30
+
+sensitive_features = X[["sex"]] #, "race"]] #, "is_young"]]  # , "race", "age"]]
 print("Input data")
 print(X)
 print("Sensitive features")
@@ -25,14 +27,14 @@ print(sensitive_features)
 
 
 X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
-    X, y, sensitive_features, stratify=y, test_size=0.3, random_state=42
+    X, y, sensitive_features, stratify=y, test_size=0.5, random_state=42
 )
 
 
 automl = AutoML(algorithms=["Xgboost"], 
                 fairness_metric="demographic_parity_ratio", 
                 fairness_threshold=0.8,
-                protected_groups = [{"sex": "Male"}, {"race": "White" }]
+                #protected_groups = [{"sex": "Male"}, {"race": "White" }]
             )
 
 automl.fit(X_train, y_train, sensitive_features=S_train)
