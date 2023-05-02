@@ -59,56 +59,36 @@ class SplitValidator(BaseValidator):
         if self.shuffle == False:
             stratify = None
 
-
-        # TODO: we split without considering sample_weight
-        # we should consider all arrays (maybe use dynamic arguments?)
-
+        input_data = [X, y]
+        if sample_weight is not None:
+            input_data += [sample_weight]
         if sensitive_features is not None:
-            (
-                X_train,
-                X_validation,
-                y_train,
-                y_validation,
-                sensitive_features_train,
-                sensitive_features_validation,
-            ) = train_test_split(
-                X,
-                y,
-                sensitive_features,
-                train_size=self.train_ratio,
-                test_size=1.0 - self.train_ratio,
-                shuffle=self.shuffle,
-                stratify=stratify,
-                random_state=self.random_seed + repeat,
-            )
-        elif sample_weight is not None: 
-            (
-                X_train,
-                X_validation,
-                y_train,
-                y_validation,
-                sample_weight_train,
-                sample_weight_validation,
-            ) = train_test_split(
-                X,
-                y,
-                sample_weight,
-                train_size=self.train_ratio,
-                test_size=1.0 - self.train_ratio,
-                shuffle=self.shuffle,
-                stratify=stratify,
-                random_state=self.random_seed + repeat,
-            )
+            input_data += [sensitive_features]
+
+        output_data = train_test_split(
+            *input_data,
+            train_size=self.train_ratio,
+            test_size=1.0 - self.train_ratio,
+            shuffle=self.shuffle,
+            stratify=stratify,
+            random_state=self.random_seed + repeat,
+        )
+
+        X_train = output_data[0]
+        X_validation = output_data[1]
+        y_train = output_data[2]
+        y_validation = output_data[3]
+        if sample_weight is not None:
+            sample_weight_train = output_data[4]
+            sample_weight_validation = output_data[5]
+            if sensitive_features is not None:
+                sensitive_features_train = output_data[6]
+                sensitive_features_validation = output_data[7]
         else:
-            X_train, X_validation, y_train, y_validation = train_test_split(
-                X,
-                y,
-                train_size=self.train_ratio,
-                test_size=1.0 - self.train_ratio,
-                shuffle=self.shuffle,
-                stratify=stratify,
-                random_state=self.random_seed + repeat,
-            )
+            if sensitive_features is not None:
+                sensitive_features_train = output_data[4]
+                sensitive_features_validation = output_data[5]
+
         train_data = {"X": X_train, "y": y_train}
         validation_data = {"X": X_validation, "y": y_validation}
         if sample_weight is not None:

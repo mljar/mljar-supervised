@@ -36,8 +36,3 @@ automl = AutoML(algorithms=["Xgboost"],
             )
 
 automl.fit(X_train, y_train, sensitive_features=S_train)
-
-
-
-# 0.0000 instead percentages
-# selection rate vertical with color area 0.8 - 1.25
