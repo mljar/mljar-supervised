@@ -20,7 +20,7 @@ from supervised.algorithms.registry import (
 from supervised.algorithms.xgboost import xgboost_eval_metric
 from supervised.algorithms.lightgbm import lightgbm_eval_metric
 from supervised.algorithms.catboost import catboost_eval_metric
-from supervised.utils.utils import dump_data
+from supervised.utils.utils import dump_data, load_data
 import logging
 from supervised.utils.config import LOG_LEVEL
 
@@ -158,7 +158,7 @@ class MljarTuner:
         all_steps += ["simple_algorithms", "default_algorithms"]
 
         if self._fairness_metric is not None:
-            all_steps += ["fairness"]
+            all_steps += ["fairness", "fairness2", "fairness3", "fairness4"]
 
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
@@ -204,8 +204,8 @@ class MljarTuner:
                 return self.simple_algorithms_params(models_cnt)
             elif step == "default_algorithms":
                 return self.default_params(models_cnt)
-            elif step == "fairness":
-                return self.fairness_optimization(models, total_time_limit)
+            elif "fairness" in step: # in ["fairness", "fairness2"]:
+                return self.fairness_optimization(models, results_path)
             elif step == "not_so_random":
                 return self.get_not_so_random_params(models_cnt)
             elif step == "mix_encoding":
@@ -279,15 +279,34 @@ class MljarTuner:
             return []
 
 
-    def fairness_optimization(self, current_models, total_time_limit):
+    def fairness_optimization(self, current_models, results_path):
+        print("\n\n\nNEW STEP\n\n\n")
         print("fairness_optimization()")
         df_models, algorithms = self.df_models_algorithms(current_models)
 
         print(df_models)
         print(algorithms)
+        
 
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
+
+        # get sensitive features for all samples
+        sensitive_features_path = os.path.join(
+            results_path, "sensitive_features.data"
+        )
+        sensitive_features = load_data(sensitive_features_path)
+
+        # get target
+        y_path = os.path.join(results_path, "y.data")
+        target = np.array(load_data(y_path)["target"])
+
+        print(sensitive_features)
+        print(target)
+        print(sensitive_features.shape)
+        print(target.shape)
+        sensitive_columns = list(sensitive_features.columns)
+
 
         for i in range(df_models.shape[0]):
             
@@ -300,10 +319,83 @@ class MljarTuner:
 
             print(m.get_name(), m.get_type(), model_type)
 
+            fo = m.get_fairness_optimization()
+            fo_step = fo.get("step", 0)
+            print("@"*21)
+            print("fo_step", fo_step)
+
             print(m.get_fairness_optimization())
+ 
+
+            samples_weight = np.ones(sensitive_features.shape[0])
+
+            fo = m.get_fairness_optimization()
+            weights = fo.get("weights")
+            for k, ws in weights.items():
+                print(k)
+                sensitive_values = k.split("@")
+                ii = None
+                for i, sv in enumerate(sensitive_values):
+                    print(sensitive_columns[i], "equals", sv)
+                    if ii is None:
+                        ii = sensitive_features[sensitive_columns[i]] == sv
+                    else:
+                        ii &= sensitive_features[sensitive_columns[i]] == sv
+
+                print(ii)
+                print(np.sum(ii))
+                print(np.sum(ii & (target == 0)))
+                print(np.sum(ii & (target == 1)))
+                print(ws[0], ws[1])
+
+                samples_weight[ii & (target == 0)] = ws[0]
+                samples_weight[ii & (target == 1)] = ws[1]
+                
+            print(samples_weight)
+            print(np.sum(samples_weight))
+            samples_weight = samples_weight * target.shape[0]/np.sum(samples_weight)
+            print(samples_weight)
+            print(np.sum(samples_weight))
+
+            sample_weight_path = os.path.join(
+                results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
+            )
+            print(sample_weight_path)
+
+            dump_data(
+                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+            )
+
+            fo = m.get_fairness_optimization()
+            fo["step"] = fo_step
+
+            params = copy.deepcopy(m.params)
+            params["fairness_optimization"] = fo
+            
+            params["validation_strategy"]["sample_weight_path"] = sample_weight_path
+            params["injected_sample_weight"] = True
+            if "Fairness" not in params["name"]:
+                params["name"] += "_Fairness_Weigthing"
+            if fo_step > 0:
+                params["name"] += f"_{fo_step}"
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
+            params["data_type"] = "fairness"
+            if "model_architecture_json" in params["learner"]:
+                del params["learner"]["model_architecture_json"]
+            if self._optuna_time_budget is not None:
+                params["optuna_time_budget"] = self._optuna_time_budget
+                params["optuna_init_params"] = self._optuna_init_params
+                params["optuna_verbose"] = self._optuna_verbose
+
+            unique_params_key = MljarTuner.get_params_key(params)
+
+            if unique_params_key not in self._unique_params_keys:
+                generated_params += [params]
 
 
-
+        print("generated")
         return generated_params
 
 

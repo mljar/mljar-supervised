@@ -52,6 +52,7 @@ class FairnessMetrics:
         fairness_metric,
         fairness_threshold,
         protected_groups=[],
+        previous_fairness_optimization=None
     ):
 
         target = np.array(target).ravel()
@@ -341,10 +342,17 @@ class FairnessMetrics:
                     sensitive_indices[key] = ii
 
 
+        
+
+        total_dp_ratio = min_selection_rate/max_selection_rate
+        print("total dp ratio", total_dp_ratio)
+
         c0 = np.sum(target==0)
         c1 = np.sum(target==1)
 
         selection_rates = {}
+        weights = {}
+        
         for key, indices in sensitive_indices.items():
             selection_rates[key] = np.sum((preds == 1) & indices) / np.sum(indices)
             print(key, np.sum(indices), selection_rates[key])
@@ -357,17 +365,70 @@ class FairnessMetrics:
             w1 = t/target.shape[0]*c1/t1
 
             print("----", key, w0, w1, t, t0, t1)
+            weights[key] = [w0, w1]
 
         max_selection_rate = np.max(list(selection_rates.values()))
         min_selection_rate = np.min(list(selection_rates.values()))
 
-        total_dp_ratio = min_selection_rate/max_selection_rate
-        print("total dp ratio", total_dp_ratio)
+        for k, v in selection_rates.items():
+            selection_rates[k] = v / max_selection_rate
         
+        print("previous fairness optimization")
+        print(previous_fairness_optimization)
+        print("********")
+        
+        previous_weights = {}
+        if previous_fairness_optimization is not None:
+        
+            weights = previous_fairness_optimization.get("weights")
+            for key, indices in sensitive_indices.items():
+                print("Previous")
+                print(previous_fairness_optimization["selection_rates"][key], selection_rates[key])
+                
+                direction = 0.0
+                if previous_fairness_optimization["selection_rates"][key] < selection_rates[key]:
+                    print("Improvement")
+                    direction = 1.0
+                elif selection_rates[key] > 0.8:
+                    print("GOOD")
+                else:
+                    print("Decrease")
+                    direction = -0.5
+                
+                # need to add previous weights instead 1.0
+                prev_weights = previous_fairness_optimization.get("previous_weights", {}).get(key, [1, 1])
+                print("prev_weights", prev_weights)
+                delta0 = weights[key][0] - prev_weights[0]
+                delta1 = weights[key][1] - prev_weights[1]
+
+                previous_weights[key] = [weights[key][0], weights[key][1]]
+
+                print("BEFORE")
+                print(weights[key])
+                weights[key][0] += direction * delta0
+                weights[key][1] += direction * delta1
+                print("AFTER")
+                print(weights[key])
+                #print(previous_fairness_optimization["weights"][key])
+
+
+        
+        step = None
+        if previous_fairness_optimization is not None:
+            step = previous_fairness_optimization.get("step")
+
+        if step is None:
+            step = 0
+        else:
+            step += 1
+
 
         fairness_metrics["fairness_optimization"] = {
             "selection_rates": selection_rates,
-            "total_dp_ratio": total_dp_ratio
+            "previous_weights": previous_weights,
+            "weights": weights, 
+            "total_dp_ratio": total_dp_ratio,
+            "step": step
         }
 
         return fairness_metrics

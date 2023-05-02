@@ -84,6 +84,7 @@ class ModelFramework:
         self._fairness_threshold = params.get("fairness_threshold")
         self._protected_groups = params.get("protected_groups", [])
         self._fairness_optimization = params.get("fairness_optimization")
+        
 
         # the automl random state from AutoML constructor, used in Optuna optimizer
         self._automl_random_state = params.get("automl_random_state", 42)
@@ -498,6 +499,7 @@ class ModelFramework:
                 self._fairness_metric,
                 self._fairness_threshold,
                 self._protected_groups,
+                self._fairness_optimization
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])

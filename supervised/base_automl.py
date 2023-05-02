@@ -1149,6 +1149,10 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
 
                 for params in generated_params:
+                    print(params)
+                    print(params.get("name"))
+                    print(params.get("status"))
+
                     if params.get("status", "") in ["trained", "skipped", "error"]:
                         self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue

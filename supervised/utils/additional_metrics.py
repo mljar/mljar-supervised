@@ -51,6 +51,7 @@ class AdditionalMetrics:
         fairness_metric=None,
         fairness_threshold=None,
         protected_groups=[],
+        previous_fairness_optimization=None
     ):
 
         negative_label, positive_label = "0", "1"
@@ -237,6 +238,7 @@ class AdditionalMetrics:
                 fairness_metric,
                 fairness_threshold,
                 protected_groups,
+                previous_fairness_optimization
             )
 
         return metrics
@@ -334,6 +336,7 @@ class AdditionalMetrics:
         fairness_metric=None,
         fairness_threshold=None,
         protected_groups=[],
+        previous_fairness_optimization=None,
     ):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -346,6 +349,7 @@ class AdditionalMetrics:
                     fairness_metric,
                     fairness_threshold,
                     protected_groups,
+                    previous_fairness_optimization
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 return AdditionalMetrics.multiclass_classification(
