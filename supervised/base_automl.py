@@ -117,7 +117,8 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_init_params = {}
         self._fairness_metric = None
         self._fairness_threshold = None
-        self._protected_groups = []
+        self._privileged_groups = []
+        self._unprivileged_groups = []
         self._optuna_verbose = True
         self._n_jobs = -1
 
@@ -993,7 +994,8 @@ class BaseAutoML(BaseEstimator, ABC):
         if sensitive_features is not None:
             self._fairness_metric = self._get_fairness_metric()
             self._fairness_threshold = self._get_fairness_threshold()
-            self._protected_groups = self._get_protected_groups()
+            self._privileged_groups = self._get_privileged_groups()
+            self._unprivileged_groups = self._get_unprivileged_groups()
 
         self._adjust_validation = False
         self._apply_constraints()
@@ -1080,7 +1082,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._optuna_verbose,
                 self._fairness_metric,
                 self._fairness_threshold,
-                self._protected_groups,
+                self._privileged_groups,
+                self._unprivileged_groups,
                 self._n_jobs,
                 self._random_state,
             )
@@ -2150,12 +2153,19 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.fairness_threshold)
 
-    def _get_protected_groups(self):
-        """Gets protected groups for fair training"""
-        if self.protected_groups == "auto":
+    def _get_privileged_groups(self):
+        """Gets privileged groups for fair training"""
+        if self.privileged_groups == "auto":
             return []
         else:
-            return deepcopy(self.protected_groups)
+            return deepcopy(self.privileged_groups)
+
+    def _get_unprivileged_groups(self):
+        """Gets unprivileged groups for fair training"""
+        if self.unprivileged_groups == "auto":
+            return []
+        else:
+            return deepcopy(self.unprivileged_groups)
 
     def to_json(self):
         if self._best_model is None:

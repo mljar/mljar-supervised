@@ -36,10 +36,10 @@ X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
 
 automl = AutoML(algorithms=["Xgboost"],
                 train_ensemble=False,
-                fairness_metric="demographic_parity_ratio", 
+                fairness_metric="demographic_parity_ratio",  # 
                 fairness_threshold=0.8,
-                #unprivileged_groups = [{"sex": "Female"}],
-                #privileged_groups = [{"sex": "Male"}]
+                privileged_groups = [{"sex": "Female"}],
+                unprivileged_groups = [{"sex": "Male"}]
             )
 
 

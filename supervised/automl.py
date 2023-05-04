@@ -70,7 +70,8 @@ class AutoML(BaseAutoML):
         optuna_verbose: bool = True,
         fairness_metric: str = "auto",
         fairness_threshold: Union[Literal["auto"], float] = "auto",
-        protected_groups: Union[Literal["auto"], list] = "auto",
+        privileged_groups: Union[Literal["auto"], list] = "auto",
+        unprivileged_groups: Union[Literal["auto"], list] = "auto",
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
@@ -256,10 +257,15 @@ class AutoML(BaseAutoML):
                 - for `equalized_odds_difference` the metric value should be below 0.1, 
                 - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
 
-            protected_groups (list): The list of protected groups. 
-                By default, list of protected groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task protected group is the one with the lowest selection rate. 
+            privileged_groups (list): The list of privileged groups. 
+                By default, list of privileged groups are automatically detected based on fairness metrics. 
+                For example, in binary classification task, a privileged group is the one with the lowest selection rate. 
                 Example value: [{"sex": "Female"}]
+
+            unprivileged_groups (list): The list of unprivileged groups. 
+                By default, list of unprivileged groups are automatically detected based on fairness metrics. 
+                For example, in binary classification task, an unprivileged group is the one with the highest selection rate. 
+                Example value: [{"sex": "Male"}]
 
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 
@@ -368,7 +374,8 @@ class AutoML(BaseAutoML):
         self.optuna_verbose = optuna_verbose
         self.fairness_metric = fairness_metric
         self.fairness_threshold = fairness_threshold
-        self.protected_groups = protected_groups
+        self.privileged_groups = privileged_groups
+        self.unprivileged_groups = unprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
 

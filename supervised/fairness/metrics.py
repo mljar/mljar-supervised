@@ -51,7 +51,8 @@ class FairnessMetrics:
         sensitive_features,
         fairness_metric,
         fairness_threshold,
-        protected_groups=[],
+        privileged_groups=[],
+        unprivileged_groups=[],
         previous_fairness_optimization=None
     ):
 
@@ -139,16 +140,27 @@ class FairnessMetrics:
             max_selection_rate = np.max(selection_rates[1:])
             min_selection_rate = np.min(selection_rates[1:])
 
-            protected_value = None
-            for pg in protected_groups:
-                if col_name in pg:
-                    protected_value = pg.get(col_name)
 
-            if protected_value is not None:
+            privileged_value, unprivileged_value = None, None
+            for pg in privileged_groups:
+                if col_name in pg:
+                    privileged_value = pg.get(col_name)
+            for upg in unprivileged_groups:
+                if col_name in upg:
+                    unprivileged_value = upg.get(col_name)
+                    
+
+            if privileged_value is not None:
                 for i, v in enumerate(values):
-                    if v == protected_value:
+                    if v == privileged_value:
                         # starting from 1 because first selection rate is for all samples
                         min_selection_rate = selection_rates[i+1]
+
+            if unprivileged_value is not None:
+                for i, v in enumerate(values):
+                    if v == unprivileged_value:
+                        # starting from 1 because first selection rate is for all samples
+                        max_selection_rate = selection_rates[i+1]
 
             demographic_parity_diff = np.round(max_selection_rate - min_selection_rate, 4)
             demographic_parity_ratio = np.round(
@@ -161,12 +173,19 @@ class FairnessMetrics:
             fpr_min = np.min(fprs[1:])
             fpr_max = np.max(fprs[1:])
 
-            if protected_value is not None:
+            if privileged_value is not None:
                 for i, v in enumerate(values):
-                    if v == protected_value:
+                    if v == privileged_value:
                         # starting from 1 because first value is for all samples
                         tpr_min = tprs[i+1]
                         fpr_min = fprs[i+1]
+            
+            if unprivileged_value is not None:
+                for i, v in enumerate(values):
+                    if v == unprivileged_value:
+                        # starting from 1 because first value is for all samples
+                        tpr_max = tprs[i+1]
+                        fpr_max = fprs[i+1]
 
             equalized_odds_diff = np.round(max(tpr_max - tpr_min, fpr_max - fpr_min), 4)
             equalized_odds_ratio = np.round(
@@ -211,6 +230,31 @@ class FairnessMetrics:
                 is_fair = equalized_odds_ratio > fairness_threshold
                 
             
+            if "parity" in fairness_metric and privileged_value is None:
+                ind = np.argmin(selection_rates[1:])
+                privileged_value = values[ind]
+            if "parity" in fairness_metric and unprivileged_value is None:
+                ind = np.argmax(selection_rates[1:])
+                unprivileged_value = values[ind]
+                
+            if "odds_difference" in fairness_metric:
+                if tpr_max - tpr_min > fpr_max - fpr_min:
+                    if privileged_value is None:
+                        ind = np.argmin(tprs[1:])
+                        privileged_value = values[ind]
+                    if unprivileged_value is None:
+                        ind = np.argmax(tprs[1:])
+                        unprivileged_value = values[ind]
+                else:
+                    if privileged_value is None:
+                        ind = np.argmin(fprs[1:])
+                        privileged_value = values[ind]
+                    if unprivileged_value is None:
+                        ind = np.argmax(fprs[1:])
+                        unprivileged_value = values[ind]
+
+                
+
             figures = []
             # selection rate figure
             fair_selection_rate = max_selection_rate * fairness_threshold
@@ -286,7 +330,9 @@ class FairnessMetrics:
                 "figures": figures,
                 "fairness_metric_name": fairness_metric_name,
                 "fairness_metric_value": fairness_metric_value,
-                "is_fair": is_fair
+                "is_fair": is_fair,
+                "privileged_value": privileged_value,
+                "unprivileged_value": unprivileged_value
             }
         
 
@@ -448,12 +494,22 @@ class FairnessMetrics:
 
             fout.write(f"\n\n## Is model fair for {k} feature?\n")
             fair_str = "fair" if v["is_fair"] else "unfair"
-            fout.write(f'Model is {fair_str} for {k} feature because {v["fairness_metric_name"]} is {v["fairness_metric_value"]}.\n\n')
-            
             fairness_threshold = fairness_metrics.get("fairness_optimization", {}).get("fairness_threshold")
-            if fairness_threshold is not None: 
-                fout.write(f'Fairness threshold is {fairness_threshold}.\n\n')
-
+            fairness_threshold_str = ""
+            if fairness_threshold is not None:
+                if "ratio" in v["fairness_metric_name"].lower():
+                    fairness_threshold_str = f"It should be higher than {fairness_threshold}."
+                else:
+                    fairness_threshold_str = f"It should be lower than {fairness_threshold}."
+            
+            fout.write(f'Model is {fair_str} for {k} feature.\n') 
+            fout.write(f'The {v["fairness_metric_name"]} is {v["fairness_metric_value"]}. {fairness_threshold_str}\n')
+            if v.get("privileged_value") is not None:
+                fout.write(f'Privileged value is {v["privileged_value"]}.\n')
+            if v.get("unprivileged_value") is not None:
+                fout.write(f'Unprivileged value is {v["unprivileged_value"]}.\n')
+            
+            
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))

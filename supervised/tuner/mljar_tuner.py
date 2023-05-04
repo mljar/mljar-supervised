@@ -51,7 +51,8 @@ class MljarTuner:
         optuna_verbose,
         fairness_metric,
         fairness_threshold,
-        protected_groups,
+        privileged_groups,
+        unprivileged_groups,
         n_jobs,
         seed,
     ):
@@ -79,7 +80,8 @@ class MljarTuner:
         self._n_jobs = n_jobs
         self._fairness_metric = fairness_metric
         self._fairness_threshold = fairness_threshold
-        self._protected_groups = protected_groups
+        self._privileged_groups = privileged_groups
+        self._unprivileged_groups = unprivileged_groups
         self._seed = seed
         self._unique_params_keys = []
 
@@ -1148,7 +1150,8 @@ class MljarTuner:
         if self._fairness_metric is not None:
             model_params["fairness_metric"] = self._fairness_metric
             model_params["fairness_threshold"] = self._fairness_threshold
-            model_params["protected_groups"] = self._protected_groups
+            model_params["privileged_groups"] = self._privileged_groups
+            model_params["unprivileged_groups"] = self._unprivileged_groups
 
         return model_params
 

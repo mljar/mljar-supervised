@@ -50,7 +50,8 @@ class AdditionalMetrics:
         sensitive_features=None,
         fairness_metric=None,
         fairness_threshold=None,
-        protected_groups=[],
+        privileged_groups=[],
+        unprivileged_groups=[],
         previous_fairness_optimization=None
     ):
 
@@ -237,7 +238,8 @@ class AdditionalMetrics:
                 sensitive_features,
                 fairness_metric,
                 fairness_threshold,
-                protected_groups,
+                privileged_groups,
+                unprivileged_groups,
                 previous_fairness_optimization
             )
 
@@ -335,7 +337,8 @@ class AdditionalMetrics:
         sensitive_features=None,
         fairness_metric=None,
         fairness_threshold=None,
-        protected_groups=[],
+        privileged_groups=[],
+        unprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
         with warnings.catch_warnings():
@@ -348,7 +351,8 @@ class AdditionalMetrics:
                     sensitive_features,
                     fairness_metric,
                     fairness_threshold,
-                    protected_groups,
+                    privileged_groups,
+                    unprivileged_groups,
                     previous_fairness_optimization
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
