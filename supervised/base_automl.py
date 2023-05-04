@@ -2109,6 +2109,7 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.fairness_metric, str) and self.eval_metric == "auto":
             return
 
+
         if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
             "demographic_parity_difference",
             "demographic_parity_ratio",
@@ -2139,7 +2140,13 @@ class BaseAutoML(BaseEstimator, ABC):
         """Gets the fairness threshold"""
         if self.fairness_threshold == "auto":
             if self._get_ml_task() == BINARY_CLASSIFICATION:
-                return 0.8
+                thresholds = {
+                    "demographic_parity_difference": 0.1,
+                    "demographic_parity_ratio": 0.8,
+                    "equalized_odds_difference": 0.1,
+                    "equalized_odds_ratio": 0.8,
+                }
+                return thresholds.get(self._fairness_metric, 0.8)
         else:
             return deepcopy(self.fairness_threshold)
 

@@ -428,7 +428,8 @@ class FairnessMetrics:
             "previous_weights": previous_weights,
             "weights": weights, 
             "total_dp_ratio": total_dp_ratio,
-            "step": step
+            "step": step,
+            "fairness_threshold": fairness_threshold
         }
 
         return fairness_metrics
@@ -448,6 +449,10 @@ class FairnessMetrics:
             fout.write(f"\n\n## Is model fair for {k} feature?\n")
             fair_str = "fair" if v["is_fair"] else "unfair"
             fout.write(f'Model is {fair_str} for {k} feature because {v["fairness_metric_name"]} is {v["fairness_metric_value"]}.\n\n')
+            
+            fairness_threshold = fairness_metrics.get("fairness_optimization", {}).get("fairness_threshold")
+            if fairness_threshold is not None: 
+                fout.write(f'Fairness threshold is {fairness_threshold}.\n\n')
 
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")

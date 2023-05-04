@@ -21,12 +21,10 @@ X["is_young"] = (X["age"] < 50) * 1 # < 30
 X["is_young"] = X["is_young"].astype(str)
 
 
-sensitive_features = X[["sex", "is_young"]] #, "race"]] #, "is_young"]]  # , "race", "age"]]
+sensitive_features = X[["sex"]] #, "race"]] #, "is_young"]]  # , "race", "age"]]
 print("Input data")
 print(X)
 print("Sensitive features")
-
-
 
 print(sensitive_features)
 
@@ -40,7 +38,9 @@ automl = AutoML(algorithms=["Xgboost"],
                 train_ensemble=False,
                 fairness_metric="demographic_parity_ratio", 
                 fairness_threshold=0.8,
-                #protected_groups = [{"sex": "Male"}, {"race": "White" }]
+                #unprivileged_groups = [{"sex": "Female"}],
+                #privileged_groups = [{"sex": "Male"}]
             )
+
 
 automl.fit(X_train, y_train, sensitive_features=S_train)
