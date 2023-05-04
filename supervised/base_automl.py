@@ -799,6 +799,19 @@ class BaseAutoML(BaseEstimator, ABC):
         if sensitive_features is not None:
             sensitive_features.reset_index(drop=True, inplace=True)
 
+            print(sensitive_features)
+            for col in sensitive_features.columns:
+                
+                if sensitive_features[col].dtype.name != "category":
+                    print("Sensitive features should be categorical")
+                    print(f"Apply automatic binarization for feature {col}")
+                    sensitive_features[col] = pd.DataFrame(pd.qcut(sensitive_features[col], q=2).astype(str))
+                    print(f"New values {list(sensitive_features[col].unique())} for feature {col} are applied")
+
+                
+
+
+
         return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):

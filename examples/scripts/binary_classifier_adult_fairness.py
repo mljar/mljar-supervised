@@ -21,7 +21,7 @@ X["is_young"] = (X["age"] < 50) * 1 # < 30
 X["is_young"] = X["is_young"].astype(str)
 
 
-sensitive_features = X[["sex"]] #, "race"]] #, "is_young"]]  # , "race", "age"]]
+sensitive_features = X[["sex", "age"]] #, "race"]] #, "is_young"]]  # , "race", "age"]]
 print("Input data")
 print(X)
 print("Sensitive features")
