@@ -26,7 +26,7 @@ class LeaderboardPlots:
             return
         # Scatter plot
         plt.figure(figsize=(10, 7))
-        plt.plot(ldb.metric_value, "*")
+        plt.plot(ldb.metric_value, "*", markersize=12, alpha=0.75)
         plt.xlabel("#Iteration")
         plt.ylabel(ldb.metric_type.iloc[0])
         plt.title("AutoML Performance")
@@ -60,3 +60,24 @@ class LeaderboardPlots:
         fout.write(
             f"![AutoML Performance Boxplot]({LeaderboardPlots.performance_boxplot_fname})"
         )
+
+        fairness_metrics = [f for f in ldb.columns if "fairness_" in f and f != "fairness_metric"]
+        for fm in fairness_metrics:
+            x_axis_name = ldb.metric_type.iloc[0]
+            y_axis_name = ldb["fairness_metric"].iloc[0]
+                
+            # Scatter plot
+            plt.figure(figsize=(10, 7))
+            plt.plot(ldb.metric_value, ldb[fm], "*", markersize=12, alpha=0.75)
+            plt.xlabel(x_axis_name)
+            plt.ylabel(y_axis_name)
+            plt.title(f"Performance vs {fm}")
+            plt.tight_layout(pad=2.0)
+            fname = f"performance_vs_{fm}.png"
+            plot_path = os.path.join(model_path, fname)
+            plt.savefig(plot_path)
+            plt.close("all")
+
+            fout.write(f"\n\n### Performance vs {fm}\n")
+            fout.write(f"![Performance vs {fm}]({fname})")
+
