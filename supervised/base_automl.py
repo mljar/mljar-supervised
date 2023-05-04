@@ -200,6 +200,14 @@ class BaseAutoML(BaseEstimator, ABC):
 
             models_map = {}
 
+            with open("framework.json", "r") as f:
+                config = json.load(f)
+                expected_joblib_version = config["saved"]["joblib_version"]
+
+            if joblib.__version__ != expected_joblib_version:
+                raise ValueError(
+                    f"Unexpected version of joblib library: expected {expected_joblib_version}, but found {joblib.__version__}. Please install expected version.")
+            
             for model_subpath in load_models:
                 if model_subpath.endswith("Ensemble") or model_subpath.endswith(
                     "Ensemble_Stacked"
