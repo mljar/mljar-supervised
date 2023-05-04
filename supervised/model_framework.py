@@ -502,6 +502,7 @@ class ModelFramework:
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
                 "is_stacked": self._is_stacked,
+                "joblib_version": joblib.__version__,
             }
             if type(desc["final_loss"]) == np.float32:
                 desc["final_loss"] = str(desc["final_loss"])
