@@ -259,13 +259,13 @@ class AutoML(BaseAutoML):
 
             privileged_groups (list): The list of privileged groups. 
                 By default, list of privileged groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task, a privileged group is the one with the lowest selection rate. 
-                Example value: [{"sex": "Female"}]
+                For example, in binary classification task, a privileged group is the one with the highest selection rate. 
+                Example value: [{"sex": "Male"}]
 
             unprivileged_groups (list): The list of unprivileged groups. 
                 By default, list of unprivileged groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task, an unprivileged group is the one with the highest selection rate. 
-                Example value: [{"sex": "Male"}]
+                For example, in binary classification task, an unprivileged group is the one with the lowest selection rate. 
+                Example value: [{"sex": "Female"}]
 
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 

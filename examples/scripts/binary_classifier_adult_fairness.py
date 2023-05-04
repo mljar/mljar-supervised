@@ -38,8 +38,8 @@ automl = AutoML(algorithms=["Xgboost"],
                 train_ensemble=False,
                 fairness_metric="demographic_parity_ratio",  # 
                 fairness_threshold=0.8,
-                privileged_groups = [{"sex": "Female"}],
-                unprivileged_groups = [{"sex": "Male"}]
+                privileged_groups = [{"sex": "Male"}],
+                unprivileged_groups = [{"sex": "Female"}]
             )
 
 
