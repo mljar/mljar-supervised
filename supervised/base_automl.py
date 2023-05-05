@@ -1253,11 +1253,13 @@ class BaseAutoML(BaseEstimator, ABC):
                 ]
 
                 if models:
+                    # if there are fair models, we select the one with best performance
                     self._best_model = min(
                         models,
                         key=lambda x: x.get_final_loss(),
                     )
                 else:
+                    # if no models are fair, we select the most fair model
                     self._best_model = min(
                         [m for m in self._models if m.is_valid()],
                         key=lambda x: x.get_best_fairness(),
