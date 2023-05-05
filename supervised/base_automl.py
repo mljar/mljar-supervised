@@ -250,7 +250,7 @@ class BaseAutoML(BaseEstimator, ABC):
         }
         if self._max_single_prediction_time is not None:
             ldb["single_prediction_time"] = []
-        
+
         sensitive_features_names = []
         if self._fairness_metric is not None and len(self._models):
             sensitive_features_names = self._models[0].get_sensitive_features_names()
@@ -801,16 +801,16 @@ class BaseAutoML(BaseEstimator, ABC):
 
             print(sensitive_features)
             for col in sensitive_features.columns:
-                
+
                 if sensitive_features[col].dtype.name != "category":
                     print("Sensitive features should be categorical")
                     print(f"Apply automatic binarization for feature {col}")
-                    sensitive_features[col] = pd.DataFrame(pd.qcut(sensitive_features[col], q=2).astype(str))
-                    print(f"New values {list(sensitive_features[col].unique())} for feature {col} are applied")
-
-                
-
-
+                    sensitive_features[col] = pd.DataFrame(
+                        pd.qcut(sensitive_features[col], q=2).astype(str)
+                    )
+                    print(
+                        f"New values {list(sensitive_features[col].unique())} for feature {col} are applied"
+                    )
 
         return X, y, sample_weight, sensitive_features
 
@@ -1103,7 +1103,9 @@ class BaseAutoML(BaseEstimator, ABC):
             self.tuner = tuner
 
             steps = tuner.steps()
-            self.verbose_print(f'AutoML steps: {[s for s in steps if "update_" not in s]}')
+            self.verbose_print(
+                f'AutoML steps: {[s for s in steps if "update_" not in s]}'
+            )
             if self._time_ctrl is None:
                 self._time_ctrl = TimeController(
                     self._start_time,
@@ -1150,9 +1152,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
 
                 if generated_params is None or not generated_params:
-                    self.verbose_print(
-                        f"Skip {step} because no parameters were generated."
-                    )
+                    if "_update_" not in step:
+                        self.verbose_print(
+                            f"Skip {step} because no parameters were generated."
+                        )
                     continue
                 if generated_params:
                     if not self._time_ctrl.enough_time_for_step(self._fit_level):
@@ -1165,9 +1168,6 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
 
                 for params in generated_params:
-                    print(params)
-                    print(params.get("name"))
-                    print(params.get("status"))
 
                     if params.get("status", "") in ["trained", "skipped", "error"]:
                         self.verbose_print(f"{params['name']}: {params['status']}.")
@@ -1240,17 +1240,41 @@ class BaseAutoML(BaseEstimator, ABC):
     def select_and_save_best(self, show_warnings=False):
         # Select best model based on the lowest loss
         self._best_model = None
+
         if self._models:
-            model_list = [
-                m
-                for m in self._models
-                if m.is_valid() and m.is_fast_enough(self._max_single_prediction_time)
-            ]
-            if model_list:
-                self._best_model = min(
-                    model_list,
-                    key=lambda x: x.get_final_loss(),
-                )
+            if self._fairness_metric is not None:
+
+                models = [
+                    m
+                    for m in self._models
+                    if m.is_valid()
+                    and m.is_fast_enough(self._max_single_prediction_time)
+                    and m.is_fair()
+                ]
+
+                if models:
+                    self._best_model = min(
+                        models,
+                        key=lambda x: x.get_final_loss(),
+                    )
+                else:
+                    self._best_model = min(
+                        [m for m in self._models if m.is_valid()],
+                        key=lambda x: x.get_best_fairness(),
+                    )
+
+            else:
+                model_list = [
+                    m
+                    for m in self._models
+                    if m.is_valid()
+                    and m.is_fast_enough(self._max_single_prediction_time)
+                ]
+                if model_list:
+                    self._best_model = min(
+                        model_list,
+                        key=lambda x: x.get_final_loss(),
+                    )
         # if none selected please select again and warn the user
         if (
             len(self._models)
@@ -1327,7 +1351,9 @@ class BaseAutoML(BaseEstimator, ABC):
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(ldb, self._results_path, fout, self._fairness_threshold)
+                LeaderboardPlots.compute(
+                    ldb, self._results_path, fout, self._fairness_threshold
+                )
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
@@ -2124,7 +2150,6 @@ class BaseAutoML(BaseEstimator, ABC):
         """Validates fariness_metric parameter"""
         if isinstance(self.fairness_metric, str) and self.eval_metric == "auto":
             return
-
 
         if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
             "demographic_parity_difference",

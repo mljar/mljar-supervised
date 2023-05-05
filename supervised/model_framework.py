@@ -522,10 +522,59 @@ class ModelFramework:
         fm = metrics.get("fairness_metrics", {})
         return fm.get("fairness_optimization", {})
 
-    def get_total_fairness(self):
+    def get_worst_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The worst fairness metric is:
+        # - for ratio metrics, the lowest fairness value from all sensitive features
+        # - for difference metrics, the highest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
         metrics = self.get_additional_metrics()
+        
         fm = metrics.get("fairness_metrics", {})
-        return fm.get("fairness_optimization", {}).get("total_dp_ratio", 0)
+        worst_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 0)
+                else:
+                    worst_value = min(worst_value, values.get("fairness_metric_value", 0))
+            else:
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 1)
+                else:
+                    worst_value = max(worst_value, values.get("fairness_metric_value", 1))
+
+        return worst_value
+
+    def get_best_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The best fairness metric is:
+        # - for ratio metrics, the highest fairness value from all sensitive features
+        # - for difference metrics, the lowest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
+        metrics = self.get_additional_metrics()        
+        fm = metrics.get("fairness_metrics", {})
+        best_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 0)
+                else:
+                    best_value = max(best_value, values.get("fairness_metric_value", 0))
+            else:
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 1)
+                else:
+                    best_value = min(best_value, values.get("fairness_metric_value", 1))
+
+        return best_value
+
 
     def is_fair(self):
         if self._is_fair is not None:
