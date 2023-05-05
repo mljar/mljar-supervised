@@ -162,8 +162,8 @@ class MljarTuner:
         if self._fairness_metric is not None:
             all_steps += ["unfairness_mitigation"]
             # up to 10 steps
-            #for i in range(10):
-            #    all_steps += [f"unfairness_mitigation_update_{i+1}"]
+            for i in range(10):
+                all_steps += [f"unfairness_mitigation_update_{i+1}"]
 
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
