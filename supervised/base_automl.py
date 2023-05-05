@@ -1103,7 +1103,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.tuner = tuner
 
             steps = tuner.steps()
-            self.verbose_print(f"AutoML steps: {steps}")
+            self.verbose_print(f'AutoML steps: {[s for s in steps if "update_" not in s]}')
             if self._time_ctrl is None:
                 self._time_ctrl = TimeController(
                     self._start_time,
