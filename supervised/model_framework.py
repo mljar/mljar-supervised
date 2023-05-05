@@ -85,7 +85,7 @@ class ModelFramework:
         self._privileged_groups = params.get("privileged_groups", [])
         self._unprivileged_groups = params.get("unprivileged_groups", [])
         self._fairness_optimization = params.get("fairness_optimization")
-        
+        self._is_fair = None
 
         # the automl random state from AutoML constructor, used in Optuna optimizer
         self._automl_random_state = params.get("automl_random_state", 42)
@@ -521,6 +521,25 @@ class ModelFramework:
         metrics = self.get_additional_metrics()
         fm = metrics.get("fairness_metrics", {})
         return fm.get("fairness_optimization", {})
+
+    def get_total_fairness(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get("fairness_optimization", {}).get("total_dp_ratio", 0)
+
+    def is_fair(self):
+        if self._is_fair is not None:
+            return self._is_fair
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        for col, m in fm.items():
+            if col == "fairness_optimization":
+                continue
+            if not m.get("is_fair", True):
+                self._is_fair = False
+                return False
+        self._is_fair = True
+        return True
 
     def save(self, results_path, model_subpath):
         start_time = time.time()

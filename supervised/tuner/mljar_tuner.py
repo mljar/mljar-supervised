@@ -159,8 +159,12 @@ class MljarTuner:
 
         all_steps += ["simple_algorithms", "default_algorithms"]
 
+
         if self._fairness_metric is not None:
-            all_steps += ["fairness", "fairness2", "fairness3", "fairness4"]
+            all_steps += ["unfairness_mitigation"]
+            # up to 10 steps
+            for i in range(1):
+                all_steps += [f"unfairness_mitigation_update_{i+1}"]
 
         if self._start_random_models > 1:
             all_steps += ["not_so_random"]
@@ -206,7 +210,7 @@ class MljarTuner:
                 return self.simple_algorithms_params(models_cnt)
             elif step == "default_algorithms":
                 return self.default_params(models_cnt)
-            elif "fairness" in step: # in ["fairness", "fairness2"]:
+            elif "fairness" in step: 
                 return self.fairness_optimization(models, results_path)
             elif step == "not_so_random":
                 return self.get_not_so_random_params(models_cnt)
@@ -282,6 +286,7 @@ class MljarTuner:
 
 
     def fairness_optimization(self, current_models, results_path):
+        
         print("\n\n\nNEW STEP\n\n\n")
         print("fairness_optimization()")
         df_models, algorithms = self.df_models_algorithms(current_models)
@@ -315,6 +320,7 @@ class MljarTuner:
             model_type = df_models["model_type"].iloc[i]
             
             if df_models["model_type"].iloc[i] in ["Baseline"]:
+                # we dont optimize Baseline
                 continue
 
             m = df_models["model"].iloc[i]
@@ -350,8 +356,8 @@ class MljarTuner:
                 print(np.sum(ii & (target == 1)))
                 print(ws[0], ws[1])
 
-                samples_weight[ii & (target == 0)] = ws[0]
-                samples_weight[ii & (target == 1)] = ws[1]
+                samples_weight[ii & (target == 0)] = max(ws[0], 0.01)
+                samples_weight[ii & (target == 1)] = max(ws[1], 0.01) # weight cant be negative
                 
             print(samples_weight)
             print(np.sum(samples_weight))
@@ -376,10 +382,14 @@ class MljarTuner:
             
             params["validation_strategy"]["sample_weight_path"] = sample_weight_path
             params["injected_sample_weight"] = True
-            if "Fairness" not in params["name"]:
-                params["name"] += "_Fairness_Weigthing"
+            if "SampleWeigthing" not in params["name"]:
+                params["name"] += "_SampleWeigthing"
             if fo_step > 0:
-                params["name"] += f"_{fo_step}"
+                if "Update" in params["name"]:
+                    n = params["name"].split("_")
+                    params["name"] = "_".join(n[:-2])
+                params["name"] += f"_Update_{fo_step}"
+
             params["status"] = "initialized"
             params["final_loss"] = None
             params["train_time"] = None
@@ -851,6 +861,10 @@ class MljarTuner:
                 "train_time": train_times,
             }
         )
+        if self._fairness_metric is not None:
+            total_fairness = [m.get_total_fairness() for m in current_models]
+            df_models["total_fairness"] = total_fairness
+
         if time_limit is not None:
             df_models = df_models[df_models.train_time < time_limit]
             df_models.reset_index(drop=True, inplace=True)

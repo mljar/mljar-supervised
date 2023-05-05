@@ -21,7 +21,7 @@ class LeaderboardPlots:
     performance_boxplot_fname = "ldb_performance_boxplot.png"
 
     @staticmethod
-    def compute(ldb, model_path, fout):
+    def compute(ldb, model_path, fout, fairness_threshold=None):
         if ldb.shape[0] < 2:
             return
         # Scatter plot
@@ -61,23 +61,38 @@ class LeaderboardPlots:
             f"![AutoML Performance Boxplot]({LeaderboardPlots.performance_boxplot_fname})"
         )
 
-        fairness_metrics = [f for f in ldb.columns if "fairness_" in f and f != "fairness_metric"]
-        for fm in fairness_metrics:
-            x_axis_name = ldb.metric_type.iloc[0]
-            y_axis_name = ldb["fairness_metric"].iloc[0]
-                
-            # Scatter plot
-            plt.figure(figsize=(10, 7))
-            plt.plot(ldb.metric_value, ldb[fm], "*", markersize=12, alpha=0.75)
-            plt.xlabel(x_axis_name)
-            plt.ylabel(y_axis_name)
-            plt.title(f"Performance vs {fm}")
-            plt.tight_layout(pad=2.0)
-            fname = f"performance_vs_{fm}.png"
-            plot_path = os.path.join(model_path, fname)
-            plt.savefig(plot_path)
-            plt.close("all")
+        if fairness_threshold is not None:
+            fairness_metrics = [f for f in ldb.columns if "fairness_" in f and f != "fairness_metric"]
+            for fm in fairness_metrics:
+                x_axis_name = ldb.metric_type.iloc[0]
+                y_axis_name = ldb["fairness_metric"].iloc[0]
+                    
+                # Scatter plot
+                plt.figure(figsize=(10, 7))
+                plt.plot(ldb.metric_value, ldb[fm], "*", markersize=12, alpha=0.75)
+                plt.xlabel(x_axis_name)
+                plt.ylabel(y_axis_name)
 
-            fout.write(f"\n\n### Performance vs {fm}\n")
-            fout.write(f"![Performance vs {fm}]({fname})")
+                plt.title(f"Performance vs {fm}")
+                plt.tight_layout(pad=2.0)
+
+                ymin = 0
+                ymax = max(1, ldb[fm].max()*1.1)
+                plt.ylim(0, ymax)
+                if "ratio" in y_axis_name:
+                    plt.axhspan(fairness_threshold, ymax, color='green', alpha=0.05)
+                    plt.axhspan(ymin, fairness_threshold, color='red', alpha=0.05)
+                else:
+                    # difference metric
+                    plt.axhspan(ymin, fairness_threshold,color='green', alpha=0.05)
+                    plt.axhspan(fairness_threshold, ymax, color='red', alpha=0.05)
+
+                
+                fname = f"performance_vs_{fm}.png"
+                plot_path = os.path.join(model_path, fname)
+                plt.savefig(plot_path)
+                plt.close("all")
+
+                fout.write(f"\n\n### Performance vs {fm}\n")
+                fout.write(f"![Performance vs {fm}]({fname})")
 

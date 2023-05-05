@@ -282,7 +282,6 @@ class FairnessMetrics:
                 s="Fair",
                 ha="center",
                 fontsize=12,
-                #bbox=dict(facecolor="white", edgecolor="grey", ls="--"),
             )
             _ = ax1.text(
                 y=0.8*fair_selection_rate,
@@ -290,9 +289,8 @@ class FairnessMetrics:
                 s="Unfair",
                 ha="center",
                 fontsize=12,
-                #bbox=dict(facecolor="white", edgecolor="grey", ls="--"),
             )
-            ax1.axhspan(fairness_threshold*max_selection_rate, 1.25*max_selection_rate, color='green', alpha=0.05)
+            ax1.axhspan(fairness_threshold*max_selection_rate, 1.25*np.max(selection_rates[1:]), color='green', alpha=0.05)
             ax1.axhspan(0, fairness_threshold*max_selection_rate, color='red', alpha=0.05)
 
             figures += [

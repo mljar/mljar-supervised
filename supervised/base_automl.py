@@ -257,6 +257,7 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["fairness_metric"] = []
             for sf in sensitive_features_names:
                 ldb[f"fairness_{sf}"] = []
+            ldb["is_fair"] = []
 
         for m in self._models:
             # filter model with random feature
@@ -278,8 +279,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 ldb["fairness_metric"] += [self._fairness_metric]
                 for sf in sensitive_features_names:
                     ldb[f"fairness_{sf}"] += [m.get_fairness_metric(sf)]
-
-
+                ldb["is_fair"] += [m.is_fair()]
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
@@ -1327,7 +1327,7 @@ class BaseAutoML(BaseEstimator, ABC):
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(ldb, self._results_path, fout)
+                LeaderboardPlots.compute(ldb, self._results_path, fout, self._fairness_threshold)
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
