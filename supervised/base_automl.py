@@ -1248,7 +1248,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     m
                     for m in self._models
                     if m.is_valid()
-                    and m.is_fast_enough(self._max_single_prediction_time)
+                    # and m.is_fast_enough(self._max_single_prediction_time)
                     and m.is_fair()
                 ]
 
@@ -1260,10 +1260,16 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
                 else:
                     # if no models are fair, we select the most fair model
-                    self._best_model = min(
-                        [m for m in self._models if m.is_valid()],
-                        key=lambda x: x.get_best_fairness(),
-                    )
+                    if "ratio" in self._fairness_metric.lower():
+                        self._best_model = max(
+                            [m for m in self._models if m.is_valid()],
+                            key=lambda x: x.get_best_fairness(),
+                        )
+                    else:
+                        self._best_model = min(
+                            [m for m in self._models if m.is_valid()],
+                            key=lambda x: x.get_best_fairness(),
+                        )
 
             else:
                 model_list = [
