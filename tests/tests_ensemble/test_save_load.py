@@ -4,11 +4,14 @@ import numpy as np
 import pandas as pd
 from sklearn import datasets
 from supervised import AutoML
+import os
+import json
 
 
 class EnsembleSaveLoadTest(unittest.TestCase):
 
-    automl_dir = "automl_1"
+    def setUp(self):
+        self.automl_dir = "automl_01"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
@@ -39,7 +42,24 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        a2 = AutoML(results_path=self.automl_dir)
+        # Znajdź ścieżki do wszystkich framework.json w katalogu wynikowym
+        framework_paths = []
+        for model_subpath in a._model_subpaths:
+            framework_path = f"{self.automl_dir}/{model_subpath}/framework.json"
+            framework_paths.append(framework_path)
+
+        # Pobierz wersję joblib z pierwszego framework.json
+        with open(framework_paths[0], "r") as f:
+            framework_data = json.load(f)
+            if isinstance(framework_data, list):
+                framework_data = framework_data[0]
+            expected_joblib_version = framework_data["joblib_version"]
+
+        a2 = AutoML()
+        a2.load(self.automl_dir, expected_joblib_version=expected_joblib_version)
         p2 = a2.predict(X)
 
         self.assertTrue((p == p2).all())
+
+if __name__ == '__main__':
+    unittest.main()
