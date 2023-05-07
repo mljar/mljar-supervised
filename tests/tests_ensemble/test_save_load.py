@@ -42,13 +42,13 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        # Znajdź ścieżki do wszystkich framework.json w katalogu wynikowym
+        # Find framework.json
         framework_paths = []
         for model_subpath in a._model_subpaths:
             framework_path = f"{self.automl_dir}/{model_subpath}/framework.json"
             framework_paths.append(framework_path)
 
-        # Pobierz wersję joblib z pierwszego framework.json
+        # Copy first joblib version in framework.json
         with open(framework_paths[0], "r") as f:
             framework_data = json.load(f)
             if isinstance(framework_data, list):
