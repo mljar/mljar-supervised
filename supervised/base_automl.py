@@ -135,8 +135,19 @@ class BaseAutoML(BaseEstimator, ABC):
             ):
                 self.load(self.results_path)
                 self._results_path = self.results_path
+                
+   def check_joblib_version(self, expected_joblib_version):
+        framework_path = os.path.join(self.results_path, self._model_subpaths[0], "framework.json")
+        with open(framework_path, "r") as f:
+            framework_data = json.load(f)
+            if isinstance(framework_data, list):
+                framework_data = framework_data[0]
+            joblib_version = framework_data["joblib_version"]
+            
+            if joblib_version != expected_joblib_version:
+                raise ValueError(f"Joblib version mismatch. Expected: {expected_joblib_version}, Found: {joblib_version}")
 
-    def load(self, path):
+    def load(self, path, expected_joblib_version):
         logger.info("Loading AutoML models ...")
         try:
             params = json.load(open(os.path.join(path, "params.json")))
