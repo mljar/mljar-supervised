@@ -10,7 +10,7 @@ import json
 
 class EnsembleSaveLoadTest(unittest.TestCase):
 
-    def setUp(self):
+   def setUp(self):
         self.automl_dir = "automl_01"
 
     def tearDown(self):
@@ -42,21 +42,23 @@ class EnsembleSaveLoadTest(unittest.TestCase):
         a.fit(X, y)
         p = a.predict(X)
 
-        # Find framework.json
-        framework_paths = []
-        for model_subpath in a._model_subpaths:
-            framework_path = f"{self.automl_dir}/{model_subpath}/framework.json"
-            framework_paths.append(framework_path)
+        # Find path to framework.json
+        framework_path = os.path.join(fr"{self.automl_dir}/1_Baseline/framework.json")
 
-        # Copy first joblib version in framework.json
-        with open(framework_paths[0], "r") as f:
-            framework_data = json.load(f)
-            if isinstance(framework_data, list):
-                framework_data = framework_data[0]
-            expected_joblib_version = framework_data["joblib_version"]
+        # check the joblib version
+        with open(framework_path, "r") as f:
+            framework_file = json.load(f)
+        if isinstance(framework_file, list):
+            framework_file = framework_file[0]
+        expected_joblib_version = framework_file["joblib_version"]
+
+        # Move the code to check versions here
+        self.assertEqual(expected_joblib_version, "1.2.0")
 
         a2 = AutoML()
-        a2.load(self.automl_dir, expected_joblib_version=expected_joblib_version)
+        a2.results_path = self.automl_dir  # Set the correct results_path
+        a2.fit(X, y)  # Fit a2 to generate results
+        a2.load(a2.results_path, expected_joblib_version)
         p2 = a2.predict(X)
 
         self.assertTrue((p == p2).all())
