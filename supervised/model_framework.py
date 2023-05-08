@@ -598,4 +598,12 @@ class ModelFramework:
             ps.from_json(p, results_path)
             mf.preprocessings += [ps]
 
+        joblib_version_computer = joblib.__version__
+        joblib_version_framework = json_desc.get("joblib_version")
+
+        if joblib_version_framework is None:
+            pass
+        elif joblib_version_computer != joblib_version_framework:
+            logger.warning(f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}")
+
         return mf
