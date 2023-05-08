@@ -135,8 +135,8 @@ class BaseAutoML(BaseEstimator, ABC):
             ):
                 self.load(self.results_path)
                 self._results_path = self.results_path
-                
-   def check_joblib_version(self, expected_joblib_version):
+
+    def check_joblib_version(self, expected_joblib_version):
         framework_path = os.path.join(self.results_path, self._model_subpaths[0], "framework.json")
         with open(framework_path, "r") as f:
             framework_data = json.load(f)
@@ -154,7 +154,7 @@ class BaseAutoML(BaseEstimator, ABC):
             framework_path = os.path.join(path, self._model_subpaths[0], "framework.json")
             if not os.path.exists(framework_path):
                 pass
-            
+        
         try:
             params = json.load(open(os.path.join(path, "params.json")))
 
@@ -216,14 +216,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 load_models = list(np.unique(load_models + models_needed))
 
             models_map = {}
-
-            with open("framework.json", "r") as f:
-                config = json.load(f)
-                expected_joblib_version = config["saved"]["joblib_version"]
-
-            if joblib.__version__ != expected_joblib_version:
-                raise ValueError(
-                    f"Unexpected version of joblib library: expected {expected_joblib_version}, but found {joblib.__version__}. Please install expected version.")
             
             for model_subpath in load_models:
                 if model_subpath.endswith("Ensemble") or model_subpath.endswith(
