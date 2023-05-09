@@ -14,8 +14,8 @@ class TestModelFramework(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_joblib_versions(self):
-        X = np.random.uniform(size=(60, 2))
-        y = np.random.randint(0, 2, size=(60,))
+        X = np.random.uniform(size=(10, 2))
+        y = np.random.randint(0, 2, size=(10,))
 
         versions_to_test = [
             "1.2.0",  # Test equl version
@@ -28,8 +28,8 @@ class TestModelFramework(unittest.TestCase):
 
                 automl = AutoML(
                     results_path=self.automl_dir,
-                    model_time_limit=10,
-                    algorithms=["Xgboost"],
+                    model_time_limit=5,
+                    algorithms=["Baseline"],
                     mode="Compete",
                     explain_level=0,
                     start_random_models=1,
@@ -42,7 +42,7 @@ class TestModelFramework(unittest.TestCase):
                 )
                 automl.fit(X, y)
 
-                json_path = f"./{self.automl_dir}/1_Default_Xgboost/framework.json"
+                json_path = f"./{self.automl_dir}/1_Baseline/framework.json"
 
                 with open(json_path) as file:
                     frame = json.load(file)
