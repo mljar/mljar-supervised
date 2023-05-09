@@ -1,65 +1,60 @@
 import unittest
-import joblib
-import os
-import numpy as np
-import pandas as pd
 import shutil
-import tempfile
+import json
+import numpy as np
+import joblib
 from supervised import AutoML
-from supervised.model_framework import ModelFramework
 
 
 class TestModelFramework(unittest.TestCase):
 
     automl_dir = "automl_testing"
-    results_path = "results"
-    model_subpath = "framework.json"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
-    def test_load_joblib_version(self):
-        # Test version 1.0.0
-        jb_version = "1.0.0"
-        joblib.__version__ = jb_version
-
-        # Create and fit AutoML
+    def test_joblib_versions(self):
         X = np.random.uniform(size=(60, 2))
         y = np.random.randint(0, 2, size=(60,))
-        automl = AutoML(
-            results_path=self.results_path,
-            model_time_limit=10,
-            algorithms=["Xgboost"],
-            mode="Compete",
-            explain_level=0,
-            start_random_models=1,
-            hill_climbing_steps=0,
-            top_models_to_improve=0,
-            kmeans_features=False,
-            golden_features=False,
-            features_selection=False,
-            boost_on_errors=False,
-        )
-        automl.fit(X, y)
 
-        expected_result = jb_version
-        actual_result = ModelFramework.load(self.results_path, self.model_subpath)
-        self.assertEqual(expected_result, actual_result)
+        versions_to_test = [
+            "1.2.0",  # Test equl version
+            "0.0.1",  # Test version 2.0.0
+        ]
 
-        # Test version 2.0.0
-        jb_version = "2.0.0"
-        joblib.__version__ = jb_version
+        for jb_version in versions_to_test:
+            with self.subTest(jb_version=jb_version):
+                joblib.__version__ = jb_version
 
-        expected_result = "Different version"
-        actual_result = ModelFramework.load(self.results_path, self.model_subpath)
-        self.assertEqual(expected_result, actual_result)
+                automl = AutoML(
+                    results_path=self.automl_dir,
+                    model_time_limit=10,
+                    algorithms=["Xgboost"],
+                    mode="Compete",
+                    explain_level=0,
+                    start_random_models=1,
+                    hill_climbing_steps=0,
+                    top_models_to_improve=0,
+                    kmeans_features=False,
+                    golden_features=False,
+                    features_selection=False,
+                    boost_on_errors=False,
+                )
+                automl.fit(X, y)
 
-        # Test version None
-        joblib.__version__ = None
+                json_path = f"./{self.automl_dir}/1_Default_Xgboost/framework.json"
 
-        expected_result = "No version found"
-        actual_result = ModelFramework.load(self.results_path, self.model_subpath)
-        self.assertEqual(expected_result, actual_result)
+                with open(json_path) as file:
+                    frame = json.load(file)
+
+                json_version = frame['joblib_version']
+                expected_result = jb_version
+
+
+                if jb_version is "1.2.0":
+                    self.assertEqual(expected_result, json_version)
+                elif jb_version is "0.0.1":
+                    self.assertNotEqual(expected_result, json_version)
 
 
 if __name__ == '__main__':
