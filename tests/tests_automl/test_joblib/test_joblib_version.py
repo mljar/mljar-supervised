@@ -18,12 +18,12 @@ class TestModelFramework(unittest.TestCase):
         y = np.random.randint(0, 2, size=(10,))
 
         versions_to_test = [
-            "1.2.0",  # Test equl version
-            "0.0.1",  # Test version 2.0.0
+            f"{joblib.__version__}",  # Test equal version
+            "0.0.1",  # Test version 0.0.1
         ]
 
         for jb_version in versions_to_test:
-            with self.subTest(jb_version=jb_version):
+            with self.subTest(jb_version):
                 joblib.__version__ = jb_version
 
                 automl = AutoML(
@@ -47,14 +47,14 @@ class TestModelFramework(unittest.TestCase):
                 with open(json_path) as file:
                     frame = json.load(file)
 
-                json_version = frame['joblib_version']
+                json_version_frame = frame['joblib_version']
                 expected_result = jb_version
 
 
-                if jb_version is "1.2.0":
-                    self.assertEqual(expected_result, json_version)
-                elif jb_version is "0.0.1":
-                    self.assertNotEqual(expected_result, json_version)
+                if jb_version == "0.0.1":
+                    self.assertNotEqual(expected_result, json_version_frame)
+                elif jb_version == joblib.__version__:
+                    self.assertEqual(expected_result, json_version_frame)
 
 
 if __name__ == '__main__':
