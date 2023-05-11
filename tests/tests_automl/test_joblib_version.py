@@ -36,46 +36,26 @@ class TestJoblibVersion(unittest.TestCase):
         )
         automl.fit(X, y)
 
-        # Test equl version 
-        jb_version = "1.2.0"
-        joblib.__version__ = jb_version
-        
+        # Test if joblib is in json
         json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json") 
 
         with open(json_path) as file:
             frame = json.load(file)
 
         json_version = frame['joblib_version']
-        expected_result = jb_version
+        expected_result = joblib.__version__
 
         self.assertEqual(expected_result, json_version)
 
 
-        # Test version 2.0.0
-        jb_version = "0.0.1"
-        joblib.__version__ = jb_version
+        # Test changing the joblib version
+        frame['joblib_version'] = "0.2.0"
 
-        with open(json_path) as file:
-            frame = json.load(file)
+        with open(json_path, 'w') as file:
+            json.dump(frame, file)
 
-        json_version = frame['joblib_version']
-        expected_result = jb_version
-
-        self.assertNotEqual(expected_result, json_version)
-
-
-        # Test version None
-        
-        joblib.__version__ = None
-        expected_result = jb_version
-
-        with open(json_path) as file:
-            frame = json.load(file)
-
-        json_version = frame['joblib_version']
-
-        self.assertNotEqual(expected_result, json_version)
-
+        with self.assertRaises(Exception):
+            automl.load(X, y)
 
 if __name__ == '__main__':
     unittest.main()
