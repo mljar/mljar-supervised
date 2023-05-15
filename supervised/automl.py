@@ -349,6 +349,7 @@ class AutoML(BaseAutoML):
         y: Union[numpy.ndarray, pandas.Series],
         sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
         cv: Optional[Union[Iterable, List]] = None,
+        **additional_params,
     ):
         """Fit the AutoML model.
 
@@ -365,7 +366,12 @@ class AutoML(BaseAutoML):
         Returns:
             AutoML object: Returns `self`
         """
+        for param, value in additional_params.items():
+
+            setattr(self, param, value)
+
         return self._fit(X, y, sample_weight, cv)
+
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """
