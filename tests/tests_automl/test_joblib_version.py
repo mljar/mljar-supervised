@@ -70,7 +70,6 @@ class TestJoblibVersion(unittest.TestCase):
         )
         automl.fit(X, y)
 
-        # Test if joblib is in json
         json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json") 
 
         with open(json_path) as file:
@@ -83,7 +82,8 @@ class TestJoblibVersion(unittest.TestCase):
             json.dump(frame, file)
 
         with self.assertRaises(AutoMLException):
-            automl.load(self.automl_dir)
+            automl_2 = AutoML(results_path=self.automl_dir)
+            automl_2.predict(X)
 
         
 if __name__ == '__main__':
