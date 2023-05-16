@@ -6,6 +6,7 @@ import shutil
 import os
 
 from supervised import AutoML
+from supervised.exceptions import AutoMLException
 
 
 class TestJoblibVersion(unittest.TestCase):
@@ -48,8 +49,8 @@ class TestJoblibVersion(unittest.TestCase):
         self.assertEqual(expected_result, json_version)
 
 
-    def test_joblib_bad_version(self):
-    
+    def test_joblib_wrong_version(self):
+        
         X = np.random.uniform(size=(60, 2))
         y = np.random.randint(0, 2, size=(60,))
 
@@ -69,22 +70,21 @@ class TestJoblibVersion(unittest.TestCase):
         )
         automl.fit(X, y)
 
+        # Test if joblib is in json
         json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json") 
 
         with open(json_path) as file:
             frame = json.load(file)
 
-        # Test changing the joblib version
+        # Injection of wrong joblib version
         frame['joblib_version'] = "0.2.0"
 
         with open(json_path, 'w') as file:
             json.dump(frame, file)
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(AutoMLException):
             automl.load(self.automl_dir)
 
-    def tearDown(self):
-        shutil.rmtree(self.automl_dir, ignore_errors=True)
         
 if __name__ == '__main__':
     unittest.main()

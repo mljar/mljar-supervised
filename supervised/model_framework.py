@@ -574,7 +574,7 @@ class ModelFramework:
         joblib_version_framework = json_desc.get("joblib_version")
 
         if joblib_version_framework is not None and joblib_version_computer != joblib_version_framework:
-            raise ValueError(f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}")
+            raise AutoMLException(f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}. Change to Framework version!")
 
         mf = ModelFramework(json_desc["params"])
         mf.uid = json_desc.get("uid", mf.uid)
