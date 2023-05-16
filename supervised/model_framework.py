@@ -502,6 +502,7 @@ class ModelFramework:
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
                 "is_stacked": self._is_stacked,
+                "joblib_version": joblib.__version__,
             }
             if type(desc["final_loss"]) == np.float32:
                 desc["final_loss"] = str(desc["final_loss"])
@@ -566,6 +567,15 @@ class ModelFramework:
     def load(results_path, model_subpath, lazy_load=True):
         model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
+
+        json_desc = json.load(open(os.path.join(model_path, "framework.json")))
+
+        joblib_version_computer = joblib.__version__
+        joblib_version_framework = json_desc.get("joblib_version")
+
+        if joblib_version_framework is not None and joblib_version_computer != joblib_version_framework:
+            raise AutoMLException(f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}. Change to Framework version!")
+
 
         json_desc = json.load(open(os.path.join(model_path, "framework.json")))
         mf = ModelFramework(json_desc["params"])
