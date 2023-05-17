@@ -169,6 +169,11 @@ class Ensemble:
                     "Can't contruct ensemble with prediction time smaller than limit."
                 )
 
+        # check if we can construct fair ensemble
+        if self._fairness_metric is not None:
+            if not [m for m in models if m.is_fair()]:
+                raise NotTrainedException("Can't contruct fair ensemble.")
+
         oofs = {}
         sensitive_features = None
         for m in models:
@@ -347,6 +352,8 @@ class Ensemble:
                         > self._max_single_prediction_time
                     ):
                         continue
+                if self._fairness_metric is not None and not m.is_fair():
+                    continue
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
                 score = self.metric(y, y_ens, sample_weight)
                 if self.metric.improvement(previous=min_score, current=score):
