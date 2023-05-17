@@ -36,14 +36,14 @@ X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
 
 
 
-automl = AutoML(algorithms=["Xgboost"], # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
+automl = AutoML(algorithms=["Xgboost", "LightGBM", "CatBoost"], # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
                 train_ensemble=True,
                 fairness_metric="demographic_parity_ratio",  # 
                 fairness_threshold=0.8,
                 #privileged_groups = [{"sex": "Male"}],
                 #underprivileged_groups = [{"sex": "Female"}],
-                #hill_climbing_steps=1,
-                #top_models_to_improve=1,
+                hill_climbing_steps=2,
+                top_models_to_improve=1,
                 explain_level=1
             )
 

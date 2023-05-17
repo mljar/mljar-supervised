@@ -352,7 +352,11 @@ class Ensemble:
                         > self._max_single_prediction_time
                     ):
                         continue
-                if self._fairness_metric is not None and not m.is_fair():
+                # skip unfair models
+                if (
+                    self._fairness_metric is not None
+                    and not self.models_map[model_name].is_fair()
+                ):
                     continue
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
                 score = self.metric(y, y_ens, sample_weight)
