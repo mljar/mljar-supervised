@@ -39,7 +39,7 @@ automl = AutoML(algorithms=["Linear", "Xgboost", "LightGBM", "Random Forest", "D
                 fairness_metric="demographic_parity_ratio",  # 
                 fairness_threshold=0.8,
                 #privileged_groups = [{"sex": "Male"}],
-                #unprivileged_groups = [{"sex": "Female"}],
+                #underprivileged_groups = [{"sex": "Female"}],
                 hill_climbing_steps=1,
                 top_models_to_improve=1
             )

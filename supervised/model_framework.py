@@ -83,7 +83,7 @@ class ModelFramework:
         self._fairness_metric = params.get("fairness_metric")
         self._fairness_threshold = params.get("fairness_threshold")
         self._privileged_groups = params.get("privileged_groups", [])
-        self._unprivileged_groups = params.get("unprivileged_groups", [])
+        self._underprivileged_groups = params.get("underprivileged_groups", [])
         self._fairness_optimization = params.get("fairness_optimization")
         self._is_fair = None
 
@@ -500,7 +500,7 @@ class ModelFramework:
                 self._fairness_metric,
                 self._fairness_threshold,
                 self._privileged_groups,
-                self._unprivileged_groups,
+                self._underprivileged_groups,
                 self._fairness_optimization
             )
             if self._ml_task == BINARY_CLASSIFICATION:

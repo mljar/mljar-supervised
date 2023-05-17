@@ -52,7 +52,7 @@ class MljarTuner:
         fairness_metric,
         fairness_threshold,
         privileged_groups,
-        unprivileged_groups,
+        underprivileged_groups,
         n_jobs,
         seed,
     ):
@@ -81,7 +81,7 @@ class MljarTuner:
         self._fairness_metric = fairness_metric
         self._fairness_threshold = fairness_threshold
         self._privileged_groups = privileged_groups
-        self._unprivileged_groups = unprivileged_groups
+        self._underprivileged_groups = underprivileged_groups
         self._seed = seed
         self._unique_params_keys = []
 
@@ -1166,7 +1166,7 @@ class MljarTuner:
             model_params["fairness_metric"] = self._fairness_metric
             model_params["fairness_threshold"] = self._fairness_threshold
             model_params["privileged_groups"] = self._privileged_groups
-            model_params["unprivileged_groups"] = self._unprivileged_groups
+            model_params["underprivileged_groups"] = self._underprivileged_groups
 
         return model_params
 

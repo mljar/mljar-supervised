@@ -71,7 +71,7 @@ class AutoML(BaseAutoML):
         fairness_metric: str = "auto",
         fairness_threshold: Union[Literal["auto"], float] = "auto",
         privileged_groups: Union[Literal["auto"], list] = "auto",
-        unprivileged_groups: Union[Literal["auto"], list] = "auto",
+        underprivileged_groups: Union[Literal["auto"], list] = "auto",
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
@@ -262,9 +262,9 @@ class AutoML(BaseAutoML):
                 For example, in binary classification task, a privileged group is the one with the highest selection rate. 
                 Example value: [{"sex": "Male"}]
 
-            unprivileged_groups (list): The list of unprivileged groups. 
-                By default, list of unprivileged groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task, an unprivileged group is the one with the lowest selection rate. 
+            underprivileged_groups (list): The list of underprivileged groups. 
+                By default, list of underprivileged groups are automatically detected based on fairness metrics. 
+                For example, in binary classification task, an underprivileged group is the one with the lowest selection rate. 
                 Example value: [{"sex": "Female"}]
 
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
@@ -375,7 +375,7 @@ class AutoML(BaseAutoML):
         self.fairness_metric = fairness_metric
         self.fairness_threshold = fairness_threshold
         self.privileged_groups = privileged_groups
-        self.unprivileged_groups = unprivileged_groups
+        self.underprivileged_groups = underprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
 

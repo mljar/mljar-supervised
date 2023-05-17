@@ -52,7 +52,7 @@ class FairnessMetrics:
         fairness_metric,
         fairness_threshold,
         privileged_groups=[],
-        unprivileged_groups=[],
+        underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
 
@@ -140,13 +140,13 @@ class FairnessMetrics:
             max_selection_rate = np.max(selection_rates[1:])
             min_selection_rate = np.min(selection_rates[1:])
 
-            privileged_value, unprivileged_value = None, None
+            privileged_value, underprivileged_value = None, None
             for pg in privileged_groups:
                 if col_name in pg:
                     privileged_value = pg.get(col_name)
-            for upg in unprivileged_groups:
+            for upg in underprivileged_groups:
                 if col_name in upg:
-                    unprivileged_value = upg.get(col_name)
+                    underprivileged_value = upg.get(col_name)
 
             if privileged_value is not None:
                 for i, v in enumerate(values):
@@ -154,9 +154,9 @@ class FairnessMetrics:
                         # starting from 1 because first selection rate is for all samples
                         max_selection_rate = selection_rates[i + 1]
 
-            if unprivileged_value is not None:
+            if underprivileged_value is not None:
                 for i, v in enumerate(values):
-                    if v == unprivileged_value:
+                    if v == underprivileged_value:
                         # starting from 1 because first selection rate is for all samples
                         min_selection_rate = selection_rates[i + 1]
 
@@ -180,9 +180,9 @@ class FairnessMetrics:
                         tpr_max = tprs[i + 1]
                         fpr_max = fprs[i + 1]
 
-            if unprivileged_value is not None:
+            if underprivileged_value is not None:
                 for i, v in enumerate(values):
-                    if v == unprivileged_value:
+                    if v == underprivileged_value:
                         # starting from 1 because first value is for all samples
                         tpr_min = tprs[i + 1]
                         fpr_min = fprs[i + 1]
@@ -233,25 +233,25 @@ class FairnessMetrics:
                 if privileged_value is None:
                     ind = np.argmax(selection_rates[1:])
                     privileged_value = values[ind]
-                if unprivileged_value is None:
+                if underprivileged_value is None:
                     ind = np.argmin(selection_rates[1:])
-                    unprivileged_value = values[ind]
+                    underprivileged_value = values[ind]
 
             if "odds" in fairness_metric:
                 if tpr_max - tpr_min > fpr_max - fpr_min:
                     if privileged_value is None:
                         ind = np.argmax(tprs[1:])
                         privileged_value = values[ind]
-                    if unprivileged_value is None:
+                    if underprivileged_value is None:
                         ind = np.argmin(tprs[1:])
-                        unprivileged_value = values[ind]
+                        underprivileged_value = values[ind]
                 else:
                     if privileged_value is None:
                         ind = np.argmax(fprs[1:])
                         privileged_value = values[ind]
-                    if unprivileged_value is None:
+                    if underprivileged_value is None:
                         ind = np.argmin(fprs[1:])
-                        unprivileged_value = values[ind]
+                        underprivileged_value = values[ind]
 
             figures = []
             # selection rate figure
@@ -352,7 +352,7 @@ class FairnessMetrics:
                 "fairness_metric_value": fairness_metric_value,
                 "is_fair": is_fair,
                 "privileged_value": privileged_value,
-                "unprivileged_value": unprivileged_value,
+                "underprivileged_value": underprivileged_value,
             }
 
         # fairness optimization stats
@@ -529,10 +529,13 @@ class FairnessMetrics:
             fout.write(
                 f'The {v["fairness_metric_name"]} is {v["fairness_metric_value"]}. {fairness_threshold_str}\n'
             )
-            if v.get("unprivileged_value") is not None:
-                fout.write(f'Unprivileged value is {v["unprivileged_value"]}.\n')
-            if v.get("privileged_value") is not None:
-                fout.write(f'Privileged value is {v["privileged_value"]}.\n')
+            if not v["is_fair"]:
+                # display information about privileged and underprivileged groups
+                # for unfair models
+                if v.get("underprivileged_value") is not None:
+                    fout.write(f'Underprivileged value is {v["underprivileged_value"]}.\n')
+                if v.get("privileged_value") is not None:
+                    fout.write(f'Privileged value is {v["privileged_value"]}.\n')
 
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")
