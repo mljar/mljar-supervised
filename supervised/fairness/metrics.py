@@ -533,7 +533,9 @@ class FairnessMetrics:
                 # display information about privileged and underprivileged groups
                 # for unfair models
                 if v.get("underprivileged_value") is not None:
-                    fout.write(f'Underprivileged value is {v["underprivileged_value"]}.\n')
+                    fout.write(
+                        f'Underprivileged value is {v["underprivileged_value"]}.\n'
+                    )
                 if v.get("privileged_value") is not None:
                     fout.write(f'Privileged value is {v["privileged_value"]}.\n')
 

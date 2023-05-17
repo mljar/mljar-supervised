@@ -13,7 +13,9 @@ logger.setLevel(LOG_LEVEL)
 
 class ExcludeRowsMissingTarget(object):
     @staticmethod
-    def transform(X=None, y=None, sample_weight=None, sensitive_features=None, warn=False):
+    def transform(
+        X=None, y=None, sample_weight=None, sensitive_features=None, warn=False
+    ):
         if y is None:
             return X, y, sample_weight, sensitive_features
         y_missing = pd.isnull(y)
@@ -36,7 +38,9 @@ class ExcludeRowsMissingTarget(object):
             sample_weight.reset_index(drop=True, inplace=True)
 
         if sensitive_features is not None:
-            sensitive_features = sensitive_features.drop(sensitive_features.index[y_missing])
+            sensitive_features = sensitive_features.drop(
+                sensitive_features.index[y_missing]
+            )
             sensitive_features.reset_index(drop=True, inplace=True)
 
         return X, y, sample_weight, sensitive_features

@@ -37,6 +37,10 @@ class Ensemble:
         ml_task=BINARY_CLASSIFICATION,
         is_stacked=False,
         max_single_prediction_time=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=None,
+        underprivileged_groups=None,
     ):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
@@ -63,6 +67,13 @@ class Ensemble:
         self._single_prediction_time = None  # prediction time on single sample
         self._max_single_prediction_time = max_single_prediction_time
         self.model_prediction_time = {}
+
+        self._fairness_metric = fairness_metric
+        self._fairness_threshold = fairness_threshold
+        self._privileged_groups = privileged_groups
+        self._underprivileged_groups = underprivileged_groups
+        self._is_fair = None
+        self.sensitive_features = None
 
     def get_train_time(self):
         return self.train_time
@@ -128,6 +139,10 @@ class Ensemble:
         if self.sample_weight is not None:
             ensemble_oof["sample_weight"] = self.sample_weight
 
+        # if self.sensitive_features is not None:
+        #    for col in self.sensitive_features.columns:
+        #        ensemble_oof[col] = self.sensitive_features[col]
+
         self.oof_predictions = ensemble_oof
         return ensemble_oof
 
@@ -155,6 +170,7 @@ class Ensemble:
                 )
 
         oofs = {}
+        sensitive_features = None
         for m in models:
             # do not use model with RandomFeature
             if "RandomFeature" in m.get_name():
@@ -176,7 +192,11 @@ class Ensemble:
             if self.sample_weight is None and "sample_weight" in oof.columns:
                 self.sample_weight = oof["sample_weight"]
 
-        return oofs, self.target, self.sample_weight
+            sensitive_cols = [c for c in oof.columns if "sensitive" in c]
+            if sensitive_cols and sensitive_features is None:
+                sensitive_features = oof[sensitive_cols]
+
+        return oofs, self.target, self.sample_weight, sensitive_features
 
     def get_additional_metrics(self):
         if self._additional_metrics is None:
@@ -203,15 +223,110 @@ class Ensemble:
                 sample_weight = oof_predictions["sample_weight"]
 
             self._additional_metrics = AdditionalMetrics.compute(
-                oof_predictions[target_cols], oof_preds, sample_weight, self._ml_task
+                oof_predictions[target_cols],
+                oof_preds,
+                sample_weight,
+                self._ml_task,
+                self.sensitive_features,
+                self._fairness_metric,
+                self._fairness_threshold,
+                self._privileged_groups,
+                self._underprivileged_groups,
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
 
         return self._additional_metrics
 
-    def fit(self, oofs, y, sample_weight=None):
+    def get_sensitive_features_names(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return [i for i in list(fm.keys()) if i != "fairness_optimization"]
+
+    def get_fairness_metric(self, col_name):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get(col_name, {}).get("fairness_metric_value")
+
+    def get_fairness_optimization(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get("fairness_optimization", {})
+
+    def get_worst_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The worst fairness metric is:
+        # - for ratio metrics, the lowest fairness value from all sensitive features
+        # - for difference metrics, the highest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
+        metrics = self.get_additional_metrics()
+
+        fm = metrics.get("fairness_metrics", {})
+        worst_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 0)
+                else:
+                    worst_value = min(
+                        worst_value, values.get("fairness_metric_value", 0)
+                    )
+            else:
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 1)
+                else:
+                    worst_value = max(
+                        worst_value, values.get("fairness_metric_value", 1)
+                    )
+
+        return worst_value
+
+    def get_best_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The best fairness metric is:
+        # - for ratio metrics, the highest fairness value from all sensitive features
+        # - for difference metrics, the lowest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        best_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 0)
+                else:
+                    best_value = max(best_value, values.get("fairness_metric_value", 0))
+            else:
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 1)
+                else:
+                    best_value = min(best_value, values.get("fairness_metric_value", 1))
+
+        return best_value
+
+    def is_fair(self):
+        if self._is_fair is not None:
+            return self._is_fair
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        for col, m in fm.items():
+            if col == "fairness_optimization":
+                continue
+            if not m.get("is_fair", True):
+                self._is_fair = False
+                return False
+        self._is_fair = True
+        return True
+
+    def fit(self, oofs, y, sample_weight=None, sensitive_features=None):
         logger.debug("Ensemble.fit")
+        self.sensitive_features = sensitive_features
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop

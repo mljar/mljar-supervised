@@ -239,32 +239,32 @@ class AutoML(BaseAutoML):
 
             optuna_verbose (boolean): If true the Optuna tuning details are displayed. Set to `True` by default.
 
-            fairness_metric (string): Name of fairness metric to be fulfilled. 
-                Available metrics for binary classification: 
-                
-                - `demographic_parity_difference`, 
-                - `demographic_parity_ratio`, 
-                - `equalized_odds_difference`, 
+            fairness_metric (string): Name of fairness metric to be fulfilled.
+                Available metrics for binary classification:
+
+                - `demographic_parity_difference`,
+                - `demographic_parity_ratio`,
+                - `equalized_odds_difference`,
                 - `equalized_odds_ratio`.
 
-            fairness_threshold (float): The treshold value for fairness metric. 
+            fairness_threshold (float): The treshold value for fairness metric.
                 The direction optimization (below or above threshold) of fairness metric is determined automatically.
 
                 Default values:
-                
-                - for `demographic_parity_difference` the metric value should be below 0.1, 
-                - for `demographic_parity_ratio` the metric value should be above 0.8, 
-                - for `equalized_odds_difference` the metric value should be below 0.1, 
+
+                - for `demographic_parity_difference` the metric value should be below 0.1,
+                - for `demographic_parity_ratio` the metric value should be above 0.8,
+                - for `equalized_odds_difference` the metric value should be below 0.1,
                 - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
 
-            privileged_groups (list): The list of privileged groups. 
-                By default, list of privileged groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task, a privileged group is the one with the highest selection rate. 
+            privileged_groups (list): The list of privileged groups.
+                By default, list of privileged groups are automatically detected based on fairness metrics.
+                For example, in binary classification task, a privileged group is the one with the highest selection rate.
                 Example value: [{"sex": "Male"}]
 
-            underprivileged_groups (list): The list of underprivileged groups. 
-                By default, list of underprivileged groups are automatically detected based on fairness metrics. 
-                For example, in binary classification task, an underprivileged group is the one with the lowest selection rate. 
+            underprivileged_groups (list): The list of underprivileged groups.
+                By default, list of underprivileged groups are automatically detected based on fairness metrics.
+                For example, in binary classification task, an underprivileged group is the one with the lowest selection rate.
                 Example value: [{"sex": "Female"}]
 
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
@@ -385,7 +385,9 @@ class AutoML(BaseAutoML):
         y: Union[numpy.ndarray, pandas.Series],
         sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
         cv: Optional[Union[Iterable, List]] = None,
-        sensitive_features: Optional[Union[numpy.ndarray, pandas.Series, pandas.DataFrame]] = None,
+        sensitive_features: Optional[
+            Union[numpy.ndarray, pandas.Series, pandas.DataFrame]
+        ] = None,
     ):
         """Fit the AutoML model.
 

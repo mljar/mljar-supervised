@@ -52,7 +52,7 @@ class AdditionalMetrics:
         fairness_threshold=None,
         privileged_groups=[],
         underprivileged_groups=[],
-        previous_fairness_optimization=None
+        previous_fairness_optimization=None,
     ):
 
         negative_label, positive_label = "0", "1"
@@ -240,7 +240,7 @@ class AdditionalMetrics:
                 fairness_threshold,
                 privileged_groups,
                 underprivileged_groups,
-                previous_fairness_optimization
+                previous_fairness_optimization,
             )
 
         return metrics
@@ -353,7 +353,7 @@ class AdditionalMetrics:
                     fairness_threshold,
                     privileged_groups,
                     underprivileged_groups,
-                    previous_fairness_optimization
+                    previous_fairness_optimization,
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 return AdditionalMetrics.multiclass_classification(
@@ -382,7 +382,6 @@ class AdditionalMetrics:
             logger.exception(
                 f"Exception while saving additional metrics. {str(e)}\nContinuing ..."
             )
-            
 
     @staticmethod
     def add_learning_curves(fout):

@@ -501,7 +501,7 @@ class ModelFramework:
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,
-                self._fairness_optimization
+                self._fairness_optimization,
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
@@ -530,7 +530,7 @@ class ModelFramework:
         # It is needed as bias mitigation stop criteria.
 
         metrics = self.get_additional_metrics()
-        
+
         fm = metrics.get("fairness_metrics", {})
         worst_value = None
         for col_name, values in fm.items():
@@ -540,12 +540,16 @@ class ModelFramework:
                 if worst_value is None:
                     worst_value = values.get("fairness_metric_value", 0)
                 else:
-                    worst_value = min(worst_value, values.get("fairness_metric_value", 0))
+                    worst_value = min(
+                        worst_value, values.get("fairness_metric_value", 0)
+                    )
             else:
                 if worst_value is None:
                     worst_value = values.get("fairness_metric_value", 1)
                 else:
-                    worst_value = max(worst_value, values.get("fairness_metric_value", 1))
+                    worst_value = max(
+                        worst_value, values.get("fairness_metric_value", 1)
+                    )
 
         return worst_value
 
@@ -556,7 +560,7 @@ class ModelFramework:
         # - for difference metrics, the lowest fairness value from all sensitive features
         # It is needed as bias mitigation stop criteria.
 
-        metrics = self.get_additional_metrics()        
+        metrics = self.get_additional_metrics()
         fm = metrics.get("fairness_metrics", {})
         best_value = None
         for col_name, values in fm.items():
@@ -574,7 +578,6 @@ class ModelFramework:
                     best_value = min(best_value, values.get("fairness_metric_value", 1))
 
         return best_value
-
 
     def is_fair(self):
         if self._is_fair is not None:

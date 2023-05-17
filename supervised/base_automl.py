@@ -423,9 +423,18 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._ml_task,
                 is_stacked=is_stacked,
                 max_single_prediction_time=self._max_single_prediction_time,
+                fairness_metric=self._fairness_metric,
+                fairness_threshold=self._fairness_threshold,
+                privileged_groups=self._privileged_groups,
+                underprivileged_groups=self._underprivileged_groups,
             )
-            oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
-            self.ensemble.fit(oofs, target, sample_weight)
+            (
+                oofs,
+                target,
+                sample_weight,
+                sensitive_features,
+            ) = self.ensemble.get_oof_matrix(self._models)
+            self.ensemble.fit(oofs, target, sample_weight, sensitive_features)
             self.keep_model(self.ensemble, ensemble_subpath)
             self.ensemble.save(self._results_path, ensemble_subpath)
             return True

@@ -48,7 +48,7 @@ class SplitValidator(BaseValidator):
         if self._sample_weight_path is not None:
             sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
-        
+
         sensitive_features = None
         if self._sensitive_features_path is not None:
             sensitive_features = load_data(self._sensitive_features_path)

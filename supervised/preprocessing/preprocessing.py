@@ -322,7 +322,7 @@ class Preprocessing(object):
                 X_validation,
                 y_validation,
                 sample_weight_validation,
-                _
+                _,
             ) = ExcludeRowsMissingTarget.transform(
                 X_validation, y_validation, sample_weight_validation
             )

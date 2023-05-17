@@ -26,6 +26,7 @@ markers = {
     "CatBoost": {"color": "tab:orange", "marker": "D"},
     "Neural Network": {"color": "tab:red", "marker": "x"},
     "Nearest Neighbors": {"color": "tab:olive", "marker": "+"},
+    "Ensemble": {"color": "black", "marker": "p"},
 }
 
 

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 from sklearn.tree import _tree
-from dtreeviz import * 
+from dtreeviz import *
 from supervised.utils.subsample import subsample
 
 
@@ -149,7 +149,9 @@ class DecisionTreeAlgorithm(SklearnAlgorithm):
                     feature_names=X_train.columns,
                     class_names=class_names,
                 )
-                tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+                tree_file_plot = os.path.join(
+                    model_file_path, learner_name + "_tree.svg"
+                )
                 viz.save(tree_file_plot)
             except Exception as e:
                 logger.info(f"Problem when visualizing decision tree. {str(e)}")
@@ -229,10 +231,14 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
                         target_name="target",
                         feature_names=X_train.columns,
                     )
-                tree_file_plot = os.path.join(model_file_path, learner_name + "_tree.svg")
+                tree_file_plot = os.path.join(
+                    model_file_path, learner_name + "_tree.svg"
+                )
                 viz.save(tree_file_plot)
             except Exception as e:
-                logger.info(f"Problem when visuzalizin decision tree regressor. {str(e)}")
+                logger.info(
+                    f"Problem when visuzalizin decision tree regressor. {str(e)}"
+                )
 
             save_rules(self.model, X_train.columns, None, model_file_path, learner_name)
 

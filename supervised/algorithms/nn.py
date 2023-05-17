@@ -46,10 +46,10 @@ class NNFit(SklearnAlgorithm):
     ):
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore")
-            # filter 
+            # filter
             # X does not have valid feature names, but MLPClassifier was fitted with feature names
             self.model.fit(X, y)
-        
+
         if log_to_file is not None:
             loss_curve = self.model.loss_curve_
             result = pd.DataFrame(

@@ -103,7 +103,9 @@ class CustomValidator(BaseValidator):
                 validation_data["sample_weight"] = sample_weight.iloc[validation_index]
             if sensitive_features is not None:
                 train_data["sensitive_features"] = sensitive_features.iloc[train_index]
-                validation_data["sensitive_features"] = sensitive_features.iloc[validation_index]
+                validation_data["sensitive_features"] = sensitive_features.iloc[
+                    validation_index
+                ]
 
         except Exception as e:
             import traceback

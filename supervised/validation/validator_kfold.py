@@ -143,7 +143,9 @@ class KFoldValidator(BaseValidator):
 
         if sensitive_features is not None:
             train_data["sensitive_features"] = sensitive_features.loc[train_index]
-            validation_data["sensitive_features"] = sensitive_features.loc[validation_index]
+            validation_data["sensitive_features"] = sensitive_features.loc[
+                validation_index
+            ]
 
         return (train_data, validation_data)
 

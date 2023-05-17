@@ -35,36 +35,45 @@ X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
 )
 
 
+
 automl = AutoML(algorithms=["Xgboost"], # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
-                train_ensemble=False,
+                train_ensemble=True,
                 fairness_metric="demographic_parity_ratio",  # 
                 fairness_threshold=0.8,
                 #privileged_groups = [{"sex": "Male"}],
                 #underprivileged_groups = [{"sex": "Female"}],
-                hill_climbing_steps=1,
-                top_models_to_improve=1,
-                # validation_strategy={
-                #     "validation_type": "kfold",
-                #     "k_folds": 5,
-                #     "shuffle": True,
-                #     "stratify": True,
-                #     "random_seed": 123
-                # },
-                validation_strategy={"validation_type": "custom"},
+                #hill_climbing_steps=1,
+                #top_models_to_improve=1,
                 explain_level=1
             )
 
+automl.fit(X_train, y_train, sensitive_features=S_train)
 
-train_indices = np.array(list(range(0, X_train.shape[0]//2)))
-test_indices = np.array(list(range(X_train.shape[0]//2, X_train.shape[0])))
-cv = [(train_indices, test_indices)]
 
-automl.fit(X_train, y_train, sensitive_features=S_train, cv=cv)
+
+
+# Example
+#
+# Fairness training with custom validation strategy
+#
+# automl = AutoML(algorithms=["Xgboost"], 
+#                 train_ensemble=False,
+#                 fairness_metric="demographic_parity_ratio",  # 
+#                 fairness_threshold=0.8,
+#                 hill_climbing_steps=1,
+#                 top_models_to_improve=1,
+#                 validation_strategy={"validation_type": "custom"},
+#                 explain_level=1
+#             )
+# train_indices = np.array(list(range(0, X_train.shape[0]//2)))
+# test_indices = np.array(list(range(X_train.shape[0]//2, X_train.shape[0])))
+# cv = [(train_indices, test_indices)]
+# automl.fit(X_train, y_train, sensitive_features=S_train, cv=cv)
 
 
 # Example
 # 
-# fairness training with cross validation
+# Fairness training with cross validation
 # 
 # automl = AutoML(algorithms=["Xgboost"],
 #                 train_ensemble=False,

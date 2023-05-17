@@ -162,13 +162,15 @@ class EarlyStopping(Callback):
                     sample_weight_validation
                 )
             # store sensitive features
-            sensitive_features_validation = predictions.get("sensitive_features_validation")    
-            
+            sensitive_features_validation = predictions.get(
+                "sensitive_features_validation"
+            )
+
             if sensitive_features_validation is not None:
                 for col in list(sensitive_features_validation.columns):
-                    self.best_y_predicted[self.learner.uid][f"sensitive_{col}"] = np.array(
-                        sensitive_features_validation[col]
-                    )
+                    self.best_y_predicted[self.learner.uid][
+                        f"sensitive_{col}"
+                    ] = np.array(sensitive_features_validation[col])
 
             self.best_models[self.learner.uid] = self.learner.copy()
             # if local copy is not available, save model and keep path
