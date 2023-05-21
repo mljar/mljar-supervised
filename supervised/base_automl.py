@@ -39,6 +39,7 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.utils.metric import UserDefinedEvalMetric
 from supervised.utils.automl_plots import AutoMLPlots
+
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -116,6 +117,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_init_params = {}
         self._optuna_verbose = True
         self._n_jobs = -1
+        self._chosen_fold = None
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -181,6 +183,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self._n_jobs = params.get("n_jobs", self._n_jobs)
             self._random_state = params.get("random_state", self._random_state)
+            self._chosen_fold = params.get("chosen_fold", self._chosen_fold)
             stacked_models = params.get("stacked")
 
             best_model_name = params.get("best_model")
@@ -368,10 +371,7 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
         # create model framework
-        mf = ModelFramework(
-            params,
-            callbacks=[early_stop, total_time_constraint],
-        )
+        mf = ModelFramework(params, callbacks=[early_stop, total_time_constraint])
 
         # start training
         logger.info(
@@ -930,6 +930,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_verbose = self._get_optuna_verbose()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
+        self._chosen_fold = self._get_chosen_fold()
 
         self._adjust_validation = False
         self._apply_constraints()
@@ -1159,10 +1160,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 if m.is_valid() and m.is_fast_enough(self._max_single_prediction_time)
             ]
             if model_list:
-                self._best_model = min(
-                    model_list,
-                    key=lambda x: x.get_final_loss(),
-                )
+                self._best_model = min(model_list, key=lambda x: x.get_final_loss())
         # if none selected please select again and warn the user
         if (
             len(self._models)
@@ -1211,6 +1209,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "random_state": self._random_state,
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
+                "chosen_fold": self._chosen_fold,
             }
             if self._best_model is not None:
                 params["best_model"] = self._best_model.get_name()
@@ -1327,11 +1326,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
             if model.get_type() == "Ensemble":
                 # Ensemble is using both original and stacked data
-                predictions = model.predict(X, X_stacked)
+                predictions = model.predict(X, X_stacked, self._chosen_fold)
             else:
-                predictions = model.predict(X_stacked)
+                predictions = model.predict(X_stacked, self._chosen_fold)
         else:
-            predictions = model.predict(X)
+            predictions = model.predict(X, self._chosen_fold)
 
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
@@ -1790,6 +1789,11 @@ class BaseAutoML(BaseEstimator, ABC):
         """Gets the current random_state"""
         self._validate_random_state()
         return deepcopy(self.random_state)
+    
+    def _get_chosen_fold(self):
+        """Gets the current chosen_fold"""
+        self._validate_chosen_fold()
+        return deepcopy(self.chosen_fold)
 
     def _validate_mode(self):
         """Validates mode parameter"""
@@ -2031,6 +2035,12 @@ class BaseAutoML(BaseEstimator, ABC):
     def _validate_random_state(self):
         """Validates random_state parameter"""
         check_positive_integer(self.random_state, "random_state")
+    
+    def _validate_chosen_fold(self):
+        """Validates chosen_fold parameter"""
+        if self.chosen_fold is None:
+            return
+        check_integer(self.chosen_fold, "chosen_fold")
 
     def to_json(self):
         if self._best_model is None:

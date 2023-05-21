@@ -1,4 +1,6 @@
 pytest==5.3.5
 black==19.3b0
+click==8.0.2
+ipython
 pytest-cov
 coveralls

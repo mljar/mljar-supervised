@@ -71,6 +71,7 @@ class AutoML(BaseAutoML):
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
+        chosen_fold: Optional[int] = None,
     ):
         """
         Initialize `AutoML` object.
@@ -342,6 +343,7 @@ class AutoML(BaseAutoML):
         self.optuna_verbose = optuna_verbose
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.chosen_fold = chosen_fold
 
     def fit(
         self,
