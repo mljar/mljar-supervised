@@ -182,7 +182,8 @@ class MljarTuner:
             all_steps += ["features_selection"]
         for i in range(self._hill_climbing_steps):
             all_steps += [f"hill_climbing_{i+1}"]
-        if self._boost_on_errors:
+        if self._boost_on_errors and self._fairness_metric is None:
+            # we can tun boost on errors only if there is not fairness optimization
             all_steps += ["boost_on_errors"]
         if self._train_ensemble:
             all_steps += ["ensemble"]
@@ -212,7 +213,7 @@ class MljarTuner:
             elif "fairness" in step:
                 return self.fairness_optimization(models, results_path)
             elif step == "not_so_random":
-                return self.get_not_so_random_params(models_cnt)
+                return self.get_not_so_random_params(models_cnt, models)
             elif step == "mix_encoding":
                 return self.get_mix_categorical_strategy(models, total_time_limit)
             elif step == "loo_encoding":
@@ -594,7 +595,29 @@ class MljarTuner:
 
         return generated_params
 
-    def get_not_so_random_params(self, models_cnt):
+    def get_fairness_sample_weight(self, current_models, model_type):
+        try:
+            df_models, algorithms = self.df_models_algorithms(current_models)
+            # df_models are sorted based on fairness metric
+            df_models = df_models[df_models.model_type == model_type]
+            
+            if df_models.shape[0]:
+                m = df_models["model"].iloc[0]    
+                swp = m.params["validation_strategy"]["sample_weight_path"]
+
+                name_suffix = "_SampleWeigthing"
+                name = m.params["name"]
+                if "Update" in name:
+                    words = name.split("_")
+                    i = words.index("Update")
+                    name_suffix += f"_Update_{words[i+1]}"
+
+                return swp, name_suffix
+        except Exception:
+            pass
+        return None, None
+
+    def get_not_so_random_params(self, models_cnt, current_models):
 
         model_types = [
             "Xgboost",
@@ -634,6 +657,15 @@ class MljarTuner:
                     params["optuna_init_params"] = self._optuna_init_params
                     params["optuna_verbose"] = self._optuna_verbose
 
+                if self._fairness_metric is not None:
+                    swp, name_suffix = self.get_fairness_sample_weight(current_models, model_type)
+                    if swp is not None:
+                        params["validation_strategy"]["sample_weight_path"] = swp 
+                        params["injected_sample_weight"] = True
+                    if name_suffix is not None:
+                        params["name"] += name_suffix
+                
+                
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     generated_params[model_type] += [params]
