@@ -479,8 +479,10 @@ class BaseAutoML(BaseEstimator, ABC):
             return
 
         ldb = self.get_leaderboard(filter_random_feature=True)
+        if self._fairness_metric is not None:
+            # get only fair models if we train with sensitive features
+            ldb = ldb[ldb["is_fair"]]
         ldb = ldb.sort_values(by="metric_value", ascending=True)
-
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 10
@@ -523,6 +525,13 @@ class BaseAutoML(BaseEstimator, ABC):
         # too many classes and models
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             if self.n_classes * len(self._models) > 1000:
+                return
+        # if we are training with sensitive features
+        # then we will stack only fair models
+        # if there are no fair models then we skip this step
+        if self._fairness_metric is not None:
+            if not [m for m in self._models if m.is_fair()]:
+                self.verbose_print("Skip stacking. We can stack only fair models.")
                 return
 
         self._perform_model_stacking()

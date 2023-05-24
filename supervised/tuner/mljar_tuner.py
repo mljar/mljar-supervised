@@ -429,7 +429,9 @@ class MljarTuner:
             if m.get_type() not in types_score_order:
                 types_score_order += [m.get_type()]
 
-            if m.params.get("injected_sample_weight", False):
+
+            # the below condition is only true for fair models
+            if self._fairness_metric is None and m.params.get("injected_sample_weight", False):
                 # dont use boost_on_errors model for stacking
                 # there will be additional boost_on_errors step
                 continue
