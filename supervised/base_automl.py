@@ -2174,10 +2174,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _validate_fairness_metric(self):
         """Validates fariness_metric parameter"""
-        if isinstance(self.fairness_metric, str) and self.eval_metric == "auto":
+        if isinstance(self.fairness_metric, str) and self.fairness_metric == "auto":
             return
 
-        if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.eval_metric not in [
+        if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.fairness_metric not in [
             "demographic_parity_difference",
             "demographic_parity_ratio",
             "equalized_odds_difference",
@@ -2196,7 +2196,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
 
         self._validate_fairness_metric()
-        if self.eval_metric == "auto":
+        if self.fairness_metric == "auto":
             if self._get_ml_task() == BINARY_CLASSIFICATION:
                 return "demographic_parity_ratio"
 
