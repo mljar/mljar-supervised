@@ -36,9 +36,9 @@ X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
 
 
 
-automl = AutoML(algorithms=["Xgboost", "Random Forest", "CatBoost"], # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
+automl = AutoML(algorithms=["Xgboost"], # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
                 train_ensemble=True,
-                fairness_metric="demographic_parity_ratio",  # 
+                fairness_metric="equalized_odds_ratio",  # 
                 fairness_threshold=0.8,
                 #privileged_groups = [{"sex": "Male"}],
                 #underprivileged_groups = [{"sex": "Female"}],
@@ -51,15 +51,15 @@ automl = AutoML(algorithms=["Xgboost", "Random Forest", "CatBoost"], # ["Linear"
                 features_selection=False,
                 boost_on_errors=False,
                 mix_encoding=False,
-                stack_models=True,
-                mode="Compete",
-                validation_strategy={
-                    "validation_type": "kfold",
-                    "k_folds": 5,
-                    "shuffle": True,
-                    "stratify": True,
-                    "random_seed": 123
-                },
+                stack_models=False,
+                #mode="Compete",
+                # validation_strategy={
+                #     "validation_type": "kfold",
+                #     "k_folds": 5,
+                #     "shuffle": True,
+                #     "stratify": True,
+                #     "random_seed": 123
+                # },
             )
 
 automl.fit(X_train, y_train, sensitive_features=S_train)

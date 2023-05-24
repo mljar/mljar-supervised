@@ -749,9 +749,12 @@ class MljarTuner:
                         model_max_index + 1 + len(generated_params),
                     )
                     if "SampleWeigthing" in m.get_name():
+                        all_params["name"] += "_SampleWeigthing"
                         n = m.get_name().split("_")
-                        all_params["name"] += "_"
-                        all_params["name"] += "_".join(n[3:])
+                        if "Update" in n:
+                            i = n.index("Update")
+                            all_params["name"] += f"_Update_{n[i+1]}"
+                        
 
                     if "golden_features" in all_params["preprocessing"]:
                         all_params["name"] += "_GoldenFeatures"
