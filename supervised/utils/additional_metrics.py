@@ -39,7 +39,7 @@ from supervised.utils.additional_plots import AdditionalPlots
 from tabulate import tabulate
 
 from supervised.fairness.metrics import FairnessMetrics
-
+from supervised.fairness.report import FairnessReport
 
 class AdditionalMetrics:
     @staticmethod
@@ -416,7 +416,7 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
-                FairnessMetrics.save_binary_classification(
+                FairnessReport.save_binary_classification(
                     fairness_metrics, fout, model_path
                 )
 
