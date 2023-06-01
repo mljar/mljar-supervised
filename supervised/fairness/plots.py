@@ -1,22 +1,11 @@
-import os
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
-
-from supervised.fairness.utils import (
-    accuracy,
-    selection_rate,
-    true_positive_rate,
-    false_positive_rate,
-    true_negative_rate,
-    false_negative_rate,
-)
-from supervised.fairness.optimization import FairnessOptimization
 
 
 class FairnessPlots:
     @staticmethod
     def binary_classification(
+        fairness_metric,
         col_name,
         metrics,
         selection_rates,
@@ -35,36 +24,41 @@ class FairnessPlots:
         ax1.spines[["right", "top", "left"]].set_visible(False)
         ax1.yaxis.set_visible(False)
         _ = ax1.bar_label(bars, padding=5)
-        ax1.axhline(y=fair_selection_rate, zorder=0, color="grey", ls="--", lw=1.5)
-        _ = ax1.text(
-            y=fair_selection_rate,
-            x=-0.6,
-            s="Fairness threshold",
-            ha="center",
-            fontsize=12,
-            bbox=dict(facecolor="white", edgecolor="grey", ls="--"),
-        )
-        _ = ax1.text(
-            y=1.2 * fair_selection_rate,
-            x=-0.6,
-            s="Fair",
-            ha="center",
-            fontsize=12,
-        )
-        _ = ax1.text(
-            y=0.8 * fair_selection_rate,
-            x=-0.6,
-            s="Unfair",
-            ha="center",
-            fontsize=12,
-        )
-        ax1.axhspan(
-            fairness_threshold * max_selection_rate,
-            1.25 * np.max(selection_rates[1:]),
-            color="green",
-            alpha=0.05,
-        )
-        ax1.axhspan(0, fairness_threshold * max_selection_rate, color="red", alpha=0.05)
+
+        if fairness_metric == "demographic_parity_ratio":
+            ax1.axhline(y=fair_selection_rate, zorder=0, color="grey", ls="--", lw=1.5)
+            _ = ax1.text(
+                y=fair_selection_rate,
+                x=-0.6,
+                s="Fairness threshold",
+                ha="center",
+                fontsize=12,
+                bbox=dict(facecolor="white", edgecolor="grey", ls="--"),
+            )
+            _ = ax1.text(
+                y=1.2 * fair_selection_rate,
+                x=-0.6,
+                s="Fair",
+                ha="center",
+                fontsize=12,
+            )
+            _ = ax1.text(
+                y=0.8 * fair_selection_rate,
+                x=-0.6,
+                s="Unfair",
+                ha="center",
+                fontsize=12,
+            )
+
+            ax1.axhspan(
+                fairness_threshold * max_selection_rate,
+                1.25 * np.max(selection_rates[1:]),
+                color="green",
+                alpha=0.05,
+            )
+            ax1.axhspan(
+                0, fairness_threshold * max_selection_rate, color="red", alpha=0.05
+            )
 
         figures += [
             {

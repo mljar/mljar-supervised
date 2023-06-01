@@ -16,7 +16,7 @@ class FairnessOptimization:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
         min_selection_rate=None,
-        max_selection_rate=None
+        max_selection_rate=None,
     ):
 
         target = np.array(target).ravel()

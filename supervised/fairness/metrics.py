@@ -229,6 +229,7 @@ class FairnessMetrics:
                 "metrics": metrics,
                 "stats": stats,
                 "figures": FairnessPlots.binary_classification(
+                    fairness_metric,
                     col_name,
                     metrics,
                     selection_rates,
@@ -255,7 +256,7 @@ class FairnessMetrics:
             underprivileged_groups,
             previous_fairness_optimization,
             min_selection_rate,
-            max_selection_rate
+            max_selection_rate,
         )
 
         return fairness_metrics
