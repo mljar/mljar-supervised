@@ -14,6 +14,22 @@ from supervised.fairness.utils import (
 from supervised.fairness.optimization import FairnessOptimization
 from supervised.fairness.plots import FairnessPlots
 
+from sklearn.metrics import (
+    f1_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    matthews_corrcoef,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report,
+    r2_score,
+    mean_squared_error,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+)
+from supervised.utils.metric import pearson, spearman
+
 
 class FairnessMetrics:
     @staticmethod
@@ -260,3 +276,74 @@ class FairnessMetrics:
         )
 
         return fairness_metrics
+
+    @staticmethod
+    def regression(
+        target,
+        predictions,
+        sensitive_features,
+        fairness_metric,
+        fairness_threshold,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
+        print(fairness_metric)
+        print(target)
+        print(predictions)
+
+        fairness_metrics = {}
+
+        for col in sensitive_features.columns:
+
+            col_name = col[10:]  # skip 'senstive_'
+
+            print("col", col_name)
+            # "rmse",
+            # "mse",
+            # "mae",
+            # "r2",
+            # "mape",
+            # "spearman",
+            # "pearson",
+
+            rmses = []
+            mses = []
+            maes = []
+            r2s = []
+            mape2 = []
+            spearmans = []
+            pearsons = []
+
+            regression_metrics = {
+                "SAMPLES": lambda t, p, sw=None: t.shape[0],
+                "MAE": mean_absolute_error,
+                "MSE": mean_squared_error,
+                "RMSE": lambda t, p, sample_weight=None: np.sqrt(
+                    mean_squared_error(t, p, sample_weight=sample_weight)
+                ),
+                "R2": r2_score,
+                "MAPE": mean_absolute_percentage_error,
+                "SPEARMAN": spearman,
+                "PEARSON": pearson,
+            }
+            metrics = {}
+            for k, v in regression_metrics.items():
+                metrics[k] = v(target, predictions)
+
+            print(metrics)
+
+            values = sensitive_features[col].unique()
+            print(values)
+
+            for value in values:
+
+                for k, v in regression_metrics.items():
+                    metrics[k] = v(
+                        target[sensitive_features[col] == value],
+                        predictions[sensitive_features[col] == value],
+                    )
+                print(value)
+                print(metrics)
+
+        return {}

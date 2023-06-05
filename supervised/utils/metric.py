@@ -107,6 +107,12 @@ def negative_spearman(y_true, y_predicted, sample_weight=None):
     return -c
 
 
+def spearman(y_true, y_predicted, sample_weight=None):
+    # sample weight is ignored
+    c, _ = sp.stats.spearmanr(y_true, y_predicted)
+    return c
+
+
 def negative_pearson(y_true, y_predicted, sample_weight=None):
     # sample weight is ignored
     if isinstance(y_true, pd.DataFrame):
@@ -114,6 +120,10 @@ def negative_pearson(y_true, y_predicted, sample_weight=None):
     if isinstance(y_predicted, pd.DataFrame):
         y_predicted = np.array(y_predicted).ravel()
     return -np.corrcoef(y_true, y_predicted)[0, 1]
+
+
+def pearson(y_true, y_predicted, sample_weight=None):
+    return -negative_pearson(y_true, y_predicted, sample_weight)
 
 
 class MetricException(Exception):

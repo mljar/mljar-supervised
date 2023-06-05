@@ -2177,7 +2177,9 @@ class BaseAutoML(BaseEstimator, ABC):
         if isinstance(self.fairness_metric, str) and self.fairness_metric == "auto":
             return
 
-        if (self._get_ml_task() == BINARY_CLASSIFICATION) and self.fairness_metric not in [
+        if (
+            self._get_ml_task() == BINARY_CLASSIFICATION
+        ) and self.fairness_metric not in [
             "demographic_parity_difference",
             "demographic_parity_ratio",
             "equalized_odds_difference",
@@ -2187,10 +2189,18 @@ class BaseAutoML(BaseEstimator, ABC):
                 f"Metric {self.fairness_metric} is not allowed in ML task: {self._get_ml_task()}. \
                     Use `demographic_parity_difference`, `demographic_parity_ratio`, `equalized_odds_difference` or `equalized_odds_ratio`"
             )
+        if (self._get_ml_task() == REGRESSION) and self.fairness_metric not in [
+            "group_loss_difference",
+            "group_loss_ratio",
+        ]:
+            raise ValueError(
+                f"Metric {self.fairness_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use `group_loss`"
+            )
 
     def _get_fairness_metric(self):
         """Gets the fairness metric"""
-        if self._get_ml_task() != BINARY_CLASSIFICATION:
+        if self._get_ml_task() == MULTICLASS_CLASSIFICATION:
             raise ValueError(
                 f"Fairness training is not implemented for {self._get_ml_task()}"
             )
@@ -2199,6 +2209,8 @@ class BaseAutoML(BaseEstimator, ABC):
         if self.fairness_metric == "auto":
             if self._get_ml_task() == BINARY_CLASSIFICATION:
                 return "demographic_parity_ratio"
+            if self._get_ml_task() == REGRESSION:
+                return "group_loss_ratio"
 
         else:
             return deepcopy(self.fairness_metric)
@@ -2212,6 +2224,12 @@ class BaseAutoML(BaseEstimator, ABC):
                     "demographic_parity_ratio": 0.8,
                     "equalized_odds_difference": 0.1,
                     "equalized_odds_ratio": 0.8,
+                }
+                return thresholds.get(self._fairness_metric, 0.8)
+            elif self._get_ml_task() == REGRESSION:
+                thresholds = {
+                    "group_loss_difference": 0.1,
+                    "group_loss_ratio": 0.8,
                 }
                 return thresholds.get(self._fairness_metric, 0.8)
         else:

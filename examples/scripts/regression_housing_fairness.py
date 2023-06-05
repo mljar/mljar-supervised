@@ -9,7 +9,7 @@ y = df["MEDV"]
 
 sensitive_features = df["B"]
 
-automl = AutoML()
+automl = AutoML(algorithms=["Xgboost"], train_ensemble=False)
 automl.fit(X, y, sensitive_features=sensitive_features)
 
 df["predictions"] = automl.predict(X)

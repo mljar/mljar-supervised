@@ -286,15 +286,12 @@ class MljarTuner:
 
     def fairness_optimization(self, current_models, results_path):
 
-        # print("\n\n\nNEW STEP\n\n\n")
-        # print("fairness_optimization()")
+        print("skip fairness optimisation - working on regression metrics report")
+        return []
         df_models, algorithms = self.df_models_algorithms(current_models)
 
         # print(df_models)
         # print(algorithms)
-
-        # print("SORTED")
-        # print(df_models)
 
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
@@ -323,8 +320,13 @@ class MljarTuner:
 
             m = df_models["model"].iloc[i]
 
-            # print(m.get_name(), m.get_type(), model_type)
-            # print(m.get_worst_fairness(),  self._fairness_threshold, self._fairness_metric.lower())
+            print(m.get_name(), m.get_type(), model_type)
+            print(
+                m.get_worst_fairness(),
+                self._fairness_threshold,
+                self._fairness_metric.lower(),
+            )
+
             if "ratio" in self._fairness_metric.lower():
                 if m.get_worst_fairness() > self._fairness_threshold:
                     # print("Model is fair")
@@ -430,9 +432,10 @@ class MljarTuner:
             if m.get_type() not in types_score_order:
                 types_score_order += [m.get_type()]
 
-
             # the below condition is only true for fair models
-            if self._fairness_metric is None and m.params.get("injected_sample_weight", False):
+            if self._fairness_metric is None and m.params.get(
+                "injected_sample_weight", False
+            ):
                 # dont use boost_on_errors model for stacking
                 # there will be additional boost_on_errors step
                 continue
@@ -600,9 +603,9 @@ class MljarTuner:
             df_models, algorithms = self.df_models_algorithms(current_models)
             # df_models are sorted based on fairness metric
             df_models = df_models[df_models.model_type == model_type]
-            
+
             if df_models.shape[0]:
-                m = df_models["model"].iloc[0]    
+                m = df_models["model"].iloc[0]
                 swp = m.params["validation_strategy"]["sample_weight_path"]
 
                 name_suffix = "_SampleWeigthing"
@@ -658,14 +661,15 @@ class MljarTuner:
                     params["optuna_verbose"] = self._optuna_verbose
 
                 if self._fairness_metric is not None:
-                    swp, name_suffix = self.get_fairness_sample_weight(current_models, model_type)
+                    swp, name_suffix = self.get_fairness_sample_weight(
+                        current_models, model_type
+                    )
                     if swp is not None:
-                        params["validation_strategy"]["sample_weight_path"] = swp 
+                        params["validation_strategy"]["sample_weight_path"] = swp
                         params["injected_sample_weight"] = True
                     if name_suffix is not None:
                         params["name"] += name_suffix
-                
-                
+
                 unique_params_key = MljarTuner.get_params_key(params)
                 if unique_params_key not in self._unique_params_keys:
                     generated_params[model_type] += [params]
@@ -754,7 +758,6 @@ class MljarTuner:
                         if "Update" in n:
                             i = n.index("Update")
                             all_params["name"] += f"_Update_{n[i+1]}"
-                        
 
                     if "golden_features" in all_params["preprocessing"]:
                         all_params["name"] += "_GoldenFeatures"
