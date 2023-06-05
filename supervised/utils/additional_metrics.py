@@ -628,6 +628,8 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"]
+        fairness_metrics = additional_metrics.get("fairness_metrics")
+
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write(
@@ -635,6 +637,12 @@ class AdditionalMetrics:
                     tabulate(max_metrics.values, max_metrics.columns, tablefmt="pipe")
                 )
             )
+
+            if fairness_metrics is not None:
+                FairnessReport.regression(
+                    fairness_metrics, fout, model_path
+                )
+
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
             AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)

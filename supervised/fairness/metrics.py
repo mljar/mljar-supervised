@@ -294,56 +294,53 @@ class FairnessMetrics:
 
         fairness_metrics = {}
 
+        regression_metrics = {
+            "SAMPLES": lambda t, p, sw=None: t.shape[0],
+            "MAE": mean_absolute_error,
+            "MSE": mean_squared_error,
+            "RMSE": lambda t, p, sample_weight=None: np.sqrt(
+                mean_squared_error(t, p, sample_weight=sample_weight)
+            ),
+            "R2": r2_score,
+            "MAPE": mean_absolute_percentage_error,
+            "SPEARMAN": spearman,
+            "PEARSON": pearson,
+        }
+        #metrics = {}
+        #for k, v in regression_metrics.items():
+        #    metrics[k] = v(target, predictions)
+
         for col in sensitive_features.columns:
 
             col_name = col[10:]  # skip 'senstive_'
 
             print("col", col_name)
-            # "rmse",
-            # "mse",
-            # "mae",
-            # "r2",
-            # "mape",
-            # "spearman",
-            # "pearson",
-
-            rmses = []
-            mses = []
-            maes = []
-            r2s = []
-            mape2 = []
-            spearmans = []
-            pearsons = []
-
-            regression_metrics = {
-                "SAMPLES": lambda t, p, sw=None: t.shape[0],
-                "MAE": mean_absolute_error,
-                "MSE": mean_squared_error,
-                "RMSE": lambda t, p, sample_weight=None: np.sqrt(
-                    mean_squared_error(t, p, sample_weight=sample_weight)
-                ),
-                "R2": r2_score,
-                "MAPE": mean_absolute_percentage_error,
-                "SPEARMAN": spearman,
-                "PEARSON": pearson,
-            }
-            metrics = {}
-            for k, v in regression_metrics.items():
-                metrics[k] = v(target, predictions)
-
-            print(metrics)
-
+ 
+            
+ 
             values = sensitive_features[col].unique()
-            print(values)
-
+            all_metrics = []
+                
             for value in values:
-
+                metrics  = {}
                 for k, v in regression_metrics.items():
                     metrics[k] = v(
                         target[sensitive_features[col] == value],
                         predictions[sensitive_features[col] == value],
                     )
+                all_metrics += [metrics]
                 print(value)
                 print(metrics)
 
-        return {}
+            mdf = pd.DataFrame(all_metrics, index=values)
+            fairness_metrics[col_name] = {
+                "metrics": mdf,
+                "figures": FairnessPlots.regression(
+                    fairness_metric,
+                    col_name,
+                    mdf
+                ),
+            } 
+        print(fairness_metrics)
+
+        return fairness_metrics

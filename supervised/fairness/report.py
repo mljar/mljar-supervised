@@ -50,3 +50,19 @@ class FairnessReport:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
+
+
+    @staticmethod
+    def regression(fairness_metrics, fout, model_path):
+
+        for k, v in fairness_metrics.items():
+            if k == "fairness_optimization":
+                continue
+            fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
+            
+            print(k)
+            
+            for figure in v["figures"]:
+                fout.write(f"\n\n### {figure['title']}\n\n")
+                figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
+                fout.write(f"\n![]({figure['fname']})\n\n")

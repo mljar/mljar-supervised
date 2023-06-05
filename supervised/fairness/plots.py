@@ -106,3 +106,33 @@ class FairnessPlots:
         ]
 
         return figures
+
+    @staticmethod
+    def regression(fairness_metric, col_name, metrics):
+        figures = []
+        print("--- plot ---")
+        print(fairness_metric)
+        print(col_name)
+        print(metrics)
+
+        metric_name = fairness_metric.split("@")[1].upper()
+        print(metric_name)
+
+        fig = plt.figure(figsize=(10, 7))
+        ax1 = fig.add_subplot(1, 1, 1)
+        #bars = ax1.bar(metrics["values"], metrics[metric_name])
+        bars = ax1.bar(metrics.index, metrics[metric_name])
+
+        ax1.spines[["right", "top", "left"]].set_visible(False)
+        ax1.yaxis.set_visible(False)
+        _ = ax1.bar_label(bars, padding=5)
+
+        figures += [
+            {
+                "title": f"{metric_name} for {col_name}",
+                "fname": f"{metric_name}_{col_name}.png",
+                "figure": fig,
+            }
+        ]
+
+        return figures
