@@ -60,7 +60,14 @@ class FairnessReport:
                 continue
             fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
             
-            print(k)
+            fout.write(v["metrics"].to_markdown())
+            fout.write("\n\n")
+
+            fout.write(f'Privileged value: {v["privileged_value"]}\n\n')
+            fout.write(f'Underprivileged value: {v["underprivileged_value"]}\n\n\n')
+            fout.write(f'Fairness metric: {v["fairness_metric_name"]}\n\n')
+            fout.write(f'{v["metric_name"]} Difference: {v["diff"]}\n\n')
+            fout.write(f'{v["metric_name"]} Ratio: {v["ratio"]}\n\n')
             
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")

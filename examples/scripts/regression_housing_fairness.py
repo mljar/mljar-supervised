@@ -4,12 +4,18 @@ from supervised.automl import AutoML
 
 df = pd.read_csv("./tests/data/boston_housing.csv")
 x_cols = [c for c in df.columns if c != "MEDV"]
+
+df["large_B"] = (df["B"] > 380) * 1
+df["large_B"] = df["large_B"].astype(str)
+
+
+print(df["large_B"].dtype.name)
+sensitive_features = df["large_B"]
+
 X = df[x_cols]
 y = df["MEDV"]
 
-sensitive_features = df["B"]
-
-automl = AutoML(algorithms=["Xgboost"], train_ensemble=False)
+automl = AutoML(algorithms=["Xgboost"], train_ensemble=False, fairness_threshold=0.85)
 automl.fit(X, y, sensitive_features=sensitive_features)
 
 df["predictions"] = automl.predict(X)

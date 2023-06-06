@@ -292,6 +292,13 @@ class FairnessMetrics:
         print(target)
         print(predictions)
 
+        metric_name = fairness_metric.split("@")[1].upper()
+
+        if "ratio" in fairness_metric.lower():
+            fairness_metric_name = f"Group Loss Ratio @ {metric_name}"
+        else:
+            fairness_metric_name = f"Group Loss Difference @ {metric_name}"
+
         fairness_metrics = {}
 
         regression_metrics = {
@@ -306,9 +313,9 @@ class FairnessMetrics:
             "SPEARMAN": spearman,
             "PEARSON": pearson,
         }
-        #metrics = {}
-        #for k, v in regression_metrics.items():
-        #    metrics[k] = v(target, predictions)
+        overall = {}
+        for k, v in regression_metrics.items():
+            overall[k] = v(target, predictions)
 
         for col in sensitive_features.columns:
 
@@ -316,10 +323,8 @@ class FairnessMetrics:
 
             print("col", col_name)
  
-            
- 
             values = sensitive_features[col].unique()
-            all_metrics = []
+            all_metrics = [overall]
                 
             for value in values:
                 metrics  = {}
@@ -329,18 +334,66 @@ class FairnessMetrics:
                         predictions[sensitive_features[col] == value],
                     )
                 all_metrics += [metrics]
-                print(value)
-                print(metrics)
+            
+            mdf = pd.DataFrame(all_metrics, index=["Overall"]+list(values))
+            
 
-            mdf = pd.DataFrame(all_metrics, index=values)
+            ratio, diff = 0, 0
+
+            if metric_name in ["R2", "SPEARMAN", "PEARSON"]:
+                # the higher the better
+
+                pass
+            else:
+                # the lower the better
+                privileged_value = mdf.index[mdf[metric_name][1:].argmin()+1] # without overall metrics
+                underprivileged_value = mdf.index[mdf[metric_name][1:].argmax()+1] # without overall metrics
+
+                ratio = np.round(mdf[metric_name][1:].min()/mdf[metric_name][1:].max(), 4)
+                diff = np.round(mdf[metric_name][1:].max()-mdf[metric_name][1:].min(), 4)
+
+
+            is_fair = False
+            if "ratio" in fairness_metric.lower():
+                fairness_metric_value = ratio
+                if ratio > fairness_threshold:
+                    is_fair = True
+            else:
+                fairness_metric_value = diff
+                if diff < fairness_threshold:
+                    is_fair = True
+
             fairness_metrics[col_name] = {
                 "metrics": mdf,
                 "figures": FairnessPlots.regression(
                     fairness_metric,
                     col_name,
-                    mdf
+                    mdf,
+                    fairness_metric_name
                 ),
+                "privileged_value": privileged_value,
+                "underprivileged_value": underprivileged_value,
+                "ratio": ratio, 
+                "diff": diff,
+                "metric_name": metric_name,
+                "fairness_metric_name": fairness_metric_name,
+                "fairness_metric_value": fairness_metric_value,
+                "is_fair": is_fair
             } 
+
+        fairness_metrics[
+            "fairness_optimization"
+        ] = FairnessOptimization.regression(
+            target,
+            predictions,
+            sensitive_features,
+            fairness_metric,
+            fairness_threshold,
+            privileged_groups,
+            underprivileged_groups,
+            previous_fairness_optimization
+        )
+        
         print(fairness_metrics)
 
         return fairness_metrics

@@ -108,7 +108,7 @@ class FairnessPlots:
         return figures
 
     @staticmethod
-    def regression(fairness_metric, col_name, metrics):
+    def regression(fairness_metric, col_name, metrics, fairness_metric_name):
         figures = []
         print("--- plot ---")
         print(fairness_metric)
@@ -120,11 +120,11 @@ class FairnessPlots:
 
         fig = plt.figure(figsize=(10, 7))
         ax1 = fig.add_subplot(1, 1, 1)
-        #bars = ax1.bar(metrics["values"], metrics[metric_name])
-        bars = ax1.bar(metrics.index, metrics[metric_name])
+        bars = ax1.bar(metrics.index[1:], metrics[metric_name][1:])
 
-        ax1.spines[["right", "top", "left"]].set_visible(False)
-        ax1.yaxis.set_visible(False)
+        ax1.spines[["right", "top"]].set_visible(False)
+        #ax1.yaxis.set_visible(False)
+        ax1.set_ylabel(metric_name)
         _ = ax1.bar_label(bars, padding=5)
 
         figures += [
