@@ -391,7 +391,9 @@ class FairnessMetrics:
             fairness_threshold,
             privileged_groups,
             underprivileged_groups,
-            previous_fairness_optimization
+            previous_fairness_optimization,
+            performance_metric=regression_metrics[metric_name],
+            performance_metric_name=metric_name
         )
         
         print(fairness_metrics)

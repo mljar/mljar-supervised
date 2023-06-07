@@ -26,7 +26,7 @@ class Scale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 self.scale.fit(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
-                self.X_min_values = np.min(X[self.columns])
+                self.X_min_values = np.min(X[self.columns], axis=0)
                 self.scale.fit(np.log(X[self.columns] - self.X_min_values + 1))
 
     def transform(self, X):
@@ -73,6 +73,8 @@ class Scale(object):
             "scale_method": self.scale_method,
         }
         if self.X_min_values is not None:
+            print(self.columns)
+            print(self.X_min_values)
             data_json["X_min_values"] = list(self.X_min_values)
         return data_json
 

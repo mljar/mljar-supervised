@@ -450,8 +450,8 @@ class MljarTuner:
                 continue
 
             counts[model_type] += 1
-            if counts[model_type] > 1:
-                continue
+            #if counts[model_type] > 1:
+            #    continue
 
             m = df_models["model"].iloc[i]
 
@@ -500,7 +500,8 @@ class MljarTuner:
 
             samples_weight = samples_weight * target.shape[0] / np.sum(samples_weight)
 
-            print(samples_weight)
+            print("SAMPLE WEIGHTS after scale")
+            print(np.unique(samples_weight))
 
             sample_weight_path = os.path.join(
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
@@ -519,6 +520,8 @@ class MljarTuner:
             params["injected_sample_weight"] = True
             if "SampleWeigthing" not in params["name"]:
                 params["name"] += "_SampleWeigthing"
+
+            print("fo_step", fo_step)
             if fo_step > 0:
                 if "Update" in params["name"]:
                     n = params["name"].split("_")
@@ -537,6 +540,9 @@ class MljarTuner:
                 params["optuna_verbose"] = self._optuna_verbose
 
             unique_params_key = MljarTuner.get_params_key(params)
+
+            print(params)
+            print(unique_params_key not in self._unique_params_keys)
 
             if unique_params_key not in self._unique_params_keys:
                 generated_params += [params]
