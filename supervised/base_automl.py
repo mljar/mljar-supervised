@@ -1236,6 +1236,21 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self.verbose_print(f"AutoML best model: {self._best_model.get_name()}")
 
+
+            if self._fairness_metric is not None:
+                # check if we have fair model
+                has_fair_model = False
+                for m in self._models:
+                    if m.is_fair():
+                        has_fair_model = True
+                        break
+                if not has_fair_model:
+                    self.verbose_print("AutoML can't construct model that meets your fairness criteria.")
+                    self.verbose_print("What you can do?")
+                    self.verbose_print("1. Please include more samples that are not biased.")
+                    self.verbose_print("2. Please examine the most unfairly treated samples.")
+
+
         except Exception as e:
             raise e
 
