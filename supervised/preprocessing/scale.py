@@ -73,8 +73,6 @@ class Scale(object):
             "scale_method": self.scale_method,
         }
         if self.X_min_values is not None:
-            print(self.columns)
-            print(self.X_min_values)
             data_json["X_min_values"] = list(self.X_min_values)
         return data_json
 

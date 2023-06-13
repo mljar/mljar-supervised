@@ -161,7 +161,6 @@ class FairnessOptimization:
             "fairness_threshold": fairness_threshold,
         }
 
-
     @staticmethod
     def regression(
         target,
@@ -173,10 +172,8 @@ class FairnessOptimization:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
         performance_metric=None,
-        performance_metric_name=None
-
+        performance_metric_name=None,
     ):
-        print("regression optimization")
         target = np.array(target).ravel()
         preds = np.array(predictions)
 
@@ -203,9 +200,6 @@ class FairnessOptimization:
                             new_sensitive_values[f"{k}@{col}"] += [(pv, v)]
 
             sensitive_values = {**sensitive_values, **new_sensitive_values}
-
-        print("sensitive values")
-        print(sensitive_values)
 
         sensitive_indices = {}
         least_frequent_key = None
@@ -234,93 +228,50 @@ class FairnessOptimization:
                         least_frequency = np.sum(ii)
                         least_frequent_key = key
 
-
-        print("least frequent key", least_frequent_key)
-        print(sensitive_indices)
-        print("len", len(sensitive_indices))
-
         weights = {}
         performance = {}
 
         for key, indices in sensitive_indices.items():
-            print(key)
-            print(target.shape[0], np.sum(indices))
-            w = target.shape[0]/len(sensitive_indices)/np.sum(indices)  
-            print(w)
-            # if key == "0":
-            #     w = 5.0
-            # else:
-            #     w = 0.5
-
+            w = target.shape[0] / len(sensitive_indices) / np.sum(indices)
             weights[key] = w
             performance[key] = performance_metric(target[indices], predictions[indices])
 
-
-        print(weights)
-        print("upscale")
         # try to upscale more the largest weight
-        print("least frequent key -> weight", least_frequent_key, weights[least_frequent_key])
         weights[least_frequent_key] *= 1.5
-        
-
-        print(weights)
-
-
-
-        print("performance")
-        print(performance)
 
         denominator = np.max(list(performance.values()))
         new_performance = {}
         for k, v in performance.items():
-            new_performance[k] = np.round(v/denominator, 4)
+            new_performance[k] = np.round(v / denominator, 4)
         performance = new_performance
-
-        print("performance ratios")
-        print(performance)
-
-
-        print("previous fairness optimization")
-        print(previous_fairness_optimization)
-        print("********")
 
         previous_weights = {}
         if previous_fairness_optimization is not None:
 
             weights = previous_fairness_optimization.get("weights")
             for key, indices in sensitive_indices.items():
-                # print("Previous")
-                # print(previous_fairness_optimization["selection_rates"][key], selection_rates[key])
-
                 direction = 0.0
                 if (
                     previous_fairness_optimization["performance"][key]
                     < performance[key]
                 ):
-                    print("Improvement")
                     direction = 1.0
                 elif performance[key] > fairness_threshold:
-                    print("GOOD")
                     direction = 0.0
                 else:
-                    print("Decrease")
                     direction = -0.5
 
                 # need to add previous weights instead 1.0
                 prev_weights = previous_fairness_optimization.get(
                     "previous_weights", {}
                 ).get(key, 1)
-                # print("prev_weights", prev_weights)
-                delta0 = weights[key] - prev_weights 
-
+                delta0 = weights[key] - prev_weights
                 previous_weights[key] = weights[key]
+                weights[key] = max(weights[key] + direction * delta0, 0.01)
 
-                # print("BEFORE")
-                # print(weights[key])
-                weights[key] += direction * delta0
-                # print("AFTER")
-                # print(weights[key])
-                # print(previous_fairness_optimization["weights"][key])
+        no_weights_change = False
+        if str(previous_weights) == str(weights):
+            no_weights_change = True
 
         step = None
         if previous_fairness_optimization is not None:
@@ -329,16 +280,13 @@ class FairnessOptimization:
         if step is None:
             step = 0
         else:
-            step += 1
-
-        print("Fairness Optimization Step", step)
+            if not no_weights_change:
+                step += 1
 
         return {
             "performance": performance,
             "previous_weights": previous_weights,
             "weights": weights,
-            #"total_dp_ratio": total_dp_ratio,
             "step": step,
             "fairness_threshold": fairness_threshold,
         }
-

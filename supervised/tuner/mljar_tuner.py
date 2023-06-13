@@ -455,13 +455,6 @@ class MljarTuner:
 
             m = df_models["model"].iloc[i]
 
-            print(m.get_name(), m.get_type(), model_type)
-            print(
-                m.get_worst_fairness(),
-                self._fairness_threshold,
-                self._fairness_metric.lower(),
-            )
-
             if "ratio" in self._fairness_metric.lower():
                 if m.get_worst_fairness() > self._fairness_threshold:
                     # print("Model is fair")
@@ -473,23 +466,16 @@ class MljarTuner:
 
             fo = m.get_fairness_optimization()
             fo_step = fo.get("step", 0)
-            # print("@"*21)
-            # print("fo_step", fo_step)
-
-            # print(m.get_fairness_optimization())
 
             samples_weight = np.ones(sensitive_features.shape[0])
 
             fo = m.get_fairness_optimization()
             weights = fo.get("weights")
 
-            print("tuner is using weights", weights)
-
             for k, ws in weights.items():
                 sensitive_values = k.split("@")
                 ii = None
                 for i, sv in enumerate(sensitive_values):
-                    # print(sensitive_columns[i], "equals", sv)
                     if ii is None:
                         ii = sensitive_features[sensitive_columns[i]] == sv
                     else:
@@ -500,8 +486,6 @@ class MljarTuner:
 
             samples_weight = samples_weight * target.shape[0] / np.sum(samples_weight)
 
-            print("SAMPLE WEIGHTS after scale")
-            print(np.unique(samples_weight))
 
             sample_weight_path = os.path.join(
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
@@ -521,7 +505,6 @@ class MljarTuner:
             if "SampleWeigthing" not in params["name"]:
                 params["name"] += "_SampleWeigthing"
 
-            print("fo_step", fo_step)
             if fo_step > 0:
                 if "Update" in params["name"]:
                     n = params["name"].split("_")
@@ -541,9 +524,6 @@ class MljarTuner:
 
             unique_params_key = MljarTuner.get_params_key(params)
 
-            print(params)
-            print(unique_params_key not in self._unique_params_keys)
-
             if unique_params_key not in self._unique_params_keys:
                 generated_params += [params]
 
@@ -559,8 +539,7 @@ class MljarTuner:
         if self._ml_task == REGRESSION:
             return self.fairness_optimization_regression(current_models, results_path)
             
-
-        print("skip fairness optimisation - working on regression metrics report")
+        print("skip fairness optimization - work in progress")
         return []
 
     def get_params_stack_models(self, stacked_models):

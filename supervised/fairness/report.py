@@ -51,7 +51,6 @@ class FairnessReport:
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
 
-
     @staticmethod
     def regression(fairness_metrics, fout, model_path):
 
@@ -59,7 +58,7 @@ class FairnessReport:
             if k == "fairness_optimization":
                 continue
             fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
-            
+
             fout.write(v["metrics"].to_markdown())
             fout.write("\n\n")
 
@@ -68,7 +67,7 @@ class FairnessReport:
             fout.write(f'Fairness metric: {v["fairness_metric_name"]}\n\n')
             fout.write(f'{v["metric_name"]} Difference: {v["diff"]}\n\n')
             fout.write(f'{v["metric_name"]} Ratio: {v["ratio"]}\n\n')
-            
+
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))

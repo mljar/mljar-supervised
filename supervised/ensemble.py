@@ -10,6 +10,7 @@ import operator
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import BINARY_CLASSIFICATION
+from supervised.algorithms.registry import REGRESSION
 from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
 from supervised.model_framework import ModelFramework
 from supervised.utils.metric import Metric
@@ -233,7 +234,9 @@ class Ensemble:
                 sample_weight,
                 self._ml_task,
                 self.sensitive_features,
-                self._fairness_metric,
+                self._fairness_metric
+                if self._ml_task != REGRESSION
+                else f"{self._fairness_metric}@{self.get_metric_name()}",
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,

@@ -11,9 +11,7 @@ y = df["ViolentCrimesPerPop"]
 
 sensitive_features = (df["racePctWhite"] > 84).astype(str)
 
-automl = AutoML(algorithms=["Xgboost"], train_ensemble=True, fairness_threshold=0.85)
+automl = AutoML(algorithms=["Decision Tree", "Neural Network", "Xgboost", "Linear", "CatBoost"], 
+                train_ensemble=True, fairness_threshold=0.8)
 automl.fit(X, y, sensitive_features=sensitive_features)
 
-# df["predictions"] = automl.predict(X)
-# print("Predictions")
-# print(df[["MEDV", "predictions"]].head())

@@ -288,9 +288,6 @@ class FairnessMetrics:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
-        print(fairness_metric)
-        print(target)
-        print(predictions)
 
         metric_name = fairness_metric.split("@")[1].upper()
 
@@ -321,37 +318,60 @@ class FairnessMetrics:
 
             col_name = col[10:]  # skip 'senstive_'
 
-            print("col", col_name)
- 
             values = sensitive_features[col].unique()
             all_metrics = [overall]
-                
+
             for value in values:
-                metrics  = {}
+                metrics = {}
                 for k, v in regression_metrics.items():
                     metrics[k] = v(
                         target[sensitive_features[col] == value],
                         predictions[sensitive_features[col] == value],
                     )
                 all_metrics += [metrics]
-            
-            mdf = pd.DataFrame(all_metrics, index=["Overall"]+list(values))
-            
 
-            ratio, diff = 0, 0
+            mdf = pd.DataFrame(all_metrics, index=["Overall"] + list(values))
 
-            if metric_name in ["R2", "SPEARMAN", "PEARSON"]:
-                # the higher the better
+            privileged_value, underprivileged_value = None, None
+            for pg in privileged_groups:
+                if col_name in pg:
+                    privileged_value = pg.get(col_name)
+            for upg in underprivileged_groups:
+                if col_name in upg:
+                    underprivileged_value = upg.get(col_name)
 
-                pass
-            else:
-                # the lower the better
-                privileged_value = mdf.index[mdf[metric_name][1:].argmin()+1] # without overall metrics
-                underprivileged_value = mdf.index[mdf[metric_name][1:].argmax()+1] # without overall metrics
+            if privileged_value is None:
+                if metric_name in ["R2", "SPEARMAN", "PEARSON"]:
+                    # the higher the better
+                    privileged_value = mdf.index[
+                        mdf[metric_name][1:].argmax() + 1
+                    ]  # without overall metrics
+                else:
+                    # the lower the better
+                    privileged_value = mdf.index[
+                        mdf[metric_name][1:].argmin() + 1
+                    ]  # without overall metrics
 
-                ratio = np.round(mdf[metric_name][1:].min()/mdf[metric_name][1:].max(), 4)
-                diff = np.round(mdf[metric_name][1:].max()-mdf[metric_name][1:].min(), 4)
+            if underprivileged_value is None:
+                if metric_name in ["R2", "SPEARMAN", "PEARSON"]:
+                    # the higher the better
+                    underprivileged_value = mdf.index[
+                        mdf[metric_name][1:].argmin() + 1
+                    ]  # without overall metrics
+                else:
+                    # the lower the better
+                    underprivileged_value = mdf.index[
+                        mdf[metric_name][1:].argmax() + 1
+                    ]  # without overall metrics
 
+            metric_min = mdf[metric_name].loc[privileged_value]
+            metric_max = mdf[metric_name].loc[underprivileged_value]
+
+            ratio = np.round(metric_min / metric_max, 4)
+            diff = np.round(metric_max - metric_min, 4)
+
+            # ratio = np.round(mdf[metric_name][1:].min()/mdf[metric_name][1:].max(), 4)
+            # diff = np.round(mdf[metric_name][1:].max()-mdf[metric_name][1:].min(), 4)
 
             is_fair = False
             if "ratio" in fairness_metric.lower():
@@ -366,24 +386,19 @@ class FairnessMetrics:
             fairness_metrics[col_name] = {
                 "metrics": mdf,
                 "figures": FairnessPlots.regression(
-                    fairness_metric,
-                    col_name,
-                    mdf,
-                    fairness_metric_name
+                    fairness_metric, col_name, mdf, fairness_metric_name
                 ),
                 "privileged_value": privileged_value,
                 "underprivileged_value": underprivileged_value,
-                "ratio": ratio, 
+                "ratio": ratio,
                 "diff": diff,
                 "metric_name": metric_name,
                 "fairness_metric_name": fairness_metric_name,
                 "fairness_metric_value": fairness_metric_value,
-                "is_fair": is_fair
-            } 
+                "is_fair": is_fair,
+            }
 
-        fairness_metrics[
-            "fairness_optimization"
-        ] = FairnessOptimization.regression(
+        fairness_metrics["fairness_optimization"] = FairnessOptimization.regression(
             target,
             predictions,
             sensitive_features,
@@ -393,9 +408,7 @@ class FairnessMetrics:
             underprivileged_groups,
             previous_fairness_optimization,
             performance_metric=regression_metrics[metric_name],
-            performance_metric_name=metric_name
+            performance_metric_name=metric_name,
         )
-        
-        print(fairness_metrics)
 
         return fairness_metrics
