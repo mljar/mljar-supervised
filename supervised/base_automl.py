@@ -2228,9 +2228,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 return thresholds.get(self._fairness_metric, 0.8)
             elif self._get_ml_task() == REGRESSION:
                 thresholds = {
-                    "group_loss_difference": 0.1,
                     "group_loss_ratio": 0.8,
                 }
+                if self._fairness_metric == "group_loss_difference":
+                    raise AutoMLException("We can't set default fairness threshold value. Please set `fairness_threshold` value in AutoML constructor.")
                 return thresholds.get(self._fairness_metric, 0.8)
         else:
             return deepcopy(self.fairness_threshold)
