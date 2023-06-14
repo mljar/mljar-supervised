@@ -364,7 +364,17 @@ class AdditionalMetrics:
         return metrics
 
     @staticmethod
-    def multiclass_classification(target, predictions, sample_weight=None):
+    def multiclass_classification(
+        target,
+        predictions,
+        sample_weight=None,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
         predicted_probas = predictions[predictions.columns[:-1]]
@@ -413,13 +423,26 @@ class AdditionalMetrics:
         )
         max_metrics["logloss"] = ll
 
-        return {
+        metrics = {
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
             "additional_plots": AdditionalPlots.plots_multiclass(
                 target, predicted_labels, predicted_probas
             ),
         }
+
+        if sensitive_features is not None:
+            metrics["fairness_metrics"] = FairnessMetrics.multiclass_classification(
+                target,
+                predicted_labels,
+                sensitive_features,
+                fairness_metric,
+                fairness_threshold,
+                privileged_groups,
+                underprivileged_groups,
+                previous_fairness_optimization,
+            )
+        return metrics
 
     @staticmethod
     def regression(
@@ -499,7 +522,15 @@ class AdditionalMetrics:
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 return AdditionalMetrics.multiclass_classification(
-                    target, predictions, sample_weight
+                    target,
+                    predictions,
+                    sample_weight,
+                    sensitive_features,
+                    fairness_metric,
+                    fairness_threshold,
+                    privileged_groups,
+                    underprivileged_groups,
+                    previous_fairness_optimization,
                 )
             elif ml_task == REGRESSION:
                 return AdditionalMetrics.regression(
@@ -597,12 +628,21 @@ class AdditionalMetrics:
         max_metrics = additional_metrics["max_metrics"].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
 
+        fairness_metrics = additional_metrics.get("fairness_metrics")
+
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n### Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
                 "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
             )
+
+            if fairness_metrics is not None:
+                # we treat multiclass problem as several binary problems
+                FairnessReport.save_binary_classification(
+                    fairness_metrics, fout, model_path
+                )
+
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
             AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
@@ -639,9 +679,7 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
-                FairnessReport.regression(
-                    fairness_metrics, fout, model_path
-                )
+                FairnessReport.regression(fairness_metrics, fout, model_path)
 
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)

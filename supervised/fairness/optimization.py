@@ -290,3 +290,166 @@ class FairnessOptimization:
             "step": step,
             "fairness_threshold": fairness_threshold,
         }
+
+    @staticmethod
+    def multiclass_classification(
+        target,
+        predicted_labels,
+        sensitive_features,
+        fairness_metric,
+        fairness_threshold,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
+
+        target = np.array(target).ravel()
+        preds = np.array(predicted_labels)
+        target_values = list(np.unique(target))
+
+
+        # fairness optimization stats
+        sensitive_values = {}
+        for col in sensitive_features.columns:
+            col_name = col[10:]  # skip 'senstive_'
+            values = list(sensitive_features[col].unique())
+            sensitive_values[col] = values
+
+            for v in values:
+                ii = sensitive_features[col] == v
+
+            new_sensitive_values = {}
+            for k, prev_values in sensitive_values.items():
+                if k == col:
+                    continue
+                new_sensitive_values[f"{k}@{col}"] = []
+                for v in values:
+                    for pv in prev_values:
+                        if isinstance(pv, tuple):
+                            new_sensitive_values[f"{k}@{col}"] += [(*pv, v)]
+                        else:
+                            new_sensitive_values[f"{k}@{col}"] += [(pv, v)]
+
+            sensitive_values = {**sensitive_values, **new_sensitive_values}
+
+        print(sensitive_values)
+
+        sensitive_indices = {}
+        for k, values_list in sensitive_values.items():
+            if k.count("@") == sensitive_features.shape[1] - 1:
+                # print(k)
+                # print("values_list",values_list)
+                cols = k.split("@")
+                for values in values_list:
+                    if not isinstance(values, tuple):
+                        values = (values,)
+                    # print("values", values)
+
+                    ii = None
+                    for i, c in enumerate(cols):
+                        if ii is None:
+                            ii = sensitive_features[c] == values[i]
+                        else:
+                            ii &= sensitive_features[c] == values[i]
+
+                    key = "@".join([str(s) for s in values])
+                    # print(key, np.sum(ii))
+                    sensitive_indices[key] = ii
+
+        print(sensitive_indices)
+
+
+        cs = {}
+        for t in target_values:
+            cs[t] = np.sum(target == t)
+        print(cs)
+        
+        # c0 = np.sum(target == 0)
+        # c1 = np.sum(target == 1)
+
+        selection_rates = {}
+        weights = {}
+
+        for key, indices in sensitive_indices.items():
+            #selection_rates[key] = np.sum((preds == 1) & indices) / np.sum(indices)
+            # print(key, np.sum(indices), selection_rates[key])
+
+            weights[key] = []
+            #t = np.sum(indices)
+            sv = np.sum(indices)
+            for t in target_values:
+                t_k = np.sum(indices & (target == t))
+                w_k = sv / target.shape[0] * cs[t] / t_k
+                weights[key] += [w_k]
+
+        print(weights)
+
+        #max_selection_rate = np.max(list(selection_rates.values()))
+        #min_selection_rate = np.min(list(selection_rates.values()))
+
+        #for k, v in selection_rates.items():
+        #    selection_rates[k] = v / max_selection_rate
+
+        # print("previous fairness optimization")
+        # print(previous_fairness_optimization)
+        # print("********")
+
+        previous_weights = {}
+        # if previous_fairness_optimization is not None:
+
+        #     weights = previous_fairness_optimization.get("weights")
+        #     for key, indices in sensitive_indices.items():
+        #         # print("Previous")
+        #         # print(previous_fairness_optimization["selection_rates"][key], selection_rates[key])
+
+        #         direction = 0.0
+        #         if (
+        #             previous_fairness_optimization["selection_rates"][key]
+        #             < selection_rates[key]
+        #         ):
+        #             # print("Improvement")
+        #             direction = 1.0
+        #         elif selection_rates[key] > 0.8:
+        #             # print("GOOD")
+        #             direction = 0.0
+        #         else:
+        #             # print("Decrease")
+        #             direction = -0.5
+
+        #         # need to add previous weights instead 1.0
+        #         prev_weights = previous_fairness_optimization.get(
+        #             "previous_weights", {}
+        #         ).get(key, [1, 1])
+        #         # print("prev_weights", prev_weights)
+        #         delta0 = weights[key][0] - prev_weights[0]
+        #         delta1 = weights[key][1] - prev_weights[1]
+
+        #         previous_weights[key] = [weights[key][0], weights[key][1]]
+
+        #         # print("BEFORE")
+        #         # print(weights[key])
+        #         weights[key][0] += direction * delta0
+        #         weights[key][1] += direction * delta1
+        #         # print("AFTER")
+        #         # print(weights[key])
+        #         # print(previous_fairness_optimization["weights"][key])
+
+        step = None
+        if previous_fairness_optimization is not None:
+            step = previous_fairness_optimization.get("step")
+
+        if step is None:
+            step = 0
+        else:
+            step += 1
+
+        return {
+            "selection_rates": selection_rates,
+            "previous_weights": previous_weights,
+            "weights": weights,
+            "step": step,
+            "fairness_threshold": fairness_threshold,
+            "target_values": target_values
+        }
+
+    

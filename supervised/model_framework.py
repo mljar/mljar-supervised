@@ -593,7 +593,7 @@ class ModelFramework:
                 self._is_fair = False
                 return False
         self._is_fair = True
-        return True
+        return False
 
     def save(self, results_path, model_subpath):
         start_time = time.time()

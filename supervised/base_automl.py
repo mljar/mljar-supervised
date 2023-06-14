@@ -821,7 +821,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
                 if not sensitive_features[col].dtype.name in ["category", "object"]:
                     self.verbose_print("Sensitive features should be categorical")
-                    self.verbose_print(f"Apply automatic binarization for feature {col}")
+                    self.verbose_print(
+                        f"Apply automatic binarization for feature {col}"
+                    )
                     sensitive_features[col] = pd.DataFrame(
                         pd.qcut(sensitive_features[col], q=2).astype(str)
                     )
@@ -1235,7 +1237,6 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self.verbose_print(f"AutoML best model: {self._best_model.get_name()}")
 
-
             if self._fairness_metric is not None:
                 # check if we have fair model
                 has_fair_model = False
@@ -1244,11 +1245,16 @@ class BaseAutoML(BaseEstimator, ABC):
                         has_fair_model = True
                         break
                 if not has_fair_model:
-                    self.verbose_print("AutoML can't construct model that meets your fairness criteria.")
+                    self.verbose_print(
+                        "AutoML can't construct model that meets your fairness criteria."
+                    )
                     self.verbose_print("What you can do?")
-                    self.verbose_print("1. Please include more samples that are not biased.")
-                    self.verbose_print("2. Please examine the most unfairly treated samples.")
-
+                    self.verbose_print(
+                        "1. Please include more samples that are not biased."
+                    )
+                    self.verbose_print(
+                        "2. Please examine the most unfairly treated samples."
+                    )
 
         except Exception as e:
             raise e
@@ -2228,7 +2234,10 @@ class BaseAutoML(BaseEstimator, ABC):
     def _get_fairness_threshold(self):
         """Gets the fairness threshold"""
         if self.fairness_threshold == "auto":
-            if self._get_ml_task() in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
+            if self._get_ml_task() in [
+                BINARY_CLASSIFICATION,
+                MULTICLASS_CLASSIFICATION,
+            ]:
                 thresholds = {
                     "demographic_parity_difference": 0.1,
                     "demographic_parity_ratio": 0.8,
@@ -2241,7 +2250,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     "group_loss_ratio": 0.8,
                 }
                 if self._fairness_metric == "group_loss_difference":
-                    raise AutoMLException("We can't set default fairness threshold value. Please set `fairness_threshold` value in AutoML constructor.")
+                    raise AutoMLException(
+                        "We can't set default fairness threshold value. Please set `fairness_threshold` value in AutoML constructor."
+                    )
                 return thresholds.get(self._fairness_metric, 0.8)
         else:
             return deepcopy(self.fairness_threshold)

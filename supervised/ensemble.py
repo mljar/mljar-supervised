@@ -330,7 +330,7 @@ class Ensemble:
                 self._is_fair = False
                 return False
         self._is_fair = True
-        return True
+        return False
 
     def fit(self, oofs, y, sample_weight=None, sensitive_features=None):
         logger.debug("Ensemble.fit")
