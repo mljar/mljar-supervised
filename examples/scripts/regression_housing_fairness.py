@@ -15,7 +15,11 @@ sensitive_features = df["large_B"]
 X = df[x_cols]
 y = df["MEDV"]
 
-automl = AutoML(algorithms=["Xgboost", "Random Forest", "LightGBM"], train_ensemble=True, fairness_threshold=0.9)
+automl = AutoML(
+    algorithms=["Xgboost", "Random Forest", "LightGBM"],
+    train_ensemble=True,
+    fairness_threshold=0.9,
+)
 automl.fit(X, y, sensitive_features=sensitive_features)
 
 df["predictions"] = automl.predict(X)
