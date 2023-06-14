@@ -2192,7 +2192,7 @@ class BaseAutoML(BaseEstimator, ABC):
             return
 
         if (
-            self._get_ml_task() == BINARY_CLASSIFICATION
+            self._get_ml_task() in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
         ) and self.fairness_metric not in [
             "demographic_parity_difference",
             "demographic_parity_ratio",
@@ -2214,25 +2214,21 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _get_fairness_metric(self):
         """Gets the fairness metric"""
-        if self._get_ml_task() == MULTICLASS_CLASSIFICATION:
-            raise ValueError(
-                f"Fairness training is not implemented for {self._get_ml_task()}"
-            )
-
         self._validate_fairness_metric()
         if self.fairness_metric == "auto":
             if self._get_ml_task() == BINARY_CLASSIFICATION:
                 return "demographic_parity_ratio"
             if self._get_ml_task() == REGRESSION:
                 return "group_loss_ratio"
-
+            if self._get_ml_task() == MULTICLASS_CLASSIFICATION:
+                return "demographic_parity_ratio"
         else:
             return deepcopy(self.fairness_metric)
 
     def _get_fairness_threshold(self):
         """Gets the fairness threshold"""
         if self.fairness_threshold == "auto":
-            if self._get_ml_task() == BINARY_CLASSIFICATION:
+            if self._get_ml_task() in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:
                 thresholds = {
                     "demographic_parity_difference": 0.1,
                     "demographic_parity_ratio": 0.8,
