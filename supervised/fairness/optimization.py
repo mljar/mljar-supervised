@@ -371,68 +371,86 @@ class FairnessOptimization:
         weights = {}
 
         for key, indices in sensitive_indices.items():
+            print("0-----F")
+            print(key)
             #selection_rates[key] = np.sum((preds == 1) & indices) / np.sum(indices)
             # print(key, np.sum(indices), selection_rates[key])
 
             weights[key] = []
             #t = np.sum(indices)
             sv = np.sum(indices)
+            selection_rates[key] = {}
             for t in target_values:
+                selection_rates[key][t] = np.sum((preds == t) & indices) / np.sum(indices)
+                
                 t_k = np.sum(indices & (target == t))
                 w_k = sv / target.shape[0] * cs[t] / t_k
                 weights[key] += [w_k]
 
         print(weights)
+        print("Selection rates")
+        print(selection_rates)
 
-        #max_selection_rate = np.max(list(selection_rates.values()))
-        #min_selection_rate = np.min(list(selection_rates.values()))
+        for t in target_values:
+            values = []
+            for k, v in selection_rates.items():
+                print(k, v[t])
+                values += [v[t]]
+            print(values)
+            max_selection_rate = np.max(values)
+            print(max_selection_rate)
+            for k, v in selection_rates.items():
+                v[t] /= max_selection_rate
 
-        #for k, v in selection_rates.items():
-        #    selection_rates[k] = v / max_selection_rate
+        print("Selection rates")
+        print(selection_rates)
 
-        # print("previous fairness optimization")
-        # print(previous_fairness_optimization)
-        # print("********")
+        print("previous_fairness_optimization")
+        print(previous_fairness_optimization)
 
         previous_weights = {}
-        # if previous_fairness_optimization is not None:
+        if previous_fairness_optimization is not None:
 
-        #     weights = previous_fairness_optimization.get("weights")
-        #     for key, indices in sensitive_indices.items():
-        #         # print("Previous")
-        #         # print(previous_fairness_optimization["selection_rates"][key], selection_rates[key])
+            weights = previous_fairness_optimization.get("weights")
+            for key, indices in sensitive_indices.items():
+                previous_weights[key] = [1]*len(target_values)
+                for i, t in enumerate(target_values):
+                    print("Previous")
+                    print(previous_fairness_optimization["selection_rates"][key][t], selection_rates[key][t])
 
-        #         direction = 0.0
-        #         if (
-        #             previous_fairness_optimization["selection_rates"][key]
-        #             < selection_rates[key]
-        #         ):
-        #             # print("Improvement")
-        #             direction = 1.0
-        #         elif selection_rates[key] > 0.8:
-        #             # print("GOOD")
-        #             direction = 0.0
-        #         else:
-        #             # print("Decrease")
-        #             direction = -0.5
+                    direction = 0.0
+                    if (
+                        previous_fairness_optimization["selection_rates"][key][t]
+                        < selection_rates[key][t]
+                    ):
+                        # print("Improvement")
+                        direction = 1.0
+                    elif selection_rates[key][t] > 0.8:
+                        # print("GOOD")
+                        direction = 0.0
+                    else:
+                        # print("Decrease")
+                        direction = -0.5
 
-        #         # need to add previous weights instead 1.0
-        #         prev_weights = previous_fairness_optimization.get(
-        #             "previous_weights", {}
-        #         ).get(key, [1, 1])
-        #         # print("prev_weights", prev_weights)
-        #         delta0 = weights[key][0] - prev_weights[0]
-        #         delta1 = weights[key][1] - prev_weights[1]
+                    print("direction", direction)
 
-        #         previous_weights[key] = [weights[key][0], weights[key][1]]
+                    # need to add previous weights instead 1.0
+                    prev_weights = previous_fairness_optimization.get(
+                        "previous_weights", {}
+                    ).get(key, [1]*len(target_values))
+                    # print("prev_weights", prev_weights)
+                    delta_i = weights[key][i] - prev_weights[i]
 
-        #         # print("BEFORE")
-        #         # print(weights[key])
-        #         weights[key][0] += direction * delta0
-        #         weights[key][1] += direction * delta1
-        #         # print("AFTER")
-        #         # print(weights[key])
-        #         # print(previous_fairness_optimization["weights"][key])
+                    previous_weights[key][i] = [weights[key][0], weights[key][1]]
+
+                    print("BEFORE")
+                    print(weights[key][i])
+
+
+                    weights[key][i] += direction * delta_i
+                    print("AFTER")
+                    print(weights[key][i])
+                    # print(previous_fairness_optimization["weights"][key])
 
         step = None
         if previous_fairness_optimization is not None:

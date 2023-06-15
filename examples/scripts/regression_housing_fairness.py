@@ -18,7 +18,7 @@ y = df["MEDV"]
 automl = AutoML(
     algorithms=["Xgboost", "Random Forest", "LightGBM"],
     train_ensemble=True,
-    fairness_threshold=0.9,
+    fairness_threshold=0.97,
 )
 automl.fit(X, y, sensitive_features=sensitive_features)
 
