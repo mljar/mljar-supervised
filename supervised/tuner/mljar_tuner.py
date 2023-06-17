@@ -49,12 +49,12 @@ class MljarTuner:
         optuna_time_budget,
         optuna_init_params,
         optuna_verbose,
-        fairness_metric,
-        fairness_threshold,
-        privileged_groups,
-        underprivileged_groups,
         n_jobs,
         seed,
+        fairness_metric = None,
+        fairness_threshold = None,
+        privileged_groups = [],
+        underprivileged_groups = []
     ):
         logger.debug("MljarTuner.__init__")
         self._start_random_models = tuner_params.get("start_random_models", 5)
