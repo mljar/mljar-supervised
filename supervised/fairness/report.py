@@ -5,18 +5,30 @@ class FairnessReport:
     """Saves information about fairness in the report."""
 
     @staticmethod
-    def save_binary_classification(fairness_metrics, fout, model_path):
+    def save_classification(fairness_metrics, fout, model_path, is_multi=False):
 
         for k, v in fairness_metrics.items():
             if k == "fairness_optimization":
                 continue
-            fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
+
+            if is_multi:
+                a = k.split("__", maxsplit=1)
+                feature, class_name = a
+
+            if is_multi:
+                fout.write(f"\n\n## Fairness metrics for {feature} feature and {class_name} class\n\n")
+            else:
+                fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
+
             fout.write(v["metrics"].to_markdown())
             fout.write("\n\n")
             fout.write(v["stats"].to_markdown())
             fout.write("\n\n")
 
-            fout.write(f"\n\n## Is model fair for {k} feature?\n")
+            if is_multi:
+                fout.write(f"\n\n## Is model fair for {feature} feature and {class_name} class?\n")
+            else:
+                fout.write(f"\n\n## Is model fair for {k} feature?\n")
             fair_str = "fair" if v["is_fair"] else "unfair"
             fairness_threshold = fairness_metrics.get("fairness_optimization", {}).get(
                 "fairness_threshold"
@@ -32,7 +44,10 @@ class FairnessReport:
                         f"It should be lower than {fairness_threshold}."
                     )
 
-            fout.write(f"Model is {fair_str} for {k} feature.\n")
+            if is_multi:
+                fout.write(f"Model is {fair_str} for {feature} feature and {class_name} class.\n")
+            else:
+                fout.write(f"Model is {fair_str} for {k} feature.\n")
             fout.write(
                 f'The {v["fairness_metric_name"]} is {v["fairness_metric_value"]}. {fairness_threshold_str}\n'
             )

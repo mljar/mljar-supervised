@@ -599,8 +599,8 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
-                FairnessReport.save_binary_classification(
-                    fairness_metrics, fout, model_path
+                FairnessReport.save_classification(
+                    fairness_metrics, fout, model_path, is_multi=False
                 )
 
             AdditionalMetrics.add_learning_curves(fout)
@@ -639,8 +639,8 @@ class AdditionalMetrics:
 
             if fairness_metrics is not None:
                 # we treat multiclass problem as several binary problems
-                FairnessReport.save_binary_classification(
-                    fairness_metrics, fout, model_path
+                FairnessReport.save_classification(
+                    fairness_metrics, fout, model_path, is_multi=True
                 )
 
             AdditionalMetrics.add_learning_curves(fout)

@@ -35,7 +35,11 @@ sensitive_features = df["Gender"]
 
 automl = AutoML(
     algorithms=["Xgboost"],
-    train_ensemble=False,
-    fairness_threshold=0.8
+    train_ensemble=True,
+    start_random_models=3,
+    hill_climbing_steps=3,
+    top_models_to_improve=2,
+    fairness_threshold=0.8,
+    explain_level=1
 )
 automl.fit(X, y, sensitive_features=sensitive_features)

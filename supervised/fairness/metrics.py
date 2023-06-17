@@ -434,15 +434,7 @@ class FairnessMetrics:
 
             col_name = col[10:]  # skip 'senstive_'
 
-            #fairness_metrics[col_name] = {}
-
-            
-
-
             for target_value in target_values:
-                print("-------------------------")
-                print(col_name, target_value)
-
                 # we need to reset them for each target value
                 privileged_value, underprivileged_value = None, None
                 for pg in privileged_groups:
@@ -521,7 +513,6 @@ class FairnessMetrics:
                     samples += [np.sum([sensitive_features[col] == value])]
 
 
-
                 metrics = pd.DataFrame(
                     {
                         "Samples": samples,
@@ -534,9 +525,6 @@ class FairnessMetrics:
                     },
                     index=["Overall"] + list(values),
                 )
-
-                print(metrics)
-
 
                 max_selection_rate = np.max(selection_rates[1:])
                 min_selection_rate = np.min(selection_rates[1:])
@@ -601,10 +589,6 @@ class FairnessMetrics:
                         "Equalized Odds Ratio",
                     ],
                 )
-                print(stats)
-                print("*"*21)
-
-
 
                 fairness_metric_name = ""
                 fairness_metric_value = 0
