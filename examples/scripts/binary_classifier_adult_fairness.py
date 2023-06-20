@@ -40,7 +40,7 @@ automl = AutoML(
         "Xgboost"
     ],  # ["Linear", "Xgboost", "LightGBM", "Random Forest", "Decision Tree", "CatBoost"],
     train_ensemble=True,
-    fairness_metric="equalized_odds_ratio",  #
+    fairness_metric="demographic_parity_ratio",  #
     fairness_threshold=0.8,
     # privileged_groups = [{"sex": "Male"}],
     # underprivileged_groups = [{"sex": "Female"}],

@@ -1112,12 +1112,12 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._optuna_time_budget,
                 self._optuna_init_params,
                 self._optuna_verbose,
+                self._n_jobs,
+                self._random_state,
                 self._fairness_metric,
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,
-                self._n_jobs,
-                self._random_state,
             )
             self.tuner = tuner
 
@@ -1254,6 +1254,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
                     self.verbose_print(
                         "2. Please examine the most unfairly treated samples."
+                    )
+                    self.verbose_print(
+                        "3. Please change fairness threshold."
                     )
 
         except Exception as e:

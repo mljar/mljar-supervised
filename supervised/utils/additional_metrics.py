@@ -52,109 +52,6 @@ from supervised.fairness.utils import (
 )
 
 
-def equalized_odds_ratio(target, preds, sensitive_features):
-
-    target = np.array(target).ravel()
-
-    odds = {}
-
-    for col in sensitive_features.columns:
-
-        col_name = col[10:]  # skip 'senstive_'
-
-        tprs = []
-        fprs = []
-        tnrs = []
-        fnrs = []
-
-        eor = None
-
-        values = sensitive_features[col].unique()
-
-        for value in values:
-            ii = sensitive_features[col] == value
-
-            tprs += [
-                true_positive_rate(
-                    target[ii],
-                    preds[ii],
-                )
-            ]
-            fprs += [
-                false_positive_rate(
-                    target[ii],
-                    preds[ii],
-                )
-            ]
-        tpr_min = np.min(tprs)
-        tpr_max = np.max(tprs)
-
-        fpr_min = np.min(fprs)
-        fpr_max = np.max(fprs)
-
-        equalized_odds_ratio = np.round(min(tpr_min / tpr_max, fpr_min / fpr_max), 4)
-        odds[col] = equalized_odds_ratio
-
-    if equalized_odds_ratio > 0.8 and accuracy_score(target, preds) > 0.8:
-        print(odds, accuracy_score(target, preds))
-
-
-def optimize_fair_threshold(target, predictions, sensitive_features):
-
-    sorted_predictions = np.sort(predictions)
-
-    STEPS = 50  # can go lower for speed increase ???
-    details = {
-        "threshold": [],
-        "f1": [],
-        "accuracy": [],
-        "precision": [],
-        "recall": [],
-        "mcc": [],
-    }
-    samples_per_step = max(1, np.floor(predictions.shape[0] / STEPS))
-
-    for i in range(STEPS):
-        idx = int(i * samples_per_step)
-        if idx + 1 >= predictions.shape[0]:
-            break
-        if i == 0:
-            th = 0.9 * np.min(sorted_predictions)
-        else:
-            th = float(0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1]))
-
-        if np.sum(predictions > th) < 1:
-            break
-
-        male_th = th
-
-        for j in range(STEPS):
-            idx = int(j * samples_per_step)
-            if idx + 1 >= predictions.shape[0]:
-                break
-            if i == 0:
-                th = 0.9 * np.min(sorted_predictions)
-            else:
-                th = float(
-                    0.5 * (sorted_predictions[idx] + sorted_predictions[idx + 1])
-                )
-
-            if np.sum(predictions > th) < 1:
-                break
-
-            female_th = th
-
-            response = (predictions > 0.5).astype(int)
-            response[sensitive_features["sensitive_sex"] == "Male"] = (
-                predictions[sensitive_features["sensitive_sex"] == "Male"] > male_th
-            ).astype(int)
-            response[sensitive_features["sensitive_sex"] == "Female"] = (
-                predictions[sensitive_features["sensitive_sex"] == "Female"] > female_th
-            ).astype(int)
-
-            equalized_odds_ratio(target, response, sensitive_features)
-
-
 class AdditionalMetrics:
     @staticmethod
     def binary_classification(
@@ -183,9 +80,6 @@ class AdditionalMetrics:
 
         predictions = np.array(predictions).flatten()
         sorted_predictions = np.sort(predictions)
-
-        # working version please do not use the below function in the production
-        # optimize_fair_threshold(target, predictions, sensitive_features)
 
         STEPS = 100  # can go lower for speed increase ???
         details = {

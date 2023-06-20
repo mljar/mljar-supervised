@@ -358,8 +358,10 @@ class FairnessOptimization:
             sv = np.sum(indices)
             selection_rates[key] = {}
             for t in target_values:
-                selection_rates[key][t] = np.sum((preds == t) & indices) / np.sum(indices)
-                
+                selection_rates[key][t] = np.sum((preds == t) & indices) / np.sum(
+                    indices
+                )
+
                 t_k = np.sum(indices & (target == t))
                 w_k = sv / target.shape[0] * cs[t] / t_k
                 weights[key] += [w_k]
@@ -376,7 +378,7 @@ class FairnessOptimization:
         if previous_fairness_optimization is not None:
             weights = previous_fairness_optimization.get("weights")
             for key, indices in sensitive_indices.items():
-                previous_weights[key] = [1]*len(target_values)
+                previous_weights[key] = [1] * len(target_values)
                 for i, t in enumerate(target_values):
                     direction = 0.0
                     if (
@@ -392,14 +394,14 @@ class FairnessOptimization:
                     # need to add previous weights instead 1.0
                     prev_weights = previous_fairness_optimization.get(
                         "previous_weights", {}
-                    ).get(key, [1]*len(target_values))
+                    ).get(key, [1] * len(target_values))
 
                     delta_i = weights[key][i] - prev_weights[i]
 
-                    previous_weights[key][i] = weights[key][i] 
+                    previous_weights[key][i] = weights[key][i]
 
                     weights[key][i] += direction * delta_i
-                    
+
         step = None
         if previous_fairness_optimization is not None:
             step = previous_fairness_optimization.get("step")
@@ -415,7 +417,5 @@ class FairnessOptimization:
             "weights": weights,
             "step": step,
             "fairness_threshold": fairness_threshold,
-            "target_values": target_values
+            "target_values": target_values,
         }
-
-    

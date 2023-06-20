@@ -16,7 +16,9 @@ class FairnessReport:
                 feature, class_name = a
 
             if is_multi:
-                fout.write(f"\n\n## Fairness metrics for {feature} feature and {class_name} class\n\n")
+                fout.write(
+                    f"\n\n## Fairness metrics for {feature} feature and {class_name} class\n\n"
+                )
             else:
                 fout.write(f"\n\n## Fairness metrics for {k} feature\n\n")
 
@@ -26,7 +28,9 @@ class FairnessReport:
             fout.write("\n\n")
 
             if is_multi:
-                fout.write(f"\n\n## Is model fair for {feature} feature and {class_name} class?\n")
+                fout.write(
+                    f"\n\n## Is model fair for {feature} feature and {class_name} class?\n"
+                )
             else:
                 fout.write(f"\n\n## Is model fair for {k} feature?\n")
             fair_str = "fair" if v["is_fair"] else "unfair"
@@ -45,7 +49,9 @@ class FairnessReport:
                     )
 
             if is_multi:
-                fout.write(f"Model is {fair_str} for {feature} feature and {class_name} class.\n")
+                fout.write(
+                    f"Model is {fair_str} for {feature} feature and {class_name} class.\n"
+                )
             else:
                 fout.write(f"Model is {fair_str} for {k} feature.\n")
             fout.write(

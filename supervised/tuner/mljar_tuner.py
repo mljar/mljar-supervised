@@ -51,10 +51,10 @@ class MljarTuner:
         optuna_verbose,
         n_jobs,
         seed,
-        fairness_metric = None,
-        fairness_threshold = None,
-        privileged_groups = [],
-        underprivileged_groups = []
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
     ):
         logger.debug("MljarTuner.__init__")
         self._start_random_models = tuner_params.get("start_random_models", 5)
@@ -288,9 +288,6 @@ class MljarTuner:
 
         df_models, algorithms = self.df_models_algorithms(current_models)
 
-        # print(df_models)
-        # print(algorithms)
-
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
 
@@ -318,28 +315,15 @@ class MljarTuner:
 
             m = df_models["model"].iloc[i]
 
-            print(m.get_name(), m.get_type(), model_type)
-            print(
-                m.get_worst_fairness(),
-                self._fairness_threshold,
-                self._fairness_metric.lower(),
-            )
-
             if "ratio" in self._fairness_metric.lower():
                 if m.get_worst_fairness() > self._fairness_threshold:
-                    # print("Model is fair")
                     continue
             else:
                 if m.get_worst_fairness() < self._fairness_threshold:
-                    # print("Model is fair already")
                     continue
 
             fo = m.get_fairness_optimization()
             fo_step = fo.get("step", 0)
-            # print("@"*21)
-            # print("fo_step", fo_step)
-
-            # print(m.get_fairness_optimization())
 
             samples_weight = np.ones(sensitive_features.shape[0])
 
@@ -349,7 +333,6 @@ class MljarTuner:
                 sensitive_values = k.split("@")
                 ii = None
                 for i, sv in enumerate(sensitive_values):
-                    # print(sensitive_columns[i], "equals", sv)
                     if ii is None:
                         ii = sensitive_features[sensitive_columns[i]] == sv
                     else:
@@ -407,9 +390,6 @@ class MljarTuner:
 
         df_models, algorithms = self.df_models_algorithms(current_models)
 
-        # print(df_models)
-        # print(algorithms)
-
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
 
@@ -432,18 +412,14 @@ class MljarTuner:
                 continue
 
             counts[model_type] += 1
-            # if counts[model_type] > 1:
-            #    continue
 
             m = df_models["model"].iloc[i]
 
             if "ratio" in self._fairness_metric.lower():
                 if m.get_worst_fairness() > self._fairness_threshold:
-                    # print("Model is fair")
                     continue
             else:
                 if m.get_worst_fairness() < self._fairness_threshold:
-                    # print("Model is fair already")
                     continue
 
             fo = m.get_fairness_optimization()
@@ -509,50 +485,13 @@ class MljarTuner:
 
         return generated_params
 
+    def fairness_optimization_multiclass_classification(
+        self, current_models, results_path
+    ):
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def fairness_optimization_multiclass_classification(self, current_models, results_path):
-
-        df_models, algorithms = self.df_models_algorithms(current_models) #, sort_by_worst_fairness=True)
-
-        #print("OOOoOOOOO")
-        #print(df_models)
-        # print(algorithms)
+        df_models, algorithms = self.df_models_algorithms(
+            current_models
+        )  # , sort_by_worst_fairness=True)
 
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
@@ -576,34 +515,18 @@ class MljarTuner:
                 continue
 
             counts[model_type] += 1
-            #if counts[model_type] > 1:
-            #    continue
 
             m = df_models["model"].iloc[i]
 
-            #print(">>>>>>>>>")
-            #print(m.get_name(), m.get_type(), model_type)
-            #print(
-            #    m.get_worst_fairness(),
-            #    self._fairness_threshold,
-            #    self._fairness_metric.lower(),
-            #)
-
             if "ratio" in self._fairness_metric.lower():
                 if m.get_worst_fairness() > self._fairness_threshold:
-                    # print("Model is fair")
                     continue
             else:
                 if m.get_worst_fairness() < self._fairness_threshold:
-                    # print("Model is fair already")
                     continue
 
             fo = m.get_fairness_optimization()
             fo_step = fo.get("step", 0)
-            # print("@"*21)
-            # print("fo_step", fo_step)
-
-            # print(m.get_fairness_optimization())
 
             samples_weight = np.ones(sensitive_features.shape[0])
 
@@ -611,13 +534,10 @@ class MljarTuner:
             weights = fo.get("weights")
             target_values = fo.get("target_values")
 
-
-
             for k, ws in weights.items():
                 sensitive_values = k.split("@")
                 ii = None
                 for i, sv in enumerate(sensitive_values):
-                    # print(sensitive_columns[i], "equals", sv)
                     if ii is None:
                         ii = sensitive_features[sensitive_columns[i]] == sv
                     else:
@@ -626,7 +546,6 @@ class MljarTuner:
                 for j, t in enumerate(target_values):
                     samples_weight[ii & (target == t)] = max(ws[j], 0.01)
 
-            
             samples_weight = samples_weight * target.shape[0] / np.sum(samples_weight)
 
             sample_weight_path = os.path.join(
@@ -669,7 +588,6 @@ class MljarTuner:
                 generated_params += [params]
 
         return generated_params
-
 
     def fairness_optimization(self, current_models, results_path):
 
@@ -1158,7 +1076,11 @@ class MljarTuner:
         return generated_params
 
     def df_models_algorithms(
-        self, current_models, time_limit=None, exclude_golden=False, sort_by_worst_fairness=False
+        self,
+        current_models,
+        time_limit=None,
+        exclude_golden=False,
+        sort_by_worst_fairness=False,
     ):
         scores = [m.get_final_loss() for m in current_models]
         model_types = [m.get_type() for m in current_models]
@@ -1192,16 +1114,20 @@ class MljarTuner:
         df_models.sort_values(by="score", ascending=True, inplace=True)
 
         if self._fairness_metric is not None:
-            
+
             sort_by_worst_fairness = True
 
             ascending = True
             if "ratio" in self._fairness_metric.lower():
                 ascending = False
             if sort_by_worst_fairness:
-                df_models.sort_values(by="worst_fairness", ascending=ascending, inplace=True)
+                df_models.sort_values(
+                    by="worst_fairness", ascending=ascending, inplace=True
+                )
             else:
-                df_models.sort_values(by="best_fairness", ascending=ascending, inplace=True)
+                df_models.sort_values(
+                    by="best_fairness", ascending=ascending, inplace=True
+                )
 
         model_types = list(df_models.model_type)
         u, idx = np.unique(model_types, return_index=True)

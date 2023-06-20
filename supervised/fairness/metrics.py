@@ -444,7 +444,6 @@ class FairnessMetrics:
                     if col_name in upg:
                         underprivileged_value = upg.get(col_name)
 
-
                 target = np.copy(original_target)
                 target[original_target == target_value] = 1
                 target[original_target != target_value] = 0
@@ -512,7 +511,6 @@ class FairnessMetrics:
                     ]
                     samples += [np.sum([sensitive_features[col] == value])]
 
-
                 metrics = pd.DataFrame(
                     {
                         "Samples": samples,
@@ -568,7 +566,9 @@ class FairnessMetrics:
                             tpr_min = tprs[i + 1]
                             fpr_min = fprs[i + 1]
 
-                equalized_odds_diff = np.round(max(tpr_max - tpr_min, fpr_max - fpr_min), 4)
+                equalized_odds_diff = np.round(
+                    max(tpr_max - tpr_min, fpr_max - fpr_min), 4
+                )
                 equalized_odds_ratio = np.round(
                     min(tpr_min / tpr_max, fpr_min / fpr_max), 4
                 )
@@ -663,7 +663,7 @@ class FairnessMetrics:
             fairness_threshold,
             privileged_groups,
             underprivileged_groups,
-            previous_fairness_optimization
+            previous_fairness_optimization,
         )
 
         return fairness_metrics
