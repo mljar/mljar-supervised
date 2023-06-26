@@ -65,17 +65,6 @@ It has four built-in modes of work:
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
 
-
-<p align="center">
-  <img src="https://github.com/mljar/visual-identity/raw/main/pictures/excel-addin-banner.jpg" width="80%" />
-</p>
-
-## Excel Add-in
-
-We are working on Excel Add-in for Machine Learning. You can train ML models without leaving WorkSheet. Model training is done locally on your machine (no cloud). You can train models with MLJAR AutoML or single models (manual hyperparameter selection). 
-
-Interested? Please [fill out the form](https://forms.gle/EjqYi3ttEkZkuKy46), and we will inform you when it will be available. 
-
 ## What's good in it? 
 
 - It is using many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
