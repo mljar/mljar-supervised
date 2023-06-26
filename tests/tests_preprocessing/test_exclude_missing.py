@@ -20,7 +20,7 @@ class ExcludeRowsMissingTargetTest(unittest.TestCase):
 
         self.assertEqual(X.shape[0], 4)
         self.assertEqual(y.shape[0], 4)
-        X, y, _ = ExcludeRowsMissingTarget.transform(X, y)
+        X, y, _, _ = ExcludeRowsMissingTarget.transform(X, y)
         self.assertEqual(X.shape[0], 2)
         self.assertEqual(y.shape[0], 2)
 
@@ -43,7 +43,7 @@ class ExcludeRowsMissingTargetTest(unittest.TestCase):
 
         self.assertEqual(X.shape[0], 4)
         self.assertEqual(y.shape[0], 4)
-        X, y, sw = ExcludeRowsMissingTarget.transform(X, y, sample_weight)
+        X, y, sw, _ = ExcludeRowsMissingTarget.transform(X, y, sample_weight)
         self.assertEqual(X.shape[0], 2)
         self.assertEqual(y.shape[0], 2)
         self.assertEqual(sw.shape[0], 2)

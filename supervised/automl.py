@@ -68,6 +68,10 @@ class AutoML(BaseAutoML):
         optuna_time_budget: Optional[int] = None,
         optuna_init_params: dict = {},
         optuna_verbose: bool = True,
+        fairness_metric: str = "auto",
+        fairness_threshold: Union[Literal["auto"], float] = "auto",
+        privileged_groups: Union[Literal["auto"], list] = "auto",
+        underprivileged_groups: Union[Literal["auto"], list] = "auto",
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
@@ -235,6 +239,34 @@ class AutoML(BaseAutoML):
 
             optuna_verbose (boolean): If true the Optuna tuning details are displayed. Set to `True` by default.
 
+            fairness_metric (string): Name of fairness metric to be fulfilled.
+                Available metrics for binary classification:
+
+                - `demographic_parity_difference`,
+                - `demographic_parity_ratio`,
+                - `equalized_odds_difference`,
+                - `equalized_odds_ratio`.
+
+            fairness_threshold (float): The treshold value for fairness metric.
+                The direction optimization (below or above threshold) of fairness metric is determined automatically.
+
+                Default values:
+
+                - for `demographic_parity_difference` the metric value should be below 0.1,
+                - for `demographic_parity_ratio` the metric value should be above 0.8,
+                - for `equalized_odds_difference` the metric value should be below 0.1,
+                - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
+
+            privileged_groups (list): The list of privileged groups.
+                By default, list of privileged groups are automatically detected based on fairness metrics.
+                For example, in binary classification task, a privileged group is the one with the highest selection rate.
+                Example value: [{"sex": "Male"}]
+
+            underprivileged_groups (list): The list of underprivileged groups.
+                By default, list of underprivileged groups are automatically detected based on fairness metrics.
+                For example, in binary classification task, an underprivileged group is the one with the lowest selection rate.
+                Example value: [{"sex": "Female"}]
+
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
 
             verbose (int): Controls the verbosity when fitting and predicting.
@@ -340,6 +372,10 @@ class AutoML(BaseAutoML):
         self.optuna_time_budget = optuna_time_budget
         self.optuna_init_params = optuna_init_params
         self.optuna_verbose = optuna_verbose
+        self.fairness_metric = fairness_metric
+        self.fairness_threshold = fairness_threshold
+        self.privileged_groups = privileged_groups
+        self.underprivileged_groups = underprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
 
@@ -349,6 +385,9 @@ class AutoML(BaseAutoML):
         y: Union[numpy.ndarray, pandas.Series],
         sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
         cv: Optional[Union[Iterable, List]] = None,
+        sensitive_features: Optional[
+            Union[numpy.ndarray, pandas.Series, pandas.DataFrame]
+        ] = None,
     ):
         """Fit the AutoML model.
 
@@ -362,10 +401,12 @@ class AutoML(BaseAutoML):
             cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
             It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
 
+            sensitive_features (numpy.ndarray or pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
+
         Returns:
             AutoML object: Returns `self`
         """
-        return self._fit(X, y, sample_weight, cv)
+        return self._fit(X, y, sample_weight, cv, sensitive_features)
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """

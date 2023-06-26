@@ -137,7 +137,7 @@ class TimeController:
         return compound
 
     def enough_time_for_step(self, fit_level):
-        if fit_level in ["ensemble", "ensemble_stacked"]:
+        if fit_level in ["ensemble", "ensemble_stacked", "fairness"]:
             return True
         total_time_spend = time.time() - self._start_time
         compound = self.compound_time_should_use(fit_level)

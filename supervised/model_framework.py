@@ -80,6 +80,13 @@ class ModelFramework:
         self._optuna_init_params = params.get("optuna_init_params", {})
         self._optuna_verbose = params.get("optuna_verbose", True)
 
+        self._fairness_metric = params.get("fairness_metric")
+        self._fairness_threshold = params.get("fairness_threshold")
+        self._privileged_groups = params.get("privileged_groups", [])
+        self._underprivileged_groups = params.get("underprivileged_groups", [])
+        self._fairness_optimization = params.get("fairness_optimization")
+        self._is_fair = None
+
         # the automl random state from AutoML constructor, used in Optuna optimizer
         self._automl_random_state = params.get("automl_random_state", 42)
 
@@ -93,9 +100,11 @@ class ModelFramework:
         X_train,
         y_train,
         sample_weight,
+        sensitive_features,
         X_validation,
         y_validation,
         sample_weight_validation,
+        sensitive_features_validation,
     ):
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
@@ -129,9 +138,11 @@ class ModelFramework:
             "y_train_true": y_train_true,
             "y_train_predicted": y_train_predicted,
             "sample_weight": sample_weight,
+            "sensitive_features": sensitive_features,
             "y_validation_true": y_validation_true,
             "y_validation_predicted": y_validation_predicted,
             "sample_weight_validation": sample_weight_validation,
+            "sensitive_features_validation": sensitive_features_validation,
             "validation_index": X_validation.index,
             "validation_columns": y_validation_columns,
         }
@@ -196,6 +207,17 @@ class ModelFramework:
                     validation_data.get("sample_weight"),
                 )
 
+                # skip preprocessing for sensitive features
+                # TODO: need to add sensitive features in preprocessing because some rows might be skipped (missing target)
+                # then we need to skip some rows in sensitive features as well
+                # TODO: drop rows if there is missing data in sensitive feature?
+
+                # get sensitive features from data split
+                sensitive_features = train_data.get("sensitive_features")
+                sensitive_features_validation = validation_data.get(
+                    "sensitive_features"
+                )
+
                 if optuna_tuner is not None:
                     optuna_start_time = time.time()
                     self.learner_params = optuna_tuner.optimize(
@@ -254,9 +276,11 @@ class ModelFramework:
                             X_train,
                             y_train,
                             sample_weight,
+                            sensitive_features,
                             X_validation,
                             y_validation,
                             sample_weight_validation,
+                            sensitive_features_validation,
                         ),
                     )
 
@@ -462,12 +486,114 @@ class ModelFramework:
             if "sample_weight" in oof_predictions.columns:
                 sample_weight = oof_predictions["sample_weight"]
 
+            sensitive_features = None
+            sensitive_cols = [c for c in oof_predictions.columns if "sensitive" in c]
+            if sensitive_cols:
+                sensitive_features = oof_predictions[sensitive_cols]
+
             self._additional_metrics = AdditionalMetrics.compute(
-                target, oof_preds, sample_weight, self._ml_task
+                target,
+                oof_preds,
+                sample_weight,
+                self._ml_task,
+                sensitive_features,
+                self._fairness_metric
+                if self._ml_task != REGRESSION
+                else f"{self._fairness_metric}@{self.get_metric_name()}",
+                self._fairness_threshold,
+                self._privileged_groups,
+                self._underprivileged_groups,
+                self._fairness_optimization,
             )
             if self._ml_task == BINARY_CLASSIFICATION:
                 self._threshold = float(self._additional_metrics["threshold"])
         return self._additional_metrics
+
+    def get_sensitive_features_names(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return [i for i in list(fm.keys()) if i != "fairness_optimization"]
+
+    def get_fairness_metric(self, col_name):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get(col_name, {}).get("fairness_metric_value")
+
+    def get_fairness_optimization(self):
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        return fm.get("fairness_optimization", {})
+
+    def get_worst_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The worst fairness metric is:
+        # - for ratio metrics, the lowest fairness value from all sensitive features
+        # - for difference metrics, the highest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
+        metrics = self.get_additional_metrics()
+
+        fm = metrics.get("fairness_metrics", {})
+        worst_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 0)
+                else:
+                    worst_value = min(
+                        worst_value, values.get("fairness_metric_value", 0)
+                    )
+            else:
+                if worst_value is None:
+                    worst_value = values.get("fairness_metric_value", 1)
+                else:
+                    worst_value = max(
+                        worst_value, values.get("fairness_metric_value", 1)
+                    )
+
+        return worst_value
+
+    def get_best_fairness(self):
+        # We have fairness metrics per sensitive feature.
+        # The best fairness metric is:
+        # - for ratio metrics, the highest fairness value from all sensitive features
+        # - for difference metrics, the lowest fairness value from all sensitive features
+        # It is needed as bias mitigation stop criteria.
+
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        best_value = None
+        for col_name, values in fm.items():
+            if col_name == "fairness_optimization":
+                continue
+            if "ratio" in self._fairness_metric.lower():
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 0)
+                else:
+                    best_value = max(best_value, values.get("fairness_metric_value", 0))
+            else:
+                if best_value is None:
+                    best_value = values.get("fairness_metric_value", 1)
+                else:
+                    best_value = min(best_value, values.get("fairness_metric_value", 1))
+
+        return best_value
+
+    def is_fair(self):
+        if self._is_fair is not None:
+            return self._is_fair
+        metrics = self.get_additional_metrics()
+        fm = metrics.get("fairness_metrics", {})
+        for col, m in fm.items():
+            if col == "fairness_optimization":
+                continue
+            if not m.get("is_fair", True):
+                self._is_fair = False
+                return False
+        self._is_fair = True
+        return False
 
     def save(self, results_path, model_subpath):
         start_time = time.time()

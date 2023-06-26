@@ -241,10 +241,10 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 valid_sets=valid_sets,
                 valid_names=valid_names,
                 feval=self.custom_eval_metric,
-                callbacks = [
-                    lgb.early_stopping(esr, verbose = False), 
-                    lgb.record_evaluation(evals_result)
-                ]
+                callbacks=[
+                    lgb.early_stopping(esr, verbose=False),
+                    lgb.record_evaluation(evals_result),
+                ],
             )
 
             del lgb_train

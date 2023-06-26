@@ -38,10 +38,33 @@ from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
 from supervised.utils.additional_plots import AdditionalPlots
 from tabulate import tabulate
 
+from supervised.fairness.metrics import FairnessMetrics
+from supervised.fairness.report import FairnessReport
+
+
+from supervised.fairness.utils import (
+    accuracy,
+    selection_rate,
+    true_positive_rate,
+    false_positive_rate,
+    true_negative_rate,
+    false_negative_rate,
+)
+
 
 class AdditionalMetrics:
     @staticmethod
-    def binary_classification(target, predictions, sample_weight=None):
+    def binary_classification(
+        target,
+        predictions,
+        sample_weight=None,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
 
         negative_label, positive_label = "0", "1"
         mapping = None
@@ -55,8 +78,9 @@ class AdditionalMetrics:
         except Exception as e:
             pass
 
-        predictions = np.array(predictions)
+        predictions = np.array(predictions).flatten()
         sorted_predictions = np.sort(predictions)
+
         STEPS = 100  # can go lower for speed increase ???
         details = {
             "threshold": [],
@@ -208,7 +232,7 @@ class AdditionalMetrics:
         else:
             labeled_target = target
 
-        return {
+        metrics = {
             "metric_details": pd.DataFrame(details),
             "max_metrics": pd.DataFrame(max_metrics),
             "accuracy_threshold_metrics": pd.DataFrame(accuracy_threshold_metrics),
@@ -219,8 +243,32 @@ class AdditionalMetrics:
             ),
         }
 
+        if sensitive_features is not None:
+            metrics["fairness_metrics"] = FairnessMetrics.binary_classification(
+                target,
+                predicted_labels,
+                sensitive_features,
+                fairness_metric,
+                fairness_threshold,
+                privileged_groups,
+                underprivileged_groups,
+                previous_fairness_optimization,
+            )
+
+        return metrics
+
     @staticmethod
-    def multiclass_classification(target, predictions, sample_weight=None):
+    def multiclass_classification(
+        target,
+        predictions,
+        sample_weight=None,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
         all_labels = [i[11:] for i in predictions.columns.tolist()[:-1]]
 
         predicted_probas = predictions[predictions.columns[:-1]]
@@ -269,7 +317,7 @@ class AdditionalMetrics:
         )
         max_metrics["logloss"] = ll
 
-        return {
+        metrics = {
             "max_metrics": pd.DataFrame(max_metrics).transpose(),
             "confusion_matrix": conf_matrix,
             "additional_plots": AdditionalPlots.plots_multiclass(
@@ -277,8 +325,31 @@ class AdditionalMetrics:
             ),
         }
 
+        if sensitive_features is not None:
+            metrics["fairness_metrics"] = FairnessMetrics.multiclass_classification(
+                target,
+                predicted_labels,
+                sensitive_features,
+                fairness_metric,
+                fairness_threshold,
+                privileged_groups,
+                underprivileged_groups,
+                previous_fairness_optimization,
+            )
+        return metrics
+
     @staticmethod
-    def regression(target, predictions, sample_weight=None):
+    def regression(
+        target,
+        predictions,
+        sample_weight=None,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
         regression_metrics = {
             "MAE": mean_absolute_error,
             "MSE": mean_squared_error,
@@ -292,7 +363,7 @@ class AdditionalMetrics:
         for k, v in regression_metrics.items():
             max_metrics[k] = v(target, predictions, sample_weight=sample_weight)
 
-        return {
+        metrics = {
             "max_metrics": pd.DataFrame(
                 {
                     "Metric": list(max_metrics.keys()),
@@ -302,20 +373,71 @@ class AdditionalMetrics:
             "additional_plots": AdditionalPlots.plots_regression(target, predictions),
         }
 
+        if sensitive_features is not None:
+            metrics["fairness_metrics"] = FairnessMetrics.regression(
+                target,
+                predictions,
+                sensitive_features,
+                fairness_metric,
+                fairness_threshold,
+                privileged_groups,
+                underprivileged_groups,
+                previous_fairness_optimization,
+            )
+
+        return metrics
+
     @staticmethod
-    def compute(target, predictions, sample_weight, ml_task):
+    def compute(
+        target,
+        predictions,
+        sample_weight,
+        ml_task,
+        sensitive_features=None,
+        fairness_metric=None,
+        fairness_threshold=None,
+        privileged_groups=[],
+        underprivileged_groups=[],
+        previous_fairness_optimization=None,
+    ):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if ml_task == BINARY_CLASSIFICATION:
                 return AdditionalMetrics.binary_classification(
-                    target, predictions, sample_weight
+                    target,
+                    predictions,
+                    sample_weight,
+                    sensitive_features,
+                    fairness_metric,
+                    fairness_threshold,
+                    privileged_groups,
+                    underprivileged_groups,
+                    previous_fairness_optimization,
                 )
             elif ml_task == MULTICLASS_CLASSIFICATION:
                 return AdditionalMetrics.multiclass_classification(
-                    target, predictions, sample_weight
+                    target,
+                    predictions,
+                    sample_weight,
+                    sensitive_features,
+                    fairness_metric,
+                    fairness_threshold,
+                    privileged_groups,
+                    underprivileged_groups,
+                    previous_fairness_optimization,
                 )
             elif ml_task == REGRESSION:
-                return AdditionalMetrics.regression(target, predictions, sample_weight)
+                return AdditionalMetrics.regression(
+                    target,
+                    predictions,
+                    sample_weight,
+                    sensitive_features,
+                    fairness_metric,
+                    fairness_threshold,
+                    privileged_groups,
+                    underprivileged_groups,
+                    previous_fairness_optimization,
+                )
 
     @staticmethod
     def save(additional_metrics, ml_task, model_desc, model_path):
@@ -334,7 +456,7 @@ class AdditionalMetrics:
                     additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
                 )
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Exception while saving additional metrics. {str(e)}\nContinuing ..."
             )
 
@@ -354,6 +476,8 @@ class AdditionalMetrics:
         confusion_matrix = additional_metrics["confusion_matrix"]
         threshold = additional_metrics["threshold"]
 
+        fairness_metrics = additional_metrics.get("fairness_metrics")
+
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n## Metric details\n{}\n\n".format(max_metrics.to_markdown()))
@@ -367,6 +491,12 @@ class AdditionalMetrics:
                     np.round(threshold, 6), confusion_matrix.to_markdown()
                 )
             )
+
+            if fairness_metrics is not None:
+                FairnessReport.save_classification(
+                    fairness_metrics, fout, model_path, is_multi=False
+                )
+
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
             AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
@@ -392,12 +522,21 @@ class AdditionalMetrics:
         max_metrics = additional_metrics["max_metrics"].transpose()
         confusion_matrix = additional_metrics["confusion_matrix"]
 
+        fairness_metrics = additional_metrics.get("fairness_metrics")
+
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write("\n### Metric details\n{}\n\n".format(max_metrics.to_markdown()))
             fout.write(
                 "\n## Confusion matrix\n{}".format(confusion_matrix.to_markdown())
             )
+
+            if fairness_metrics is not None:
+                # we treat multiclass problem as several binary problems
+                FairnessReport.save_classification(
+                    fairness_metrics, fout, model_path, is_multi=True
+                )
+
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
             AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)
@@ -423,6 +562,8 @@ class AdditionalMetrics:
         additional_metrics, model_desc, model_path, fold_cnt, repeat_cnt
     ):
         max_metrics = additional_metrics["max_metrics"]
+        fairness_metrics = additional_metrics.get("fairness_metrics")
+
         with open(os.path.join(model_path, "README.md"), "w", encoding="utf-8") as fout:
             fout.write(model_desc)
             fout.write(
@@ -430,6 +571,10 @@ class AdditionalMetrics:
                     tabulate(max_metrics.values, max_metrics.columns, tablefmt="pipe")
                 )
             )
+
+            if fairness_metrics is not None:
+                FairnessReport.regression(fairness_metrics, fout, model_path)
+
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)
             AdditionalMetrics.add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt)

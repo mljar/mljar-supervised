@@ -26,7 +26,7 @@ class Scale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 self.scale.fit(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
-                self.X_min_values = np.min(X[self.columns])
+                self.X_min_values = np.min(X[self.columns], axis=0)
                 self.scale.fit(np.log(X[self.columns] - self.X_min_values + 1))
 
     def transform(self, X):
