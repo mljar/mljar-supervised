@@ -1,6 +1,7 @@
 import logging
 
 import warnings
+
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 from supervised.base_automl import BaseAutoML
@@ -268,21 +269,21 @@ class AutoML(BaseAutoML):
                 - for `equalized_odds_ratio` the metric value shoule be above 0.8.
                 - for `group_loss_ratio` the metric value shoule be above 0.8.
 
-                For `group_loss_difference` the default threshold value can't be set because it depends on the dataset. 
+                For `group_loss_difference` the default threshold value can't be set because it depends on the dataset.
                 If `group_loss_difference` metric is used and `fairness_threshold` is not specified manually, then an exception will be raised.
 
             privileged_groups (list): The list of privileged groups.
 
                 By default, list of privileged groups are automatically detected based on fairness metrics.
                 For example, in binary classification task, a privileged group is the one with the highest selection rate.
-                
+
                 Example value: `[{"sex": "Male"}]`
 
             underprivileged_groups (list): The list of underprivileged groups.
-                
+
                 By default, list of underprivileged groups are automatically detected based on fairness metrics.
                 For example, in binary classification task, an underprivileged group is the one with the lowest selection rate.
-                
+
                 Example value: `[{"sex": "Female"}]`
 
             n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.

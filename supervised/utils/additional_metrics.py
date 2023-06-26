@@ -65,7 +65,6 @@ class AdditionalMetrics:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
-
         negative_label, positive_label = "0", "1"
         mapping = None
         try:
@@ -597,7 +596,6 @@ class AdditionalMetrics:
 
     @staticmethod
     def add_linear_coefs(fout, model_path, fold_cnt, repeat_cnt):
-
         coef_files = [f for f in os.listdir(model_path) if "_coefs.csv" in f]
         if not len(coef_files):
             return
@@ -646,7 +644,6 @@ class AdditionalMetrics:
 
     @staticmethod
     def add_tree_viz(fout, model_path, fold_cnt, repeat_cnt):
-
         tree_viz = [f for f in os.listdir(model_path) if "_tree.svg" in f]
         if len(tree_viz):
             fout.write("\n\n## Decision Tree \n")
@@ -711,7 +708,6 @@ class AdditionalMetrics:
         fout.write(f"![Permutation-based Importance](permutation_importance.png)")
 
         if "random_feature" in df.index.tolist():
-
             df["counter"] = 0
             df = df.fillna(
                 0

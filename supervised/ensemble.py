@@ -28,7 +28,6 @@ from supervised.utils.learning_curves import LearningCurves
 
 
 class Ensemble:
-
     algorithm_name = "Greedy Ensemble"
     algorithm_short_name = "Ensemble"
 
@@ -189,7 +188,6 @@ class Ensemble:
             prediction_cols = [c for c in oof.columns if "prediction" in c]
             oofs[m.get_name()] = oof[prediction_cols]  # oof["prediction"]
             if self.target is None:
-
                 self.target_columns = [c for c in oof.columns if "target" in c]
                 self.target = oof[
                     self.target_columns

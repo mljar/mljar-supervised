@@ -37,7 +37,6 @@ def check_bool(value, original_var_name):
 
 
 def check_greater_than_zero_integer_or_float(value, original_var_name):
-
     if not (isinstance(value, int) or isinstance(value, float)):
         raise ValueError(
             f"'{original_var_name}' must be an integer or float, got '{type(value)}'."

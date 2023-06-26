@@ -217,7 +217,6 @@ class XgbAlgorithm(BaseAlgorithm):
         # print(self.model.best_ntree_limit, num_trees)
 
         if log_to_file is not None:
-
             metric_name = list(evals_result["train"].keys())[-1]
 
             result = pd.DataFrame(

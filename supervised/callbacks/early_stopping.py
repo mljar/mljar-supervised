@@ -112,7 +112,6 @@ class EarlyStopping(Callback):
         if self.metric.improvement(
             previous=self.best_loss[self.learner.uid], current=validation_loss
         ):
-
             y_validation_true = predictions.get("y_validation_true")
             self.no_improvement_cnt = 0
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")

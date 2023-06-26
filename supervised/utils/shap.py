@@ -23,7 +23,6 @@ import warnings
 class PlotSHAP:
     @staticmethod
     def is_available(algorithm, X_train, y_train, ml_task):
-
         # https://github.com/mljar/mljar-supervised/issues/112 disable for NN
         # https://github.com/mljar/mljar-supervised/issues/114 disable for CatBoost
         if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]:
@@ -54,7 +53,6 @@ class PlotSHAP:
 
     @staticmethod
     def get_explainer(algorithm, X_train):
-
         explainer = None
         if algorithm.algorithm_short_name in [
             "Xgboost",
@@ -341,11 +339,9 @@ class PlotSHAP:
         learner_name,
         class_names,
     ):
-
         for decision_type in ["worst", "best"]:
             m = 1 if decision_type == "worst" else -1
             for i in range(4):
-
                 fig = plt.gcf()
                 shap.multioutput_decision_plot(
                     list(expected_value),

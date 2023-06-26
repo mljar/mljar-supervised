@@ -43,14 +43,12 @@ class FairnessMetrics:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
-
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
 
         fairness_metrics = {}
 
         for col in sensitive_features.columns:
-
             col_name = col[10:]  # skip 'senstive_'
 
             accuracies = []
@@ -288,7 +286,6 @@ class FairnessMetrics:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
-
         metric_name = fairness_metric.split("@")[1].upper()
 
         if "ratio" in fairness_metric.lower():
@@ -315,7 +312,6 @@ class FairnessMetrics:
             overall[k] = v(target, predictions)
 
         for col in sensitive_features.columns:
-
             col_name = col[10:]  # skip 'senstive_'
 
             values = sensitive_features[col].unique()
@@ -431,7 +427,6 @@ class FairnessMetrics:
         fairness_metrics = {}
 
         for col in sensitive_features.columns:
-
             col_name = col[10:]  # skip 'senstive_'
 
             for target_value in target_values:

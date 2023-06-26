@@ -230,7 +230,6 @@ class Preprocessing(object):
 
         new_datetime_columns = []
         for col in cols_to_process:
-
             t = DateTimeTransformer()
             t.fit(X_train, col)
             X_train = t.transform(X_train)
@@ -596,7 +595,6 @@ class Preprocessing(object):
         return preprocessing_params
 
     def from_json(self, data_json, results_path):
-
         self._params = data_json.get("params", self._params)
 
         if "remove_columns" in data_json:

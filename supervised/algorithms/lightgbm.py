@@ -84,7 +84,6 @@ def lightgbm_eval_metric(ml_task, automl_eval_metric):
 
 
 class LightgbmAlgorithm(BaseAlgorithm):
-
     algorithm_name = "LightGBM"
     algorithm_short_name = "LightGBM"
 
@@ -213,7 +212,6 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 init_model=self.model,
             )
         else:
-
             valid_names = None
             esr = None
             if X_validation is not None and y_validation is not None:

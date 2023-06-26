@@ -21,7 +21,6 @@ logger.setLevel(LOG_LEVEL)
 
 
 class LinearAlgorithm(SklearnAlgorithm):
-
     algorithm_name = "Logistic Regression"
     algorithm_short_name = "Linear"
 
@@ -106,7 +105,6 @@ class LinearAlgorithm(SklearnAlgorithm):
 
 
 class LinearRegressorAlgorithm(SklearnAlgorithm):
-
     algorithm_name = "Linear Regression"
     algorithm_short_name = "Linear"
 

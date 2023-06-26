@@ -63,7 +63,6 @@ class NNFit(SklearnAlgorithm):
 
 
 class MLPAlgorithm(NNFit):
-
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 
@@ -95,7 +94,6 @@ class MLPAlgorithm(NNFit):
 
 
 class MLPRegressorAlgorithm(NNFit):
-
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 

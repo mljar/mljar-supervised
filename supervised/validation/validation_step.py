@@ -11,7 +11,6 @@ from supervised.exceptions import AutoMLException
 
 class ValidationStep:
     def __init__(self, params):
-
         # kfold is default validation technique
         self.validation_type = params.get("validation_type", "kfold")
 

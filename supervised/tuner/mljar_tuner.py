@@ -152,7 +152,6 @@ class MljarTuner:
         return True
 
     def steps(self):
-
         all_steps = []
         if self._adjust_validation:
             all_steps += ["adjust_validation"]
@@ -256,7 +255,6 @@ class MljarTuner:
             elif step == "stack":
                 return self.get_params_stack_models(stacked_models)
             elif step == "ensemble_stacked":
-
                 # do we have stacked models?
                 any_stacked = False
                 for m in models:
@@ -285,7 +283,6 @@ class MljarTuner:
             return []
 
     def fairness_optimization_binary_classification(self, current_models, results_path):
-
         df_models, algorithms = self.df_models_algorithms(current_models)
 
         generated_params = []
@@ -302,7 +299,6 @@ class MljarTuner:
         sensitive_columns = list(sensitive_features.columns)
 
         for i in range(df_models.shape[0]):
-
             model_type = df_models["model_type"].iloc[i]
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
@@ -387,7 +383,6 @@ class MljarTuner:
         return generated_params
 
     def fairness_optimization_regression(self, current_models, results_path):
-
         df_models, algorithms = self.df_models_algorithms(current_models)
 
         generated_params = []
@@ -404,7 +399,6 @@ class MljarTuner:
         sensitive_columns = list(sensitive_features.columns)
 
         for i in range(df_models.shape[0]):
-
             model_type = df_models["model_type"].iloc[i]
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
@@ -488,7 +482,6 @@ class MljarTuner:
     def fairness_optimization_multiclass_classification(
         self, current_models, results_path
     ):
-
         df_models, algorithms = self.df_models_algorithms(
             current_models
         )  # , sort_by_worst_fairness=True)
@@ -507,7 +500,6 @@ class MljarTuner:
         sensitive_columns = list(sensitive_features.columns)
 
         for i in range(df_models.shape[0]):
-
             model_type = df_models["model_type"].iloc[i]
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
@@ -590,7 +582,6 @@ class MljarTuner:
         return generated_params
 
     def fairness_optimization(self, current_models, results_path):
-
         if self._ml_task == BINARY_CLASSIFICATION:
             return self.fairness_optimization_binary_classification(
                 current_models, results_path
@@ -735,7 +726,6 @@ class MljarTuner:
         return generated_params
 
     def skip_if_rows_cols_limit(self, model_type):
-
         max_rows_limit = AlgorithmsRegistry.get_max_rows_limit(
             self._ml_task, model_type
         )
@@ -753,7 +743,6 @@ class MljarTuner:
         return False
 
     def default_params(self, models_cnt):
-
         generated_params = []
         for model_type in [
             "LightGBM",
@@ -819,7 +808,6 @@ class MljarTuner:
         return None, None
 
     def get_not_so_random_params(self, models_cnt, current_models):
-
         model_types = [
             "Xgboost",
             "LightGBM",
@@ -840,7 +828,6 @@ class MljarTuner:
                 continue
             # minus 1 because already have 1 default
             for i in range(self._start_random_models - 1):
-
                 logger.info(
                     f"Generate not-so-random parameters for {model_type} (#{models_cnt+1})"
                 )
@@ -922,7 +909,6 @@ class MljarTuner:
         counts = {model_type: 0 for model_type in algorithms}
 
         for i in range(df_models.shape[0]):
-
             model_type = df_models["model_type"].iloc[i]
             counts[model_type] += 1
             if counts[model_type] > self._top_models_to_improve:
@@ -933,7 +919,6 @@ class MljarTuner:
             for p in HillClimbing.get(
                 m.params.get("learner"), self._ml_task, len(current_models) + self._seed
             ):
-
                 model_indices = [
                     int(m.get_name().split("_")[0]) for m in current_models
                 ]
@@ -989,7 +974,6 @@ class MljarTuner:
         )
 
     def get_categorical_strategy(self, current_models, strategy, total_time_limit):
-
         model_selection_time_limit = (
             None if total_time_limit is None else 0.1 * total_time_limit
         )
@@ -1114,7 +1098,6 @@ class MljarTuner:
         df_models.sort_values(by="score", ascending=True, inplace=True)
 
         if self._fairness_metric is not None:
-
             sort_by_worst_fairness = True
 
             ascending = True
@@ -1224,7 +1207,6 @@ class MljarTuner:
 
         time_needed = 0
         for m_type in algorithms:
-
             if m_type not in [
                 "Xgboost",
                 "LightGBM",
@@ -1249,7 +1231,6 @@ class MljarTuner:
         return time_needed
 
     def get_params_to_insert_random_feature(self, current_models, total_time_limit):
-
         time_needed = self.time_features_selection(current_models, total_time_limit)
 
         if total_time_limit is not None and time_needed > 0.1 * total_time_limit:
@@ -1296,7 +1277,6 @@ class MljarTuner:
     def get_features_selection_params(
         self, current_models, results_path, total_time_limit
     ):
-
         fname = os.path.join(results_path, "drop_features.json")
         if not os.path.exists(fname):
             return None
@@ -1359,7 +1339,6 @@ class MljarTuner:
 
         model_params = None
         if params_type == "default":
-
             model_params = model_info["default_params"]
             model_params["seed"] = seed
 
@@ -1440,7 +1419,6 @@ class MljarTuner:
             self._unique_params_keys += [key]
 
     def boost_params(self, current_models, results_path, total_time_limit):
-
         model_selection_time_limit = (
             None if total_time_limit is None else 0.1 * total_time_limit
         )

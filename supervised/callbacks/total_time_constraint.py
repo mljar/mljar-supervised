@@ -63,7 +63,6 @@ class TotalTimeConstraint(Callback):
                 )
 
     def on_iteration_end(self, logs, predictions):
-
         total_elapsed_time = np.round(time.time() - self.total_time_start, 2)
 
         if self.total_time_limit is not None:

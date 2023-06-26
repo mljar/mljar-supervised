@@ -17,7 +17,6 @@ MY_COLORS = list(mcolors.TABLEAU_COLORS.values())
 
 
 class LearningCurves:
-
     output_file_name = "learning_curves.png"
 
     @staticmethod

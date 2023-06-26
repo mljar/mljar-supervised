@@ -73,7 +73,6 @@ class KFoldValidator(BaseValidator):
         folds_path = os.path.join(self._results_path, "folds")
 
         if not os.path.exists(folds_path):
-
             os.mkdir(folds_path)
             X = load_data(self._X_path)
             y = load_data(self._y_path)
@@ -109,7 +108,6 @@ class KFoldValidator(BaseValidator):
             log.debug("Folds split already done, reuse it")
 
     def get_split(self, k, repeat=0):
-
         repeat_str = f"_repeat_{repeat}" if self.repeats > 1 else ""
 
         train_index_file = os.path.join(

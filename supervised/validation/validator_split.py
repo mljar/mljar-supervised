@@ -39,7 +39,6 @@ class SplitValidator(BaseValidator):
             raise AutoMLException("No data path set in SplitValidator params")
 
     def get_split(self, k=0, repeat=0):
-
         X = load_data(self._X_path)
         y = load_data(self._y_path)
         y = y["target"]

@@ -10,7 +10,6 @@ from supervised.preprocessing.loo_encoder import LooEncoder
 
 
 class PreprocessingCategorical(object):
-
     CONVERT_ONE_HOT = "categorical_to_onehot"
     CONVERT_INTEGER = "categorical_to_int"
     CONVERT_LOO = "categorical_to_loo"
@@ -36,7 +35,6 @@ class PreprocessingCategorical(object):
 
     def _fit_categorical_convert(self, X):
         for column in self._columns:
-
             if PreprocessingUtils.get_type(X[column]) != PreprocessingUtils.CATEGORICAL:
                 # no need to convert, already a number
                 continue

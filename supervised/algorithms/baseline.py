@@ -16,7 +16,6 @@ logger.setLevel(LOG_LEVEL)
 
 
 class BaselineClassifierAlgorithm(SklearnAlgorithm):
-
     algorithm_name = "Baseline Classifier"
     algorithm_short_name = "Baseline"
 
@@ -42,7 +41,6 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm):
 
 
 class BaselineRegressorAlgorithm(SklearnAlgorithm):
-
     algorithm_name = "Baseline Regressor"
     algorithm_short_name = "Baseline"
 

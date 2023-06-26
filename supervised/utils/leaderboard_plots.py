@@ -31,7 +31,6 @@ markers = {
 
 
 class LeaderboardPlots:
-
     performance_fname = "ldb_performance.png"
     performance_boxplot_fname = "ldb_performance_boxplot.png"
 

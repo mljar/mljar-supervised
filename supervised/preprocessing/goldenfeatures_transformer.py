@@ -263,7 +263,6 @@ class GoldenFeaturesTransformer(object):
             fout.write(json.dumps(self.to_json(), indent=4))
 
     def _subsample(self, X, y):
-
         MAX_SIZE = 10000
         TRAIN_SIZE = 2500
 

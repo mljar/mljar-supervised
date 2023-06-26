@@ -22,7 +22,6 @@ logger.setLevel(LOG_LEVEL)
 
 
 class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
-
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"
 
@@ -52,7 +51,6 @@ class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
 
 
 class RandomForestRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
-
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"
 

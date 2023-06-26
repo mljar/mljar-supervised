@@ -249,7 +249,6 @@ class ModelFramework:
                 )
 
                 for i in range(learner.max_iters):
-
                     self.callbacks.on_iteration_start()
 
                     learner.fit(
@@ -426,7 +425,8 @@ class ModelFramework:
 
     def is_valid(self):
         """is_valid is used in Ensemble to check if it has more than 1 model in it.
-        If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model"""
+        If Ensemble has only 1 model in it, then Ensemble shouldn't be used as best model
+        """
         return True
 
     def is_fast_enough(self, max_single_prediction_time):
@@ -464,7 +464,6 @@ class ModelFramework:
         return y_predicted_final
 
     def get_additional_metrics(self):
-
         if self._additional_metrics is None:
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
@@ -698,8 +697,13 @@ class ModelFramework:
         joblib_version_computer = joblib.__version__
         joblib_version_framework = json_desc.get("joblib_version")
 
-        if joblib_version_framework is not None and joblib_version_computer != joblib_version_framework:
-            raise AutoMLException(f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}. Change to Framework version!")
+        if (
+            joblib_version_framework is not None
+            and joblib_version_computer != joblib_version_framework
+        ):
+            raise AutoMLException(
+                f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}. Change to Framework version!"
+            )
 
         mf = ModelFramework(json_desc["params"])
         mf.uid = json_desc.get("uid", mf.uid)

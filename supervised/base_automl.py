@@ -346,7 +346,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return 1
 
     def train_model(self, params):
-
         # do we have enough time to train?
         # if not, skip
         if not self._time_ctrl.enough_time(
@@ -413,7 +412,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
-
             ensemble_subpath = "Ensemble_Stacked" if is_stacked else "Ensemble"
             ensemble_path = os.path.join(self._results_path, ensemble_subpath)
             self.create_dir(ensemble_path)
@@ -474,7 +472,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return X_stacked
 
     def _perform_model_stacking(self):
-
         if self._stacked_models is not None:
             return
 
@@ -677,7 +674,6 @@ class BaseAutoML(BaseEstimator, ABC):
                         ] = new_sensitive_features.loc[j]
 
     def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
-
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
@@ -818,7 +814,6 @@ class BaseAutoML(BaseEstimator, ABC):
             sensitive_features.reset_index(drop=True, inplace=True)
 
             for col in sensitive_features.columns:
-
                 if not sensitive_features[col].dtype.name in ["category", "object"]:
                     self.verbose_print("Sensitive features should be categorical")
                     self.verbose_print(
@@ -834,7 +829,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):
-
         if "Neural Network" in self._algorithms and self._n_jobs != -1:
             self._algorithms.remove("Neural Network")
             self.verbose_print(
@@ -849,7 +843,6 @@ class BaseAutoML(BaseEstimator, ABC):
         # remove algorithms in the case of multiclass
         # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-
             if self.n_classes >= 10 and self.n_features_in_ * self.n_classes > 500:
                 if self.algorithms == "auto":
                     for a in ["CatBoost"]:
@@ -857,7 +850,6 @@ class BaseAutoML(BaseEstimator, ABC):
                             self._algorithms.remove(a)
 
             if self.n_features_in_ * self.n_classes > 1000:
-
                 if self.algorithms == "auto":
                     for a in ["Xgboost", "CatBoost"]:
                         if a in self._algorithms:
@@ -950,7 +942,6 @@ class BaseAutoML(BaseEstimator, ABC):
         self._apply_constraints_stack_models()
 
     def _apply_constraints_stack_models(self):
-
         if self._validation_strategy["validation_type"] == "split":
             if self._stack_models:
                 self.verbose_print("Disable stacking for split validation")
@@ -1187,7 +1178,6 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
 
                 for params in generated_params:
-
                     if params.get("status", "") in ["trained", "skipped", "error"]:
                         self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
@@ -1255,9 +1245,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     self.verbose_print(
                         "2. Please examine the most unfairly treated samples."
                     )
-                    self.verbose_print(
-                        "3. Please change fairness threshold."
-                    )
+                    self.verbose_print("3. Please change fairness threshold.")
 
         except Exception as e:
             raise e
@@ -1284,7 +1272,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
         if self._models:
             if self._fairness_metric is not None:
-
                 models = [
                     m
                     for m in self._models
@@ -1458,7 +1445,6 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
     def _base_predict(self, X, model=None):
-
         if model is None:
             if self._best_model is None:
                 self.load(self.results_path)
@@ -1528,7 +1514,6 @@ class BaseAutoML(BaseEstimator, ABC):
             return predictions
 
     def _predict(self, X):
-
         predictions = self._base_predict(X)
         # Return predictions
         # If classification task the result is in column 'label'
@@ -2285,7 +2270,6 @@ class BaseAutoML(BaseEstimator, ABC):
         }
 
     def from_json(self, json_data):
-
         if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
@@ -2445,7 +2429,6 @@ margin-right: auto;display: block;"/>\n\n"""
             return IFrame(main_readme_html, width=width, height=height)
 
     def _report(self, width=900, height=1200):
-
         self._results_path = self._get_results_path()
         main_readme_html = os.path.join(self._results_path, "README.html")
 
@@ -2503,7 +2486,6 @@ margin-right: auto;display: block;"/>\n\n"""
         return self._show_report(main_readme_html, width, height)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
-
         metric = self._best_model.get_metric()
 
         X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(

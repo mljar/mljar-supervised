@@ -6,7 +6,6 @@ from supervised.algorithms.registry import REGRESSION
 
 
 def subsample(X, y, ml_task, train_size):
-
     shuffle = True
     stratify = None
 

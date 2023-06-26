@@ -12,7 +12,6 @@ class FairnessPlots:
         max_selection_rate,
         fairness_threshold,
     ):
-
         figures = []
         # selection rate figure
         fair_selection_rate = max_selection_rate * fairness_threshold

@@ -56,7 +56,6 @@ class KNNFit(SklearnAlgorithm):
 
 
 class KNeighborsAlgorithm(KNNFit):
-
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 
@@ -74,7 +73,6 @@ class KNeighborsAlgorithm(KNNFit):
 
 
 class KNeighborsRegressorAlgorithm(KNNFit):
-
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 

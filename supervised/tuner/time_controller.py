@@ -58,7 +58,6 @@ class TimeController:
         return np.sum([s["train_time"] for s in self._spend])
 
     def time_should_use(self, fit_level):
-
         if self._total_time_limit is None:
             return 7 * 24 * 3600  # 7 days
 
@@ -90,7 +89,6 @@ class TimeController:
             ]
             or "hill_climbing" in fit_level
         ):
-
             ratio = 0
             for k, v in ratios.items():
                 if k in self._steps:
@@ -211,7 +209,6 @@ class TimeController:
         return self.enough_time_for_model(model_type)
 
     def learner_time_limit(self, model_type, fit_level, k_folds):
-
         if self._total_time_limit is None:
             return 7 * 24 * 3600
 
@@ -256,7 +253,6 @@ class TimeController:
             return tt
 
     def log_time(self, model_name, model_type, fit_level, train_time):
-
         self._spend += [
             {
                 "model_name": model_name,

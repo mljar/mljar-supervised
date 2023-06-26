@@ -18,7 +18,6 @@ class FairnessOptimization:
         min_selection_rate=None,
         max_selection_rate=None,
     ):
-
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
 
@@ -105,7 +104,6 @@ class FairnessOptimization:
 
         previous_weights = {}
         if previous_fairness_optimization is not None:
-
             weights = previous_fairness_optimization.get("weights")
             for key, indices in sensitive_indices.items():
                 # print("Previous")
@@ -247,7 +245,6 @@ class FairnessOptimization:
 
         previous_weights = {}
         if previous_fairness_optimization is not None:
-
             weights = previous_fairness_optimization.get("weights")
             for key, indices in sensitive_indices.items():
                 direction = 0.0
@@ -302,7 +299,6 @@ class FairnessOptimization:
         underprivileged_groups=[],
         previous_fairness_optimization=None,
     ):
-
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
         target_values = list(np.unique(target))

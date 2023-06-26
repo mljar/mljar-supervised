@@ -6,7 +6,6 @@ class FairnessReport:
 
     @staticmethod
     def save_classification(fairness_metrics, fout, model_path, is_multi=False):
-
         for k, v in fairness_metrics.items():
             if k == "fairness_optimization":
                 continue
@@ -74,7 +73,6 @@ class FairnessReport:
 
     @staticmethod
     def regression(fairness_metrics, fout, model_path):
-
         for k, v in fairness_metrics.items():
             if k == "fairness_optimization":
                 continue

@@ -7,7 +7,6 @@ from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 class PreprocessingMissingValues(object):
-
     FILL_NA_MIN = "na_fill_min_1"
     FILL_NA_MEAN = "na_fill_mean"
     FILL_NA_MEDIAN = "na_fill_median"

@@ -42,12 +42,10 @@ class CustomValidator(BaseValidator):
         folds_path = os.path.join(self._results_path, "folds")
 
         if not os.path.exists(folds_path):
-
             os.mkdir(folds_path)
 
             print("Custom validation strategy")
             for fold_cnt, (train_index, validation_index) in enumerate(self.cv):
-
                 print(f"Split {fold_cnt}.")
                 print(f"Train {train_index.shape[0]} samples.")
                 print(f"Validation {validation_index.shape[0]} samples.")

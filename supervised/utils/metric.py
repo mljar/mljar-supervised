@@ -47,7 +47,6 @@ def negative_r2(y_true, y_predicted, sample_weight=None):
 
 
 def negative_f1(y_true, y_predicted, sample_weight=None):
-
     if isinstance(y_true, pd.DataFrame):
         y_true = np.array(y_true)
     if isinstance(y_predicted, pd.DataFrame):
@@ -70,7 +69,6 @@ def negative_f1(y_true, y_predicted, sample_weight=None):
 
 
 def negative_accuracy(y_true, y_predicted, sample_weight=None):
-
     if isinstance(y_true, pd.DataFrame):
         y_true = np.array(y_true)
     if isinstance(y_predicted, pd.DataFrame):
@@ -90,7 +88,6 @@ def negative_accuracy(y_true, y_predicted, sample_weight=None):
 
 
 def negative_average_precision(y_true, y_predicted, sample_weight=None):
-
     if isinstance(y_true, pd.DataFrame):
         y_true = np.array(y_true)
     if isinstance(y_predicted, pd.DataFrame):
