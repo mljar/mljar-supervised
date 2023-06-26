@@ -1519,9 +1519,9 @@ class BaseAutoML(BaseEstimator, ABC):
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
                 try:
-                    predictions["label"] = predictions["label"].astype(np.int32)
+                    predictions["label"] = predictions["label"].astype(int)
                 except Exception as e:
-                    predictions["label"] = predictions["label"].astype(np.float)
+                    predictions["label"] = predictions["label"].astype(float)
             return predictions
         # Regression
         else:

@@ -50,7 +50,7 @@ class LabelBinarizer(object):
 
     def to_json(self):
         self._uniq_values = [
-            i if type(i) != np.bool_ else bool(i) for i in list(self._uniq_values)
+            i if type(i) != bool else bool(i) for i in list(self._uniq_values)
         ]
         data_json = {
             "new_columns": list(self._new_columns),

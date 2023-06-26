@@ -630,8 +630,7 @@ class ModelFramework:
                 "is_stacked": self._is_stacked,
                 "joblib_version": joblib.__version__,
             }
-            if type(desc["final_loss"]) == np.float32:
-                desc["final_loss"] = str(desc["final_loss"])
+            desc["final_loss"] = str(desc["final_loss"])
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:

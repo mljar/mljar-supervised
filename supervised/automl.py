@@ -1,4 +1,8 @@
 import logging
+
+import warnings
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+
 from supervised.base_automl import BaseAutoML
 from supervised.utils.config import LOG_LEVEL
 

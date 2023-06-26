@@ -17,3 +17,4 @@ optuna>=2.7.0
 scikit-plot==0.3.7
 markdown
 typing-extensions
+ipython
