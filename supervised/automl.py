@@ -413,7 +413,7 @@ class AutoML(BaseAutoML):
             sample_weight (numpy.ndarray or pandas.Series): Training sample weights
 
             cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
-            It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
+                It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
 
             sensitive_features (numpy.ndarray or pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
 
