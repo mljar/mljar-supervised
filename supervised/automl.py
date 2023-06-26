@@ -271,7 +271,7 @@ class AutoML(BaseAutoML):
 
                 By default, list of privileged groups are automatically detected based on fairness metrics.
                 For example, in binary classification task, a privileged group is the one with the highest selection rate.
-            
+                
                 Example value: `[{"sex": "Male"}]`
 
             underprivileged_groups (list): The list of underprivileged groups.
