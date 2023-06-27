@@ -35,6 +35,7 @@
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
+ - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
@@ -116,6 +117,56 @@ In the [docs](https://supervised.mljar.com/features/modes/) you can find details
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_modes.png" width="100%" />
 </p>
+
+## Fairness Aware Training
+
+Starting from version `1.0.0` AutoML can optimize Machine Learning pipline with sensitive features. There are following fairness releated arguments in the AutoML constructor:
+ - `fairness_metric` - metric which will be used to decide if the model is fair,
+ - `fairness_threshold` - threshold used in decision about model fairness,
+ - `privileged_groups` - privileged groups used in fairness metrics computation,
+ - `underprivileged_groups` - underprivileged groups used in fairness metrics computation.
+
+The `fit()` method accepts `sensitive_features`. When sensitive features are passed to AutoML, the best model will be selected among fair models only. In the AutoML reports additional information about fairness metrics will be added. The MLJAR AutoML supports two methods for bias mitigation:
+ - Sample Weighting
+ - Smart Grid Search - similar to Samepl Weighting where different weights sets are checked to optimize fairness metric.
+
+The fair ML bulding can be used with all algorithms including `Ensemble` and `Stacked Ensemble`. We support three Machine Learning tasks:
+ - binary classification,
+ - mutliclass classification,
+ - regression.
+
+Example code:
+
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_openml
+from supervised.automl import AutoML
+
+data = fetch_openml(data_id=1590, as_frame=True)
+X = data.data
+y = (data.target == ">50K") * 1
+sensitive_features = X[["sex"]]
+
+X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
+    X, y, sensitive_features, stratify=y, test_size=0.75, random_state=42
+)
+
+automl = AutoML(
+    algorithms=[
+        "Xgboost"
+    ],
+    train_ensemble=False,
+    fairness_metric="demographic_parity_ratio",  
+    fairness_threshold=0.8,
+    privileged_groups = [{"sex": "Male"}],
+    underprivileged_groups = [{"sex": "Female"}],
+)
+
+automl.fit(X_train, y_train, sensitive_features=S_train)
+```
+
+You can read more about fairness aware AutoML training in our article https://mljar.com/blog/fairness-machine-learning/
 
 ### Explain 
 
