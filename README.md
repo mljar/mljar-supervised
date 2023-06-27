@@ -168,6 +168,8 @@ automl.fit(X_train, y_train, sensitive_features=S_train)
 
 You can read more about fairness aware AutoML training in our article https://mljar.com/blog/fairness-machine-learning/
 
+![Fairness aware AutoML](https://raw.githubusercontent.com/mljar/visual-identity/main/automl/fairness-automl.gif)
+
 ### Explain 
 
 ```py
