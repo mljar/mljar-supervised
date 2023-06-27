@@ -211,8 +211,8 @@ Starting from version `1.0.0` AutoML can optimize Machine Learning pipline with 
  - `underprivileged_groups` - underprivileged groups used in fairness metrics computation.
 
 The `fit()` method accepts `sensitive_features`. When sensitive features are passed to AutoML, the best model will be selected among fair models only. In the AutoML reports additional information about fairness metrics will be added. The MLJAR AutoML supports two methods for bias mitigation:
- - Sample Weighting
- - Smart Grid Search - similar to Samepl Weighting where different weights sets are checked to optimize fairness metric.
+ - Sample Weighting - assigns weights to samples to treat samples equally,
+ - Smart Grid Search - similar to Sample Weighting where different weights are checked to optimize fairness metric.
 
 The fair ML bulding can be used with all algorithms including `Ensemble` and `Stacked Ensemble`. We support three Machine Learning tasks:
  - binary classification,
