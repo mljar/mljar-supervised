@@ -118,6 +118,90 @@ In the [docs](https://supervised.mljar.com/features/modes/) you can find details
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_modes.png" width="100%" />
 </p>
 
+### Explain 
+
+```py
+automl = AutoML(mode="Explain")
+```
+
+It is aimed to be used when the user wants to explain and understand the data.
+ - It is using 75%/25% train/test split. 
+ - It is using: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `Xgboost`, `Neural Network` algorithms and ensemble. 
+ - It has full explanations: learning curves, importance plots, and SHAP plots.
+
+### Perform
+
+```py
+automl = AutoML(mode="Perform")
+```
+
+It should be used when the user wants to train a model that will be used in real-life use cases.
+ - It is using 5-fold CV.
+ - It is using: `Linear`, `Random Forest`, `LightGBM`, `Xgboost`, `CatBoost` and `Neural Network`. It uses ensembling. 
+ - It has learning curves and importance plots in reports.
+
+### Compete
+
+```py
+automl = AutoML(mode="Compete")
+```
+
+It should be used for machine learning competitions.
+ - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: train/test split (80/20), 5-fold CV or 10-fold CV. 
+ - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network` and `Nearest Neighbors`. It uses ensemble and **stacking**. 
+ - It has only learning curves in the reports.
+
+### Optuna
+
+```py
+automl = AutoML(mode="Optuna", optuna_time_budget=3600)
+```
+
+It should be used when the performance is the most important and time is not limited.
+- It is using 10-fold CV
+- It is using: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, and `CatBoost`. Those algorithms are tuned by `Optuna` framework for `optuna_time_budget` seconds, each. Algorithms are tuned with original data, without advanced feature engineering.
+- It is using advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
+- It produces learning curves in the reports.
+
+
+
+## How to save and load AutoML?
+
+All models in the AutoML are saved and loaded automatically. No need to call `save()` or `load()`.
+
+### Example:
+
+#### Train AutoML
+
+```python
+automl = AutoML(results_path="AutoML_classifier")
+automl.fit(X, y)
+```
+
+You will have all models saved in the `AutoML_classifier` directory. Each model will have a separate directory with the `README.md` file with all details from the training.
+
+#### Compute predictions
+```python
+automl = AutoML(results_path="AutoML_classifier")
+automl.predict(X)
+```
+
+The  AutoML automatically loads models from the `results_path` directory. If you will call `fit()` on already trained AutoML then you will get a warning message that AutoML is already fitted.
+
+
+### Why do you automatically save all models?
+
+All models are automatically saved to be able to restore the training after interruption. For example, you are training AutoML for 48 hours, and after 47 hours there is some unexpected interruption. In MLJAR AutoML you just call the same training code after the interruption and AutoML reloads already trained models and finish the training.
+
+## Supported evaluation metrics (`eval_metric` argument in `AutoML()`)
+
+- for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`- default is `logloss`
+- for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
+- for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
+
+If you don't find `eval_metric` that you need, please add a new issue. We will add it.
+
+
 ## Fairness Aware Training
 
 Starting from version `1.0.0` AutoML can optimize Machine Learning pipline with sensitive features. There are following fairness releated arguments in the AutoML constructor:
@@ -170,86 +254,7 @@ You can read more about fairness aware AutoML training in our article https://ml
 
 ![Fairness aware AutoML](https://raw.githubusercontent.com/mljar/visual-identity/main/automl/fairness-automl.gif)
 
-### Explain 
 
-```py
-automl = AutoML(mode="Explain")
-```
-
-It is aimed to be used when the user wants to explain and understand the data.
- - It is using 75%/25% train/test split. 
- - It is using: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `Xgboost`, `Neural Network` algorithms and ensemble. 
- - It has full explanations: learning curves, importance plots, and SHAP plots.
-
-### Perform
-
-```py
-automl = AutoML(mode="Perform")
-```
-
-It should be used when the user wants to train a model that will be used in real-life use cases.
- - It is using 5-fold CV.
- - It is using: `Linear`, `Random Forest`, `LightGBM`, `Xgboost`, `CatBoost` and `Neural Network`. It uses ensembling. 
- - It has learning curves and importance plots in reports.
-
-### Compete
-
-```py
-automl = AutoML(mode="Compete")
-```
-
-It should be used for machine learning competitions.
- - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: train/test split (80/20), 5-fold CV or 10-fold CV. 
- - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network` and `Nearest Neighbors`. It uses ensemble and **stacking**. 
- - It has only learning curves in the reports.
-
-### Optuna
-
-```py
-automl = AutoML(mode="Optuna", optuna_time_budget=3600)
-```
-
-It should be used when the performance is the most important and time is not limited.
-- It is using 10-fold CV
-- It is using: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, and `CatBoost`. Those algorithms are tuned by `Optuna` framework for `optuna_time_budget` seconds, each. Algorithms are tuned with original data, without advanced feature engineering.
-- It is using advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
-- It produces learning curves in the reports.
-
-## How to save and load AutoML?
-
-All models in the AutoML are saved and loaded automatically. No need to call `save()` or `load()`.
-
-### Example:
-
-#### Train AutoML
-
-```python
-automl = AutoML(results_path="AutoML_classifier")
-automl.fit(X, y)
-```
-
-You will have all models saved in the `AutoML_classifier` directory. Each model will have a separate directory with the `README.md` file with all details from the training.
-
-#### Compute predictions
-```python
-automl = AutoML(results_path="AutoML_classifier")
-automl.predict(X)
-```
-
-The  AutoML automatically loads models from the `results_path` directory. If you will call `fit()` on already trained AutoML then you will get a warning message that AutoML is already fitted.
-
-
-### Why do you automatically save all models?
-
-All models are automatically saved to be able to restore the training after interruption. For example, you are training AutoML for 48 hours, and after 47 hours there is some unexpected interruption. In MLJAR AutoML you just call the same training code after the interruption and AutoML reloads already trained models and finish the training.
-
-## Supported evaluation metrics (`eval_metric` argument in `AutoML()`)
-
-- for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`- default is `logloss`
-- for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
-- for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
-
-If you don't find `eval_metric` that you need, please add a new issue. We will add it.
 
 # Examples
 
