@@ -156,7 +156,7 @@ class FairnessOptimization:
             "weights": weights,
             "total_dp_ratio": total_dp_ratio,
             "step": step,
-            "fairness_threshold": fairness_threshold,
+            "fairness_threshold": fairness_threshold
         }
 
     @staticmethod

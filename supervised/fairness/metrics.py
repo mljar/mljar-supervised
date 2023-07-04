@@ -42,7 +42,7 @@ class FairnessMetrics:
         privileged_groups=[],
         underprivileged_groups=[],
         previous_fairness_optimization=None,
-    ):
+    ):        
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
 

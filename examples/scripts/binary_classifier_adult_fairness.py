@@ -5,7 +5,8 @@ from supervised.automl import AutoML
 
 data = fetch_openml(data_id=1590, as_frame=True)
 X = data.data
-y = (data.target == ">50K") * 1
+# data.target #
+y = data.target # (data.target == ">50K") * 1
 sensitive_features = X[["sex"]]
 
 X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(

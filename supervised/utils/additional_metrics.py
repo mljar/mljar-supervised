@@ -221,6 +221,7 @@ class AdditionalMetrics:
         )
 
         predicted_labels = pd.Series((predictions.ravel() > threshold).astype(int))
+        predicted_labels_01 = predicted_labels.copy()
         predicted_probas = pd.DataFrame(
             {"proba_0": 1 - predictions.ravel(), "proba_1": predictions.ravel()}
         )
@@ -245,7 +246,7 @@ class AdditionalMetrics:
         if sensitive_features is not None:
             metrics["fairness_metrics"] = FairnessMetrics.binary_classification(
                 target,
-                predicted_labels,
+                predicted_labels_01,
                 sensitive_features,
                 fairness_metric,
                 fairness_threshold,

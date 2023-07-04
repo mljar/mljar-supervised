@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import OneHotEncoder
+from supervised.preprocessing.label_encoder import LabelEncoder
 
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.algorithms.registry import AlgorithmsRegistry
@@ -295,6 +296,17 @@ class MljarTuner:
         # get target
         y_path = os.path.join(results_path, "y.data")
         target = np.array(load_data(y_path)["target"])
+        
+        # we operate here on full target data (for all samples)
+        # we can't load preprocessed targets from other place
+        # we need to perform preprocessing here 
+        if df_models.shape[0] > 0:
+            target_preprocessing = df_models["model"].iloc[0].params.get("preprocessing", {}).get("target_preprocessing", {})
+            if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
+                cat_y = LabelEncoder(try_to_fit_numeric=True)
+                cat_y.fit(target)
+                target = cat_y.transform(target)
+        
 
         sensitive_columns = list(sensitive_features.columns)
 
