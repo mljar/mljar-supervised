@@ -11,17 +11,15 @@ from supervised import AutoML
 
 
 class FairnessInRegressionTest(unittest.TestCase):
-    
     automl_dir = "automl_fairness_testing"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_init(self):
-
         X = np.random.uniform(size=(30, 2))
         y = np.random.randint(0, 100, size=(30,))
-        S = pd.DataFrame({"sensitive": ["A", "B"]*15})
+        S = pd.DataFrame({"sensitive": ["A", "B"] * 15})
 
         automl = AutoML(
             results_path=self.automl_dir,
@@ -46,4 +44,3 @@ class FairnessInRegressionTest(unittest.TestCase):
         self.assertTrue(len(automl._models[0].get_fairness_optimization()) > 1)
         self.assertTrue(automl._models[0].get_worst_fairness() is not None)
         self.assertTrue(automl._models[0].get_best_fairness() is not None)
-        
