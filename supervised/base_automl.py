@@ -52,14 +52,17 @@ from supervised.utils.data_validation import (
     check_integer,
 )
 from supervised.utils.utils import dump_data, load_data
-import matplotlib.font_manager as font_manager
 
-# Get a list of all font families available on the system
-font_families = font_manager.findSystemFonts()
 
-# Load the font file for the first font family in the list and get the name of the first font family
-REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
+try:
+    import matplotlib.font_manager as font_manager
+    # Get a list of all font families available on the system
+    font_families = font_manager.findSystemFonts()
 
+    # Load the font file for the first font family in the list and get the name of the first font family
+    REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
+except Exception:
+    REPORT_FONT = "Arial"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
