@@ -245,9 +245,10 @@ class PlotSHAP:
                     class_names,
                 )
         except Exception as e:
-            print(
-                f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
-            )
+            pass
+            #print(
+            #    f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
+            #)
 
     @staticmethod
     def decisions_regression(
