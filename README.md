@@ -35,6 +35,7 @@
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
+ - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
  - [Examples](https://github.com/mljar/mljar-supervised#examples)
  - [FAQ](https://github.com/mljar/mljar-supervised#faq)
  - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
@@ -64,17 +65,6 @@ It has four built-in modes of work:
  - `Optuna` mode that can be used to search for highly-tuned ML models, should be used when the performance is the most important, and computation time is not limited (it is available from version `0.10.0`)
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
-
-
-<p align="center">
-  <img src="https://github.com/mljar/visual-identity/raw/main/pictures/excel-addin-banner.jpg" width="80%" />
-</p>
-
-## Excel Add-in
-
-We are working on Excel Add-in for Machine Learning. You can train ML models without leaving WorkSheet. Model training is done locally on your machine (no cloud). You can train models with MLJAR AutoML or single models (manual hyperparameter selection). 
-
-Interested? Please [fill out the form](https://forms.gle/EjqYi3ttEkZkuKy46), and we will inform you when it will be available. 
 
 ## What's good in it? 
 
@@ -173,6 +163,8 @@ It should be used when the performance is the most important and time is not lim
 - It is using advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
 - It produces learning curves in the reports.
 
+
+
 ## How to save and load AutoML?
 
 All models in the AutoML are saved and loaded automatically. No need to call `save()` or `load()`.
@@ -208,6 +200,61 @@ All models are automatically saved to be able to restore the training after inte
 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
 
 If you don't find `eval_metric` that you need, please add a new issue. We will add it.
+
+
+## Fairness Aware Training
+
+Starting from version `1.0.0` AutoML can optimize Machine Learning pipline with sensitive features. There are following fairness releated arguments in the AutoML constructor:
+ - `fairness_metric` - metric which will be used to decide if the model is fair,
+ - `fairness_threshold` - threshold used in decision about model fairness,
+ - `privileged_groups` - privileged groups used in fairness metrics computation,
+ - `underprivileged_groups` - underprivileged groups used in fairness metrics computation.
+
+The `fit()` method accepts `sensitive_features`. When sensitive features are passed to AutoML, the best model will be selected among fair models only. In the AutoML reports additional information about fairness metrics will be added. The MLJAR AutoML supports two methods for bias mitigation:
+ - Sample Weighting - assigns weights to samples to treat samples equally,
+ - Smart Grid Search - similar to Sample Weighting where different weights are checked to optimize fairness metric.
+
+The fair ML bulding can be used with all algorithms including `Ensemble` and `Stacked Ensemble`. We support three Machine Learning tasks:
+ - binary classification,
+ - mutliclass classification,
+ - regression.
+
+Example code:
+
+
+```python
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_openml
+from supervised.automl import AutoML
+
+data = fetch_openml(data_id=1590, as_frame=True)
+X = data.data
+y = (data.target == ">50K") * 1
+sensitive_features = X[["sex"]]
+
+X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
+    X, y, sensitive_features, stratify=y, test_size=0.75, random_state=42
+)
+
+automl = AutoML(
+    algorithms=[
+        "Xgboost"
+    ],
+    train_ensemble=False,
+    fairness_metric="demographic_parity_ratio",  
+    fairness_threshold=0.8,
+    privileged_groups = [{"sex": "Male"}],
+    underprivileged_groups = [{"sex": "Female"}],
+)
+
+automl.fit(X_train, y_train, sensitive_features=S_train)
+```
+
+You can read more about fairness aware AutoML training in our article https://mljar.com/blog/fairness-machine-learning/
+
+![Fairness aware AutoML](https://raw.githubusercontent.com/mljar/visual-identity/main/automl/fairness-automl.gif)
+
+
 
 # Examples
 

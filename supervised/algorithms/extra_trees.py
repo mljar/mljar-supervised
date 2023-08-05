@@ -21,7 +21,6 @@ logger.setLevel(LOG_LEVEL)
 
 
 class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
-
     algorithm_name = "Extra Trees Classifier"
     algorithm_short_name = "Extra Trees"
 
@@ -51,7 +50,6 @@ class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
 
 
 class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
-
     algorithm_name = "Extra Trees Regressor"
     algorithm_short_name = "Extra Trees"
 

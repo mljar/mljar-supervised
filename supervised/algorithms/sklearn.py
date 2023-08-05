@@ -113,8 +113,8 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
 
         start_time = time.time()
         with warnings.catch_warnings():
-            warnings.simplefilter(action="ignore")    
-            
+            warnings.simplefilter(action="ignore")
+
             for i in range(max_steps):
                 self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
                 self.model.n_estimators += self.trees_in_step

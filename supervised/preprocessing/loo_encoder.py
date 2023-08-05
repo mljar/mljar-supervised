@@ -39,7 +39,7 @@ class LooEncoder(object):
             "cols": self.enc.cols,
             "dim": self.enc._dim,
             "mean": float(self.enc._mean),
-            "feature_names": self.enc.feature_names,
+            "feature_names": self.enc.get_feature_names_out(),
             "mapping": {},
         }
         for k, v in self.enc.mapping.items():

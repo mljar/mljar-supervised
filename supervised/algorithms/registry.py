@@ -5,7 +5,6 @@ REGRESSION = "regression"
 
 
 class AlgorithmsRegistry:
-
     registry = {
         BINARY_CLASSIFICATION: {},
         MULTICLASS_CLASSIFICATION: {},

@@ -26,7 +26,6 @@ class MetricLogger(Callback):
         self.current_learner_uid = learner.uid
 
     def on_iteration_end(self, logs, predictions):
-
         for metric in self.metrics:
             train_loss = 0
             if predictions.get("y_train_predicted") is not None:

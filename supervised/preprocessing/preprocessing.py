@@ -86,7 +86,7 @@ class Preprocessing(object):
             target_preprocessing = self._params.get("target_preprocessing")
             logger.debug("target_preprocessing params: {}".format(target_preprocessing))
 
-            X_train, y_train, sample_weight = ExcludeRowsMissingTarget.transform(
+            X_train, y_train, sample_weight, _ = ExcludeRowsMissingTarget.transform(
                 X_train, y_train, sample_weight
             )
 
@@ -230,7 +230,6 @@ class Preprocessing(object):
 
         new_datetime_columns = []
         for col in cols_to_process:
-
             t = DateTimeTransformer()
             t.fit(X_train, col)
             X_train = t.transform(X_train)
@@ -322,6 +321,7 @@ class Preprocessing(object):
                 X_validation,
                 y_validation,
                 sample_weight_validation,
+                _,
             ) = ExcludeRowsMissingTarget.transform(
                 X_validation, y_validation, sample_weight_validation
             )
@@ -595,7 +595,6 @@ class Preprocessing(object):
         return preprocessing_params
 
     def from_json(self, data_json, results_path):
-
         self._params = data_json.get("params", self._params)
 
         if "remove_columns" in data_json:

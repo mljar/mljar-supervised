@@ -65,6 +65,7 @@ class KFoldValidator(BaseValidator):
         self._X_path = self.params.get("X_path")
         self._y_path = self.params.get("y_path")
         self._sample_weight_path = self.params.get("sample_weight_path")
+        self._sensitive_features_path = self.params.get("sensitive_features_path")
 
         if self._X_path is None or self._y_path is None:
             raise AutoMLException("No data path set in KFoldValidator params")
@@ -72,7 +73,6 @@ class KFoldValidator(BaseValidator):
         folds_path = os.path.join(self._results_path, "folds")
 
         if not os.path.exists(folds_path):
-
             os.mkdir(folds_path)
             X = load_data(self._X_path)
             y = load_data(self._y_path)
@@ -108,7 +108,6 @@ class KFoldValidator(BaseValidator):
             log.debug("Folds split already done, reuse it")
 
     def get_split(self, k, repeat=0):
-
         repeat_str = f"_repeat_{repeat}" if self.repeats > 1 else ""
 
         train_index_file = os.path.join(
@@ -130,11 +129,21 @@ class KFoldValidator(BaseValidator):
             sample_weight = load_data(self._sample_weight_path)
             sample_weight = sample_weight["sample_weight"]
 
+        sensitive_features = None
+        if self._sensitive_features_path is not None:
+            sensitive_features = load_data(self._sensitive_features_path)
+
         train_data = {"X": X.loc[train_index], "y": y.loc[train_index]}
         validation_data = {"X": X.loc[validation_index], "y": y.loc[validation_index]}
         if sample_weight is not None:
             train_data["sample_weight"] = sample_weight.loc[train_index]
             validation_data["sample_weight"] = sample_weight.loc[validation_index]
+
+        if sensitive_features is not None:
+            train_data["sensitive_features"] = sensitive_features.loc[train_index]
+            validation_data["sensitive_features"] = sensitive_features.loc[
+                validation_index
+            ]
 
         return (train_data, validation_data)
 

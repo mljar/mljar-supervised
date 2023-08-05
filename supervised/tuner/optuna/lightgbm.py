@@ -136,7 +136,6 @@ class LightgbmObjective:
             param["num_class"] = self.num_class
 
         try:
-
             metric_name = self.eval_metric_name
             if metric_name == "custom":
                 metric_name = self.custom_eval_metric_name

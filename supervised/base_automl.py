@@ -39,6 +39,7 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric
 from supervised.utils.metric import UserDefinedEvalMetric
 from supervised.utils.automl_plots import AutoMLPlots
+
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -51,14 +52,17 @@ from supervised.utils.data_validation import (
     check_integer,
 )
 from supervised.utils.utils import dump_data, load_data
-import matplotlib.font_manager as font_manager
 
-# Get a list of all font families available on the system
-font_families = font_manager.findSystemFonts()
 
-# Load the font file for the first font family in the list and get the name of the first font family
-REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
+try:
+    import matplotlib.font_manager as font_manager
+    # Get a list of all font families available on the system
+    font_families = font_manager.findSystemFonts()
 
+    # Load the font file for the first font family in the list and get the name of the first font family
+    REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
+except Exception:
+    REPORT_FONT = "Arial"
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -114,6 +118,10 @@ class BaseAutoML(BaseEstimator, ABC):
         self._max_single_prediction_time = None
         self._optuna_time_budget = None
         self._optuna_init_params = {}
+        self._fairness_metric = None
+        self._fairness_threshold = None
+        self._privileged_groups = []
+        self._underprivileged_groups = []
         self._optuna_verbose = True
         self._n_jobs = -1
 
@@ -245,6 +253,15 @@ class BaseAutoML(BaseEstimator, ABC):
         }
         if self._max_single_prediction_time is not None:
             ldb["single_prediction_time"] = []
+
+        sensitive_features_names = []
+        if self._fairness_metric is not None and len(self._models):
+            sensitive_features_names = self._models[0].get_sensitive_features_names()
+            ldb["fairness_metric"] = []
+            for sf in sensitive_features_names:
+                ldb[f"fairness_{sf}"] = []
+            ldb["is_fair"] = []
+
         for m in self._models:
             # filter model with random feature
             if filter_random_feature and "RandomFeature" in m.get_name():
@@ -261,6 +278,11 @@ class BaseAutoML(BaseEstimator, ABC):
                     ]
                 else:
                     ldb["single_prediction_time"] += [None]
+            if self._fairness_metric is not None:
+                ldb["fairness_metric"] += [self._fairness_metric]
+                for sf in sensitive_features_names:
+                    ldb[f"fairness_{sf}"] += [m.get_fairness_metric(sf)]
+                ldb["is_fair"] += [m.is_fair()]
 
         ldb = pd.DataFrame(ldb)
         # need to add argument for sorting
@@ -327,7 +349,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return 1
 
     def train_model(self, params):
-
         # do we have enough time to train?
         # if not, skip
         if not self._time_ctrl.enough_time(
@@ -394,7 +415,6 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
-
             ensemble_subpath = "Ensemble_Stacked" if is_stacked else "Ensemble"
             ensemble_path = os.path.join(self._results_path, ensemble_subpath)
             self.create_dir(ensemble_path)
@@ -404,9 +424,18 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._ml_task,
                 is_stacked=is_stacked,
                 max_single_prediction_time=self._max_single_prediction_time,
+                fairness_metric=self._fairness_metric,
+                fairness_threshold=self._fairness_threshold,
+                privileged_groups=self._privileged_groups,
+                underprivileged_groups=self._underprivileged_groups,
             )
-            oofs, target, sample_weight = self.ensemble.get_oof_matrix(self._models)
-            self.ensemble.fit(oofs, target, sample_weight)
+            (
+                oofs,
+                target,
+                sample_weight,
+                sensitive_features,
+            ) = self.ensemble.get_oof_matrix(self._models)
+            self.ensemble.fit(oofs, target, sample_weight, sensitive_features)
             self.keep_model(self.ensemble, ensemble_subpath)
             self.ensemble.save(self._results_path, ensemble_subpath)
             return True
@@ -446,13 +475,14 @@ class BaseAutoML(BaseEstimator, ABC):
         return X_stacked
 
     def _perform_model_stacking(self):
-
         if self._stacked_models is not None:
             return
 
         ldb = self.get_leaderboard(filter_random_feature=True)
+        if self._fairness_metric is not None:
+            # get only fair models if we train with sensitive features
+            ldb = ldb[ldb["is_fair"]]
         ldb = ldb.sort_values(by="metric_value", ascending=True)
-
         models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
         self._stacked_models = []
         models_limit = 10
@@ -495,6 +525,13 @@ class BaseAutoML(BaseEstimator, ABC):
         # too many classes and models
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             if self.n_classes * len(self._models) > 1000:
+                return
+        # if we are training with sensitive features
+        # then we will stack only fair models
+        # if there are no fair models then we skip this step
+        if self._fairness_metric is not None:
+            if not [m for m in self._models if m.is_fair()]:
+                self.verbose_print("Skip stacking. We can stack only fair models.")
                 return
 
         self._perform_model_stacking()
@@ -542,14 +579,14 @@ class BaseAutoML(BaseEstimator, ABC):
             self.train_model(params)
         """
 
-    def _save_data(self, X, y, sample_weight=None, cv=None):
+    def _save_data(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
         # save information about original data
-        self._save_data_info(X, y, sample_weight)
+        self._save_data_info(X, y, sample_weight, sensitive_features)
 
         # handle drastic imbalance
         # assure at least 20 samples of each class
         # for binary and multiclass classification
-        self._handle_drastic_imbalance(X, y, sample_weight)
+        self._handle_drastic_imbalance(X, y, sample_weight, sensitive_features)
 
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.data")
@@ -562,6 +599,12 @@ class BaseAutoML(BaseEstimator, ABC):
             dump_data(
                 self._sample_weight_path, pd.DataFrame({"sample_weight": sample_weight})
             )
+        self._sensitive_features_path = None
+        if sensitive_features is not None:
+            self._sensitive_features_path = os.path.join(
+                self._results_path, "sensitive_features.data"
+            )
+            dump_data(self._sensitive_features_path, sensitive_features)
 
         dump_data(self._X_path, X)
 
@@ -576,6 +619,10 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validation_strategy["results_path"] = self._results_path
         if sample_weight is not None:
             self._validation_strategy["sample_weight_path"] = self._sample_weight_path
+        if sensitive_features is not None:
+            self._validation_strategy[
+                "sensitive_features_path"
+            ] = self._sensitive_features_path
 
         if cv is not None:
             self._validation_strategy["cv_path"] = os.path.join(
@@ -586,7 +633,9 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._max_single_prediction_time is not None:
             self._one_sample = X.iloc[:1].copy(deep=True)
 
-    def _handle_drastic_imbalance(self, X, y, sample_weight=None):
+    def _handle_drastic_imbalance(
+        self, X, y, sample_weight=None, sensitive_features=None
+    ):
         if self._ml_task == REGRESSION:
             return
         classes, cnts = np.unique(y, return_counts=True)
@@ -609,6 +658,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         .sample(n=append_samples, replace=True, random_state=1)
                         .reset_index(drop=True)
                     )
+                if sensitive_features is not None:
+                    new_sensitive_features = (
+                        sensitive_features[y == classes[i]]
+                        .sample(n=append_samples, replace=True, random_state=1)
+                        .reset_index(drop=True)
+                    )
                 for j in range(new_X.shape[0]):
                     X.loc[X.shape[0]] = new_X.loc[j]
                     y.loc[y.shape[0]] = classes[i]
@@ -616,9 +671,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         sample_weight.loc[
                             sample_weight.shape[0]
                         ] = new_sample_weight.loc[j]
+                    if sensitive_features is not None:
+                        sensitive_features.loc[
+                            sensitive_features.shape[0]
+                        ] = new_sensitive_features.loc[j]
 
-    def _save_data_info(self, X, y, sample_weight=None):
-
+    def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
@@ -637,6 +695,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features_in_,
             "is_sample_weighted": sample_weight is not None,
+            "is_fairness_applied": sensitive_features is not None,
         }
         # Add n_classes if not regression
         if self._ml_task != REGRESSION:
@@ -686,7 +745,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     # This method builds pandas.Dataframe from input. The input can be numpy.ndarray, matrix, or pandas.Dataframe
     # This method is used to build dataframes in `fit()` and in `predict`. That's the reason y can be None (`predict()` method)
-    def _build_dataframe(self, X, y=None, sample_weight=None):
+    def _build_dataframe(self, X, y=None, sample_weight=None, sensitive_features=None):
         if X is None or X.shape[0] == 0:
             raise AutoMLException("Empty input dataset")
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
@@ -731,8 +790,21 @@ class BaseAutoML(BaseEstimator, ABC):
                 sample_weight = check_array(sample_weight, ensure_2d=False)
                 sample_weight = pd.Series(np.array(sample_weight), name="sample_weight")
 
-        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
-            X, y, sample_weight, warn=True
+        if sensitive_features is not None:
+            if isinstance(sensitive_features, np.ndarray):
+                sensitive_features = check_array(sensitive_features, ensure_2d=False)
+                sensitive_features = pd.DataFrame(
+                    sensitive_features,
+                    columns=[
+                        "sensitive_" + str(i)
+                        for i in range(1, len(sensitive_features[0]) + 1)
+                    ],
+                )
+            elif isinstance(sensitive_features, pd.Series):
+                sensitive_features = pd.DataFrame(sensitive_features)
+
+        X, y, sample_weight, sensitive_features = ExcludeRowsMissingTarget.transform(
+            X, y, sample_weight, sensitive_features, warn=True
         )
 
         X.reset_index(drop=True, inplace=True)
@@ -741,10 +813,25 @@ class BaseAutoML(BaseEstimator, ABC):
         if sample_weight is not None:
             sample_weight.reset_index(drop=True, inplace=True)
 
-        return X, y, sample_weight
+        if sensitive_features is not None:
+            sensitive_features.reset_index(drop=True, inplace=True)
+
+            for col in sensitive_features.columns:
+                if not sensitive_features[col].dtype.name in ["category", "object"]:
+                    self.verbose_print("Sensitive features should be categorical")
+                    self.verbose_print(
+                        f"Apply automatic binarization for feature {col}"
+                    )
+                    sensitive_features[col] = pd.DataFrame(
+                        pd.qcut(sensitive_features[col], q=2).astype(str)
+                    )
+                    self.verbose_print(
+                        f"New values {list(sensitive_features[col].unique())} for feature {col} are applied"
+                    )
+
+        return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):
-
         if "Neural Network" in self._algorithms and self._n_jobs != -1:
             self._algorithms.remove("Neural Network")
             self.verbose_print(
@@ -759,7 +846,6 @@ class BaseAutoML(BaseEstimator, ABC):
         # remove algorithms in the case of multiclass
         # and too many classes and columns
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-
             if self.n_classes >= 10 and self.n_features_in_ * self.n_classes > 500:
                 if self.algorithms == "auto":
                     for a in ["CatBoost"]:
@@ -767,7 +853,6 @@ class BaseAutoML(BaseEstimator, ABC):
                             self._algorithms.remove(a)
 
             if self.n_features_in_ * self.n_classes > 1000:
-
                 if self.algorithms == "auto":
                     for a in ["Xgboost", "CatBoost"]:
                         if a in self._algorithms:
@@ -860,7 +945,6 @@ class BaseAutoML(BaseEstimator, ABC):
         self._apply_constraints_stack_models()
 
     def _apply_constraints_stack_models(self):
-
         if self._validation_strategy["validation_type"] == "split":
             if self._stack_models:
                 self.verbose_print("Disable stacking for split validation")
@@ -889,7 +973,7 @@ class BaseAutoML(BaseEstimator, ABC):
             ):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
-    def _fit(self, X, y, sample_weight=None, cv=None):
+    def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(
@@ -897,7 +981,9 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             return
         # Validate input and build dataframes
-        X, y, sample_weight = self._build_dataframe(X, y, sample_weight)
+        X, y, sample_weight, sensitive_features = self._build_dataframe(
+            X, y, sample_weight, sensitive_features
+        )
 
         self.n_rows_in_ = X.shape[0]
         self.n_features_in_ = X.shape[1]
@@ -930,6 +1016,12 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_verbose = self._get_optuna_verbose()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
+
+        if sensitive_features is not None:
+            self._fairness_metric = self._get_fairness_metric()
+            self._fairness_threshold = self._get_fairness_threshold()
+            self._privileged_groups = self._get_privileged_groups()
+            self._underprivileged_groups = self._get_underprivileged_groups()
 
         self._adjust_validation = False
         self._apply_constraints()
@@ -980,15 +1072,16 @@ class BaseAutoML(BaseEstimator, ABC):
             #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
             # Save data
-            if sample_weight is not None:
-                self._save_data(
-                    X.copy(deep=False),
-                    y.copy(deep=False),
-                    sample_weight.copy(deep=False),
-                    cv,
-                )
-            else:
-                self._save_data(X.copy(deep=False), y.copy(deep=False), None, cv)
+
+            self._save_data(
+                X.copy(deep=False),
+                y.copy(deep=False),
+                None if sample_weight is None else sample_weight.copy(deep=False),
+                cv,
+                None
+                if sensitive_features is None
+                else sensitive_features.copy(deep=False),
+            )
 
             tuner = MljarTuner(
                 self._get_tuner_params(
@@ -1015,11 +1108,17 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._optuna_verbose,
                 self._n_jobs,
                 self._random_state,
+                self._fairness_metric,
+                self._fairness_threshold,
+                self._privileged_groups,
+                self._underprivileged_groups,
             )
             self.tuner = tuner
 
             steps = tuner.steps()
-            self.verbose_print(f"AutoML steps: {steps}")
+            self.verbose_print(
+                f'AutoML steps: {[s for s in steps if "update_" not in s]}'
+            )
             if self._time_ctrl is None:
                 self._time_ctrl = TimeController(
                     self._start_time,
@@ -1066,9 +1165,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
 
                 if generated_params is None or not generated_params:
-                    self.verbose_print(
-                        f"Skip {step} because no parameters were generated."
-                    )
+                    if "_update_" not in step:
+                        self.verbose_print(
+                            f"Skip {step} because no parameters were generated."
+                        )
                     continue
                 if generated_params:
                     if not self._time_ctrl.enough_time_for_step(self._fit_level):
@@ -1130,6 +1230,26 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self.verbose_print(f"AutoML best model: {self._best_model.get_name()}")
 
+            if self._fairness_metric is not None:
+                # check if we have fair model
+                has_fair_model = False
+                for m in self._models:
+                    if m.is_fair():
+                        has_fair_model = True
+                        break
+                if not has_fair_model:
+                    self.verbose_print(
+                        "AutoML can't construct model that meets your fairness criteria."
+                    )
+                    self.verbose_print("What you can do?")
+                    self.verbose_print(
+                        "1. Please include more samples that are not biased."
+                    )
+                    self.verbose_print(
+                        "2. Please examine the most unfairly treated samples."
+                    )
+                    self.verbose_print("3. Please change fairness threshold.")
+
         except Exception as e:
             raise e
 
@@ -1152,17 +1272,48 @@ class BaseAutoML(BaseEstimator, ABC):
     def select_and_save_best(self, show_warnings=False):
         # Select best model based on the lowest loss
         self._best_model = None
+
         if self._models:
-            model_list = [
-                m
-                for m in self._models
-                if m.is_valid() and m.is_fast_enough(self._max_single_prediction_time)
-            ]
-            if model_list:
-                self._best_model = min(
-                    model_list,
-                    key=lambda x: x.get_final_loss(),
-                )
+            if self._fairness_metric is not None:
+                models = [
+                    m
+                    for m in self._models
+                    if m.is_valid()
+                    # and m.is_fast_enough(self._max_single_prediction_time)
+                    and m.is_fair()
+                ]
+
+                if models:
+                    # if there are fair models, we select the one with best performance
+                    self._best_model = min(
+                        models,
+                        key=lambda x: x.get_final_loss(),
+                    )
+                else:
+                    # if no models are fair, we select the most fair model
+                    if "ratio" in self._fairness_metric.lower():
+                        self._best_model = max(
+                            [m for m in self._models if m.is_valid()],
+                            key=lambda x: x.get_best_fairness(),
+                        )
+                    else:
+                        self._best_model = min(
+                            [m for m in self._models if m.is_valid()],
+                            key=lambda x: x.get_best_fairness(),
+                        )
+
+            else:
+                model_list = [
+                    m
+                    for m in self._models
+                    if m.is_valid()
+                    and m.is_fast_enough(self._max_single_prediction_time)
+                ]
+                if model_list:
+                    self._best_model = min(
+                        model_list,
+                        key=lambda x: x.get_final_loss(),
+                    )
         # if none selected please select again and warn the user
         if (
             len(self._models)
@@ -1239,7 +1390,9 @@ class BaseAutoML(BaseEstimator, ABC):
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(ldb, self._results_path, fout)
+                LeaderboardPlots.compute(
+                    ldb, self._results_path, fout, self._fairness_threshold
+                )
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
@@ -1295,7 +1448,6 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
     def _base_predict(self, X, model=None):
-
         if model is None:
             if self._best_model is None:
                 self.load(self.results_path)
@@ -1356,16 +1508,15 @@ class BaseAutoML(BaseEstimator, ABC):
             target_is_numeric = self._data_info.get("target_is_numeric", False)
             if target_is_numeric:
                 try:
-                    predictions["label"] = predictions["label"].astype(np.int32)
+                    predictions["label"] = predictions["label"].astype(int)
                 except Exception as e:
-                    predictions["label"] = predictions["label"].astype(np.float)
+                    predictions["label"] = predictions["label"].astype(float)
             return predictions
         # Regression
         else:
             return predictions
 
     def _predict(self, X):
-
         predictions = self._base_predict(X)
         # Return predictions
         # If classification task the result is in column 'label'
@@ -2032,6 +2183,85 @@ class BaseAutoML(BaseEstimator, ABC):
         """Validates random_state parameter"""
         check_positive_integer(self.random_state, "random_state")
 
+    def _validate_fairness_metric(self):
+        """Validates fariness_metric parameter"""
+        if isinstance(self.fairness_metric, str) and self.fairness_metric == "auto":
+            return
+
+        if (
+            self._get_ml_task() in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]
+        ) and self.fairness_metric not in [
+            "demographic_parity_difference",
+            "demographic_parity_ratio",
+            "equalized_odds_difference",
+            "equalized_odds_ratio",
+        ]:
+            raise ValueError(
+                f"Metric {self.fairness_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use `demographic_parity_difference`, `demographic_parity_ratio`, `equalized_odds_difference` or `equalized_odds_ratio`"
+            )
+        if (self._get_ml_task() == REGRESSION) and self.fairness_metric not in [
+            "group_loss_difference",
+            "group_loss_ratio",
+        ]:
+            raise ValueError(
+                f"Metric {self.fairness_metric} is not allowed in ML task: {self._get_ml_task()}. \
+                    Use `group_loss`"
+            )
+
+    def _get_fairness_metric(self):
+        """Gets the fairness metric"""
+        self._validate_fairness_metric()
+        if self.fairness_metric == "auto":
+            if self._get_ml_task() == BINARY_CLASSIFICATION:
+                return "demographic_parity_ratio"
+            if self._get_ml_task() == REGRESSION:
+                return "group_loss_ratio"
+            if self._get_ml_task() == MULTICLASS_CLASSIFICATION:
+                return "demographic_parity_ratio"
+        else:
+            return deepcopy(self.fairness_metric)
+
+    def _get_fairness_threshold(self):
+        """Gets the fairness threshold"""
+        if self.fairness_threshold == "auto":
+            if self._get_ml_task() in [
+                BINARY_CLASSIFICATION,
+                MULTICLASS_CLASSIFICATION,
+            ]:
+                thresholds = {
+                    "demographic_parity_difference": 0.1,
+                    "demographic_parity_ratio": 0.8,
+                    "equalized_odds_difference": 0.1,
+                    "equalized_odds_ratio": 0.8,
+                }
+                return thresholds.get(self._fairness_metric, 0.8)
+            elif self._get_ml_task() == REGRESSION:
+                thresholds = {
+                    "group_loss_ratio": 0.8,
+                }
+                if self._fairness_metric == "group_loss_difference":
+                    raise AutoMLException(
+                        "We can't set default fairness threshold value. Please set `fairness_threshold` value in AutoML constructor."
+                    )
+                return thresholds.get(self._fairness_metric, 0.8)
+        else:
+            return deepcopy(self.fairness_threshold)
+
+    def _get_privileged_groups(self):
+        """Gets privileged groups for fair training"""
+        if self.privileged_groups == "auto":
+            return []
+        else:
+            return deepcopy(self.privileged_groups)
+
+    def _get_underprivileged_groups(self):
+        """Gets underprivileged groups for fair training"""
+        if self.underprivileged_groups == "auto":
+            return []
+        else:
+            return deepcopy(self.underprivileged_groups)
+
     def to_json(self):
         if self._best_model is None:
             return None
@@ -2043,7 +2273,6 @@ class BaseAutoML(BaseEstimator, ABC):
         }
 
     def from_json(self, json_data):
-
         if json_data["best_model"]["algorithm_short_name"] == "Ensemble":
             self._best_model = Ensemble()
             self._best_model.from_json(json_data["best_model"])
@@ -2203,7 +2432,6 @@ margin-right: auto;display: block;"/>\n\n"""
             return IFrame(main_readme_html, width=width, height=height)
 
     def _report(self, width=900, height=1200):
-
         self._results_path = self._get_results_path()
         main_readme_html = os.path.join(self._results_path, "README.html")
 
@@ -2261,10 +2489,9 @@ margin-right: auto;display: block;"/>\n\n"""
         return self._show_report(main_readme_html, width, height)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
-
         metric = self._best_model.get_metric()
 
-        X, y, sample_weight = ExcludeRowsMissingTarget.transform(
+        X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(
             X, y, sample_weight, warn=True
         )
 

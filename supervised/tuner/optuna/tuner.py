@@ -283,7 +283,6 @@ class OptunaTuner:
                 self.tuning[k] = v
 
     def plot_study(self, algorithm, data_type, study):
-
         key = f"{data_type}_{algorithm}"
 
         plots = [

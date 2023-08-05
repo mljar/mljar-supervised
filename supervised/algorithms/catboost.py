@@ -79,7 +79,6 @@ def catboost_objective(ml_task, eval_metric):
 
 
 class CatBoostAlgorithm(BaseAlgorithm):
-
     algorithm_name = "CatBoost"
     algorithm_short_name = "CatBoost"
     warmup_iterations = 20

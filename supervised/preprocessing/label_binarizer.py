@@ -49,14 +49,19 @@ class LabelBinarizer(object):
         return X
 
     def to_json(self):
-        self._uniq_values = [
-            i if type(i) != np.bool_ else bool(i) for i in list(self._uniq_values)
-        ]
+        self._uniq_values = [str(i) for i in list(self._uniq_values)]
         data_json = {
             "new_columns": list(self._new_columns),
             "unique_values": self._uniq_values,
             "old_column": self._old_column,
         }
+
+        if (
+            "True" in self._uniq_values
+            and "False" in self._uniq_values
+            and len(self._uniq_values) == 2
+        ):
+            self._uniq_values = [False, True]
 
         return data_json
 
@@ -64,3 +69,10 @@ class LabelBinarizer(object):
         self._new_columns = data_json.get("new_columns", None)
         self._uniq_values = data_json.get("unique_values", None)
         self._old_column = data_json.get("old_column", None)
+
+        if (
+            "True" in self._uniq_values
+            and "False" in self._uniq_values
+            and len(self._uniq_values) == 2
+        ):
+            self._uniq_values = [False, True]

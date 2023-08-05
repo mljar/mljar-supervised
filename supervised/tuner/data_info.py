@@ -16,7 +16,6 @@ from supervised.algorithms.registry import (
 class DataInfo:
     @staticmethod
     def compute(X, y, machinelearning_task):
-
         columns_info = {}
         for col in X.columns:
             columns_info[col] = []

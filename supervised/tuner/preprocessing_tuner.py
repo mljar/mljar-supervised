@@ -29,7 +29,6 @@ class PreprocessingTuner:
         machinelearning_task,
         categorical_strategy=CATEGORICALS_ALL_INT,
     ):
-
         columns_preprocessing = {}
         columns_info = data_info["columns_info"]
 
@@ -58,7 +57,6 @@ class PreprocessingTuner:
                 in required_preprocessing  # the algorithm needs converted categoricals
                 and "categorical" in preprocessing_needed  # the feature is categorical
             ):
-
                 if categorical_strategy == PreprocessingTuner.CATEGORICALS_MIX:
                     if PreprocessingCategorical.MANY_CATEGORIES in preprocessing_needed:
                         preprocessing_to_apply += [

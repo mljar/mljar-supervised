@@ -147,7 +147,7 @@ class AutoMLIntegrationTest(unittest.TestCase):
             random_state=0,
         )
         X = pd.DataFrame(X)
-        X = X.astype(np.float16)
+        X = X.astype(float)
         a.fit(X, y)
         p = a.predict(X)
         self.assertIsInstance(p, np.ndarray)

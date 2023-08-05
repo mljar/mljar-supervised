@@ -112,7 +112,6 @@ class EarlyStopping(Callback):
         if self.metric.improvement(
             previous=self.best_loss[self.learner.uid], current=validation_loss
         ):
-
             y_validation_true = predictions.get("y_validation_true")
             self.no_improvement_cnt = 0
             self.best_iter[self.learner.uid] = logs.get("iter_cnt")
@@ -161,6 +160,16 @@ class EarlyStopping(Callback):
                 self.best_y_predicted[self.learner.uid]["sample_weight"] = np.array(
                     sample_weight_validation
                 )
+            # store sensitive features
+            sensitive_features_validation = predictions.get(
+                "sensitive_features_validation"
+            )
+
+            if sensitive_features_validation is not None:
+                for col in list(sensitive_features_validation.columns):
+                    self.best_y_predicted[self.learner.uid][
+                        f"sensitive_{col}"
+                    ] = np.array(sensitive_features_validation[col])
 
             self.best_models[self.learner.uid] = self.learner.copy()
             # if local copy is not available, save model and keep path
