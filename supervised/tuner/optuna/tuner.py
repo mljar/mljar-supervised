@@ -216,7 +216,7 @@ class OptunaTuner:
                 self.random_state,
             )
 
-        study.optimize(objective, n_trials=5000, timeout=self.time_budget)
+        study.optimize(objective, n_trials=5000, timeout=self.time_budget, gc_after_trial=True)
 
         self.plot_study(algorithm, data_type, study)
 
