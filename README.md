@@ -33,7 +33,7 @@
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
- - [AutoML Web App with GUI]([# ](https://github.com/mljar/mljar-supervised#automl-web-app-with-user-interface)
+ - [AutoML Web App with GUI](https://github.com/mljar/mljar-supervised#automl-web-app-with-user-interface)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
  - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
