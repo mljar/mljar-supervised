@@ -392,6 +392,7 @@ class FairnessMetrics:
                 "fairness_metric_name": fairness_metric_name,
                 "fairness_metric_value": fairness_metric_value,
                 "is_fair": is_fair,
+                "fairness_threshold": fairness_threshold
             }
 
         fairness_metrics["fairness_optimization"] = FairnessOptimization.regression(
