@@ -91,3 +91,30 @@ class FairnessInBinaryClassificationTest(unittest.TestCase):
             )
             automl.fit(X, y, sensitive_features=S)
         self.assertTrue("is not allowed" in str(context.exception))
+
+
+    def test_two_sensitive_features(self):
+        X = np.random.uniform(size=(30, 2))
+        y = np.random.randint(0, 2, size=(30,))
+        S = pd.DataFrame({
+            "sensitive_1": ["White", "Black"] * 15,
+            "sensitive_2": ["Male", "Female"] * 15
+            })
+
+        automl = AutoML(
+            results_path=self.automl_dir,
+            model_time_limit=10,
+            algorithms=["Xgboost"],
+            explain_level=0,
+            train_ensemble=False,
+            stack_models=False,
+            start_random_models=1,
+        )
+
+        automl.fit(X, y, sensitive_features=S)
+
+        self.assertGreater(len(automl._models), 0)
+
+        sensitive_features_names = automl._models[0].get_sensitive_features_names()
+        self.assertEqual(len(sensitive_features_names), 2)
+        

@@ -220,11 +220,11 @@ class FairnessOptimization:
                             ii &= sensitive_features[c] == values[i]
 
                     key = "@".join([str(s) for s in values])
-                    # print(key, np.sum(ii))
-                    sensitive_indices[key] = ii
-                    if np.sum(ii) < least_frequency:
-                        least_frequency = np.sum(ii)
-                        least_frequent_key = key
+                    if np.sum(ii) > 0:
+                        sensitive_indices[key] = ii
+                        if np.sum(ii) < least_frequency:
+                            least_frequency = np.sum(ii)
+                            least_frequent_key = key
 
         weights = {}
         performance = {}
