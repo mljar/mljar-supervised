@@ -1,7 +1,7 @@
 import logging
-
+import matplotlib
+matplotlib.use("Agg")
 import warnings
-
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 from supervised.base_automl import BaseAutoML
