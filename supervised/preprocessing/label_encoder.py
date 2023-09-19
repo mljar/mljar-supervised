@@ -1,7 +1,8 @@
 import copy
 import logging
-import numpy as np
 from decimal import Decimal
+
+import numpy as np
 from sklearn import preprocessing as sk_preproc
 
 from supervised.utils.config import LOG_LEVEL

@@ -1,26 +1,28 @@
 import logging
 import os
-import sklearn
 import warnings
+
 import numpy as np
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.tree import DecisionTreeRegressor
+import sklearn
+from sklearn.base import ClassifierMixin, RegressorMixin
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
+from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from sklearn.tree import _tree
 from dtreeviz import *
+from sklearn.tree import _tree
+
 from supervised.utils.subsample import subsample
 
 
@@ -86,7 +88,7 @@ def save_rules(tree, feature_names, class_names, model_file_path, learner_name):
         logger.info(f"Problem with extracting decision tree rules. {str(e)}")
 
 
-class DecisionTreeAlgorithm(SklearnAlgorithm):
+class DecisionTreeAlgorithm(SklearnAlgorithm, ClassifierMixin):
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
 
@@ -159,7 +161,7 @@ class DecisionTreeAlgorithm(SklearnAlgorithm):
             )
 
 
-class DecisionTreeRegressorAlgorithm(SklearnAlgorithm):
+class DecisionTreeRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
 

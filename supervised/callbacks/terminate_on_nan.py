@@ -3,6 +3,7 @@ import logging
 log = logging.getLogger(__name__)
 
 import numpy as np
+
 from supervised.callbacks.callback import Callback
 
 

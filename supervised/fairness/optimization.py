@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -156,7 +157,7 @@ class FairnessOptimization:
             "weights": weights,
             "total_dp_ratio": total_dp_ratio,
             "step": step,
-            "fairness_threshold": fairness_threshold
+            "fairness_threshold": fairness_threshold,
         }
 
     @staticmethod

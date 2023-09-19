@@ -1,21 +1,20 @@
+import logging
+import warnings
+
 import numpy as np
 import pandas as pd
-import warnings
-import logging
+import sklearn
+from sklearn.base import ClassifierMixin, RegressorMixin
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
-
-import sklearn
-from sklearn.neural_network import MLPClassifier
-from sklearn.neural_network import MLPRegressor
-
+from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ class NNFit(SklearnAlgorithm):
             result.to_csv(log_to_file, index=False, header=False)
 
 
-class MLPAlgorithm(NNFit):
+class MLPAlgorithm(NNFit, ClassifierMixin):
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 
@@ -93,7 +92,7 @@ class MLPAlgorithm(NNFit):
         return "logloss"
 
 
-class MLPRegressorAlgorithm(NNFit):
+class MLPRegressorAlgorithm(NNFit, RegressorMixin):
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 

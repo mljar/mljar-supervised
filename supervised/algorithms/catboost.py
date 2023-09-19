@@ -1,33 +1,34 @@
-import logging
 import copy
-import numpy as np
-import pandas as pd
+import logging
 import os
 import time
 
+import numpy as np
+import pandas as pd
+from sklearn.base import ClassifierMixin, RegressorMixin
+
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import (
-    CatBoostEvalMetricSpearman,
-    CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
     CatBoostEvalMetricMSE,
+    CatBoostEvalMetricPearson,
+    CatBoostEvalMetricSpearman,
     CatBoostEvalMetricUserDefined,
 )
-
-from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost, Pool
 import catboost
+from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
 
 
 def catboost_eval_metric(ml_task, eval_metric):
@@ -366,9 +367,13 @@ required_preprocessing = [
 ]
 
 
+class CBClassifier(CatBoostAlgorithm, ClassifierMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
-    CatBoostAlgorithm,
+    CBClassifier,
     classification_params,
     required_preprocessing,
     additional,
@@ -388,7 +393,7 @@ multiclass_classification_default_params["learning_rate"] = 0.15
 
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    CatBoostAlgorithm,
+    CBClassifier,
     multiclass_classification_params,
     required_preprocessing,
     additional,
@@ -413,9 +418,14 @@ regression_default_params = {
     "loss_function": "RMSE",
 }
 
+
+class CBRegressor(CatBoostAlgorithm, RegressorMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     REGRESSION,
-    CatBoostAlgorithm,
+    CBRegressor,
     regression_params,
     regression_required_preprocessing,
     additional,

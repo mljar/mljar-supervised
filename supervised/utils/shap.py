@@ -1,8 +1,10 @@
-import os
 import logging
+import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import shap
 from sklearn.preprocessing import OneHotEncoder
 
 from supervised.algorithms.registry import (
@@ -10,8 +12,6 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-import shap
-
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
@@ -246,9 +246,9 @@ class PlotSHAP:
                 )
         except Exception as e:
             pass
-            #print(
+            # print(
             #    f"Exception while producing SHAP explanations. {str(e)}\nContinuing ..."
-            #)
+            # )
 
     @staticmethod
     def decisions_regression(

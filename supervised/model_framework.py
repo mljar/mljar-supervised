@@ -1,42 +1,41 @@
+import copy
+import gc
+import json
+import logging
+import os
+import sys
+import time
 import uuid
+import zipfile
+
 import numpy as np
 import pandas as pd
-import time
-import zipfile
-import os
-import copy
-import logging
-import json
-import gc
-import sys
 
-from supervised.callbacks.callback_list import CallbackList
-from supervised.validation.validation_step import ValidationStep
 from supervised.algorithms.factory import AlgorithmFactory
-from supervised.preprocessing.preprocessing import Preprocessing
-from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
-from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.exceptions import AutoMLException
-from supervised.utils.config import LOG_LEVEL
-from supervised.utils.additional_metrics import AdditionalMetrics
-from supervised.utils.metric import Metric
-
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
+from supervised.callbacks.callback_list import CallbackList
+from supervised.exceptions import AutoMLException
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.preprocessing.preprocessing import Preprocessing
+from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import Metric
+from supervised.validation.validation_step import ValidationStep
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from supervised.utils.config import mem
-from supervised.utils.learning_curves import LearningCurves
-
-import optuna
 import joblib
+import optuna
 
 from supervised.tuner.optuna.tuner import OptunaTuner
+from supervised.utils.config import mem
+from supervised.utils.learning_curves import LearningCurves
 
 
 class ModelFramework:

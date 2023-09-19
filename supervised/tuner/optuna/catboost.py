@@ -1,21 +1,21 @@
-from catboost import CatBoostClassifier, CatBoostRegressor, CatBoost, Pool
 import catboost
 import optuna
+from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
 
+from supervised.algorithms.catboost import catboost_eval_metric, catboost_objective
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.metric import (
-    Metric,
-    CatBoostEvalMetricSpearman,
-    CatBoostEvalMetricPearson,
     CatBoostEvalMetricAveragePrecision,
     CatBoostEvalMetricMSE,
+    CatBoostEvalMetricPearson,
+    CatBoostEvalMetricSpearman,
     CatBoostEvalMetricUserDefined,
+    Metric,
 )
-
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
-
-from supervised.algorithms.catboost import catboost_objective, catboost_eval_metric
 
 EPS = 1e-8
 

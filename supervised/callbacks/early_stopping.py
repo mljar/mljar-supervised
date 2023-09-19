@@ -1,11 +1,12 @@
-import os
 import logging
+import os
+
 import numpy as np
 import pandas as pd
 
 from supervised.callbacks.callback import Callback
-from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import Metric
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)

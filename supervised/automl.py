@@ -1,21 +1,26 @@
 import logging
+
 import matplotlib
+
 matplotlib.use("Agg")
 import warnings
+
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
-from supervised.base_automl import BaseAutoML
-from supervised.utils.config import LOG_LEVEL
+from collections.abc import Iterable
+from re import U
 
 # libraries for type hints
-from typing import Optional, Union, List
+from typing import List, Optional, Union
+
+import numpy
+import pandas
 from typing_extensions import (
     Literal,
 )  # typing_extensions is used for using Literal from python 3.7
-from re import U
-import numpy
-import pandas
-from collections.abc import Iterable
+
+from supervised.base_automl import BaseAutoML
+from supervised.utils.config import LOG_LEVEL
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR

@@ -1,21 +1,22 @@
-import os
 import json
-import joblib
-import optuna
+import os
 import warnings
+
+import joblib
 import matplotlib
+import optuna
 from matplotlib import pyplot as plt
 
-from supervised.utils.metric import Metric
+from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
-from supervised.tuner.optuna.lightgbm import LightgbmObjective
-from supervised.tuner.optuna.xgboost import XgboostObjective
 from supervised.tuner.optuna.catboost import CatBoostObjective
-from supervised.tuner.optuna.random_forest import RandomForestObjective
 from supervised.tuner.optuna.extra_trees import ExtraTreesObjective
 from supervised.tuner.optuna.knn import KNNObjective
+from supervised.tuner.optuna.lightgbm import LightgbmObjective
 from supervised.tuner.optuna.nn import NeuralNetworkObjective
-from supervised.exceptions import AutoMLException
+from supervised.tuner.optuna.random_forest import RandomForestObjective
+from supervised.tuner.optuna.xgboost import XgboostObjective
+from supervised.utils.metric import Metric
 
 
 class OptunaTuner:
@@ -216,7 +217,9 @@ class OptunaTuner:
                 self.random_state,
             )
 
-        study.optimize(objective, n_trials=5000, timeout=self.time_budget, gc_after_trial=True)
+        study.optimize(
+            objective, n_trials=5000, timeout=self.time_budget, gc_after_trial=True
+        )
 
         self.plot_study(algorithm, data_type, study)
 

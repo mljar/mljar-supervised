@@ -1,10 +1,11 @@
 import copy
 import logging
+import time
+import warnings
+
+import joblib
 import numpy as np
 import pandas as pd
-import time
-import joblib
-import warnings
 
 from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (

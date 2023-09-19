@@ -1,6 +1,8 @@
-import time
 import logging
+import time
+
 import numpy as np
+
 from supervised.callbacks.callback import Callback
 from supervised.exceptions import NotTrainedException
 from supervised.utils.config import LOG_LEVEL

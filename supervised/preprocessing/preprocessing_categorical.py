@@ -1,12 +1,13 @@
-import os
 import json
+import os
+
 import numpy as np
 import pandas as pd
 
-from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
-from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.label_binarizer import LabelBinarizer
+from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.loo_encoder import LooEncoder
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 class PreprocessingCategorical(object):

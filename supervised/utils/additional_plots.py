@@ -1,9 +1,9 @@
 import os
+
 import numpy as np
 import pandas as pd
-
-from matplotlib import pyplot as plt
 import scikitplot as skplt
+from matplotlib import pyplot as plt
 
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,

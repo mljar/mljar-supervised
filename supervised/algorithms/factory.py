@@ -1,6 +1,6 @@
-from supervised.algorithms.registry import AlgorithmsRegistry, BINARY_CLASSIFICATION
-
 import logging
+
+from supervised.algorithms.registry import BINARY_CLASSIFICATION, AlgorithmsRegistry
 
 logger = logging.getLogger(__name__)
 

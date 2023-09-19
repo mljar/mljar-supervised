@@ -91,18 +91,24 @@ class FairnessReport:
             if v["is_fair"]:
                 fout.write(f"Model is fair for {k} feature.\n")
                 if "ratio" in v["fairness_metric_name"].lower():
-                    fout.write(f"The {v['fairness_metric_name']} value is above threshold {v['fairness_threshold']}.\n\n")
+                    fout.write(
+                        f"The {v['fairness_metric_name']} value is above threshold {v['fairness_threshold']}.\n\n"
+                    )
                 else:
-                    fout.write(f"The {v['fairness_metric_name']} value is below threshold {v['fairness_threshold']}.\n\n")
+                    fout.write(
+                        f"The {v['fairness_metric_name']} value is below threshold {v['fairness_threshold']}.\n\n"
+                    )
             else:
                 # model is not fair
                 fout.write(f"Model is unfair for {k} feature.\n")
                 if "ratio" in v["fairness_metric_name"].lower():
-                    fout.write(f"The {v['fairness_metric_name']} value is below threshold {v['fairness_threshold']}.\n\n")
+                    fout.write(
+                        f"The {v['fairness_metric_name']} value is below threshold {v['fairness_threshold']}.\n\n"
+                    )
                 else:
-                    fout.write(f"The {v['fairness_metric_name']} value is above threshold {v['fairness_threshold']}.\n\n")
-
-
+                    fout.write(
+                        f"The {v['fairness_metric_name']} value is above threshold {v['fairness_threshold']}.\n\n"
+                    )
 
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")

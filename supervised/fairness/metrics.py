@@ -1,32 +1,32 @@
 import os
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-
-from supervised.fairness.utils import (
-    accuracy,
-    selection_rate,
-    true_positive_rate,
-    false_positive_rate,
-    true_negative_rate,
-    false_negative_rate,
-)
-from supervised.fairness.optimization import FairnessOptimization
-from supervised.fairness.plots import FairnessPlots
-
 from sklearn.metrics import (
-    f1_score,
     accuracy_score,
-    precision_score,
-    recall_score,
-    matthews_corrcoef,
-    roc_auc_score,
-    confusion_matrix,
     classification_report,
-    r2_score,
-    mean_squared_error,
+    confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
     mean_absolute_error,
     mean_absolute_percentage_error,
+    mean_squared_error,
+    precision_score,
+    r2_score,
+    recall_score,
+    roc_auc_score,
+)
+
+from supervised.fairness.optimization import FairnessOptimization
+from supervised.fairness.plots import FairnessPlots
+from supervised.fairness.utils import (
+    accuracy,
+    false_negative_rate,
+    false_positive_rate,
+    selection_rate,
+    true_negative_rate,
+    true_positive_rate,
 )
 from supervised.utils.metric import pearson, spearman
 
@@ -42,7 +42,7 @@ class FairnessMetrics:
         privileged_groups=[],
         underprivileged_groups=[],
         previous_fairness_optimization=None,
-    ):        
+    ):
         target = np.array(target).ravel()
         preds = np.array(predicted_labels)
 
@@ -392,7 +392,7 @@ class FairnessMetrics:
                 "fairness_metric_name": fairness_metric_name,
                 "fairness_metric_value": fairness_metric_value,
                 "is_fair": is_fair,
-                "fairness_threshold": fairness_threshold
+                "fairness_threshold": fairness_threshold,
             }
 
         fairness_metrics["fairness_optimization"] = FairnessOptimization.regression(

@@ -1,4 +1,5 @@
 import logging
+
 from supervised.utils.config import LOG_LEVEL
 
 logging.basicConfig(

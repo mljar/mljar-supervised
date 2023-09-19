@@ -2,11 +2,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
+from supervised.exceptions import AutoMLException
+from supervised.validation.validator_custom import CustomValidator
 from supervised.validation.validator_kfold import KFoldValidator
 from supervised.validation.validator_split import SplitValidator
-from supervised.validation.validator_custom import CustomValidator
-
-from supervised.exceptions import AutoMLException
 
 
 class ValidationStep:

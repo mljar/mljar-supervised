@@ -1,27 +1,24 @@
-import numpy as np
-import pandas as pd
 import lightgbm as lgb
+import numpy as np
 import optuna
+import pandas as pd
 
-from supervised.utils.metric import Metric
+from supervised.algorithms.lightgbm import lightgbm_eval_metric, lightgbm_objective
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.metric import (
+    Metric,
+    lightgbm_eval_metric_accuracy,
+    lightgbm_eval_metric_average_precision,
+    lightgbm_eval_metric_f1,
+    lightgbm_eval_metric_pearson,
     lightgbm_eval_metric_r2,
     lightgbm_eval_metric_spearman,
-    lightgbm_eval_metric_pearson,
-    lightgbm_eval_metric_f1,
-    lightgbm_eval_metric_average_precision,
-    lightgbm_eval_metric_accuracy,
     lightgbm_eval_metric_user_defined,
 )
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
-
-from supervised.algorithms.lightgbm import (
-    lightgbm_objective,
-    lightgbm_eval_metric,
-)
-
 
 EPS = 1e-8
 

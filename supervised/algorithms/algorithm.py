@@ -1,8 +1,10 @@
 import uuid
+
 import numpy as np
+
+from supervised.utils.common import construct_learner_name
 from supervised.utils.importance import PermutationImportance
 from supervised.utils.shap import PlotSHAP
-from supervised.utils.common import construct_learner_name
 
 
 class BaseAlgorithm:

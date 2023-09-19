@@ -1,30 +1,32 @@
-import logging
 import copy
-import numpy as np
-import pandas as pd
+import logging
 import os
 import time
 from inspect import signature
+
+import numpy as np
+import pandas as pd
 import xgboost as xgb
+from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
-)
-from supervised.utils.metric import (
-    xgboost_eval_metric_r2,
-    xgboost_eval_metric_spearman,
-    xgboost_eval_metric_pearson,
-    xgboost_eval_metric_f1,
-    xgboost_eval_metric_average_precision,
-    xgboost_eval_metric_accuracy,
-    xgboost_eval_metric_mse,
-    xgboost_eval_metric_user_defined,
+    AlgorithmsRegistry,
 )
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import (
+    xgboost_eval_metric_accuracy,
+    xgboost_eval_metric_average_precision,
+    xgboost_eval_metric_f1,
+    xgboost_eval_metric_mse,
+    xgboost_eval_metric_pearson,
+    xgboost_eval_metric_r2,
+    xgboost_eval_metric_spearman,
+    xgboost_eval_metric_user_defined,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -366,9 +368,14 @@ required_preprocessing = [
     "target_as_integer",
 ]
 
+
+class XgbClassifier(XgbAlgorithm, ClassifierMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
-    XgbAlgorithm,
+    XgbClassifier,
     xgb_bin_class_params,
     required_preprocessing,
     additional,
@@ -377,7 +384,7 @@ AlgorithmsRegistry.add(
 
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    XgbAlgorithm,
+    XgbClassifier,
     xgb_multi_class_params,
     required_preprocessing,
     additional,
@@ -393,9 +400,13 @@ regression_required_preprocessing = [
 ]
 
 
+class XgbRegressor(XgbAlgorithm, RegressorMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     REGRESSION,
-    XgbAlgorithm,
+    XgbRegressor,
     xgb_regression_params,
     regression_required_preprocessing,
     additional,

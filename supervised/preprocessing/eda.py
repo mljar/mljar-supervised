@@ -1,19 +1,18 @@
+import logging
 import os
 import re
-import logging
+import warnings
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+from wordcloud import STOPWORDS, WordCloud
 
-import warnings
-from wordcloud import WordCloud
-from wordcloud import STOPWORDS
-from collections import defaultdict
-
-from supervised.utils.config import LOG_LEVEL
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -23,8 +22,8 @@ BLUE = "#007cf2"
 COLS = 14
 MAXCOL = 25
 
-import string
 import base64
+import string
 
 
 class EDA:

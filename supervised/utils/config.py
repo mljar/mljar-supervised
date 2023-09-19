@@ -2,12 +2,12 @@ import logging
 
 LOG_LEVEL = logging.ERROR
 
-import numpy as np
-
 # from guppy import hpy
 # from pympler import summary
 # from pympler import muppy
 import time
+
+import numpy as np
 
 
 def mem(msg=""):

@@ -1,19 +1,20 @@
 import logging
 import os
-import sklearn
+
 import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neighbors import KNeighborsRegressor
+import sklearn
+from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import SklearnAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
+from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ logger.setLevel(LOG_LEVEL)
 KNN_ROWS_LIMIT = 1000
 
 
-class KNNFit(SklearnAlgorithm):
+class KNNFit(SklearnAlgorithm, ClassifierMixin):
     def file_extension(self):
         return "k_neighbors"
 
@@ -55,7 +56,7 @@ class KNNFit(SklearnAlgorithm):
             self.model.fit(X, y)
 
 
-class KNeighborsAlgorithm(KNNFit):
+class KNeighborsAlgorithm(KNNFit, RegressorMixin):
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 

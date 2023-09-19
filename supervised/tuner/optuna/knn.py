@@ -1,11 +1,13 @@
 import numpy as np
-from supervised.algorithms.knn import KNeighborsAlgorithm, KNeighborsRegressorAlgorithm
 import optuna
 
+from supervised.algorithms.knn import KNeighborsAlgorithm, KNeighborsRegressorAlgorithm
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.metric import Metric
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
 
 
 class KNNObjective:

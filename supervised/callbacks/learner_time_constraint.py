@@ -1,8 +1,9 @@
-import time
 import logging
-import numpy as np
-from supervised.callbacks.callback import Callback
+import time
 
+import numpy as np
+
+from supervised.callbacks.callback import Callback
 from supervised.utils.config import LOG_LEVEL
 
 log = logging.getLogger(__name__)

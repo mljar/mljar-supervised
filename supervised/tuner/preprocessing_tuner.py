@@ -1,15 +1,15 @@
 import numpy as np
 import pandas as pd
-from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
-from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
-from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
-from supervised.preprocessing.scale import Scale
 
 from supervised.algorithms.registry import (
-    REGRESSION,
-    MULTICLASS_CLASSIFICATION,
     BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
 )
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.preprocessing.scale import Scale
 
 
 class PreprocessingTuner:

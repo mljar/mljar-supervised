@@ -1,16 +1,18 @@
-import os
 import logging
+import os
+
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
-from supervised.utils.metric import Metric
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import Metric
 
 logger.setLevel(LOG_LEVEL)
 
-import matplotlib.pyplot as plt
 import warnings
+
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 

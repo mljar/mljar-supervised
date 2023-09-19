@@ -1,22 +1,25 @@
-import os
-import logging
 import copy
-import numpy as np
-import pandas as pd
+import json
+import logging
+import operator
+import os
 import time
 import uuid
-import json
-import operator
+
+import numpy as np
+import pandas as pd
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import BINARY_CLASSIFICATION
-from supervised.algorithms.registry import REGRESSION
-from supervised.algorithms.registry import MULTICLASS_CLASSIFICATION
-from supervised.model_framework import ModelFramework
-from supervised.utils.metric import Metric
-from supervised.utils.config import LOG_LEVEL
-from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.exceptions import NotTrainedException
+from supervised.model_framework import ModelFramework
+from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import Metric
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)

@@ -1,10 +1,11 @@
-import os
 import json
+import logging
+import os
 import warnings
+
 import numpy as np
 import pandas as pd
 
-import logging
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)

@@ -1,29 +1,31 @@
-import logging
+import contextlib
 import copy
+import logging
+import os
+import time
+
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import time
-import os
-import contextlib
-import lightgbm as lgb
+from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
-)
-from supervised.utils.metric import (
-    lightgbm_eval_metric_r2,
-    lightgbm_eval_metric_spearman,
-    lightgbm_eval_metric_pearson,
-    lightgbm_eval_metric_f1,
-    lightgbm_eval_metric_average_precision,
-    lightgbm_eval_metric_accuracy,
-    lightgbm_eval_metric_user_defined,
+    AlgorithmsRegistry,
 )
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.metric import (
+    lightgbm_eval_metric_accuracy,
+    lightgbm_eval_metric_average_precision,
+    lightgbm_eval_metric_f1,
+    lightgbm_eval_metric_pearson,
+    lightgbm_eval_metric_r2,
+    lightgbm_eval_metric_spearman,
+    lightgbm_eval_metric_user_defined,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -346,9 +348,14 @@ classification_multi_default_params = {
 lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
 
+
+class LgbmClassifier(LightgbmAlgorithm, ClassifierMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     BINARY_CLASSIFICATION,
-    LightgbmAlgorithm,
+    LgbmClassifier,
     lgbm_bin_params,
     required_preprocessing,
     additional,
@@ -357,7 +364,7 @@ AlgorithmsRegistry.add(
 
 AlgorithmsRegistry.add(
     MULTICLASS_CLASSIFICATION,
-    LightgbmAlgorithm,
+    LgbmClassifier,
     lgbm_multi_params,
     required_preprocessing,
     additional,
@@ -382,9 +389,14 @@ regression_default_params = {
     "min_data_in_leaf": 10,
 }
 
+
+class LgbmRegressor(LightgbmAlgorithm, RegressorMixin):
+    pass
+
+
 AlgorithmsRegistry.add(
     REGRESSION,
-    LightgbmAlgorithm,
+    LgbmRegressor,
     lgbr_params,
     regression_required_preprocessing,
     additional,

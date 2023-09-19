@@ -1,11 +1,13 @@
-import os
 import json
 import logging
+import os
 import warnings
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.inspection import permutation_importance
+
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -18,12 +20,13 @@ from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
 
-from sklearn.metrics import make_scorer, log_loss
 import sys
+
+from sklearn.metrics import log_loss, make_scorer
 
 
 def log_loss_eps(y_true, y_pred):
-    ll = log_loss(y_true, y_pred, eps=1e-7)
+    ll = log_loss(y_true, y_pred)
     return ll
 
 

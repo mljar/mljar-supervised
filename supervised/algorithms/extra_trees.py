@@ -1,18 +1,20 @@
 import logging
 import os
+
 import sklearn
+from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.sklearn import (
-    SklearnTreesEnsembleClassifierAlgorithm,
-    SklearnTreesEnsembleRegressorAlgorithm,
-)
-from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
+)
+from supervised.algorithms.sklearn import (
+    SklearnTreesEnsembleClassifierAlgorithm,
+    SklearnTreesEnsembleRegressorAlgorithm,
 )
 from supervised.utils.config import LOG_LEVEL
 
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
+class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm, ClassifierMixin):
     algorithm_name = "Extra Trees Classifier"
     algorithm_short_name = "Extra Trees"
 
@@ -49,7 +51,9 @@ class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm):
         return "extra_trees"
 
 
-class ExtraTreesRegressorAlgorithm(SklearnTreesEnsembleRegressorAlgorithm):
+class ExtraTreesRegressorAlgorithm(
+    SklearnTreesEnsembleRegressorAlgorithm, RegressorMixin
+):
     algorithm_name = "Extra Trees Regressor"
     algorithm_short_name = "Extra Trees"
 

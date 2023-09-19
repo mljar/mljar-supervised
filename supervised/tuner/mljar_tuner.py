@@ -1,29 +1,28 @@
-import os
 import copy
 import json
+import logging
+import os
+
 import numpy as np
 import pandas as pd
-
 from sklearn.preprocessing import OneHotEncoder
-from supervised.preprocessing.label_encoder import LabelEncoder
 
-from supervised.tuner.random_parameters import RandomParameters
-from supervised.algorithms.registry import AlgorithmsRegistry
-from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
-from supervised.tuner.preprocessing_tuner import PreprocessingTuner
-from supervised.tuner.hill_climbing import HillClimbing
+from supervised.algorithms.catboost import catboost_eval_metric
+from supervised.algorithms.lightgbm import lightgbm_eval_metric
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+    AlgorithmsRegistry,
 )
-
 from supervised.algorithms.xgboost import xgboost_eval_metric
-from supervised.algorithms.lightgbm import lightgbm_eval_metric
-from supervised.algorithms.catboost import catboost_eval_metric
-from supervised.utils.utils import dump_data, load_data
-import logging
+from supervised.preprocessing.label_encoder import LabelEncoder
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
+from supervised.tuner.hill_climbing import HillClimbing
+from supervised.tuner.preprocessing_tuner import PreprocessingTuner
+from supervised.tuner.random_parameters import RandomParameters
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.utils import dump_data, load_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -296,17 +295,21 @@ class MljarTuner:
         # get target
         y_path = os.path.join(results_path, "y.data")
         target = np.array(load_data(y_path)["target"])
-        
+
         # we operate here on full target data (for all samples)
         # we can't load preprocessed targets from other place
-        # we need to perform preprocessing here 
+        # we need to perform preprocessing here
         if df_models.shape[0] > 0:
-            target_preprocessing = df_models["model"].iloc[0].params.get("preprocessing", {}).get("target_preprocessing", {})
+            target_preprocessing = (
+                df_models["model"]
+                .iloc[0]
+                .params.get("preprocessing", {})
+                .get("target_preprocessing", {})
+            )
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 cat_y = LabelEncoder(try_to_fit_numeric=True)
                 cat_y.fit(target)
                 target = cat_y.transform(target)
-        
 
         sensitive_columns = list(sensitive_features.columns)
 

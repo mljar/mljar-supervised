@@ -1,17 +1,18 @@
-import os
 import logging
+import os
+
 import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
-from supervised.utils.config import LOG_LEVEL
 from supervised.utils.common import learner_name_to_fold_repeat
+from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import Metric
 
 logger.setLevel(LOG_LEVEL)
 
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 
 MY_COLORS = list(mcolors.TABLEAU_COLORS.values())
 
