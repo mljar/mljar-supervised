@@ -372,7 +372,7 @@ class Preprocessing(object):
         # in case new data there can be gaps!
         if (
             X_validation is not None
-            and np.sum(np.sum(pd.isnull(X_validation))) > 0
+            and pd.isnull(X_validation).sum().sum() > 0
             and len(self._params["columns_preprocessing"]) > 0
         ):
             # there is something missing, fill it
