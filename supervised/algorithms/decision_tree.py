@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 import sklearn
-from sklearn.base import ClassifierMixin, RegressorMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
@@ -85,7 +85,7 @@ def save_rules(tree, feature_names, class_names, model_file_path, learner_name):
         logger.info(f"Problem with extracting decision tree rules. {str(e)}")
 
 
-class DecisionTreeAlgorithm(SklearnAlgorithm, ClassifierMixin):
+class DecisionTreeAlgorithm(SklearnAlgorithm, BaseEstimator, ClassifierMixin):
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
 
