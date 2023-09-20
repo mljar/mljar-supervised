@@ -17,7 +17,7 @@ from supervised.utils.config import LOG_LEVEL
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from dtreeviz import *
+import dtreeviz
 from sklearn.tree import _tree
 
 from supervised.utils.subsample import subsample
@@ -138,7 +138,8 @@ class DecisionTreeAlgorithm(SklearnAlgorithm, ClassifierMixin):
                 if len(class_names) > 10:
                     # dtreeviz does not support more than 10 classes
                     return
-                viz = dtreeviz(
+
+                viz = dtreeviz.model(
                     self.model,
                     X_train,
                     y_train,
@@ -149,7 +150,7 @@ class DecisionTreeAlgorithm(SklearnAlgorithm, ClassifierMixin):
                 tree_file_plot = os.path.join(
                     model_file_path, learner_name + "_tree.svg"
                 )
-                viz.save(tree_file_plot)
+                viz.view().save(tree_file_plot)
             except Exception as e:
                 logger.info(f"Problem when visualizing decision tree. {str(e)}")
 
@@ -220,7 +221,7 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
                         feature_names=x.columns,
                     )
                 else:
-                    viz = dtreeviz(
+                    viz = dtreeviz.model(
                         self.model,
                         X_train,
                         y_train,
@@ -230,7 +231,7 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
                 tree_file_plot = os.path.join(
                     model_file_path, learner_name + "_tree.svg"
                 )
-                viz.save(tree_file_plot)
+                viz.view().save(tree_file_plot)
             except Exception as e:
                 logger.info(
                     f"Problem when visuzalizin decision tree regressor. {str(e)}"
