@@ -8,11 +8,9 @@ import numpy as np
 import pandas as pd
 from sklearn.inspection import permutation_importance
 
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION)
 from supervised.utils.subsample import subsample
 
 logger = logging.getLogger(__name__)
@@ -48,10 +46,8 @@ class PermutationImportance:
         # for scoring check https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter
         if ml_task == BINARY_CLASSIFICATION:
             scoring = log_loss_scorer
-            model.classes_ = np.unique(y_validation)
         elif ml_task == MULTICLASS_CLASSIFICATION:
             scoring = log_loss_scorer
-            model.classes_ = np.unique(y_validation)
         else:
             scoring = "neg_mean_squared_error"
 

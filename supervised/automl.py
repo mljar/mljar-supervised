@@ -9,15 +9,13 @@ warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 from collections.abc import Iterable
 from re import U
-
 # libraries for type hints
 from typing import List, Optional, Union
 
 import numpy
 import pandas
-from typing_extensions import (
-    Literal,
-)  # typing_extensions is used for using Literal from python 3.7
+from typing_extensions import \
+    Literal  # typing_extensions is used for using Literal from python 3.7
 
 from supervised.base_automl import BaseAutoML
 from supervised.utils.config import LOG_LEVEL

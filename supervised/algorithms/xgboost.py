@@ -10,23 +10,18 @@ import xgboost as xgb
 from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-    AlgorithmsRegistry,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION, AlgorithmsRegistry)
 from supervised.utils.config import LOG_LEVEL
-from supervised.utils.metric import (
-    xgboost_eval_metric_accuracy,
-    xgboost_eval_metric_average_precision,
-    xgboost_eval_metric_f1,
-    xgboost_eval_metric_mse,
-    xgboost_eval_metric_pearson,
-    xgboost_eval_metric_r2,
-    xgboost_eval_metric_spearman,
-    xgboost_eval_metric_user_defined,
-)
+from supervised.utils.metric import (xgboost_eval_metric_accuracy,
+                                     xgboost_eval_metric_average_precision,
+                                     xgboost_eval_metric_f1,
+                                     xgboost_eval_metric_mse,
+                                     xgboost_eval_metric_pearson,
+                                     xgboost_eval_metric_r2,
+                                     xgboost_eval_metric_spearman,
+                                     xgboost_eval_metric_user_defined)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -129,7 +124,6 @@ class XgbAlgorithm(BaseAlgorithm):
         elif self.params.get("eval_metric", "") == "user_defined_metric":
             self.custom_eval_metric = xgboost_eval_metric_user_defined
 
-        self.best_ntree_limit = 0
         logger.debug("XgbLearner __init__")
 
     """
@@ -214,10 +208,6 @@ class XgbAlgorithm(BaseAlgorithm):
         del dtrain
         del dvalidation
 
-        # dump_list = self.model.get_dump()
-        # num_trees = len(dump_list)
-        # print(self.model.best_ntree_limit, num_trees)
-
         if log_to_file is not None:
             metric_name = list(evals_result["train"].keys())[-1]
 
@@ -244,9 +234,6 @@ class XgbAlgorithm(BaseAlgorithm):
 
             result.to_csv(log_to_file, index=False, header=False)
 
-        # save best_ntree_limit because of:
-        # https://github.com/dmlc/xgboost/issues/805
-        self.best_ntree_limit = self.model.best_ntree_limit
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
@@ -271,12 +258,13 @@ class XgbAlgorithm(BaseAlgorithm):
         dtrain = xgb.DMatrix(
             X.values if isinstance(X, pd.DataFrame) else X, missing=np.NaN
         )
-        if "iteration_range" in str(signature(self.model.predict)):
-            # the newer version
-            a = self.model.predict(dtrain, iteration_range=(0, self.best_ntree_limit))
+        # xgboost > 2.0.0 version
+        if hasattr(self.model, "best_iteration"):
+            a = self.model.predict(
+                dtrain, iteration_range=(0, self.model.best_iteration + 1)
+            )
         else:
-            # the older interface
-            a = self.model.predict(dtrain, ntree_limit=self.best_ntree_limit)
+            a = self.model.predict(dtrain)
 
         return a
 
@@ -295,7 +283,9 @@ class XgbAlgorithm(BaseAlgorithm):
         self.model_file_path = model_file_path
 
     def file_extension(self):
-        return "xgboost"
+        # we need to keep models as json files
+        # to keep information about best_iteration
+        return "xgboost.json"
 
     def get_metric_name(self):
         metric = self.params.get("eval_metric")

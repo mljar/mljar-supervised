@@ -1,14 +1,10 @@
 import optuna
 
-from supervised.algorithms.extra_trees import (
-    ExtraTreesAlgorithm,
-    ExtraTreesRegressorAlgorithm,
-)
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-)
+from supervised.algorithms.extra_trees import (ExtraTreesAlgorithm,
+                                               ExtraTreesRegressorAlgorithm)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION)
 from supervised.utils.metric import Metric
 
 EPS = 1e-8

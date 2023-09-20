@@ -12,15 +12,13 @@ import numpy as np
 import pandas as pd
 
 from supervised.algorithms.factory import AlgorithmFactory
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-    AlgorithmsRegistry,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION, AlgorithmsRegistry)
 from supervised.callbacks.callback_list import CallbackList
 from supervised.exceptions import AutoMLException
-from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.preprocessing.exclude_missing_target import \
+    ExcludeRowsMissingTarget
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL

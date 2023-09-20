@@ -5,18 +5,11 @@ log = logging.getLogger(__name__)
 import numpy as np
 import pandas as pd
 import scipy as sp
-from sklearn.metrics import (
-    accuracy_score,
-    average_precision_score,
-    f1_score,
-    log_loss,
-    mean_absolute_error,
-    mean_absolute_percentage_error,
-    mean_squared_error,
-    mean_squared_log_error,
-    r2_score,
-    roc_auc_score,
-)
+from sklearn.metrics import (accuracy_score, average_precision_score, f1_score,
+                             log_loss, mean_absolute_error,
+                             mean_absolute_percentage_error,
+                             mean_squared_error, mean_squared_log_error,
+                             r2_score, roc_auc_score)
 
 
 def logloss(y_true, y_predicted, sample_weight=None):

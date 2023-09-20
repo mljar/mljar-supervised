@@ -10,11 +10,9 @@ import numpy as np
 import pandas as pd
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION)
 from supervised.exceptions import NotTrainedException
 from supervised.model_framework import ModelFramework
 from supervised.utils.additional_metrics import AdditionalMetrics

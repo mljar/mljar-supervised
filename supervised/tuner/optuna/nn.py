@@ -1,11 +1,9 @@
 import optuna
 
 from supervised.algorithms.nn import MLPAlgorithm, MLPRegressorAlgorithm
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION)
 from supervised.utils.metric import Metric
 
 

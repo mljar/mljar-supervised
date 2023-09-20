@@ -8,21 +8,16 @@ import pandas as pd
 from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
-    REGRESSION,
-    AlgorithmsRegistry,
-)
+from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
+                                            MULTICLASS_CLASSIFICATION,
+                                            REGRESSION, AlgorithmsRegistry)
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.utils.config import LOG_LEVEL
-from supervised.utils.metric import (
-    CatBoostEvalMetricAveragePrecision,
-    CatBoostEvalMetricMSE,
-    CatBoostEvalMetricPearson,
-    CatBoostEvalMetricSpearman,
-    CatBoostEvalMetricUserDefined,
-)
+from supervised.utils.metric import (CatBoostEvalMetricAveragePrecision,
+                                     CatBoostEvalMetricMSE,
+                                     CatBoostEvalMetricPearson,
+                                     CatBoostEvalMetricSpearman,
+                                     CatBoostEvalMetricUserDefined)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)

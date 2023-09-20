@@ -83,6 +83,30 @@ class XgboostAlgorithmTest(unittest.TestCase):
         loss2 = metric(self.y, y_predicted)
         assert_almost_equal(loss, loss2)
 
+    def test_save_and_load_with_early_stopping(self):
+        metric = Metric({"name": "logloss"})
+        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        xgb = XgbAlgorithm(params)
+        xgb.fit(self.X, self.y, X_validation=self.X, y_validation=self.y)
+        y_predicted = xgb.predict(self.X)
+        loss = metric(self.y, y_predicted)
+
+        filename = os.path.join(tempfile.gettempdir(), os.urandom(12).hex())
+        prev_best_iteration = xgb.model.best_iteration
+        xgb.save(filename)
+
+        xgb2 = XgbAlgorithm(params)
+        self.assertTrue(xgb2.model is None)
+        xgb2.load(filename)
+        # Finished with the file, delete it
+        os.remove(filename)
+
+        y_predicted = xgb2.predict(self.X)
+        loss2 = metric(self.y, y_predicted)
+        assert_almost_equal(loss, loss2)
+        self.assertEqual(prev_best_iteration, xgb2.model.best_iteration)
+
+
     def test_restricted_characters_in_feature_name(self):
         df = pd.DataFrame(
             {

@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_categorical import \
+    PreprocessingCategorical
 
 
 class EncodingSelector:
