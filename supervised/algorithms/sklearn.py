@@ -35,6 +35,8 @@ class SklearnAlgorithm(BaseAlgorithm):
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore")
             self.model.fit(X, y, sample_weight=sample_weight)
+            if self.params["ml_task"] != REGRESSION:
+                self.classes_ = np.unique(y)
 
     def copy(self):
         return copy.deepcopy(self)
@@ -172,6 +174,8 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
                 df_result["train"] *= -1.0
                 df_result["validation"] *= -1.0
             df_result.to_csv(log_to_file, index=False, header=False)
+        
+        self.classes_ = np.unique(y)
 
     def get_metric_name(self):
         return self.params.get("eval_metric_name", "logloss")

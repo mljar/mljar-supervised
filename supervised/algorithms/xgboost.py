@@ -234,6 +234,9 @@ class XgbAlgorithm(BaseAlgorithm):
 
             result.to_csv(log_to_file, index=False, header=False)
 
+        if self.params["ml_task"] != REGRESSION:
+            self.classes_ = np.unique(y)
+
         # fix high memory consumption in xgboost,
         # waiting for release with fix
         # https://github.com/dmlc/xgboost/issues/5474
