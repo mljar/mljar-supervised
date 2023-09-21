@@ -11,11 +11,9 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLModelsNeededForPredictTest(unittest.TestCase):
-
     # models_needed_on_predict
 
     def test_models_needed_on_predict(self):
-
         with tempfile.TemporaryDirectory() as tmpdir:
             params = {
                 "saved": [

@@ -12,7 +12,6 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLGoldenFeaturesTest(unittest.TestCase):
-
     automl_dir = "automl_tests"
     rows = 50
 
@@ -20,7 +19,6 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_no_golden_features(self):
-
         N_COLS = 10
         X, y = datasets.make_classification(
             n_samples=100,
@@ -50,7 +48,6 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
         self.assertEqual(len(automl._models), 1)
 
     def test_golden_features(self):
-
         N_COLS = 10
         X, y = datasets.make_classification(
             n_samples=100,
@@ -85,7 +82,6 @@ class AutoMLGoldenFeaturesTest(unittest.TestCase):
             self.assertEqual(len(d["new_features"]), 10)
 
     def test_golden_features_count(self):
-
         N_COLS = 10
         X, y = datasets.make_classification(
             n_samples=100,

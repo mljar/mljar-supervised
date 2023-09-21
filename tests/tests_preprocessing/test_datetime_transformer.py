@@ -9,7 +9,6 @@ from supervised.preprocessing.datetime_transformer import DateTimeTransformer
 
 class DateTimeTransformerTest(unittest.TestCase):
     def test_transformer(self):
-
         d = {
             "col1": [
                 "2020/06/01",

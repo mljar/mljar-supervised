@@ -7,7 +7,6 @@ from supervised.tuner.time_controller import TimeController
 
 class TimeControllerTest(unittest.TestCase):
     def test_to_and_from_json(self):
-
         tc = TimeController(
             start_time=time.time(),
             total_time_limit=10,
@@ -23,7 +22,6 @@ class TimeControllerTest(unittest.TestCase):
         assert_almost_equal(tc2.model_spend("Baseline"), 123.1)
 
     def test_enough_time_for_stacking(self):
-
         for t in [5, 10, 20]:
             tc = TimeController(
                 start_time=time.time(),

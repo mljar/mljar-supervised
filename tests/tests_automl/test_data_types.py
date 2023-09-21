@@ -12,7 +12,6 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLDataTypesTest(unittest.TestCase):
-
     automl_dir = "automl_tests"
     rows = 250
 
@@ -20,7 +19,6 @@ class AutoMLDataTypesTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_category_data_type(self):
-
         X = np.random.rand(self.rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
         y = np.random.randint(0, 2, self.rows)
@@ -38,7 +36,6 @@ class AutoMLDataTypesTest(unittest.TestCase):
         automl.fit(X, y)
 
     def test_encoding_strange_characters(self):
-
         X = np.random.rand(self.rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
         y = np.random.permutation(["ɛ", "🂲"] * int(self.rows / 2))

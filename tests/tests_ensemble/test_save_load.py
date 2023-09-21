@@ -7,7 +7,6 @@ from supervised import AutoML
 
 
 class EnsembleSaveLoadTest(unittest.TestCase):
-
     automl_dir = "automl_1"
 
     def tearDown(self):

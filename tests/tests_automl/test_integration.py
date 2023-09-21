@@ -11,7 +11,6 @@ from supervised import AutoML
 
 
 class AutoMLIntegrationTest(unittest.TestCase):
-
     automl_dir = "automl_1"
 
     def tearDown(self):
@@ -76,7 +75,7 @@ class AutoMLIntegrationTest(unittest.TestCase):
         self.assertEqual(len(p), X.shape[0])
 
     def test_different_input_types(self):
-        """ Test the different data input types for AutoML"""
+        """Test the different data input types for AutoML"""
         model = AutoML(
             total_time_limit=10,
             explain_level=0,

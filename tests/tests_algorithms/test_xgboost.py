@@ -10,6 +10,7 @@ from sklearn import datasets
 
 from supervised.algorithms.xgboost import XgbAlgorithm, additional
 from supervised.utils.metric import Metric
+from supervised.utils.constants import BINARY_CLASSIFICATION
 
 import tempfile
 
@@ -33,7 +34,12 @@ class XgboostAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss", "seed": 1}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "seed": 1,
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         prev_loss = None
         for _ in range(3):
             xgb = XgbAlgorithm(params)
@@ -46,7 +52,11 @@ class XgboostAlgorithmTest(unittest.TestCase):
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         xgb = XgbAlgorithm(params)
         xgb.fit(self.X, self.y)
         y_predicted = xgb.predict(self.X)
@@ -63,7 +73,11 @@ class XgboostAlgorithmTest(unittest.TestCase):
 
     def test_save_and_load(self):
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         xgb = XgbAlgorithm(params)
         xgb.fit(self.X, self.y)
         y_predicted = xgb.predict(self.X)
@@ -85,7 +99,11 @@ class XgboostAlgorithmTest(unittest.TestCase):
 
     def test_save_and_load_with_early_stopping(self):
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         xgb = XgbAlgorithm(params)
         xgb.fit(self.X, self.y, X_validation=self.X, y_validation=self.y)
         y_predicted = xgb.predict(self.X)
@@ -106,7 +124,6 @@ class XgboostAlgorithmTest(unittest.TestCase):
         assert_almost_equal(loss, loss2)
         self.assertEqual(prev_best_iteration, xgb2.model.best_iteration)
 
-
     def test_restricted_characters_in_feature_name(self):
         df = pd.DataFrame(
             {
@@ -120,13 +137,21 @@ class XgboostAlgorithmTest(unittest.TestCase):
         X = df.iloc[:, 1:]
 
         metric = Metric({"name": "logloss"})
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         xgb = XgbAlgorithm(params)
         xgb.fit(X, y)
         xgb.predict(X)
 
     def test_get_metric_name(self):
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         model = XgbAlgorithm(params)
         self.assertEqual(model.get_metric_name(), "logloss")
 
@@ -135,7 +160,11 @@ class XgboostAlgorithmTest(unittest.TestCase):
         self.assertEqual(model.get_metric_name(), "rmse")
 
     def test_is_fitted(self):
-        params = {"objective": "binary:logistic", "eval_metric": "logloss"}
+        params = {
+            "objective": "binary:logistic",
+            "eval_metric": "logloss",
+            "ml_task": BINARY_CLASSIFICATION,
+        }
         model = XgbAlgorithm(params)
         self.assertFalse(model.is_fitted())
         model.fit(self.X, self.y)

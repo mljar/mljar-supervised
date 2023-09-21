@@ -11,14 +11,12 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLAdjustValidationTest(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_custom_init(self):
-
         X = np.random.uniform(size=(60, 2))
         y = np.random.randint(0, 2, size=(60,))
 

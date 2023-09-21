@@ -20,7 +20,6 @@ additional["max_rounds"] = 1
 
 
 class AutoMLExplainLevelsTest(unittest.TestCase):
-
     automl_dir = "automl_1"
 
     def setUp(self):
@@ -294,7 +293,6 @@ class AutoMLExplainLevelsTest(unittest.TestCase):
                 break
         # disable  ??? TODO
         self.assertTrue(produced)
-
 
         # Check permutation importance
         produced = False

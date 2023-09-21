@@ -23,7 +23,6 @@ breast_cancer = datasets.load_breast_cancer()
 
 
 class AutoMLSampleWeightTest(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):

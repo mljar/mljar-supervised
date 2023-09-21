@@ -11,14 +11,12 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLStackModelsConstraintsTest(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_allow_stack_models(self):
-
         X = np.random.uniform(size=(100, 2))
         y = np.random.randint(0, 2, size=(100,))
         X[:, 0] = y
@@ -36,7 +34,6 @@ class AutoMLStackModelsConstraintsTest(unittest.TestCase):
         self.assertTrue(automl._time_ctrl._is_stacking)
 
     def test_disable_stack_models(self):
-
         X = np.random.uniform(size=(100, 2))
         y = np.random.randint(0, 2, size=(100,))
         X[:, 0] = y
@@ -54,7 +51,6 @@ class AutoMLStackModelsConstraintsTest(unittest.TestCase):
         self.assertFalse(automl._time_ctrl._is_stacking)
 
     def test_disable_stack_models_adjusted_validation(self):
-
         X = np.random.uniform(size=(100, 2))
         y = np.random.randint(0, 2, size=(100,))
         X[:, 0] = y

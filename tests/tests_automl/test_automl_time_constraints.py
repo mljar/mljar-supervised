@@ -14,7 +14,6 @@ from supervised.tuner.time_controller import TimeController
 
 
 class AutoMLTimeConstraintsTest(unittest.TestCase):
-
     automl_dir = "automl_tests"
 
     def tearDown(self):

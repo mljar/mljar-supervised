@@ -13,7 +13,6 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLDirChangeTest(unittest.TestCase):
-
     automl_dir_a = "automl_testing_A"
     automl_dir_b = "automl_testing_B"
     automl_dir = "automl_testing"

@@ -18,7 +18,9 @@ class SplitValidatorTest(unittest.TestCase):
                     ),
                     columns=["a", "b"],
                 ),
-                "y": pd.DataFrame(np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]),
+                "y": pd.DataFrame(
+                    np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]
+                ),
             }
 
             X_path = os.path.join(results_path, "X.data")
@@ -136,7 +138,9 @@ class SplitValidatorTest(unittest.TestCase):
                     ),
                     columns=["a", "b"],
                 ),
-                "y": pd.DataFrame(np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]),
+                "y": pd.DataFrame(
+                    np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]
+                ),
             }
 
             X_path = os.path.join(results_path, "X.data")
@@ -165,7 +169,9 @@ class SplitValidatorTest(unittest.TestCase):
                     train, validation = vl.get_split(k_fold, repeat)
 
                     X_train, y_train = train.get("X"), train.get("y")
-                    X_validation, y_validation = validation.get("X"), validation.get("y")
+                    X_validation, y_validation = validation.get("X"), validation.get(
+                        "y"
+                    )
 
                     self.assertEqual(X_train.shape[0], 4)
                     self.assertEqual(y_train.shape[0], 4)
@@ -184,7 +190,9 @@ class SplitValidatorTest(unittest.TestCase):
                     ),
                     columns=["a", "b"],
                 ),
-                "y": pd.DataFrame(np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]),
+                "y": pd.DataFrame(
+                    np.array([0, 0, 1, 0, 1, 0, 1, 1]), columns=["target"]
+                ),
             }
 
             X_path = os.path.join(results_path, "X.data")

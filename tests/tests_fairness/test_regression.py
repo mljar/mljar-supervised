@@ -45,15 +45,15 @@ class FairnessInRegressionTest(unittest.TestCase):
         self.assertTrue(automl._models[0].get_worst_fairness() is not None)
         self.assertTrue(automl._models[0].get_best_fairness() is not None)
 
-
-
     def test_two_sensitive_features(self):
         X = np.random.uniform(size=(30, 2))
         y = np.random.randint(0, 100, size=(30,))
-        S = pd.DataFrame({
-            "sensitive_1": ["White", "Black"] * 15,
-            "sensitive_2": ["Male", "Female"] * 15
-            })
+        S = pd.DataFrame(
+            {
+                "sensitive_1": ["White", "Black"] * 15,
+                "sensitive_2": ["Male", "Female"] * 15,
+            }
+        )
 
         automl = AutoML(
             results_path=self.automl_dir,
@@ -71,4 +71,3 @@ class FairnessInRegressionTest(unittest.TestCase):
 
         sensitive_features_names = automl._models[0].get_sensitive_features_names()
         self.assertEqual(len(sensitive_features_names), 2)
-        

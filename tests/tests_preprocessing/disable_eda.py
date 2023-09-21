@@ -13,7 +13,6 @@ from supervised.preprocessing.eda import EDA
 
 
 class EDATest(unittest.TestCase):
-
     automl_dir = "automl_tests"
 
     def tearDown(self):
@@ -42,14 +41,13 @@ class EDATest(unittest.TestCase):
         self.assertTrue("README.md" in result_files)
 
     def test_column_name_to_filename(self):
-        """ Valid feature name should be untouched """
+        """Valid feature name should be untouched"""
         col = "feature_1"
         self.assertEqual(EDA.prepare(col), col)
 
         self.tearDown()
 
     def test_extensive_eda(self):
-
         """
         Test for extensive_eda feature
         """

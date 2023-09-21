@@ -22,7 +22,6 @@ breast_cancer = datasets.load_breast_cancer()
 
 
 class AutoMLTest(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):
@@ -32,7 +31,7 @@ class AutoMLTest(unittest.TestCase):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_new_directory(self):
-        """ Directory does not exist, create it """
+        """Directory does not exist, create it"""
         # Assert directory does not exist
         self.assertTrue(not os.path.exists(self.automl_dir))
         # Create model with dir
@@ -45,7 +44,7 @@ class AutoMLTest(unittest.TestCase):
         self.assertTrue(os.path.exists(self.automl_dir))
 
     def test_empty_directory(self):
-        """ Directory exists and is empty, use it """
+        """Directory exists and is empty, use it"""
         # Assert directory does not exist
         self.assertTrue(not os.path.exists(self.automl_dir))
         # Make dir
@@ -157,7 +156,7 @@ class AutoMLTest(unittest.TestCase):
             model.predict_proba(housing.data)
 
     def test_iris_dataset(self):
-        """ Tests AutoML in the iris dataset (Multiclass classification)"""
+        """Tests AutoML in the iris dataset (Multiclass classification)"""
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
@@ -165,15 +164,17 @@ class AutoMLTest(unittest.TestCase):
         self.assertGreater(score, 0.5)
 
     def test_housing_dataset(self):
-        """ Tests AutoML in the housing dataset (Regression)"""
+        """Tests AutoML in the housing dataset (Regression)"""
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
-        score = model.fit(housing.data, housing.target).score(housing.data, housing.target)
+        score = model.fit(housing.data, housing.target).score(
+            housing.data, housing.target
+        )
         self.assertGreater(score, 0.5)
 
     def test_breast_cancer_dataset(self):
-        """ Tests AutoML in the breast cancer (binary classification)"""
+        """Tests AutoML in the breast cancer (binary classification)"""
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
@@ -183,7 +184,7 @@ class AutoMLTest(unittest.TestCase):
         self.assertGreater(score, 0.5)
 
     def test_titatic_dataset(self):
-        """ Tets AutoML in the titanic dataset (binary classification) with categorial features"""
+        """Tets AutoML in the titanic dataset (binary classification) with categorial features"""
         automl = AutoML(
             algorithms=["Xgboost"], mode="Explain", results_path=self.automl_dir
         )

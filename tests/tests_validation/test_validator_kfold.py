@@ -10,7 +10,7 @@ import tempfile
 
 class KFoldValidatorTest(unittest.TestCase):
     def test_create(self):
-        with tempfile.TemporaryDirectory() as results_path:        
+        with tempfile.TemporaryDirectory() as results_path:
             data = {
                 "X": pd.DataFrame(
                     np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), columns=["a", "b"]
@@ -159,7 +159,9 @@ class KFoldValidatorTest(unittest.TestCase):
                     train, validation = vl.get_split(k_fold, repeat)
 
                     X_train, y_train = train.get("X"), train.get("y")
-                    X_validation, y_validation = validation.get("X"), validation.get("y")
+                    X_validation, y_validation = validation.get("X"), validation.get(
+                        "y"
+                    )
 
                     self.assertEqual(X_train.shape[0], 2)
                     self.assertEqual(y_train.shape[0], 2)

@@ -10,7 +10,6 @@ from supervised.algorithms.registry import REGRESSION
 
 class SubsampleTest(unittest.TestCase):
     def test_subsample_regression_10k(self):
-
         rows = 10000
         cols = 51
         X = np.random.rand(rows, cols)

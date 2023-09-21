@@ -10,7 +10,6 @@ from supervised.preprocessing.text_transformer import TextTransformer
 
 class TextTransformerTest(unittest.TestCase):
     def test_transformer(self):
-
         d = {
             "col1": [
                 "This is the first document.",

@@ -15,7 +15,6 @@ additional["max_rounds"] = 1
 
 
 class AutoMLTargetsTest(unittest.TestCase):
-
     automl_dir = "automl_tests"
     rows = 50
 

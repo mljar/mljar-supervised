@@ -25,7 +25,6 @@ class ModelMock:
 
 class TunerHillClimbingTest(unittest.TestCase):
     def test_hill_climbing(self):
-
         models = []
         models += [
             ModelMock(

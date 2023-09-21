@@ -21,7 +21,6 @@ additional["max_rounds"] = 1
 
 
 class AutoMLRepeatedValidationTest(unittest.TestCase):
-
     automl_dir = "automl_1"
 
     def tearDown(self):

@@ -20,7 +20,6 @@ additional["max_rounds"] = 1
 
 
 class AutoMLHandleImbalanceTest(unittest.TestCase):
-
     automl_dir = "automl_1"
 
     def tearDown(self):
@@ -113,7 +112,7 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
                 "stratify": True,
             },
             start_random_models=1,
-            explain_level=0
+            explain_level=0,
         )
 
         rows = 100

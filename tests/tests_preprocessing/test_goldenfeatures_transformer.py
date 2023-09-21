@@ -17,14 +17,12 @@ from supervised.algorithms.registry import (
 
 
 class GoldenFeaturesTransformerTest(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_transformer(self):
-
         X, y = datasets.make_classification(
             n_samples=100,
             n_features=10,
@@ -49,7 +47,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
             gft3.from_json(gft.to_json(), tmpdir)
 
     def test_subsample_regression_10k(self):
-
         rows = 10000
         X = np.random.rand(rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -64,7 +61,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
         self.assertTrue(y_test.shape[0], 2500)
 
     def test_subsample_regression_4k(self):
-
         rows = 4000
         X = np.random.rand(rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -79,7 +75,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
         self.assertTrue(y_test.shape[0], 2000)
 
     def test_subsample_multiclass_10k(self):
-
         rows = 10000
         X = np.random.rand(rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -98,7 +93,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
                 self.assertTrue(i in uni)
 
     def test_subsample_multiclass_4k(self):
-
         rows = 4000
         X = np.random.rand(rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -117,7 +111,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
                 self.assertTrue(i in uni)
 
     def test_subsample_binclass_4k(self):
-
         rows = 4000
         X = np.random.rand(rows, 3)
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
@@ -136,7 +129,6 @@ class GoldenFeaturesTransformerTest(unittest.TestCase):
                 self.assertTrue(i in uni)
 
     def test_features_count(self):
-
         N_COLS = 10
         X, y = datasets.make_classification(
             n_samples=100,

@@ -10,14 +10,12 @@ from supervised.exceptions import AutoMLException
 
 
 class TestJoblibVersion(unittest.TestCase):
-
     automl_dir = "automl_testing"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
 
     def test_joblib_good_version(self):
-
         X = np.random.uniform(size=(60, 2))
         y = np.random.randint(0, 2, size=(60,))
 
@@ -38,19 +36,17 @@ class TestJoblibVersion(unittest.TestCase):
         automl.fit(X, y)
 
         # Test if joblib is in json
-        json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json") 
+        json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json")
 
         with open(json_path) as file:
             frame = json.load(file)
 
-        json_version = frame['joblib_version']
+        json_version = frame["joblib_version"]
         expected_result = joblib.__version__
 
         self.assertEqual(expected_result, json_version)
 
-
     def test_joblib_wrong_version(self):
-        
         X = np.random.uniform(size=(60, 2))
         y = np.random.randint(0, 2, size=(60,))
 
@@ -70,21 +66,21 @@ class TestJoblibVersion(unittest.TestCase):
         )
         automl.fit(X, y)
 
-        json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json") 
+        json_path = os.path.join(self.automl_dir, "1_Default_Xgboost", "framework.json")
 
         with open(json_path) as file:
             frame = json.load(file)
 
         # Injection of wrong joblib version
-        frame['joblib_version'] = "0.2.0"
+        frame["joblib_version"] = "0.2.0"
 
-        with open(json_path, 'w') as file:
+        with open(json_path, "w") as file:
             json.dump(frame, file)
 
         with self.assertRaises(AutoMLException):
             automl_2 = AutoML(results_path=self.automl_dir)
             automl_2.predict(X)
 
-        
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
