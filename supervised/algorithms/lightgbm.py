@@ -257,7 +257,7 @@ class LightgbmAlgorithm(BaseAlgorithm):
                     }
                 )
                 result.to_csv(log_to_file, index=False, header=False)
-            
+
             if self.params["ml_task"] != REGRESSION:
                 self.classes_ = np.unique(y)
 

@@ -27,4 +27,4 @@ automl.fit(X_train, y_train)
 
 
 pred = automl.predict(X_test)
-print("Test accuracy", accuracy_score(y_test, pred["label"]))
+print("Test accuracy", accuracy_score(y_test, pred))

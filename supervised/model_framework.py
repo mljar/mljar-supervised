@@ -462,6 +462,7 @@ class ModelFramework:
 
     def get_additional_metrics(self):
         if self._additional_metrics is None:
+            logger.debug("Compute additional metrics")
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
             oof_predictions = self.get_out_of_folds()
