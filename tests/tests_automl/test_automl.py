@@ -322,7 +322,7 @@ class AutoMLTest(unittest.TestCase):
             model.fit(iris.data, iris.target)
 
     def test_too_small_time_limit(self):
-        rows = 100000
+        rows = 1000000
         X = np.random.uniform(size=(rows, 100))
         y = np.random.randint(0, 2, size=(rows,))
 
