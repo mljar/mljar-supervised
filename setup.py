@@ -21,12 +21,13 @@ setup(
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=open("requirements.txt").readlines(),
     include_package_data=True,
-    python_requires='>=3.7.1',
+    python_requires='>=3.8',
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     keywords=[
         "automated machine learning",
@@ -34,6 +35,16 @@ setup(
         "machine learning",
         "data science",
         "data mining",
-        "mljar"
+        "mljar",
+        "random forest",
+        "decision tree",
+        "xgboost",
+        "lightgbm",
+        "catboost",
+        "neural network",
+        "extra trees",
+        "linear model",
+        "features selection",
+        "features engineering"
     ],
 )
