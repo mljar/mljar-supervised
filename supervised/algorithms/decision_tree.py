@@ -8,9 +8,12 @@ from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.utils.config import LOG_LEVEL
 

@@ -17,6 +17,7 @@ from supervised.tuner.optuna.nn import NeuralNetworkObjective
 from supervised.tuner.optuna.random_forest import RandomForestObjective
 from supervised.tuner.optuna.xgboost import XgboostObjective
 from supervised.utils.metric import Metric
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 
 class OptunaTuner:
@@ -277,7 +278,7 @@ class OptunaTuner:
 
     def save(self):
         with open(self.tuning_fname, "w") as fout:
-            fout.write(json.dumps(self.tuning, indent=4))
+            fout.write(json.dumps(self.tuning, indent=4, cls=MLJSONEncoder))
 
     def load(self):
         if os.path.exists(self.tuning_fname):

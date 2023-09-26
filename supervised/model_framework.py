@@ -12,18 +12,21 @@ import numpy as np
 import pandas as pd
 
 from supervised.algorithms.factory import AlgorithmFactory
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.callbacks.callback_list import CallbackList
 from supervised.exceptions import AutoMLException
-from supervised.preprocessing.exclude_missing_target import \
-    ExcludeRowsMissingTarget
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import Metric
 from supervised.validation.validation_step import ValidationStep
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -632,7 +635,7 @@ class ModelFramework:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:
                 desc["single_prediction_time"] = self._single_prediction_time
-            fout.write(json.dumps(desc, indent=4))
+            fout.write(json.dumps(desc, indent=4, cls=MLJSONEncoder))
 
         learning_curve_metric = self.learners[0].get_metric_name()
         if learning_curve_metric is None:

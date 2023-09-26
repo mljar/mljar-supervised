@@ -11,10 +11,13 @@ from sklearn.metrics import log_loss, mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.exceptions import AutoMLException
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 
 def get_binary_score(X_train, y_train, X_test, y_test):
@@ -260,7 +263,7 @@ class GoldenFeaturesTransformer(object):
 
     def save(self):
         with open(self._result_path, "w") as fout:
-            fout.write(json.dumps(self.to_json(), indent=4))
+            fout.write(json.dumps(self.to_json(), indent=4, cls=MLJSONEncoder))
 
     def _subsample(self, X, y):
         MAX_SIZE = 10000

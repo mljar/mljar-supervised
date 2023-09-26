@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.config import LOG_LEVEL
 
 logger = logging.getLogger(__name__)

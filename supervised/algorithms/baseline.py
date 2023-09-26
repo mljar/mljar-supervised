@@ -5,9 +5,12 @@ import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.algorithms.sklearn import SklearnAlgorithm
 from supervised.utils.config import LOG_LEVEL
 

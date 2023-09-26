@@ -7,9 +7,11 @@ import pandas as pd
 import shap
 from sklearn.preprocessing import OneHotEncoder
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL

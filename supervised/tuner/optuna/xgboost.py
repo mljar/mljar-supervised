@@ -2,19 +2,23 @@ import numpy as np
 import optuna
 import xgboost as xgb
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
-from supervised.algorithms.xgboost import (xgboost_eval_metric,
-                                           xgboost_objective)
-from supervised.utils.metric import (Metric, xgboost_eval_metric_accuracy,
-                                     xgboost_eval_metric_average_precision,
-                                     xgboost_eval_metric_f1,
-                                     xgboost_eval_metric_mse,
-                                     xgboost_eval_metric_pearson,
-                                     xgboost_eval_metric_r2,
-                                     xgboost_eval_metric_spearman,
-                                     xgboost_eval_metric_user_defined)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
+from supervised.algorithms.xgboost import xgboost_eval_metric, xgboost_objective
+from supervised.utils.metric import (
+    Metric,
+    xgboost_eval_metric_accuracy,
+    xgboost_eval_metric_average_precision,
+    xgboost_eval_metric_f1,
+    xgboost_eval_metric_mse,
+    xgboost_eval_metric_pearson,
+    xgboost_eval_metric_r2,
+    xgboost_eval_metric_spearman,
+    xgboost_eval_metric_user_defined,
+)
 
 EPS = 1e-8
 

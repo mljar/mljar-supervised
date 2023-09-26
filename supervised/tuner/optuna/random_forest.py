@@ -1,10 +1,14 @@
 import optuna
 
 from supervised.algorithms.random_forest import (
-    RandomForestAlgorithm, RandomForestRegressorAlgorithm)
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+    RandomForestAlgorithm,
+    RandomForestRegressorAlgorithm,
+)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.metric import Metric
 
 

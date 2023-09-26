@@ -10,14 +10,17 @@ import numpy as np
 import pandas as pd
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.exceptions import NotTrainedException
 from supervised.model_framework import ModelFramework
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import Metric
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -527,7 +530,7 @@ class Ensemble:
 
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
-            fout.write(json.dumps(desc, indent=4))
+            fout.write(json.dumps(desc, indent=4, cls=MLJSONEncoder))
 
         LearningCurves.plot_for_ensemble(self._scores, self.metric.name, model_path)
 

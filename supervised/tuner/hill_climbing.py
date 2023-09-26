@@ -2,8 +2,7 @@ import copy
 
 import numpy as np
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            AlgorithmsRegistry)
+from supervised.algorithms.registry import BINARY_CLASSIFICATION, AlgorithmsRegistry
 
 
 class HillClimbing:

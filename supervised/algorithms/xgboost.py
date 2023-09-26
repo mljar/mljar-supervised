@@ -10,18 +10,23 @@ import xgboost as xgb
 from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.utils.config import LOG_LEVEL
-from supervised.utils.metric import (xgboost_eval_metric_accuracy,
-                                     xgboost_eval_metric_average_precision,
-                                     xgboost_eval_metric_f1,
-                                     xgboost_eval_metric_mse,
-                                     xgboost_eval_metric_pearson,
-                                     xgboost_eval_metric_r2,
-                                     xgboost_eval_metric_spearman,
-                                     xgboost_eval_metric_user_defined)
+from supervised.utils.metric import (
+    xgboost_eval_metric_accuracy,
+    xgboost_eval_metric_average_precision,
+    xgboost_eval_metric_f1,
+    xgboost_eval_metric_mse,
+    xgboost_eval_metric_pearson,
+    xgboost_eval_metric_r2,
+    xgboost_eval_metric_spearman,
+    xgboost_eval_metric_user_defined,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)

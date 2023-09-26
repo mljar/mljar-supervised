@@ -9,13 +9,15 @@ from sklearn.preprocessing import OneHotEncoder
 
 from supervised.algorithms.catboost import catboost_eval_metric
 from supervised.algorithms.lightgbm import lightgbm_eval_metric
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.algorithms.xgboost import xgboost_eval_metric
 from supervised.preprocessing.label_encoder import LabelEncoder
-from supervised.preprocessing.preprocessing_categorical import \
-    PreprocessingCategorical
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.tuner.hill_climbing import HillClimbing
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.random_parameters import RandomParameters

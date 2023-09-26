@@ -5,22 +5,22 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer
-from supervised.preprocessing.exclude_missing_target import \
-    ExcludeRowsMissingTarget
-from supervised.preprocessing.goldenfeatures_transformer import \
-    GoldenFeaturesTransformer
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.preprocessing.goldenfeatures_transformer import (
+    GoldenFeaturesTransformer,
+)
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
-from supervised.preprocessing.preprocessing_categorical import \
-    PreprocessingCategorical
-from supervised.preprocessing.preprocessing_missing import \
-    PreprocessingMissingValues
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.text_transformer import TextTransformer

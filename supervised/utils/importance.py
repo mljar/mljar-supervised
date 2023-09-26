@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 from sklearn.inspection import permutation_importance
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.subsample import subsample
 
 logger = logging.getLogger(__name__)

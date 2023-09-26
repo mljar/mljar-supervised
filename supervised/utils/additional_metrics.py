@@ -8,16 +8,26 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, f1_score, matthews_corrcoef,
-                             mean_absolute_error,
-                             mean_absolute_percentage_error,
-                             mean_squared_error, precision_score, r2_score,
-                             recall_score, roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+    mean_squared_error,
+    precision_score,
+    r2_score,
+    recall_score,
+    roc_auc_score,
+)
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 from supervised.utils.metric import logloss
 
 logger = logging.getLogger(__name__)
@@ -28,12 +38,18 @@ from tabulate import tabulate
 
 from supervised.fairness.metrics import FairnessMetrics
 from supervised.fairness.report import FairnessReport
-from supervised.fairness.utils import (accuracy, false_negative_rate,
-                                       false_positive_rate, selection_rate,
-                                       true_negative_rate, true_positive_rate)
+from supervised.fairness.utils import (
+    accuracy,
+    false_negative_rate,
+    false_positive_rate,
+    selection_rate,
+    true_negative_rate,
+    true_positive_rate,
+)
 from supervised.utils.additional_plots import AdditionalPlots
 from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
 from supervised.utils.learning_curves import LearningCurves
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 
 class AdditionalMetrics:
@@ -722,7 +738,7 @@ class AdditionalMetrics:
 
             fname = os.path.join(os.path.dirname(model_path), "drop_features.json")
             with open(fname, "w") as fout:
-                fout.write(json.dumps(drop_features, indent=4))
+                fout.write(json.dumps(drop_features, indent=4, cls=MLJSONEncoder))
 
             fname = os.path.join(
                 os.path.dirname(model_path),

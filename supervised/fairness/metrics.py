@@ -3,18 +3,31 @@ import os
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.metrics import (accuracy_score, classification_report,
-                             confusion_matrix, f1_score, matthews_corrcoef,
-                             mean_absolute_error,
-                             mean_absolute_percentage_error,
-                             mean_squared_error, precision_score, r2_score,
-                             recall_score, roc_auc_score)
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+    mean_squared_error,
+    precision_score,
+    r2_score,
+    recall_score,
+    roc_auc_score,
+)
 
 from supervised.fairness.optimization import FairnessOptimization
 from supervised.fairness.plots import FairnessPlots
-from supervised.fairness.utils import (accuracy, false_negative_rate,
-                                       false_positive_rate, selection_rate,
-                                       true_negative_rate, true_positive_rate)
+from supervised.fairness.utils import (
+    accuracy,
+    false_negative_rate,
+    false_positive_rate,
+    selection_rate,
+    true_negative_rate,
+    true_positive_rate,
+)
 from supervised.utils.metric import pearson, spearman
 
 

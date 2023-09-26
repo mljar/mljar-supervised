@@ -5,9 +5,11 @@ import pandas as pd
 import scikitplot as skplt
 from matplotlib import pyplot as plt
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+)
 
 
 class AdditionalPlots:

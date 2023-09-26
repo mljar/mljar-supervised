@@ -18,9 +18,12 @@ from sklearn.metrics import accuracy_score, r2_score
 from sklearn.utils.validation import check_array
 from tabulate import tabulate
 
-from supervised.algorithms.registry import (BINARY_CLASSIFICATION,
-                                            MULTICLASS_CLASSIFICATION,
-                                            REGRESSION, AlgorithmsRegistry)
+from supervised.algorithms.registry import (
+    BINARY_CLASSIFICATION,
+    MULTICLASS_CLASSIFICATION,
+    REGRESSION,
+    AlgorithmsRegistry,
+)
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.learner_time_constraint import LearnerTimeConstraint
 from supervised.callbacks.metric_logger import MetricLogger
@@ -28,8 +31,8 @@ from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
 from supervised.exceptions import AutoMLException, NotTrainedException
 from supervised.model_framework import ModelFramework
-from supervised.preprocessing.exclude_missing_target import \
-    ExcludeRowsMissingTarget
+from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -39,12 +42,16 @@ from supervised.tuner.time_controller import TimeController
 from supervised.utils.automl_plots import AutoMLPlots
 from supervised.utils.config import LOG_LEVEL, mem
 from supervised.utils.data_validation import (
-    check_bool, check_greater_than_zero_integer,
-    check_greater_than_zero_integer_or_float, check_integer,
-    check_positive_integer)
+    check_bool,
+    check_greater_than_zero_integer,
+    check_greater_than_zero_integer_or_float,
+    check_integer,
+    check_positive_integer,
+)
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.utils import dump_data, load_data
+from supervised.utils.jsonencoder import MLJSONEncoder
 
 try:
     import matplotlib.font_manager as font_manager
@@ -698,7 +705,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._data_info["num_class"] = columns_and_target_info["num_class"]
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
-            fout.write(json.dumps(self._data_info, indent=4))
+            fout.write(json.dumps(self._data_info, indent=4, cls=MLJSONEncoder))
 
     def save_progress(self, step=None, generated_params=None):
         if step is not None and generated_params is not None:
@@ -713,7 +720,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         fname = os.path.join(self._results_path, "progress.json")
         with open(fname, "w") as fout:
-            fout.write(json.dumps(state, indent=4))
+            fout.write(json.dumps(state, indent=4, cls=MLJSONEncoder))
 
     def load_progress(self):
         state = {}
@@ -1367,7 +1374,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             if self._stacked_models is not None:
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
-            fout.write(json.dumps(params, indent=4))
+            fout.write(json.dumps(params, indent=4, cls=MLJSONEncoder))
 
         if self._models:
             ldb = self.get_leaderboard(original_metric_values=True)
