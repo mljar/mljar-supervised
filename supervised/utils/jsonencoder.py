@@ -1,6 +1,6 @@
 import json
 import numpy as np
-
+from datetime import date
 
 class MLJSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -25,5 +25,7 @@ class MLJSONEncoder(json.JSONEncoder):
             return float(o)
         elif isinstance(o, np.ndarray):
             return o.tolist()
+        elif isinstance(obj, date):
+            return obj.strftime("%Y-%m-%d")
 
-        return super().default(o)
+        return super(MLJSONEncoder, self).default(o)
