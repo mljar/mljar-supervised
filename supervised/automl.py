@@ -50,7 +50,7 @@ class AutoML(BaseAutoML):
                 Literal[
                     "Baseline",
                     "Linear",
-                    "Decicion Tree",
+                    "Decision Tree",
                     "Random Forest",
                     "Extra Trees",
                     "LightGBM",
