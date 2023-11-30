@@ -17,7 +17,11 @@ class KNeighborsRegressorAlgorithmTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.X, cls.y = datasets.make_regression(
-            n_samples=100, n_features=5, n_informative=4, shuffle=False, random_state=0
+            n_samples=100,
+            n_features=5, 
+            n_informative=4, 
+            shuffle=False, 
+            random_state=0
         )
 
     def test_reproduce_fit(self):
@@ -77,3 +81,20 @@ class KNeighborsAlgorithmTest(unittest.TestCase):
         self.assertFalse(model.is_fitted())
         model.fit(self.X, self.y)
         self.assertTrue(model.is_fitted())
+
+    def test_classes_attribute(self):
+        params = {"ml_task": "binary_classification"}
+        model = KNeighborsAlgorithm(params)
+        model.fit(self.X,self.y)
+
+
+        try:
+            classes = model._classes  
+        except AttributeError:
+            classes = None
+
+        #debug statements
+        print("np.unique(self.y):", np.unique(self.y))
+        print("classes:", classes)
+
+        self.assertTrue(np.array_equal(np.unique(self.y), classes))
