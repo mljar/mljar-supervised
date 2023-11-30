@@ -11,7 +11,14 @@
 [![Downloads](https://pepy.tech/badge/mljar-supervised)](https://pepy.tech/project/mljar-supervised)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_overview_mljar_v3.svg" width="100%" />
+  <img 
+    alt=„mljar AutoML”
+    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_white.png#gh-light-mode-only" width="100%" />  
+</p>
+<p align="center">
+  <img 
+    alt=„mljar AutoML”
+    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_black.png#gh-dark-mode-only" width="100%" />  
 </p>
 
 ---
@@ -24,7 +31,7 @@
 
 
 <p align="center">
-  <img src="https://github.com/mljar/visual-identity/raw/main/robots/robot_docs.png" width="40%" />
+  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/pipeline_AutoML.png" width="100%" />
 </p>
 
 
