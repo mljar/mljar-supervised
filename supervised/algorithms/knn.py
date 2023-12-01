@@ -64,7 +64,7 @@ class KNNFit(SklearnAlgorithm, ClassifierMixin):
             return None
 
 
-class KNeighborsAlgorithm(KNNFit, ClassifierMixin):
+class KNeighborsAlgorithm(KNNFit, RegressorMixin):
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 
@@ -81,7 +81,7 @@ class KNeighborsAlgorithm(KNNFit, ClassifierMixin):
         )
 
 
-class KNeighborsRegressorAlgorithm(KNNFit, RegressorMixin):
+class KNeighborsRegressorAlgorithm(KNNFit):
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 

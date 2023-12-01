@@ -87,14 +87,9 @@ class KNeighborsAlgorithmTest(unittest.TestCase):
         model = KNeighborsAlgorithm(params)
         model.fit(self.X,self.y)
 
-
         try:
             classes = model._classes  
         except AttributeError:
             classes = None
-
-        #debug statements
-        print("np.unique(self.y):", np.unique(self.y))
-        print("classes:", classes)
 
         self.assertTrue(np.array_equal(np.unique(self.y), classes))
