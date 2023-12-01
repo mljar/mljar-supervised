@@ -12,12 +12,12 @@
 
 <p align="center">
   <img 
-    alt=„mljar AutoML”
+    alt="mljar AutoML"
     src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_white.png#gh-light-mode-only" width="100%" />  
 </p>
 <p align="center">
   <img 
-    alt=„mljar AutoML”
+    alt="mljar AutoML"
     src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_black.png#gh-dark-mode-only" width="100%" />  
 </p>
 
