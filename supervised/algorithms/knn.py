@@ -55,6 +55,14 @@ class KNNFit(SklearnAlgorithm, ClassifierMixin):
         else:
             self.model.fit(X, y)
 
+    @property
+    def _classes(self):
+        # Returns the unique classes based on the fitted model
+        if hasattr(self.model, "classes_"):
+            return self.model.classes_
+        else:
+            return None
+
 
 class KNeighborsAlgorithm(KNNFit, RegressorMixin):
     algorithm_name = "k-Nearest Neighbors"
