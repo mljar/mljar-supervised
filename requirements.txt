@@ -18,3 +18,4 @@ scikit-plot==0.3.7
 markdown
 typing-extensions
 ipython
+pyarrow
