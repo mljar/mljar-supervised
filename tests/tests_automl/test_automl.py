@@ -1,14 +1,14 @@
 import os
+import shutil
 import unittest
-import tempfile
-import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-import shutil
-
+import pytest
 from sklearn import datasets
-from sklearn.pipeline import make_pipeline
 from sklearn.decomposition import PCA
+from sklearn.pipeline import make_pipeline
 
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
@@ -21,8 +21,10 @@ housing.target = housing.target[:500]
 breast_cancer = datasets.load_breast_cancer()
 
 
+@pytest.mark.usefixtures("data_folder")
 class AutoMLTest(unittest.TestCase):
-    automl_dir = "automl_testing"
+    automl_dir = "AutoMLTest"
+    data_folder: Path
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
@@ -185,18 +187,19 @@ class AutoMLTest(unittest.TestCase):
 
     def test_titatic_dataset(self):
         """Tets AutoML in the titanic dataset (binary classification) with categorial features"""
+        data_folder = self.data_folder
         automl = AutoML(
             algorithms=["Xgboost"], mode="Explain", results_path=self.automl_dir
         )
 
-        df = pd.read_csv("tests/data/Titanic/train.csv")
+        df = pd.read_csv((data_folder / "Titanic/train.csv"))
 
         X = df[df.columns[2:]]
         y = df["Survived"]
 
         automl.fit(X, y)
 
-        test = pd.read_csv("tests/data/Titanic/test_with_Survived.csv")
+        test = pd.read_csv(data_folder / "Titanic/test_with_Survived.csv")
         test_cols = [
             "Parch",
             "Ticket",

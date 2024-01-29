@@ -1,16 +1,17 @@
+import json
+import os
+import shutil
 import unittest
+
 import joblib
 import numpy as np
-import json
-import shutil
-import os
 
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
 
 
 class TestJoblibVersion(unittest.TestCase):
-    automl_dir = "automl_testing"
+    automl_dir = "TestJoblibVersion"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

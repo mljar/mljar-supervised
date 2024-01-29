@@ -1,14 +1,11 @@
 import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
+import unittest
+
+import pandas as pd
 from sklearn import datasets
 
 from supervised import AutoML
-
 from supervised.algorithms.random_forest import additional
 
 additional["max_steps"] = 3
@@ -20,7 +17,7 @@ additional["max_rounds"] = 1
 
 
 class AutoMLExplainLevelsTest(unittest.TestCase):
-    automl_dir = "automl_1"
+    automl_dir = "AutoMLExplainLevelsTest"
 
     def setUp(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

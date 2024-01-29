@@ -1,18 +1,15 @@
-import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
+import unittest
+
+from numpy.testing import assert_almost_equal
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
-from numpy.testing import assert_almost_equal
+
 from supervised import AutoML
 
 
 class AutoMLPredictionAfterLoadTest(unittest.TestCase):
-    automl_dir = "automl_testing"
+    automl_dir = "AutoMLPredictionAfterLoadTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

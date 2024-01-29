@@ -1,18 +1,11 @@
-import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
-from numpy.testing import assert_almost_equal
+import unittest
 
+import numpy as np
+from numpy.testing import assert_almost_equal
 from sklearn import datasets
-from sklearn.pipeline import make_pipeline
-from sklearn.decomposition import PCA
 
 from supervised import AutoML
-from supervised.exceptions import AutoMLException
 
 iris = datasets.load_iris()
 housing = datasets.fetch_california_housing()
@@ -23,7 +16,7 @@ breast_cancer = datasets.load_breast_cancer()
 
 
 class AutoMLSampleWeightTest(unittest.TestCase):
-    automl_dir = "automl_testing"
+    automl_dir = "AutoMLSampleWeightTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
