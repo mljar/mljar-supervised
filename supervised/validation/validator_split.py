@@ -1,19 +1,14 @@
-import gc
 import logging
 import os
 import warnings
 
 import numpy as np
-import pandas as pd
 
 log = logging.getLogger(__name__)
-
-import time
 
 from sklearn.model_selection import train_test_split
 
 from supervised.exceptions import AutoMLException
-from supervised.utils.config import mem
 from supervised.utils.utils import load_data
 from supervised.validation.validator_base import BaseValidator
 

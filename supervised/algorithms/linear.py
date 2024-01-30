@@ -1,15 +1,12 @@
 import logging
 import os
-import warnings
 
 import numpy as np
 import pandas as pd
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,

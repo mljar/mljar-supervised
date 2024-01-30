@@ -5,8 +5,6 @@ from supervised.algorithms.extra_trees import (
     ExtraTreesRegressorAlgorithm,
 )
 from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
 from supervised.utils.metric import Metric

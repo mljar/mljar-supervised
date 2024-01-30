@@ -1,6 +1,5 @@
 import copy
 import logging
-import os
 import time
 
 import numpy as np
@@ -28,7 +27,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 import catboost
-from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
 
 def catboost_eval_metric(ml_task, eval_metric):

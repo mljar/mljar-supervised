@@ -5,8 +5,6 @@ from supervised.algorithms.random_forest import (
     RandomForestRegressorAlgorithm,
 )
 from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
-    MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
 from supervised.utils.metric import Metric

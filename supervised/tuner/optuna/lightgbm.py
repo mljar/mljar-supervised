@@ -5,9 +5,7 @@ import pandas as pd
 
 from supervised.algorithms.lightgbm import lightgbm_eval_metric, lightgbm_objective
 from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
-    REGRESSION,
 )
 from supervised.utils.metric import (
     Metric,

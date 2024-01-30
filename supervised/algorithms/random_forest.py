@@ -1,12 +1,9 @@
 import logging
-import os
 
-import numpy as np
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,

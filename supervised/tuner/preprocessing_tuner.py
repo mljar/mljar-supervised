@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -8,7 +5,6 @@ from supervised.algorithms.registry import (
 )
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
-from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.scale import Scale
 
 

@@ -3,9 +3,7 @@ import optuna
 import xgboost as xgb
 
 from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
-    REGRESSION,
 )
 from supervised.algorithms.xgboost import xgboost_eval_metric, xgboost_objective
 from supervised.utils.metric import (

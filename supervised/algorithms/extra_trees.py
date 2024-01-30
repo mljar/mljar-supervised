@@ -1,11 +1,9 @@
 import logging
-import os
 
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,

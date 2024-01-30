@@ -1,9 +1,6 @@
-import copy
 import json
 import logging
 import os
-import time
-import uuid
 import warnings
 
 import numpy as np
@@ -38,14 +35,6 @@ from tabulate import tabulate
 
 from supervised.fairness.metrics import FairnessMetrics
 from supervised.fairness.report import FairnessReport
-from supervised.fairness.utils import (
-    accuracy,
-    false_negative_rate,
-    false_positive_rate,
-    selection_rate,
-    true_negative_rate,
-    true_positive_rate,
-)
 from supervised.utils.additional_plots import AdditionalPlots
 from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
 from supervised.utils.learning_curves import LearningCurves
