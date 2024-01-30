@@ -1,8 +1,5 @@
 import copy
 import logging
-import os
-import time
-from inspect import signature
 
 import numpy as np
 import pandas as pd
@@ -30,8 +27,6 @@ from supervised.utils.metric import (
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
-
-import tempfile
 
 
 class XgbAlgorithmException(Exception):

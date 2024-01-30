@@ -1,15 +1,8 @@
-import os
-import unittest
-import tempfile
-import json
-import time
-import numpy as np
-import pandas as pd
 import shutil
+import time
+import unittest
+
 from supervised import AutoML
-from numpy.testing import assert_almost_equal
-from sklearn import datasets
-from supervised.exceptions import AutoMLException
 from supervised.tuner.time_controller import TimeController
 
 

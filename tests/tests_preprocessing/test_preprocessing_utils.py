@@ -1,6 +1,8 @@
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 

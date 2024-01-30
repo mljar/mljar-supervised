@@ -1,14 +1,11 @@
-import json
-import copy
 import unittest
-import tempfile
+
 import numpy as np
 import pandas as pd
-import uuid
 
-from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
-from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing import Preprocessing
+from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
+from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 
 
 class PreprocessingTest(unittest.TestCase):

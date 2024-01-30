@@ -1,10 +1,7 @@
-import copy
-import gc
 import json
 import logging
 import os
 import shutil
-import sys
 import time
 import types
 from abc import ABC
@@ -25,14 +22,11 @@ from supervised.algorithms.registry import (
     AlgorithmsRegistry,
 )
 from supervised.callbacks.early_stopping import EarlyStopping
-from supervised.callbacks.learner_time_constraint import LearnerTimeConstraint
-from supervised.callbacks.metric_logger import MetricLogger
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
 from supervised.exceptions import AutoMLException, NotTrainedException
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
-
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -40,7 +34,7 @@ from supervised.tuner.data_info import DataInfo
 from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.tuner.time_controller import TimeController
 from supervised.utils.automl_plots import AutoMLPlots
-from supervised.utils.config import LOG_LEVEL, mem
+from supervised.utils.config import LOG_LEVEL
 from supervised.utils.data_validation import (
     check_bool,
     check_greater_than_zero_integer,
@@ -48,10 +42,10 @@ from supervised.utils.data_validation import (
     check_integer,
     check_positive_integer,
 )
+from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.utils import dump_data, load_data
-from supervised.utils.jsonencoder import MLJSONEncoder
 
 try:
     import matplotlib.font_manager as font_manager

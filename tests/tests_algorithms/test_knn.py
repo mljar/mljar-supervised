@@ -1,16 +1,11 @@
 import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 
+import numpy as np
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from supervised.algorithms.knn import KNeighborsAlgorithm, KNeighborsRegressorAlgorithm
 from supervised.utils.metric import Metric
-
-import tempfile
 
 
 class KNeighborsRegressorAlgorithmTest(unittest.TestCase):

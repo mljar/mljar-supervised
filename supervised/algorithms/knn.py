@@ -1,13 +1,10 @@
 import logging
-import os
 
-import numpy as np
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,

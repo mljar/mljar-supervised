@@ -1,16 +1,13 @@
-import unittest
-import tempfile
-import json
-import copy
-import numpy as np
-import pandas as pd
 import os
+import tempfile
+import unittest
+
+import pandas as pd
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from supervised.algorithms.catboost import CatBoostAlgorithm, additional
 from supervised.utils.metric import Metric
-import tempfile
 
 additional["max_rounds"] = 1
 

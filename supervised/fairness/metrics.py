@@ -1,21 +1,10 @@
-import os
-
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    f1_score,
-    matthews_corrcoef,
     mean_absolute_error,
     mean_absolute_percentage_error,
     mean_squared_error,
-    precision_score,
     r2_score,
-    recall_score,
-    roc_auc_score,
 )
 
 from supervised.fairness.optimization import FairnessOptimization

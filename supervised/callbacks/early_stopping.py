@@ -11,8 +11,6 @@ from supervised.utils.metric import Metric
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
-from supervised.utils.config import mem
-
 
 class EarlyStopping(Callback):
     def __init__(self, params):

@@ -1,15 +1,9 @@
 import unittest
-import tempfile
-import json
+
 import numpy as np
-import pandas as pd
 
-from numpy.testing import assert_almost_equal
-from sklearn import datasets
-
-from supervised.utils.additional_metrics import AdditionalMetrics
-from supervised.utils.metric import Metric
 from supervised.algorithms.registry import BINARY_CLASSIFICATION, REGRESSION
+from supervised.utils.additional_metrics import AdditionalMetrics
 
 
 class ComputeAdditionalMetricsTest(unittest.TestCase):

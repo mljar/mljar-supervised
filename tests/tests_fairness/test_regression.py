@@ -1,11 +1,8 @@
-import os
 import shutil
 import unittest
+
 import numpy as np
 import pandas as pd
-from supervised.utils.utils import dump_data
-from supervised.validation.validator_kfold import KFoldValidator
-import shutil
 
 from supervised import AutoML
 

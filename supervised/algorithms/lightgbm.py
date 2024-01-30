@@ -2,7 +2,6 @@ import contextlib
 import copy
 import logging
 import os
-import time
 
 import lightgbm as lgb
 import numpy as np

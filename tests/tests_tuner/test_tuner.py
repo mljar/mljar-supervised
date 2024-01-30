@@ -1,5 +1,5 @@
-import os
 import unittest
+
 from supervised.tuner.mljar_tuner import MljarTuner
 
 

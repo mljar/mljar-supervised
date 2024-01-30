@@ -1,14 +1,12 @@
-import os
-import unittest
-import tempfile
 import json
-import numpy as np
-import pandas as pd
+import os
 import shutil
-from supervised import AutoML
-from numpy.testing import assert_almost_equal
+import unittest
+
+import pandas as pd
 from sklearn import datasets
-from supervised.exceptions import AutoMLException
+
+from supervised import AutoML
 
 
 class AutoMLGoldenFeaturesTest(unittest.TestCase):

@@ -64,16 +64,4 @@ class AlgorithmsRegistry:
 
         return automl_eval_metric
 
-
-import supervised.algorithms.baseline
-import supervised.algorithms.catboost
-import supervised.algorithms.decision_tree
-import supervised.algorithms.extra_trees
-import supervised.algorithms.knn
-import supervised.algorithms.lightgbm
-import supervised.algorithms.linear
-import supervised.algorithms.nn
-
 # Import algorithm to be registered
-import supervised.algorithms.random_forest
-import supervised.algorithms.xgboost

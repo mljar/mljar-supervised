@@ -1,6 +1,5 @@
-import catboost
 import optuna
-from catboost import CatBoost, CatBoostClassifier, CatBoostRegressor, Pool
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
 from supervised.algorithms.catboost import catboost_eval_metric, catboost_objective
 from supervised.algorithms.registry import (

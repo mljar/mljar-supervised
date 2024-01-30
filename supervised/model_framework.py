@@ -3,10 +3,8 @@ import gc
 import json
 import logging
 import os
-import sys
 import time
 import uuid
-import zipfile
 
 import numpy as np
 import pandas as pd
@@ -20,22 +18,19 @@ from supervised.algorithms.registry import (
 )
 from supervised.callbacks.callback_list import CallbackList
 from supervised.exceptions import AutoMLException
-from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
 from supervised.validation.validation_step import ValidationStep
-from supervised.utils.jsonencoder import MLJSONEncoder
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 import joblib
-import optuna
 
 from supervised.tuner.optuna.tuner import OptunaTuner
-from supervised.utils.config import mem
 from supervised.utils.learning_curves import LearningCurves
 
 

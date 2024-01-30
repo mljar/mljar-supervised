@@ -7,10 +7,7 @@ from supervised.algorithms.registry import (
     REGRESSION,
 )
 from supervised.preprocessing.encoding_selector import EncodingSelector
-from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
-from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
-from supervised.preprocessing.scale import Scale
 
 
 class DataInfo:

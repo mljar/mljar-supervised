@@ -1,4 +1,5 @@
 import json
+
 from supervised.utils.jsonencoder import MLJSONEncoder
 
 

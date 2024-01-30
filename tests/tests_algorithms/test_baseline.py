@@ -1,9 +1,6 @@
-import unittest
-import tempfile
-import json
-import numpy as np
 import os
-import pandas as pd
+import tempfile
+import unittest
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
@@ -13,8 +10,6 @@ from supervised.algorithms.baseline import (
     BaselineRegressorAlgorithm,
 )
 from supervised.utils.metric import Metric
-
-import tempfile
 
 
 class BaselineTest(unittest.TestCase):

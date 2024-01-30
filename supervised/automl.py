@@ -8,7 +8,6 @@ import warnings
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 from collections.abc import Iterable
-from re import U
 
 # libraries for type hints
 from typing import List, Optional, Union

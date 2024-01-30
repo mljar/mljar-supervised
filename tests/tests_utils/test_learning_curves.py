@@ -1,5 +1,6 @@
 import os
 import unittest
+
 from supervised.utils.learning_curves import LearningCurves
 
 

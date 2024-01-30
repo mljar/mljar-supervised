@@ -1,5 +1,4 @@
 import logging
-import os
 
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
