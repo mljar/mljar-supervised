@@ -1,11 +1,9 @@
 import os
-import re
+import shutil
 import unittest
-import tempfile
-import json
+
 import numpy as np
 import pandas as pd
-import shutil
 from sklearn import datasets
 
 from supervised import AutoML

@@ -1,10 +1,7 @@
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
-
 import os
+import tempfile
+import unittest
+
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
@@ -15,8 +12,6 @@ from supervised.algorithms.random_forest import (
     regression_additional,
 )
 from supervised.utils.metric import Metric
-
-import tempfile
 
 additional["trees_in_step"] = 1
 regression_additional["trees_in_step"] = 1

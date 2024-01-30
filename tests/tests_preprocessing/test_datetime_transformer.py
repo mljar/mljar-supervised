@@ -1,7 +1,5 @@
 import unittest
-import tempfile
-import json
-import numpy as np
+
 import pandas as pd
 
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer

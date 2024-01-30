@@ -1,11 +1,10 @@
-import os
 import unittest
+
 import numpy as np
 import pandas as pd
-import tempfile
 
-from supervised.utils.subsample import subsample
 from supervised.algorithms.registry import REGRESSION
+from supervised.utils.subsample import subsample
 
 
 class SubsampleTest(unittest.TestCase):

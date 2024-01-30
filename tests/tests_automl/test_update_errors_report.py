@@ -1,13 +1,10 @@
 import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
+import unittest
+
+import numpy as np
 
 from supervised import AutoML
-from supervised.exceptions import AutoMLException
 
 
 class AutoMLUpdateErrorsReportTest(unittest.TestCase):

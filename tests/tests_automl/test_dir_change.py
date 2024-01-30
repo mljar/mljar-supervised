@@ -1,15 +1,12 @@
 import os
-import json
 import shutil
 import unittest
-import tempfile
+
 import numpy as np
-import pandas as pd
-from sklearn import datasets
 from numpy.testing import assert_almost_equal
+from sklearn import datasets
 
 from supervised import AutoML
-from supervised.exceptions import AutoMLException
 
 
 class AutoMLDirChangeTest(unittest.TestCase):

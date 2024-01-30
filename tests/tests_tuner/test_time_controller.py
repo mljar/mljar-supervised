@@ -1,7 +1,8 @@
-import os
 import time
 import unittest
+
 from numpy.testing import assert_almost_equal
+
 from supervised.tuner.time_controller import TimeController
 
 

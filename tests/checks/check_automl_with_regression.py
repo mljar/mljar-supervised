@@ -1,16 +1,9 @@
 import unittest
-import tempfile
-import json
-import numpy as np
+
 import pandas as pd
-
-from numpy.testing import assert_almost_equal
-from sklearn import datasets
-from supervised.automl import AutoML
-from supervised.metric import Metric
-
 import sklearn.model_selection
-from sklearn.metrics import log_loss
+
+from supervised.automl import AutoML
 
 
 class AutoMLWithRegressionTest(unittest.TestCase):

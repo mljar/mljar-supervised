@@ -1,7 +1,8 @@
 import unittest
-import tempfile
+
 import numpy as np
 import pandas as pd
+
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 
 
