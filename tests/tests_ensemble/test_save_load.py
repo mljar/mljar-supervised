@@ -1,13 +1,14 @@
-import unittest
 import shutil
-import numpy as np
+import unittest
+
 import pandas as pd
 from sklearn import datasets
+
 from supervised import AutoML
 
 
 class EnsembleSaveLoadTest(unittest.TestCase):
-    automl_dir = "automl_1"
+    automl_dir = "EnsembleSaveLoadTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

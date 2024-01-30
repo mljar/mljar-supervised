@@ -1,16 +1,13 @@
 import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
+import unittest
+
+import pandas as pd
 from sklearn import datasets
 
 from supervised import AutoML
-from supervised.utils.common import construct_learner_name
-
 from supervised.algorithms.random_forest import additional
+from supervised.utils.common import construct_learner_name
 
 additional["max_steps"] = 1
 additional["trees_in_step"] = 1
@@ -21,7 +18,7 @@ additional["max_rounds"] = 1
 
 
 class AutoMLRepeatedValidationTest(unittest.TestCase):
-    automl_dir = "automl_1"
+    automl_dir = "AutoMLRepeatedValidationTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
