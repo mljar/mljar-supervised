@@ -1,0 +1,72 @@
+name: Contributor install test
+
+on:
+  workflow_dispatch:
+    inputs:
+      python-version:
+        description: 'Python version'
+        required: true
+        default: '3.11'
+        options:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+      os:
+        description: 'Operating System'
+        required: true
+        default: 'ubuntu-latest'
+        options:
+          - 'ubuntu-latest'
+          - 'macos-latest'
+          - 'windows-latest'
+      method:
+        description: 'Method install python dependencies can be venv or poetry'
+        required: true
+        default: 'venv'
+        options:
+          - 'venv'
+          - 'poetry'
+
+jobs:
+  build:
+
+    runs-on: ${{ github.event.inputs.os }}
+
+
+    steps:
+      - name: Install OS Dependencies
+        if: ${{ github.event.inputs.os }} == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install graphviz
+
+      - name: Install OS Dependencies
+        if: ${{ github.event.inputs.os }} == 'macos-latest'
+        run: |
+          brew install graphviz
+
+      - name: Install OS Dependencies
+        if: ${{ github.event.inputs.os }} == 'windows-latest'
+        run: |
+          choco install graphviz
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ github.event.inputs.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ github.event.inputs.python-version }}
+      - name: Install dependencies traditionally with virtualenv
+        if: ${{ github.event.inputs.method }} == 'venv'
+        run: |
+          virtualenv venv 
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pip install -r requirements_dev.txt
+          pytest
+      - name: Install dependencies with poetry
+        if: ${{ github.event.inputs.method }} == 'poetry'
+        run: |
+          pip install poetry
+          poetry install
+          poetry run pytest
+    continue-on-error: true
