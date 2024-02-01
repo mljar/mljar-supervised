@@ -12,14 +12,6 @@ on:
           - '3.9'
           - '3.10'
           - '3.11'
-      os:
-        description: 'Operating System'
-        required: true
-        default: 'ubuntu-latest'
-        options:
-          - 'ubuntu-latest'
-          - 'macos-latest'
-          - 'windows-latest'
       method:
         description: 'Method install python dependencies can be venv or poetry'
         required: true
@@ -31,25 +23,15 @@ on:
 jobs:
   build:
 
-    runs-on: ${{ github.event.inputs.os }}
+    runs-on: 'ubuntu-latest'
 
 
     steps:
       - name: Install OS Dependencies
-        if: ${{ github.event.inputs.os }} == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get -y install graphviz
 
-      - name: Install OS Dependencies
-        if: ${{ github.event.inputs.os }} == 'macos-latest'
-        run: |
-          brew install graphviz
-
-      - name: Install OS Dependencies
-        if: ${{ github.event.inputs.os }} == 'windows-latest'
-        run: |
-          choco install graphviz
       - uses: actions/checkout@v2
       - name: Set up Python ${{ github.event.inputs.python-version }}
         uses: actions/setup-python@v2
@@ -69,4 +51,3 @@ jobs:
           pip install poetry
           poetry install
           poetry run pytest
-    continue-on-error: true
