@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: ${{ github.event.inputs.python-version }}
       - name: Install dependencies traditionally with virtualenv
-        if: "${{ github.event.inputs.method }} == 'venv'"
+        if: github.event.inputs.method == 'venv'
         run: |
           python -m pip install --upgrade pip
           pip install virtualenv  
@@ -48,7 +48,7 @@ jobs:
           pip install -r requirements_dev.txt
           pytest
       - name: Install dependencies with poetry
-        if: "${{ github.event.inputs.method }} == 'poetry'"
+        if: github.event.inputs.method == 'poetry'
         run: |
           python -m pip install --upgrade pip
           pip install poetry
