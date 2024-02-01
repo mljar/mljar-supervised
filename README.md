@@ -486,14 +486,6 @@ cd mljar-supervised
 python setup.py install
 ```
 
-Installation for development
-```
-git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.6
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
-```
 
 Running in the docker:
 ```
@@ -509,6 +501,36 @@ Install from GitHub with pip:
 ```
 pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
 ```
+# Contribute
+## Installation for development:
+First Clone the repository:
+```
+git clone https://github.com/mljar/mljar-supervised.git
+```
+
+### install dependencies traditionally with virtualenv:
+
+```
+virtualenv venv 
+source venv/bin/activate
+pip install -r requirements.txt
+pip install -r requirements_dev.txt
+pytest 
+```
+### install dependencies with poetry:
+make sure you have poetry installed on your system/main interpreter
+```
+pip install poetry
+```
+then install dependencies with poetry
+```
+poetry install
+poetry run pytest
+```
+**Note:** both installation methods assumed to be executed from the root directory of the project cloned 
+
+
+
 # Demo
 
 In the below demo GIF you will see:
