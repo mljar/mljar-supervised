@@ -1,13 +1,13 @@
 import copy
-import gc
 import json
 import logging
 import os
-import time
 import uuid
 
+import gc
 import numpy as np
 import pandas as pd
+import time
 
 from supervised.algorithms.factory import AlgorithmFactory
 from supervised.algorithms.registry import (
@@ -89,18 +89,18 @@ class ModelFramework:
         return self.train_time
 
     def predictions(
-        self,
-        learner,
-        preproces,
-        X_train,
-        y_train,
-        sample_weight,
-        sensitive_features,
-        X_validation,
-        y_validation,
-        sample_weight_validation,
-        sensitive_features_validation,
-    ):
+            self,
+            learner,
+            preproces,
+            X_train,
+            y_train,
+            sample_weight,
+            sensitive_features,
+            X_validation,
+            y_validation,
+            sample_weight_validation,
+            sensitive_features_validation,
+    ) -> dict:
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
@@ -150,7 +150,7 @@ class ModelFramework:
 
         optuna_tuner = None
         if self._optuna_time_budget is not None and OptunaTuner.is_optimizable(
-            self.learner_params.get("model_type", "")
+                self.learner_params.get("model_type", "")
         ):
             optuna_tuner = OptunaTuner(
                 results_path,
@@ -680,7 +680,7 @@ class ModelFramework:
         desc += "\n## Optimized metric\n"
         desc += f"{self.get_metric_name()}\n"
         desc += "\n## Training time\n"
-        desc += f"\n{np.round(self.train_time,1)} seconds\n"
+        desc += f"\n{np.round(self.train_time, 1)} seconds\n"
         return desc
 
     @staticmethod
@@ -694,8 +694,8 @@ class ModelFramework:
         joblib_version_framework = json_desc.get("joblib_version")
 
         if (
-            joblib_version_framework is not None
-            and joblib_version_computer != joblib_version_framework
+                joblib_version_framework is not None
+                and joblib_version_computer != joblib_version_framework
         ):
             raise AutoMLException(
                 f"Joblib version mismatch. Computer: {joblib_version_computer}, Framework: {joblib_version_framework}. Change to Framework version!"
@@ -718,7 +718,7 @@ class ModelFramework:
 
         mf.learners = []
         for learner_desc, learner_subpath in zip(
-            json_desc.get("learners"), json_desc.get("saved")
+                json_desc.get("learners"), json_desc.get("saved")
         ):
             learner_path = os.path.join(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
