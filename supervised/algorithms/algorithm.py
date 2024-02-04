@@ -1,6 +1,8 @@
 import uuid
+from typing import Union
 
 import numpy as np
+import pandas as pd
 
 from supervised.utils.common import construct_learner_name
 from supervised.utils.importance import PermutationImportance
@@ -16,15 +18,15 @@ class BaseAlgorithm:
     algorithm_name = "Unknown"
     algorithm_short_name = "Unknown"
 
-    def __init__(self, params):
-        self.params = params
-        self.stop_training = False
-        self.library_version = None
-        self.model = None
-        self.uid = params.get("uid", str(uuid.uuid4()))
-        self.ml_task = params.get("ml_task")
-        self.model_file_path = None
-        self.name = "amazing_learner"
+    def __init__(self, params: dict):
+        self.params: dict = params
+        self.stop_training: bool = False
+        self.library_version: str = None
+        self.model: object = None
+        self.uid: str = params.get("uid", str(uuid.uuid4()))
+        self.ml_task: str = params.get("ml_task")
+        self.model_file_path: str = None
+        self.name: str = "amazing_learner"
 
     def set_learner_name(self, fold, repeat, repeats):
         self.name = construct_learner_name(fold, repeat, repeats)
@@ -38,15 +40,15 @@ class BaseAlgorithm:
             self.load(self.model_file_path)
 
     def fit(
-        self,
-        X,
-        y,
-        sample_weight=None,
-        X_validation=None,
-        y_validation=None,
-        sample_weight_validation=None,
-        log_to_file=None,
-        max_time=None,
+            self,
+            X: Union[np.ndarray, pd.DataFrame],
+            y: Union[np.ndarray, pd.Series],
+            sample_weight=None,
+            X_validation=None,
+            y_validation=None,
+            sample_weight_validation=None,
+            log_to_file=None,
+            max_time=None,
     ):
         pass
 
@@ -76,18 +78,18 @@ class BaseAlgorithm:
         return f"{self.name}.{self.file_extension()}"
 
     def interpret(
-        self,
-        X_train,
-        y_train,
-        X_validation,
-        y_validation,
-        model_file_path,
-        learner_name,
-        target_name=None,
-        class_names=None,
-        metric_name=None,
-        ml_task=None,
-        explain_level=2,
+            self,
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            target_name=None,
+            class_names=None,
+            metric_name=None,
+            ml_task=None,
+            explain_level=2,
     ):
         # do not produce feature importance for Baseline
         if self.algorithm_short_name == "Baseline":

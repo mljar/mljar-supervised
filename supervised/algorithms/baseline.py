@@ -21,12 +21,12 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm, ClassifierMixin):
     algorithm_name = "Baseline Classifier"
     algorithm_short_name = "Baseline"
 
-    def __init__(self, params):
+    def __init__(self, params: dict):
         super(BaselineClassifierAlgorithm, self).__init__(params)
         logger.debug("BaselineClassifierAlgorithm.__init__")
 
-        self.library_version = sklearn.__version__
-        self.max_iters = additional.get("max_steps", 1)
+        self.library_version: str = sklearn.__version__
+        self.max_iters: int = additional.get("max_steps", 1)
         self.model = DummyClassifier(
             strategy="prior", random_state=params.get("seed", 1)
         )
@@ -36,9 +36,9 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm, ClassifierMixin):
 
     def is_fitted(self):
         return (
-            hasattr(self.model, "n_outputs_")
-            and self.model.n_outputs_ is not None
-            and self.model.n_outputs_ > 0
+                hasattr(self.model, "n_outputs_")
+                and self.model.n_outputs_ is not None
+                and self.model.n_outputs_ > 0
         )
 
 
@@ -59,9 +59,9 @@ class BaselineRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
 
     def is_fitted(self):
         return (
-            hasattr(self.model, "n_outputs_")
-            and self.model.n_outputs_ is not None
-            and self.model.n_outputs_ > 0
+                hasattr(self.model, "n_outputs_")
+                and self.model.n_outputs_ is not None
+                and self.model.n_outputs_ > 0
         )
 
 
@@ -85,6 +85,5 @@ AlgorithmsRegistry.add(
     additional,
     {},
 )
-
 
 AlgorithmsRegistry.add(REGRESSION, BaselineRegressorAlgorithm, {}, {}, additional, {})

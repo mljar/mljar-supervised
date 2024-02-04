@@ -1,5 +1,6 @@
 import logging
 
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import BINARY_CLASSIFICATION, AlgorithmsRegistry
 
 logger = logging.getLogger(__name__)
@@ -8,8 +9,9 @@ from supervised.exceptions import AutoMLException
 
 
 class AlgorithmFactory(object):
+
     @classmethod
-    def get_algorithm(cls, params):
+    def get_algorithm(cls, params) -> BaseAlgorithm:
         alg_type = params.get("model_type", "Xgboost")
         ml_task = params.get("ml_task", BINARY_CLASSIFICATION)
 
@@ -20,7 +22,7 @@ class AlgorithmFactory(object):
             raise AutoMLException(f"Cannot get algorithm class. {str(e)}")
 
     @classmethod
-    def load(cls, json_desc, learner_path, lazy_load):
+    def load(cls, json_desc, learner_path, lazy_load) -> BaseAlgorithm:
         learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
         learner.set_params(json_desc, learner_path)
         if not lazy_load:
