@@ -1,26 +1,21 @@
 import logging
-
-import matplotlib
-
-matplotlib.use("Agg")
 import warnings
-
-warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
-
 from collections.abc import Iterable
-
 # libraries for type hints
 from typing import List, Optional, Union
 
-import numpy
-import pandas
+import matplotlib
+import numpy as np
+import pandas as pd
 from typing_extensions import (
     Literal,
-)  # typing_extensions is used for using Literal from python 3.7
+)
 
 from supervised.base_automl import BaseAutoML
 from supervised.utils.config import LOG_LEVEL
 
+matplotlib.use("Agg")
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
 )
@@ -29,61 +24,60 @@ logger.setLevel(LOG_LEVEL)
 
 
 class AutoML(BaseAutoML):
-
     """
     Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
     """
 
     def __init__(
-        self,
-        results_path: Optional[str] = None,
-        total_time_limit: int = 60 * 60,
-        mode: Literal["Explain", "Perform", "Compete", "Optuna"] = "Explain",
-        ml_task: Literal[
-            "auto", "binary_classification", "multiclass_classification", "regression"
-        ] = "auto",
-        model_time_limit: Optional[int] = None,
-        algorithms: Union[
-            Literal["auto"],
-            List[
-                Literal[
-                    "Baseline",
-                    "Linear",
-                    "Decision Tree",
-                    "Random Forest",
-                    "Extra Trees",
-                    "LightGBM",
-                    "Xgboost",
-                    "CatBoost",
-                    "Neural Network",
-                    "Nearest Neighbors",
-                ]
-            ],
-        ] = "auto",
-        train_ensemble: bool = True,
-        stack_models: Union[Literal["auto"], bool] = "auto",
-        eval_metric: str = "auto",
-        validation_strategy: Union[Literal["auto"], dict] = "auto",
-        explain_level: Union[Literal["auto"], Literal[0, 1, 2]] = "auto",
-        golden_features: Union[Literal["auto"], bool, int] = "auto",
-        features_selection: Union[Literal["auto"], bool] = "auto",
-        start_random_models: Union[Literal["auto"], int] = "auto",
-        hill_climbing_steps: Union[Literal["auto"], int] = "auto",
-        top_models_to_improve: Union[Literal["auto"], int] = "auto",
-        boost_on_errors: Union[Literal["auto"], bool] = "auto",
-        kmeans_features: Union[Literal["auto"], bool] = "auto",
-        mix_encoding: Union[Literal["auto"], bool] = "auto",
-        max_single_prediction_time: Optional[Union[int, float]] = None,
-        optuna_time_budget: Optional[int] = None,
-        optuna_init_params: dict = {},
-        optuna_verbose: bool = True,
-        fairness_metric: str = "auto",
-        fairness_threshold: Union[Literal["auto"], float] = "auto",
-        privileged_groups: Union[Literal["auto"], list] = "auto",
-        underprivileged_groups: Union[Literal["auto"], list] = "auto",
-        n_jobs: int = -1,
-        verbose: int = 1,
-        random_state: int = 1234,
+            self,
+            results_path: Optional[str] = None,
+            total_time_limit: int = 60 * 60,
+            mode: Literal["Explain", "Perform", "Compete", "Optuna"] = "Explain",
+            ml_task: Literal[
+                "auto", "binary_classification", "multiclass_classification", "regression"
+            ] = "auto",
+            model_time_limit: Optional[int] = None,
+            algorithms: Union[
+                Literal["auto"],
+                List[
+                    Literal[
+                        "Baseline",
+                        "Linear",
+                        "Decision Tree",
+                        "Random Forest",
+                        "Extra Trees",
+                        "LightGBM",
+                        "Xgboost",
+                        "CatBoost",
+                        "Neural Network",
+                        "Nearest Neighbors",
+                    ]
+                ],
+            ] = "auto",
+            train_ensemble: bool = True,
+            stack_models: Union[Literal["auto"], bool] = "auto",
+            eval_metric: str = "auto",
+            validation_strategy: Union[Literal["auto"], dict] = "auto",
+            explain_level: Union[Literal["auto"], Literal[0, 1, 2]] = "auto",
+            golden_features: Union[Literal["auto"], bool, int] = "auto",
+            features_selection: Union[Literal["auto"], bool] = "auto",
+            start_random_models: Union[Literal["auto"], int] = "auto",
+            hill_climbing_steps: Union[Literal["auto"], int] = "auto",
+            top_models_to_improve: Union[Literal["auto"], int] = "auto",
+            boost_on_errors: Union[Literal["auto"], bool] = "auto",
+            kmeans_features: Union[Literal["auto"], bool] = "auto",
+            mix_encoding: Union[Literal["auto"], bool] = "auto",
+            max_single_prediction_time: Optional[Union[int, float]] = None,
+            optuna_time_budget: Optional[int] = None,
+            optuna_init_params: dict = {},
+            optuna_verbose: bool = True,
+            fairness_metric: str = "auto",
+            fairness_threshold: Union[Literal["auto"], float] = "auto",
+            privileged_groups: Union[Literal["auto"], list] = "auto",
+            underprivileged_groups: Union[Literal["auto"], list] = "auto",
+            n_jobs: int = -1,
+            verbose: int = 1,
+            random_state: int = 1234,
     ):
         """
         Initialize `AutoML` object.
@@ -403,44 +397,44 @@ class AutoML(BaseAutoML):
         self.random_state = random_state
 
     def fit(
-        self,
-        X: Union[numpy.ndarray, pandas.DataFrame],
-        y: Union[numpy.ndarray, pandas.Series],
-        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
-        cv: Optional[Union[Iterable, List]] = None,
-        sensitive_features: Optional[
-            Union[numpy.ndarray, pandas.Series, pandas.DataFrame]
-        ] = None,
+            self,
+            X: Union[np.ndarray, pd.DataFrame],
+            y: Union[np.ndarray, pd.Series],
+            sample_weight: Optional[Union[np.ndarray, pd.Series]] = None,
+            cv: Optional[Union[Iterable, List]] = None,
+            sensitive_features: Optional[
+                Union[np.ndarray, pd.Series, pd.DataFrame]
+            ] = None,
     ):
         """Fit the AutoML model.
 
         Arguments:
-            X (numpy.ndarray or pandas.DataFrame): Training data
+            X (np.ndarray or pd.DataFrame): Training data
 
-            y (numpy.ndarray or pandas.Series): Training targets
+            y (np.ndarray or pd.Series): Training targets
 
-            sample_weight (numpy.ndarray or pandas.Series): Training sample weights
+            sample_weight (np.ndarray or pd.Series): Training sample weights
 
             cv (iterable or list): List or iterable with (train, validation) splits representing array of indices.
                 It is used only with custom validation (`validation_strategy={'validation_type': 'custom'}`).
 
-            sensitive_features (pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
+            sensitive_features (pd.Series or pd.DataFrame): Sensitive features to learn fair models
 
         Returns:
             AutoML object: Returns `self`
         """
         return self._fit(X, y, sample_weight, cv, sensitive_features)
 
-    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
+    def predict(self, X: Union[List, np.ndarray, pd.DataFrame]) -> np.ndarray:
         """
         Computes predictions from AutoML best model.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame):
+            X (list or np.ndarray or pd.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            numpy.ndarray:
+            np.ndarray:
 
             - One-dimensional array of class labels for classification.
             - One-dimensional array of predictions for regression.
@@ -451,18 +445,18 @@ class AutoML(BaseAutoML):
         return self._predict(X)
 
     def predict_proba(
-        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
-    ) -> numpy.ndarray:
+            self, X: Union[List, np.ndarray, pd.DataFrame]
+    ) -> np.ndarray:
         """
         Computes class probabilities from AutoML best model.
         This method can only be used for classification tasks.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame):
+            X (list or np.ndarray or pd.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            numpy.ndarray of shape (n_samples, n_classes):
+            np.ndarray of shape (n_samples, n_classes):
                 Matrix of containing class probabilities of the input samples
 
         Raises:
@@ -472,18 +466,18 @@ class AutoML(BaseAutoML):
         return self._predict_proba(X)
 
     def predict_all(
-        self, X: Union[List, numpy.ndarray, pandas.DataFrame]
-    ) -> pandas.DataFrame:
+            self, X: Union[List, np.ndarray, pd.DataFrame]
+    ) -> pd.DataFrame:
         """
         Computes both class probabilities and class labels for classification tasks.
         Computes predictions for regression tasks.
 
         Arguments:
-            X (list or numpy.ndarray or pandas.DataFrame):
+            X (list or np.ndarray or pd.DataFrame):
                 Input values to make predictions on.
 
         Returns:
-            pandas.Dataframe:
+            pd.Dataframe:
                 Dataframe (n_samples, n_classes + 1) containing both class probabilities and class
                 labels of the input samples for classification tasks.
                 Dataframe with predictions for regression tasks.
@@ -495,21 +489,21 @@ class AutoML(BaseAutoML):
         return self._predict_all(X)
 
     def score(
-        self,
-        X: Union[numpy.ndarray, pandas.DataFrame],
-        y: Optional[Union[numpy.ndarray, pandas.Series]] = None,
-        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
+            self,
+            X: Union[np.ndarray, pd.DataFrame],
+            y: Optional[Union[np.ndarray, pd.Series]] = None,
+            sample_weight: Optional[Union[np.ndarray, pd.Series]] = None,
     ) -> float:
         """Calculates a goodness of `fit` for an AutoML instance.
 
         Arguments:
-            X (numpy.ndarray or pandas.DataFrame):
+            X (np.ndarray or pd.DataFrame):
                 Test values to make predictions on.
 
-            y (numpy.ndarray or pandas.Series):
+            y (np.ndarray or pd.Series):
                 True labels for X.
 
-            sample_weight (numpy.ndarray or pandas.Series):
+            sample_weight (np.ndarray or pd.Series):
                 Sample weights.
         Returns:
             float: Returns a goodness of fit measure (higher is better):
@@ -523,22 +517,22 @@ class AutoML(BaseAutoML):
         return self._report(width, height)
 
     def need_retrain(
-        self,
-        X: Union[numpy.ndarray, pandas.DataFrame],
-        y: Union[numpy.ndarray, pandas.Series],
-        sample_weight: Optional[Union[numpy.ndarray, pandas.Series]] = None,
-        decrease: float = 0.1,
+            self,
+            X: Union[np.ndarray, pd.DataFrame],
+            y: Union[np.ndarray, pd.Series],
+            sample_weight: Optional[Union[np.ndarray, pd.Series]] = None,
+            decrease: float = 0.1,
     ) -> bool:
         """Decides about model retraining based on new data.
 
         Arguments:
-            X (numpy.ndarray or pandas.DataFrame):
+            X (np.ndarray or pd.DataFrame):
                 New data.
 
-            y (numpy.ndarray or pandas.Series):
+            y (np.ndarray or pd.Series):
                 True labels for X.
 
-            sample_weight (numpy.ndarray or pandas.Series):
+            sample_weight (np.ndarray or pd.Series):
                 Sample weights.
 
             decrease (float): The ratio of change in the performance used as a threshold for retraining decision.
