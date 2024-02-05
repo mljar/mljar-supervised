@@ -1,6 +1,8 @@
 import uuid
+from typing import Union
 
 import numpy as np
+import pandas as pd
 
 from supervised.utils.common import construct_learner_name
 from supervised.utils.importance import PermutationImportance
@@ -16,15 +18,15 @@ class BaseAlgorithm:
     algorithm_name = "Unknown"
     algorithm_short_name = "Unknown"
 
-    def __init__(self, params):
-        self.params = params
-        self.stop_training = False
-        self.library_version = None
-        self.model = None
-        self.uid = params.get("uid", str(uuid.uuid4()))
-        self.ml_task = params.get("ml_task")
-        self.model_file_path = None
-        self.name = "amazing_learner"
+    def __init__(self, params: dict):
+        self.params: dict = params
+        self.stop_training: bool = False
+        self.library_version: str = None
+        self.model: object = None
+        self.uid: str = params.get("uid", str(uuid.uuid4()))
+        self.ml_task: str = params.get("ml_task")
+        self.model_file_path: str = None
+        self.name: str = "amazing_learner"
 
     def set_learner_name(self, fold, repeat, repeats):
         self.name = construct_learner_name(fold, repeat, repeats)
@@ -39,8 +41,8 @@ class BaseAlgorithm:
 
     def fit(
         self,
-        X,
-        y,
+        X: Union[np.ndarray, pd.DataFrame],
+        y: Union[np.ndarray, pd.Series],
         sample_weight=None,
         X_validation=None,
         y_validation=None,
