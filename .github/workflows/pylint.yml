@@ -21,5 +21,6 @@ jobs:
           pylint ./supervised --fail-under=6
       - name: Black + pylint
         run: |
+          pip install black
           black ./supervised
           pylint ./supervised --fail-under=6
