@@ -3,7 +3,7 @@ name: Tests
 on: [ push,pull_request ]
 
 jobs:
-  build:
+  tests:
 
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,3 +45,18 @@ jobs:
         run: |
           pytest tests --cov=supervised/
     continue-on-error: true
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python "3.10"
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+      - name: Analysing the code with pylint
+        run: |
+          pylint ./supervised --fail-under=7
