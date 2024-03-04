@@ -201,7 +201,7 @@ class XgbAlgorithm(BaseAlgorithm):
             early_stopping_rounds=esr,
             evals_result=evals_result,
             verbose_eval=False,
-            feval=self.custom_eval_metric
+            custom_metric=self.custom_eval_metric
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 
