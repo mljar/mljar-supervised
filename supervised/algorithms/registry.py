@@ -3,7 +3,6 @@ BINARY_CLASSIFICATION = "binary_classification"
 MULTICLASS_CLASSIFICATION = "multiclass_classification"
 REGRESSION = "regression"
 
-
 class AlgorithmsRegistry:
     registry = {
         BINARY_CLASSIFICATION: {},
@@ -65,3 +64,13 @@ class AlgorithmsRegistry:
         return automl_eval_metric
 
 # Import algorithm to be registered
+import supervised.algorithms.baseline
+import supervised.algorithms.catboost
+import supervised.algorithms.decision_tree
+import supervised.algorithms.extra_trees
+import supervised.algorithms.knn
+import supervised.algorithms.lightgbm
+import supervised.algorithms.linear
+import supervised.algorithms.nn
+import supervised.algorithms.random_forest
+import supervised.algorithms.xgboost
