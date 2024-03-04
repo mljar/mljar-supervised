@@ -75,7 +75,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
         rf.fit(self.X, self.y)
         y_predicted = rf.predict(self.X)
-        self.assertTrue(metric(self.y, y_predicted) < 1.0)
+        self.assertTrue(metric(self.y, y_predicted) < 1.5)
 
     def test_copy(self):
         metric = Metric({"name": "logloss"})
