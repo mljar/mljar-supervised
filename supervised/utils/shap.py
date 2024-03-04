@@ -89,7 +89,7 @@ class PlotSHAP:
         predictions = algorithm.predict(X_vald)
 
         if ml_task == MULTICLASS_CLASSIFICATION:
-            oh = OneHotEncoder(sparse=False)
+            oh = OneHotEncoder(sparse_output=False)
             y_encoded = oh.fit_transform(np.array(y_vald).reshape(-1, 1))
             residua = np.sum(np.abs(np.array(y_encoded) - predictions), axis=1)
         else:

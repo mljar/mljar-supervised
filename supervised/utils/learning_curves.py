@@ -106,14 +106,16 @@ class LearningCurves:
                     label=f"Fold {fold+1},{repeat_str} test",
                 )
 
-            best_iter = None
-            if Metric.optimize_negative(metric_name):
-                best_iter = df.test.argmax()
-            else:
-                best_iter = df.test.argmin()
+            
+            if not df.test.isnull().values.any():
+                best_iter = None
+                if Metric.optimize_negative(metric_name):
+                    best_iter = df.test.argmax()
+                else:
+                    best_iter = df.test.argmin()
 
-            if best_iter is not None and best_iter != -1:
-                plt.axvline(best_iter, color=colors[fold], alpha=0.3)
+                if best_iter is not None and best_iter != -1:
+                    plt.axvline(best_iter, color=colors[fold], alpha=0.3)
 
         if trees_in_iteration is not None:
             plt.xlabel("#Trees")

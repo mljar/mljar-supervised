@@ -1462,7 +1462,7 @@ class MljarTuner:
         y = oof["target"]
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-            oh = OneHotEncoder(sparse=False)
+            oh = OneHotEncoder(sparse_output=False)
             y_encoded = oh.fit_transform(np.array(y).reshape(-1, 1))
             residua = np.sum(
                 np.abs(np.array(y_encoded) - np.array(predictions)), axis=1

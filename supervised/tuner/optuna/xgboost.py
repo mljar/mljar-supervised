@@ -112,7 +112,7 @@ class XgboostObjective:
                 early_stopping_rounds=self.early_stopping_rounds,
                 callbacks=[pruning_callback],
                 verbose_eval=False,
-                feval=self.custom_eval_metric,
+                custom_metric=self.custom_eval_metric,
             )
             preds = bst.predict(
                 self.dvalidation, iteration_range=(0, bst.best_iteration)

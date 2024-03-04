@@ -20,10 +20,8 @@ from sklearn.metrics import (
 
 
 def logloss(y_true, y_predicted, sample_weight=None):
-    epsilon = 1e-6
-    y_predicted = sp.maximum(epsilon, y_predicted)
-    y_predicted = sp.minimum(1 - epsilon, y_predicted)
-    ll = log_loss(y_true, y_predicted, sample_weight=sample_weight)
+    # convert predicted values to float32 to avoid warnings
+    ll = log_loss(y_true, y_predicted.astype(np.float32), sample_weight=sample_weight)
     return ll
 
 

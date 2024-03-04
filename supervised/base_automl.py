@@ -2393,13 +2393,13 @@ a:hover {{
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
                     old = f'href="{f}/README.html"'
-                    new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" "
+                    new = f"onclick=\"toggleShow('{f}');toggleShow('automl-report-main')\" "
                     content_html = content_html.replace(old, new)
 
         # other links
         if me is not None:
             old = 'href="../README.html"'
-            new = f"onclick=\"toggleShow('{me}');toggleShow('main')\" "
+            new = f"onclick=\"toggleShow('{me}');toggleShow('automl-report-main')\" "
             content_html = content_html.replace(old, new)
 
         beginning = ""
@@ -2407,11 +2407,8 @@ a:hover {{
         if page_type == "main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
-            # disable EDA
-            # if os.path.exists(os.path.join(self._results_path, "EDA")):
-            #     beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
-                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('main')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
         content_html = beginning + content_html
 
@@ -2436,8 +2433,8 @@ margin-right: auto;display: block;"/>\n\n"""
         body = ""
         fname = os.path.join(self._results_path, "README.md")
         body += (
-            '<div id="main">\n'
-            + self._md_to_html(fname, "main", self._results_path)
+            '<div id="automl-report-main">\n'
+            + self._md_to_html(fname, "automl-report-main", self._results_path)
             + "\n\n</div>\n\n"
         )
 
