@@ -35,7 +35,7 @@ X = train[train.columns[2:]]
 y = train["Survived"]
 
 # automl = AutoML(mode="Compete") # default mode is Explain
-automl = AutoML(algorithms=["Neural Network"], total_time_limit=120)  # default mode is Explain
+automl = AutoML(total_time_limit=120)  # default mode is Explain
 
 automl.fit(X, y)
 
