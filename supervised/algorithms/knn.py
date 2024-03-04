@@ -1,13 +1,10 @@
 import logging
-import os
 
-import numpy as np
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -54,6 +51,14 @@ class KNNFit(SklearnAlgorithm, ClassifierMixin):
             self.model.fit(X1, y1)
         else:
             self.model.fit(X, y)
+
+    @property
+    def _classes(self):
+        # Returns the unique classes based on the fitted model
+        if hasattr(self.model, "classes_"):
+            return self.model.classes_
+        else:
+            return None
 
 
 class KNeighborsAlgorithm(KNNFit, RegressorMixin):

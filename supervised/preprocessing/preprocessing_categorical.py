@@ -1,8 +1,4 @@
-import json
-import os
-
 import numpy as np
-import pandas as pd
 
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder

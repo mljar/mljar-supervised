@@ -5,9 +5,7 @@ import pandas as pd
 
 from supervised.algorithms.lightgbm import lightgbm_eval_metric, lightgbm_objective
 from supervised.algorithms.registry import (
-    BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
-    REGRESSION,
 )
 from supervised.utils.metric import (
     Metric,
@@ -139,16 +137,17 @@ class LightgbmObjective:
             pruning_callback = optuna.integration.LightGBMPruningCallback(
                 trial, metric_name, "validation"
             )
+            early_stopping_callback = lgb.early_stopping(
+                self.early_stopping_rounds, verbose=False
+            )
 
             gbm = lgb.train(
                 param,
                 self.dtrain,
                 valid_sets=[self.dvalid],
                 valid_names=["validation"],
-                verbose_eval=False,
-                callbacks=[pruning_callback],
+                callbacks=[pruning_callback, early_stopping_callback],
                 num_boost_round=self.rounds,
-                early_stopping_rounds=self.early_stopping_rounds,
                 feval=self.custom_eval_metric,
             )
 

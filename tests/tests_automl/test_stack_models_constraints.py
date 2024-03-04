@@ -1,17 +1,13 @@
-import os
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import shutil
+import unittest
+
+import numpy as np
 
 from supervised import AutoML
-from supervised.exceptions import AutoMLException
 
 
 class AutoMLStackModelsConstraintsTest(unittest.TestCase):
-    automl_dir = "automl_testing"
+    automl_dir = "AutoMLStackModelsConstraintsTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

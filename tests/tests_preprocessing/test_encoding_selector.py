@@ -1,7 +1,7 @@
 import unittest
-import tempfile
-import numpy as np
+
 import pandas as pd
+
 from supervised.preprocessing.encoding_selector import EncodingSelector
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 

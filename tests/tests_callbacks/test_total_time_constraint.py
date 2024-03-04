@@ -1,11 +1,6 @@
-import unittest
-import tempfile
-import json
 import time
-import numpy as np
-import pandas as pd
+import unittest
 
-from numpy.testing import assert_almost_equal
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.exceptions import NotTrainedException
 

@@ -1,18 +1,15 @@
-import unittest
+import os
 import tempfile
-import json
+import unittest
+
 import numpy as np
 import pandas as pd
-import os
-
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from supervised.algorithms.xgboost import XgbAlgorithm, additional
-from supervised.utils.metric import Metric
 from supervised.utils.constants import BINARY_CLASSIFICATION
-
-import tempfile
+from supervised.utils.metric import Metric
 
 additional["max_rounds"] = 1
 

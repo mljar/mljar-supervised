@@ -1,17 +1,13 @@
-import json
 import logging
 import os
 import warnings
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from sklearn.inspection import permutation_importance
 
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
-    REGRESSION,
 )
 from supervised.utils.subsample import subsample
 
@@ -19,8 +15,6 @@ logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
 
 logger.setLevel(LOG_LEVEL)
-
-import sys
 
 from sklearn.metrics import log_loss, make_scorer
 

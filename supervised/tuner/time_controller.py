@@ -1,9 +1,7 @@
-import json
 import logging
 import time
 
 import numpy as np
-import pandas as pd
 
 from supervised.utils.config import LOG_LEVEL
 

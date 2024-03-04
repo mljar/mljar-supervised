@@ -1,11 +1,12 @@
 import os
-import shutil
+import tempfile
 import unittest
+
 import numpy as np
 import pandas as pd
+
 from supervised.utils.utils import dump_data
 from supervised.validation.validator_kfold import KFoldValidator
-import tempfile
 
 
 class KFoldValidatorTest(unittest.TestCase):

@@ -1,18 +1,18 @@
-import unittest
-import tempfile
-import json
 import shutil
+import tempfile
+import unittest
+
 import numpy as np
 import pandas as pd
-from numpy.testing import assert_almost_equal
 from sklearn import datasets
-from supervised.preprocessing.goldenfeatures_transformer import (
-    GoldenFeaturesTransformer,
-)
+
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
+)
+from supervised.preprocessing.goldenfeatures_transformer import (
+    GoldenFeaturesTransformer,
 )
 
 

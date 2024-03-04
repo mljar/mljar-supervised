@@ -1,10 +1,7 @@
-import os
-import unittest
-import tempfile
 import json
-import numpy as np
-import pandas as pd
-import shutil
+import os
+import tempfile
+import unittest
 
 from supervised import AutoML
 from supervised.exceptions import AutoMLException

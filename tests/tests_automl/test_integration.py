@@ -1,17 +1,15 @@
-import os
+import shutil
 import unittest
-import tempfile
-import json
+
 import numpy as np
 import pandas as pd
-import shutil
 from sklearn import datasets
 
 from supervised import AutoML
 
 
 class AutoMLIntegrationTest(unittest.TestCase):
-    automl_dir = "automl_1"
+    automl_dir = "AutoMLIntegrationTest"
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)

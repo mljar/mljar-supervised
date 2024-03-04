@@ -1,4 +1,3 @@
-import copy
 import logging
 from decimal import Decimal
 

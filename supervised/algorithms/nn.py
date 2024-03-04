@@ -7,7 +7,6 @@ import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
-from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,

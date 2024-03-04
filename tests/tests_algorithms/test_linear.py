@@ -1,17 +1,12 @@
-import unittest
-import tempfile
-import json
-import numpy as np
-import pandas as pd
 import os
+import tempfile
+import unittest
 
 from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from supervised.algorithms.linear import LinearAlgorithm, LinearRegressorAlgorithm
 from supervised.utils.metric import Metric
-
-import tempfile
 
 
 class LinearRegressorAlgorithmTest(unittest.TestCase):

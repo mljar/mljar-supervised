@@ -1,6 +1,5 @@
 import logging
 import os
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,6 @@ import scipy as sp
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
-from supervised.utils.metric import Metric
 
 logger.setLevel(LOG_LEVEL)
 
