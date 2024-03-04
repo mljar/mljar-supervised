@@ -27,7 +27,8 @@ class Scale(object):
 
     def transform(self, X):
         if len(self.columns):
-            X.loc[:, self.columns] = X.loc[:, self.columns].astype(float)
+            for c in self.columns:
+                X[c] = X[c].astype(float)
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
