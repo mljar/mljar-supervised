@@ -47,17 +47,6 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.utils import dump_data, load_data
 
-try:
-    import matplotlib.font_manager as font_manager
-
-    # Get a list of all font families available on the system
-    font_families = font_manager.findSystemFonts()
-
-    # Load the font file for the first font family in the list and get the name of the first font family
-    REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
-except Exception:
-    REPORT_FONT = "Arial"
-
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
@@ -2281,7 +2270,7 @@ class BaseAutoML(BaseEstimator, ABC):
 .styled-table {{
     border-collapse: collapse;
     font-size: 0.9em;
-    font-family:Courier New;
+    font-family: Courier New;
 }}
 
 .styled-table td, .styled-table th {{
@@ -2302,8 +2291,7 @@ class BaseAutoML(BaseEstimator, ABC):
 }}
 
 body {{
-    font-family: {REPORT_FONT};
-    font-size: 1.0em;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: rgba(236, 243, 249, 0.15);
 }}
 
@@ -2404,7 +2392,7 @@ a:hover {{
 
         beginning = ""
 
-        if page_type == "main":
+        if page_type == "automl-report-main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
