@@ -2287,7 +2287,7 @@ class BaseAutoML(BaseEstimator, ABC):
 .styled-table td, .styled-table th {{
     border: 1px solid #ddd;
     padding: 8px;
-{{
+}}
 
 .styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
 
@@ -2389,7 +2389,7 @@ a:hover {{
                 content_html = "\n".join(new_content)
 
         # change links
-        if page_type == "main":
+        if page_type == "automl-report-main":
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
                     old = f'href="{f}/README.html"'
