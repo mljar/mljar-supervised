@@ -21,12 +21,12 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm, ClassifierMixin):
     algorithm_name = "Baseline Classifier"
     algorithm_short_name = "Baseline"
 
-    def __init__(self, params):
+    def __init__(self, params: dict):
         super(BaselineClassifierAlgorithm, self).__init__(params)
         logger.debug("BaselineClassifierAlgorithm.__init__")
 
-        self.library_version = sklearn.__version__
-        self.max_iters = additional.get("max_steps", 1)
+        self.library_version: str = sklearn.__version__
+        self.max_iters: int = additional.get("max_steps", 1)
         self.model = DummyClassifier(
             strategy="prior", random_state=params.get("seed", 1)
         )
