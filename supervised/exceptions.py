@@ -2,9 +2,6 @@ import logging
 
 from supervised.utils.config import LOG_LEVEL
 
-logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
-)
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
