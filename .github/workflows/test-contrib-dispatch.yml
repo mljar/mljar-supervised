@@ -1,0 +1,56 @@
+name: Contributor install test
+
+on:
+  workflow_dispatch:
+    inputs:
+      python-version:
+        description: 'Python version'
+        required: true
+        default: '3.11'
+        options:
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+      method:
+        description: 'Method install python dependencies can be venv or poetry'
+        required: true
+        default: 'venv'
+        options:
+          - 'venv'
+          - 'poetry'
+
+jobs:
+  build:
+
+    runs-on: 'ubuntu-latest'
+
+
+    steps:
+      - name: Install OS Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install graphviz
+
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ github.event.inputs.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ github.event.inputs.python-version }}
+      - name: Install dependencies traditionally with virtualenv
+        if: github.event.inputs.method == 'venv'
+        run: |
+          python -m pip install --upgrade pip
+          pip install virtualenv  
+          virtualenv venv 
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pip install -r requirements_dev.txt
+          pytest
+      - name: Install dependencies with poetry
+        if: github.event.inputs.method == 'poetry'
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+          poetry run pytest
