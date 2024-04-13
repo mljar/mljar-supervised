@@ -1,8 +1,8 @@
 
 # New way for visual programming!
 
-We are working on new way for visual programming. We developer desktop application called [MLJAR Studio](https://mljar.com). 
-It is a notebook based development environment with interactive code recipes and managed Python environment. All running locally on your machine.
+We are working on new way for visual programming. We developed desktop application called [MLJAR Studio](https://mljar.com). 
+It is a notebook based development environment with interactive code recipes and managed Python environment. All running locally on your machine. We are waiting for your feedback.
 
 <p align="center">
   <img 
