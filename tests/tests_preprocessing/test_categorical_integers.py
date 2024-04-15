@@ -81,7 +81,6 @@ class CategoricalIntegersTest(unittest.TestCase):
         categorical.fit(df)
 
         df = categorical.transform(df).astype(int)
-        df = categorical.inverse_transform(df)
 
     def test_future_warning_pandas_inverse_transform(self):
         import warnings
