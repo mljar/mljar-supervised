@@ -64,6 +64,68 @@ class CategoricalIntegersTest(unittest.TestCase):
         self.assertEqual(df["col4"][1], 1)
         self.assertEqual(df["col4"][2], 2)
 
+    def test_future_warning_pandas_transform(self):
+        import warnings
+        warnings.filterwarnings("error")
+
+        # training data
+        d = {
+            "col1": [False, True, True],
+            "col2": [False, False, True],
+            "col3": [True, False, True],
+        }
+        df = pd.DataFrame(data=d)
+        categorical = PreprocessingCategorical(
+            df.columns, PreprocessingCategorical.CONVERT_INTEGER
+        )
+        categorical.fit(df)
+
+        df = categorical.transform(df).astype(int)
+        df = categorical.inverse_transform(df)
+
+    def test_future_warning_pandas_inverse_transform(self):
+        import warnings
+
+        # training data
+        d = {
+            "col1": [False, True, True],
+            "col2": [False, False, True],
+            "col3": [True, False, True],
+        }
+        df = pd.DataFrame(data=d)
+        categorical = PreprocessingCategorical(
+            df.columns, PreprocessingCategorical.CONVERT_INTEGER
+        )
+        categorical.fit(df)
+
+        df = categorical.transform(df).astype(int)
+        warnings.filterwarnings("error")
+        df = categorical.inverse_transform(df)
+
+    def test_fit_transform_inverse_transform_integers(self):
+        # training data
+        d = {
+            "col1": [1, 2, 3],
+            "col2": ["a", "a", "c"],
+            "col3": [1, 1, 3],
+            "col4": ["a", "b", "c"],
+        }
+        df = pd.DataFrame(data=d)
+        categorical = PreprocessingCategorical(
+            df.columns, PreprocessingCategorical.CONVERT_INTEGER
+        )
+        categorical.fit(df)
+        df_transform = categorical.transform(df).astype(int)
+        df_inverse = categorical.inverse_transform(df_transform)
+        for col in ["col1", "col2", "col3", "col4"]:
+            self.assertTrue(col in df_inverse.columns)
+        self.assertEqual(d["col2"][0], df_inverse["col2"][0])
+        self.assertEqual(d["col2"][1], df_inverse["col2"][1])
+        self.assertEqual(d["col2"][2], df_inverse["col2"][2])
+        self.assertEqual(d["col4"][0], df_inverse["col4"][0])
+        self.assertEqual(d["col4"][1], df_inverse["col4"][1])
+        self.assertEqual(d["col4"][2], df_inverse["col4"][2])
+
     def test_fit_transform_integers_with_new_values(self):
         # training data
         d_train = {
