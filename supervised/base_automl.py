@@ -2290,10 +2290,10 @@ class BaseAutoML(BaseEstimator, ABC):
     color: white;
 }}
 
-body {{
+.mljar-automl-report {{
     font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: rgba(236, 243, 249, 0.15);
-}}
+
 
 h1 {{
     color: #004666;
@@ -2327,7 +2327,7 @@ a:hover {{
     cursor: pointer;
     color: #0099CC;
 }}
-
+}}
 
 """
 
@@ -2459,7 +2459,9 @@ margin-right: auto;display: block;"/>\n\n"""
     </style>
 </head>
 <body>
+    <div class="mljar-automl-report">
     {body}
+    <div>
 </body>
 </html>
 """
