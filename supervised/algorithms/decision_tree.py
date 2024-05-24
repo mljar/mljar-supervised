@@ -215,7 +215,7 @@ class DecisionTreeRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
                 # if too many points are used then final SVG plot is very large (can be > 100MB)
                 if X_train.shape[0] > 250:
                     x, _, y, _ = subsample(X_train, y_train, REGRESSION, 250)
-                    viz = dtreeviz(
+                    viz = dtreeviz.model(
                         self.model,
                         x,
                         y,
