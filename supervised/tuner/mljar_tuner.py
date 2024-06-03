@@ -181,8 +181,14 @@ class MljarTuner:
             all_steps += ["features_selection"]
         for i in range(self._hill_climbing_steps):
             all_steps += [f"hill_climbing_{i+1}"]
-        if self._boost_on_errors and self._fairness_metric is None:
-            # we can tun boost on errors only if there is not fairness optimization
+        if (
+            self._boost_on_errors
+            and self._fairness_metric is None
+            and self._validation_strategy.get("validation_type", "") != "custom"
+        ):
+            # we can turn boost on errors only if there is not fairness optimization
+            # boost on errors will not work for custom validation strategy
+            # because we cant assure that we have all samples in out-of-folds predictions
             all_steps += ["boost_on_errors"]
         if self._train_ensemble:
             all_steps += ["ensemble"]
