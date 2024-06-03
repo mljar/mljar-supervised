@@ -14,7 +14,7 @@ seaborn>=0.11.1
 wordcloud>=1.8.1
 category_encoders>=2.2.2
 optuna>=2.7.0
-mljar-scikit-plot>=0.3.8
+mljar-scikit-plot>=0.3.11
 markdown
 typing-extensions
 ipython

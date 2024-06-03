@@ -225,12 +225,6 @@ def lightgbm_eval_metric_accuracy(preds, dtrain):
     target = dtrain.get_label()
     weight = dtrain.get_weight()
 
-    unique_targets = np.unique(target)
-    if len(unique_targets) > 2:
-        cols = len(unique_targets)
-        rows = int(preds.shape[0] / len(unique_targets))
-        preds = np.reshape(preds, (rows, cols), order="F")
-
     return "accuracy", -negative_accuracy(target, preds, weight), True
 
 
