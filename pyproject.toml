@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "mljar-supervised"
+version = "1.1.3"
+description = "Automated Machine Learning for Humans"
+readme = "README.md"
+homepage = "https://github.com/mljar/mljar-supervised"
+repository = "https://github.com/mljar/mljar-supervised"
+authors = ["MLJAR, Sp. z o.o. <contact@mljar.com>"]
+license = "MIT"
+keywords = ["automated machine learning", "automl", "machine learning", "data science", "data mining", "mljar", "random forest", "decision tree", "xgboost", "lightgbm", "catboost", "neural network", "extra trees", "linear model", "features selection", "features engineering"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+packages = [
+    { include = "supervised" },
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = ">=1.19.5"
+pandas = ">=2.0.0"
+scipy = ">=1.6.1,<=1.11.4"
+scikit-learn = ">=1.0"
+xgboost = ">=2.0.0"
+lightgbm = ">=3.0.0"
+catboost = ">=0.24.4"
+joblib = ">=1.0.1"
+tabulate = ">=0.8.7"
+matplotlib = ">=3.2.2"
+dtreeviz = ">=2.2.2"
+shap = ">=0.42.1"
+seaborn = ">=0.11.1"
+wordcloud = ">=1.8.1"
+category_encoders = ">=2.2.2"
+optuna = ">=2.7.0"
+scikit-plot = "==0.3.7"
+markdown = "*"
+typing-extensions = "*"
+ipython = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+black = "*"
+pytest-cov = "*"
+coveralls = "*"
