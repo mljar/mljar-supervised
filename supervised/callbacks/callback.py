@@ -1,25 +1,31 @@
-class Callback(object):
-    def __init__(self, params):
-        self.params = params
-        self.learners = []
-        self.learner = None  # current learner
-        self.name = "callback"
+from typing import List
 
-    def add_and_set_learner(self, learner):
+from supervised.algorithms.algorithm import BaseAlgorithm
+
+
+class Callback(object):
+
+    def __init__(self, params: dict):
+        self.params: dict = params
+        self.learners: List[BaseAlgorithm] = []
+        self.learner: BaseAlgorithm = None  # current learner
+        self.name: str = "callback"
+
+    def add_and_set_learner(self, learner: BaseAlgorithm):
         self.learners += [learner]
         self.learner = learner
 
-    def on_learner_train_start(self, logs):
+    def on_learner_train_start(self, logs: dict) -> None:
         pass
 
-    def on_learner_train_end(self, logs):
+    def on_learner_train_end(self, logs: dict) -> None:
         pass
 
-    def on_iteration_start(self, logs):
+    def on_iteration_start(self, logs: dict) -> None:
         pass
 
-    def on_iteration_end(self, logs, predictions):
+    def on_iteration_end(self, logs: dict, predictions: dict) -> None:
         pass
 
-    def on_framework_train_end(self, logs):
+    def on_framework_train_end(self, logs: dict) -> None:
         pass
