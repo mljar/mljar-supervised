@@ -18,3 +18,4 @@ mljar-scikit-plot>=0.3.11
 markdown
 typing-extensions
 ipython
+pyarrow
