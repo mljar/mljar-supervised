@@ -1,6 +1,7 @@
 import lightgbm as lgb
 import numpy as np
 import optuna
+import optuna_integration
 import pandas as pd
 
 from supervised.algorithms.lightgbm import lightgbm_eval_metric, lightgbm_objective
@@ -134,7 +135,7 @@ class LightgbmObjective:
             metric_name = self.eval_metric_name
             if metric_name == "custom":
                 metric_name = self.custom_eval_metric_name
-            pruning_callback = optuna.integration.LightGBMPruningCallback(
+            pruning_callback = optuna_integration.LightGBMPruningCallback(
                 trial, metric_name, "validation"
             )
             early_stopping_callback = lgb.early_stopping(

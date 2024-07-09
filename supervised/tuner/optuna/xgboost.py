@@ -1,5 +1,6 @@
 import numpy as np
 import optuna
+import optuna_integration
 import xgboost as xgb
 
 from supervised.algorithms.registry import (
@@ -101,7 +102,7 @@ class XgboostObjective:
         if self.num_class is not None:
             param["num_class"] = self.num_class
         try:
-            pruning_callback = optuna.integration.XGBoostPruningCallback(
+            pruning_callback = optuna_integration.XGBoostPruningCallback(
                 trial, f"validation-{self.eval_metric_name}"
             )
             bst = xgb.train(
