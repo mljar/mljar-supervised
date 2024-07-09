@@ -23,6 +23,7 @@ class TextTransformerTest(unittest.TestCase):
         transf = TextTransformer()
         transf.fit(df, "col1")
         df = transf.transform(df)
+        
         self.assertTrue(df.shape[0] == 5)
         self.assertTrue("col1" not in df.columns)
 
