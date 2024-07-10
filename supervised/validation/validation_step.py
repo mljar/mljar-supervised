@@ -1,4 +1,7 @@
 import logging
+from typing import Tuple
+
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
@@ -24,14 +27,14 @@ class ValidationStep:
                 f"The validation type ({self.validation_type}) is not implemented."
             )
 
-    def get_split(self, k, repeat=0):
+    def get_split(self, k: int, repeat: int = 0) -> Tuple[pd.DataFrame, pd.DataFrame]:
         return self.validator.get_split(k, repeat)
 
     def split(self):
         return self.validator.split()
 
-    def get_n_splits(self):
+    def get_n_splits(self) -> int:
         return self.validator.get_n_splits()
 
-    def get_repeats(self):
+    def get_repeats(self) -> int:
         return self.validator.get_repeats()

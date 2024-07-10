@@ -1,13 +1,13 @@
 import copy
-import gc
 import json
 import logging
 import os
-import time
 import uuid
 
+import gc
 import numpy as np
 import pandas as pd
+import time
 
 from supervised.algorithms.factory import AlgorithmFactory
 from supervised.algorithms.registry import (
@@ -100,7 +100,7 @@ class ModelFramework:
         y_validation,
         sample_weight_validation,
         sensitive_features_validation,
-    ):
+    ) -> dict:
         y_train_true = y_train
         y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
