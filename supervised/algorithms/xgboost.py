@@ -169,14 +169,19 @@ class XgbAlgorithm(BaseAlgorithm):
             missing=np.NaN,
             weight=sample_weight,
         )
-        dvalidation = xgb.DMatrix(
-            X_validation.values
-            if isinstance(X_validation, pd.DataFrame)
-            else X_validation,
-            label=y_validation,
-            missing=np.NaN,
-            weight=sample_weight_validation,
-        )
+        
+        if X_validation is not None and y_validation is not None:       
+            dvalidation = xgb.DMatrix(
+                X_validation.values
+                if isinstance(X_validation, pd.DataFrame)
+                else X_validation,
+                label=y_validation,
+                missing=np.NaN,
+                weight=sample_weight_validation,
+            )
+        else:
+            dvalidation = None
+            
         evals_result = {}
 
         evals = []
