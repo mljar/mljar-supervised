@@ -13,7 +13,7 @@ shap>=0.42.1
 seaborn>=0.11.1
 wordcloud>=1.8.1
 category_encoders>=2.2.2
-optuna-integration=>3.6.0
+optuna-integration>=3.6.0
 mljar-scikit-plot>=0.3.11
 markdown
 typing-extensions
