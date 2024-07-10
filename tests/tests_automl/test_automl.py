@@ -122,7 +122,7 @@ class AutoMLTest(unittest.TestCase):
         # Get params after fit
         params_after_fit = model.get_params()
         # Assert before and after params are equal
-        self.assertEquals(params_before_fit, params_after_fit)
+        self.assertEqual(params_before_fit, params_after_fit)
 
     def test_scikit_learn_pipeline_integration(self):
         """
