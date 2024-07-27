@@ -820,7 +820,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.verbose_print(
                 "Neural Network algorithm was disabled because it doesn't support n_jobs parameter."
             )
-        if "Linear" in self._algorithms and not (
+        if "Linear" in self._algorithms and len(self._algorithms) > 1 and and not (
             self.n_rows_in_ < 10000 and self.n_features_in_ < 1000
         ):
             self._algorithms.remove("Linear")
