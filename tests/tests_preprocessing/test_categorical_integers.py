@@ -95,6 +95,45 @@ class CategoricalIntegersTest(unittest.TestCase):
         self.assertEqual(df["col4"][1], 1)
         self.assertEqual(df["col4"][2], 4)  # new values get higher indexes
 
+    def test_future_warning_pandas_transform(self):
+        import warnings
+
+        # warnings.filterwarnings("error")
+        with warnings.catch_warnings(action="error"):
+
+            # training data
+            d = {
+                "col1": [False, True, True],
+                "col2": [False, False, True],
+                "col3": [True, False, True],
+            }
+            df = pd.DataFrame(data=d)
+            categorical = PreprocessingCategorical(
+                df.columns, PreprocessingCategorical.CONVERT_INTEGER
+            )
+            categorical.fit(df)
+
+            df = categorical.transform(df).astype(int)
+
+    def test_future_warning_pandas_inverse_transform(self):
+        import warnings
+
+        with warnings.catch_warnings(action="error"):
+            # training data
+            d = {
+                "col1": [False, True, True],
+                "col2": [False, False, True],
+                "col3": [True, False, True],
+            }
+            df = pd.DataFrame(data=d)
+            categorical = PreprocessingCategorical(
+                df.columns, PreprocessingCategorical.CONVERT_INTEGER
+            )
+            categorical.fit(df)
+
+            df = categorical.transform(df).astype(int)
+            df = categorical.inverse_transform(df)
+
     def test_to_and_from_json_convert_integers(self):
         # training data
         d = {
