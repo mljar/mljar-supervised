@@ -4,6 +4,8 @@ import pandas as pd
 
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 
+import warnings
+
 
 class CategoricalIntegersTest(unittest.TestCase):
     def test_constructor_preprocessing_categorical(self):
@@ -65,41 +67,40 @@ class CategoricalIntegersTest(unittest.TestCase):
         self.assertEqual(df["col4"][2], 2)
 
     def test_future_warning_pandas_transform(self):
-        import warnings
-        warnings.filterwarnings("error")
+        with warnings.catch_warnings(action="error"):
 
-        # training data
-        d = {
-            "col1": [False, True, True],
-            "col2": [False, False, True],
-            "col3": [True, False, True],
-        }
-        df = pd.DataFrame(data=d)
-        categorical = PreprocessingCategorical(
-            df.columns, PreprocessingCategorical.CONVERT_INTEGER
-        )
-        categorical.fit(df)
+            # training data
+            d = {
+                "col1": [False, True, True],
+                "col2": [False, False, True],
+                "col3": [True, False, True],
+            }
+            df = pd.DataFrame(data=d)
+            categorical = PreprocessingCategorical(
+                df.columns, PreprocessingCategorical.CONVERT_INTEGER
+            )
+            categorical.fit(df)
 
-        df = categorical.transform(df).astype(int)
+            df = categorical.transform(df).astype(int)
 
     def test_future_warning_pandas_inverse_transform(self):
-        import warnings
+        with warnings.catch_warnings(action="error"):
 
-        # training data
-        d = {
-            "col1": [False, True, True],
-            "col2": [False, False, True],
-            "col3": [True, False, True],
-        }
-        df = pd.DataFrame(data=d)
-        categorical = PreprocessingCategorical(
-            df.columns, PreprocessingCategorical.CONVERT_INTEGER
-        )
-        categorical.fit(df)
+            # training data
+            d = {
+                "col1": [False, True, True],
+                "col2": [False, False, True],
+                "col3": [True, False, True],
+            }
+            df = pd.DataFrame(data=d)
+            categorical = PreprocessingCategorical(
+                df.columns, PreprocessingCategorical.CONVERT_INTEGER
+            )
+            categorical.fit(df)
 
-        df = categorical.transform(df).astype(int)
-        warnings.filterwarnings("error")
-        df = categorical.inverse_transform(df)
+            df = categorical.transform(df).astype(int)
+            warnings.filterwarnings("error")
+            df = categorical.inverse_transform(df)
 
     def test_fit_transform_inverse_transform_integers(self):
         # training data
