@@ -67,7 +67,8 @@ class CategoricalIntegersTest(unittest.TestCase):
         self.assertEqual(df["col4"][2], 2)
 
     def test_future_warning_pandas_transform(self):
-        with warnings.catch_warnings(action="error"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
 
             # training data
             d = {
@@ -84,7 +85,8 @@ class CategoricalIntegersTest(unittest.TestCase):
             df = categorical.transform(df).astype(int)
 
     def test_future_warning_pandas_inverse_transform(self):
-        with warnings.catch_warnings(action="error"):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
 
             # training data
             d = {
