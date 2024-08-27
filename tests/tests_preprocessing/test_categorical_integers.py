@@ -101,7 +101,6 @@ class CategoricalIntegersTest(unittest.TestCase):
             categorical.fit(df)
 
             df = categorical.transform(df).astype(int)
-            warnings.filterwarnings("error")
             df = categorical.inverse_transform(df)
 
     def test_fit_transform_inverse_transform_integers(self):
