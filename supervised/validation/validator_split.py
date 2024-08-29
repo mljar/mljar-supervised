@@ -24,7 +24,9 @@ class SplitValidator(BaseValidator):
         self.repeats = self.params.get("repeats", 1)
 
         if not self.shuffle and self.repeats > 1:
-            warnings.warn("Disable repeats in validation because shuffle is disabled")
+            warnings.warn(
+                "Disable repeats in validation because shuffle is disabled", UserWarning
+            )
             self.repeats = 1
 
         self._results_path = self.params.get("results_path")

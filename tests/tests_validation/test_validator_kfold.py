@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -194,7 +195,15 @@ class KFoldValidatorTest(unittest.TestCase):
                 "y_path": y_path,
                 "random_seed": 1,
             }
-            vl = KFoldValidator(params)
+
+            with pytest.warns(
+                expected_warning=UserWarning,
+                match="Disable repeats in validation because shuffle is disabled",
+            ) as record:
+                vl = KFoldValidator(params)
+
+            # check that only one warning was raised
+            self.assertEqual(len(record), 1)
 
             self.assertEqual(params["k_folds"], vl.get_n_splits())
             self.assertEqual(1, vl.get_repeats())

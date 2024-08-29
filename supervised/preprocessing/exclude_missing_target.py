@@ -23,7 +23,8 @@ class ExcludeRowsMissingTarget(object):
         logger.debug("Exclude rows with missing target values")
         if warn:
             warnings.warn(
-                "There are samples with missing target values in the data which will be excluded for further analysis"
+                "There are samples with missing target values in the data which will be excluded for further analysis",
+                UserWarning
             )
         y = y.drop(y.index[y_missing])
         y.reset_index(drop=True, inplace=True)
