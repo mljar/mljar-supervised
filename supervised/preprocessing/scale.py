@@ -83,6 +83,7 @@ class Scale(object):
         self.scale.n_samples_seen_ = int(data_json.get("n_samples_seen"))
         self.scale.n_features_in_ = int(data_json.get("n_features_in"))
         self.columns = data_json.get("columns", [])
+        self.scale.feature_names_in_ = data_json.get("columns")
         self.scale_method = data_json.get("scale_method")
         self.X_min_values = data_json.get("X_min_values")
         if self.X_min_values is not None:
