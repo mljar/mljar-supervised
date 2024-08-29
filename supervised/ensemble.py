@@ -560,7 +560,8 @@ class Ensemble:
         model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading ensemble from {model_path}")
 
-        json_desc = json.load(open(os.path.join(model_path, "ensemble.json")))
+        with open(os.path.join(model_path, "ensemble.json")) as file:
+            json_desc = json.load(file)
 
         ensemble = Ensemble(json_desc.get("optimize_metric"), json_desc.get("ml_task"))
         ensemble._name = json_desc.get("name", ensemble._name)
