@@ -130,7 +130,8 @@ class BaseAutoML(BaseEstimator, ABC):
     def load(self, path):
         logger.info("Loading AutoML models ...")
         try:
-            params = json.load(open(os.path.join(path, "params.json")))
+            with open(os.path.join(path, "params.json")) as file:
+                params = json.load(file)
 
             self._model_subpaths = params["saved"]
             self._mode = params.get("mode", self._mode)
@@ -215,7 +216,8 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._stacked_models += [models_map[stacked_model_name]]
 
             data_info_path = os.path.join(path, "data_info.json")
-            self._data_info = json.load(open(data_info_path))
+            with open(data_info_path, "r") as file:
+                self._data_info = json.load(file)
             self.n_features_in_ = self._data_info["n_features"]
 
             if "n_classes" in self._data_info:
@@ -710,7 +712,8 @@ class BaseAutoML(BaseEstimator, ABC):
         fname = os.path.join(self._results_path, "progress.json")
         if not os.path.exists(fname):
             return
-        state = json.load(open(fname, "r"))
+        with open(fname, "r") as file:
+            state = json.load(file)
         self._fit_level = state.get("fit_level", self._fit_level)
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
@@ -1382,15 +1385,15 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def get_ensemble_models(self, ensemble_name="Ensemble"):
         try:
-            params = json.load(
-                open(os.path.join(self.results_path, ensemble_name, "ensemble.json"))
-            )
+            with open(os.path.join(self.results_path, ensemble_name, "ensemble.json")) as file:
+                params = json.load(file)
             return [m["model"] for m in params["selected_models"]]
         except Exception as e:
             return []
 
     def models_needed_on_predict(self, required_model_name):
-        params = json.load(open(os.path.join(self.results_path, "params.json")))
+        with open(os.path.join(self.results_path, "params.json")) as file:
+            params = json.load(file)
         saved_models = params.get("saved", [])
         stacked_models = params.get("stacked", [])
 

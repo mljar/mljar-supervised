@@ -22,4 +22,5 @@ class AutoMLUpdateErrorsReportTest(unittest.TestCase):
 
         errors_filename = os.path.join(self.automl_dir, "errors.md")
         self.assertTrue(os.path.exists(errors_filename))
-        self.assertTrue("bad error" in open(errors_filename).read())
+        with open(errors_filename) as file:
+            self.assertTrue("bad error" in file.read())

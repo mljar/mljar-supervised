@@ -36,7 +36,8 @@ class AutoMLRestoreTest(unittest.TestCase):
         # Get number of starting models
         n1 = len([x for x in os.listdir(self.automl_dir) if x[0].isdigit()])
 
-        progress = json.load(open(os.path.join(self.automl_dir, "progress.json"), "r"))
+        with open(os.path.join(self.automl_dir, "progress.json"), "r") as file:
+            progress = json.load(file)
         progress["fit_level"] = "default_algorithms"
 
         with open(os.path.join(self.automl_dir, "progress.json"), "w") as fout:
