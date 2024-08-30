@@ -45,6 +45,8 @@ class Scale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.inverse_transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
+                X[self.columns] = X[self.columns].astype("float64")
+
                 X[self.columns] = self.scale.inverse_transform(X[self.columns])
                 X[self.columns] = np.exp(X[self.columns])
 
