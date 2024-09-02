@@ -198,9 +198,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
             for i in range(X.shape[1]):
                 if PreprocessingUtils.is_categorical(X.iloc[:, i]):
                     self.cat_features += [i]
-                    X.iloc[:, i] = X.iloc[:, i].astype(str)
+                    col_name = X.columns[i]
+                    X[col_name] = X[col_name].astype(str)
                     if X_validation is not None:
-                        X_validation.iloc[:, i] = X_validation.iloc[:, i].astype(str)
+                        X_validation[col_name] = X_validation[col_name].astype(str)
 
         eval_set = None
         if X_validation is not None and y_validation is not None:
