@@ -169,14 +169,19 @@ class XgbAlgorithm(BaseAlgorithm):
             missing=np.NaN,
             weight=sample_weight,
         )
-        dvalidation = xgb.DMatrix(
-            X_validation.values
-            if isinstance(X_validation, pd.DataFrame)
-            else X_validation,
-            label=y_validation,
-            missing=np.NaN,
-            weight=sample_weight_validation,
-        )
+        
+        if X_validation is not None and y_validation is not None:       
+            dvalidation = xgb.DMatrix(
+                X_validation.values
+                if isinstance(X_validation, pd.DataFrame)
+                else X_validation,
+                label=y_validation,
+                missing=np.NaN,
+                weight=sample_weight_validation,
+            )
+        else:
+            dvalidation = None
+            
         evals_result = {}
 
         evals = []
@@ -201,7 +206,7 @@ class XgbAlgorithm(BaseAlgorithm):
             early_stopping_rounds=esr,
             evals_result=evals_result,
             verbose_eval=False,
-            feval=self.custom_eval_metric
+            custom_metric=self.custom_eval_metric
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 

@@ -20,10 +20,8 @@ from sklearn.metrics import (
 
 
 def logloss(y_true, y_predicted, sample_weight=None):
-    epsilon = 1e-6
-    y_predicted = sp.maximum(epsilon, y_predicted)
-    y_predicted = sp.minimum(1 - epsilon, y_predicted)
-    ll = log_loss(y_true, y_predicted, sample_weight=sample_weight)
+    # convert predicted values to float32 to avoid warnings
+    ll = log_loss(y_true, y_predicted.astype(np.float32), sample_weight=sample_weight)
     return ll
 
 
@@ -226,12 +224,6 @@ def lightgbm_eval_metric_average_precision(preds, dtrain):
 def lightgbm_eval_metric_accuracy(preds, dtrain):
     target = dtrain.get_label()
     weight = dtrain.get_weight()
-
-    unique_targets = np.unique(target)
-    if len(unique_targets) > 2:
-        cols = len(unique_targets)
-        rows = int(preds.shape[0] / len(unique_targets))
-        preds = np.reshape(preds, (rows, cols), order="F")
 
     return "accuracy", -negative_accuracy(target, preds, weight), True
 

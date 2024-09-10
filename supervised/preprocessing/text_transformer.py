@@ -1,5 +1,5 @@
 import warnings
-
+import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -70,4 +70,4 @@ class TextTransformer(object):
             )
             self._vectorizer.vocabulary_ = vocabulary
             self._vectorizer.fixed_vocabulary_ = fixed_vocabulary
-            self._vectorizer.idf_ = idf
+            self._vectorizer.idf_ = np.array(idf)

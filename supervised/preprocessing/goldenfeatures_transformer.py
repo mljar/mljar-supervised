@@ -127,7 +127,8 @@ class GoldenFeaturesTransformer(object):
             self._result_path = os.path.join(results_path, self._result_file)
 
             if os.path.exists(self._result_path):
-                self.from_json(json.load(open(self._result_path, "r")), results_path)
+                with open(self._result_path, "r") as file:
+                    self.from_json(json.load(file), results_path)
 
     def fit(self, X, y):
         if self._new_features:

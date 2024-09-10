@@ -88,7 +88,7 @@ class CustomValidator(BaseValidator):
             validation_data = {
                 "X": X.iloc[validation_index],
                 "y": y.iloc[validation_index],
-            }
+            }            
             if sample_weight is not None:
                 train_data["sample_weight"] = sample_weight.iloc[train_index]
                 validation_data["sample_weight"] = sample_weight.iloc[validation_index]

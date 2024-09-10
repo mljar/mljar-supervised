@@ -1,3 +1,17 @@
+
+# New way for visual programming!
+
+We are working on new way for visual programming. We developed desktop application called [MLJAR Studio](https://mljar.com). 
+It is a notebook based development environment with interactive code recipes and managed Python environment. All running locally on your machine. We are waiting for your feedback.
+
+<p align="center">
+  <img 
+    alt="mljar AutoML"
+    src="https://raw.githubusercontent.com/pplonski/pplonski/main/media/piece-of-code.png" width="88%" />  
+</p>
+
+---
+
 # MLJAR Automated Machine Learning for Humans
 
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
@@ -13,12 +27,12 @@
 <p align="center">
   <img 
     alt="mljar AutoML"
-    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_white.png#gh-light-mode-only" width="100%" />  
+    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_white.png#gh-light-mode-only" width="50%" />  
 </p>
 <p align="center">
   <img 
     alt="mljar AutoML"
-    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_black.png#gh-dark-mode-only" width="100%" />  
+    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_black.png#gh-dark-mode-only" width="50%" />  
 </p>
 
 ---
@@ -33,8 +47,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/pipeline_AutoML.png" width="100%" />
 </p>
-
-
 
 ---
 
@@ -57,6 +69,9 @@
  - [Commercial support](https://github.com/mljar/mljar-supervised#commercial-support)
  - [MLJAR](https://github.com/mljar/mljar-supervised#mljar)
  
+
+
+
 
 # Automated Machine Learning 
 

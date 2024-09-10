@@ -688,7 +688,8 @@ class ModelFramework:
         model_path = os.path.join(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
 
-        json_desc = json.load(open(os.path.join(model_path, "framework.json")))
+        with open(os.path.join(model_path, "framework.json")) as file:
+            json_desc = json.load(file)
 
         joblib_version_computer = joblib.__version__
         joblib_version_framework = json_desc.get("joblib_version")

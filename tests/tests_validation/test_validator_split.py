@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -211,7 +212,15 @@ class SplitValidatorTest(unittest.TestCase):
                 "y_path": y_path,
                 "repeats": 3,
             }
-            vl = SplitValidator(params)
+
+            with pytest.warns(
+                expected_warning=UserWarning,
+                match="Disable repeats in validation because shuffle is disabled",
+            ) as record:
+                vl = SplitValidator(params)
+
+            # check that only one warning was raised
+            self.assertEqual(len(record), 1)
 
             self.assertEqual(1, vl.get_n_splits())
             self.assertEqual(1, vl.get_repeats())

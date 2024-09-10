@@ -1,5 +1,6 @@
 import shutil
 import unittest
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -100,7 +101,16 @@ class AutoMLTargetsTest(unittest.TestCase):
             explain_level=0,
             start_random_models=1,
         )
-        automl.fit(X, y)
+
+        with pytest.warns(
+            expected_warning=UserWarning,
+            match="There are samples with missing target values in the data which will be excluded for further analysis",
+        ) as record:
+            automl.fit(X, y)
+
+        # check that only one warning was raised
+        self.assertEqual(len(record), 1)
+
         p = automl.predict(X)
         pred = automl.predict(X)
 
@@ -256,7 +266,16 @@ class AutoMLTargetsTest(unittest.TestCase):
             explain_level=0,
             start_random_models=1,
         )
-        automl.fit(X, y)
+
+        with pytest.warns(
+            expected_warning=UserWarning,
+            match="There are samples with missing target values in the data which will be excluded for further analysis",
+        ) as record:
+            automl.fit(X, y)
+
+        # check that only one warning was raised
+        self.assertEqual(len(record), 1)
+
         pred = automl.predict(X)
 
         u = np.unique(pred)
@@ -298,7 +317,14 @@ class AutoMLTargetsTest(unittest.TestCase):
             explain_level=0,
             start_random_models=1,
         )
-        automl.fit(X, y)
+
+        with pytest.warns(
+            match="There are samples with missing target values in the data which will be excluded for further analysis"
+        ) as record:
+            automl.fit(X, y)
+
+        self.assertEqual(len(record), 1)
+
         pred = automl.predict(X)
 
         self.assertIsInstance(pred, np.ndarray)

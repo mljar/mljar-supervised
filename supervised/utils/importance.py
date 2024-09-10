@@ -24,7 +24,7 @@ def log_loss_eps(y_true, y_pred):
     return ll
 
 
-log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, needs_proba=True)
+log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, response_method="predict_proba")
 
 
 class PermutationImportance:

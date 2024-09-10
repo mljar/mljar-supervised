@@ -47,17 +47,6 @@ from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.utils import dump_data, load_data
 
-try:
-    import matplotlib.font_manager as font_manager
-
-    # Get a list of all font families available on the system
-    font_families = font_manager.findSystemFonts()
-
-    # Load the font file for the first font family in the list and get the name of the first font family
-    REPORT_FONT = font_manager.FontProperties(fname=font_families[0]).get_name()
-except Exception:
-    REPORT_FONT = "Arial"
-
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
@@ -141,7 +130,8 @@ class BaseAutoML(BaseEstimator, ABC):
     def load(self, path):
         logger.info("Loading AutoML models ...")
         try:
-            params = json.load(open(os.path.join(path, "params.json")))
+            with open(os.path.join(path, "params.json")) as file:
+                params = json.load(file)
 
             self._model_subpaths = params["saved"]
             self._mode = params.get("mode", self._mode)
@@ -226,7 +216,8 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._stacked_models += [models_map[stacked_model_name]]
 
             data_info_path = os.path.join(path, "data_info.json")
-            self._data_info = json.load(open(data_info_path))
+            with open(data_info_path, "r") as file:
+                self._data_info = json.load(file)
             self.n_features_in_ = self._data_info["n_features"]
 
             if "n_classes" in self._data_info:
@@ -721,7 +712,8 @@ class BaseAutoML(BaseEstimator, ABC):
         fname = os.path.join(self._results_path, "progress.json")
         if not os.path.exists(fname):
             return
-        state = json.load(open(fname, "r"))
+        with open(fname, "r") as file:
+            state = json.load(file)
         self._fit_level = state.get("fit_level", self._fit_level)
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
@@ -1393,15 +1385,15 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def get_ensemble_models(self, ensemble_name="Ensemble"):
         try:
-            params = json.load(
-                open(os.path.join(self.results_path, ensemble_name, "ensemble.json"))
-            )
+            with open(os.path.join(self.results_path, ensemble_name, "ensemble.json")) as file:
+                params = json.load(file)
             return [m["model"] for m in params["selected_models"]]
         except Exception as e:
             return []
 
     def models_needed_on_predict(self, required_model_name):
-        params = json.load(open(os.path.join(self.results_path, "params.json")))
+        with open(os.path.join(self.results_path, "params.json")) as file:
+            params = json.load(file)
         saved_models = params.get("saved", [])
         stacked_models = params.get("stacked", [])
 
@@ -2281,13 +2273,13 @@ class BaseAutoML(BaseEstimator, ABC):
 .styled-table {{
     border-collapse: collapse;
     font-size: 0.9em;
-    font-family:Courier New;
+    font-family: Courier New;
 }}
 
 .styled-table td, .styled-table th {{
     border: 1px solid #ddd;
     padding: 8px;
-{{
+}}
 
 .styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
 
@@ -2301,11 +2293,10 @@ class BaseAutoML(BaseEstimator, ABC):
     color: white;
 }}
 
-body {{
-    font-family: {REPORT_FONT};
-    font-size: 1.0em;
+.mljar-automl-report {{
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: rgba(236, 243, 249, 0.15);
-}}
+
 
 h1 {{
     color: #004666;
@@ -2339,7 +2330,7 @@ a:hover {{
     cursor: pointer;
     color: #0099CC;
 }}
-
+}}
 
 """
 
@@ -2389,29 +2380,26 @@ a:hover {{
                 content_html = "\n".join(new_content)
 
         # change links
-        if page_type == "main":
+        if page_type == "automl-report-main":
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
                     old = f'href="{f}/README.html"'
-                    new = f"onclick=\"toggleShow('{f}');toggleShow('main')\" "
+                    new = f"onclick=\"toggleShow('{f}');toggleShow('automl-report-main')\" "
                     content_html = content_html.replace(old, new)
 
         # other links
         if me is not None:
             old = 'href="../README.html"'
-            new = f"onclick=\"toggleShow('{me}');toggleShow('main')\" "
+            new = f"onclick=\"toggleShow('{me}');toggleShow('automl-report-main')\" "
             content_html = content_html.replace(old, new)
 
         beginning = ""
 
-        if page_type == "main":
+        if page_type == "automl-report-main":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
-            # disable EDA
-            # if os.path.exists(os.path.join(self._results_path, "EDA")):
-            #     beginning += "<a onclick=\"toggleShow('EDA');toggleShow('main')\" >Automatic Exploratory Data Analysis Report</a>"
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
-                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('main')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
         content_html = beginning + content_html
 
@@ -2436,8 +2424,8 @@ margin-right: auto;display: block;"/>\n\n"""
         body = ""
         fname = os.path.join(self._results_path, "README.md")
         body += (
-            '<div id="main">\n'
-            + self._md_to_html(fname, "main", self._results_path)
+            '<div id="automl-report-main">\n'
+            + self._md_to_html(fname, "automl-report-main", self._results_path)
             + "\n\n</div>\n\n"
         )
 
@@ -2474,7 +2462,9 @@ margin-right: auto;display: block;"/>\n\n"""
     </style>
 </head>
 <body>
+    <div class="mljar-automl-report">
     {body}
+    <div>
 </body>
 </html>
 """

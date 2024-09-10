@@ -27,7 +27,8 @@ class Scale(object):
 
     def transform(self, X):
         if len(self.columns):
-            X.loc[:, self.columns] = X.loc[:, self.columns].astype(float)
+            for c in self.columns:
+                X[c] = X[c].astype(float)
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
@@ -44,6 +45,8 @@ class Scale(object):
             if self.scale_method == self.SCALE_NORMAL:
                 X.loc[:, self.columns] = self.scale.inverse_transform(X[self.columns])
             elif self.scale_method == self.SCALE_LOG_AND_NORMAL:
+                X[self.columns] = X[self.columns].astype("float64")
+
                 X[self.columns] = self.scale.inverse_transform(X[self.columns])
                 X[self.columns] = np.exp(X[self.columns])
 
@@ -82,6 +85,7 @@ class Scale(object):
         self.scale.n_samples_seen_ = int(data_json.get("n_samples_seen"))
         self.scale.n_features_in_ = int(data_json.get("n_features_in"))
         self.columns = data_json.get("columns", [])
+        self.scale.feature_names_in_ = data_json.get("columns")
         self.scale_method = data_json.get("scale_method")
         self.X_min_values = data_json.get("X_min_values")
         if self.X_min_values is not None:

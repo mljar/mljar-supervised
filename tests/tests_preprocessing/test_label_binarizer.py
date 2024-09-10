@@ -169,18 +169,20 @@ class LabelBinarizerTest(unittest.TestCase):
         # do not touch continuous attribute
         self.assertTrue("col3" in df_test.columns)
 
-    def test_inverse_transform(self):
-        d = {"col1": ["a", "a", "c"], "col2": ["w", "e", "d"]}
+    def test_inverse_transform_2_unique_strings(self):
+        d = {"col1": ["a", "a", "c"]}
         df = pd.DataFrame(data=d)
         lb = LabelBinarizer()
-        # check first column
         lb.fit(df, "col1")
         bb = lb.transform(df, "col1")
         self.assertTrue("col1_c" in bb.columns)
         self.assertTrue(np.sum(bb["col1_c"]) == 1)
         bb = lb.inverse_transform(bb)
         self.assertTrue("col1_c" not in bb.columns)
-        # check second column
+
+    def test_inverse_transform_strings(self):
+        d = {"col2": ["w", "e", "d"]}
+        df = pd.DataFrame(data=d)
         lb = LabelBinarizer()
         lb.fit(df, "col2")
         bb = lb.transform(df, "col2")
@@ -190,6 +192,28 @@ class LabelBinarizerTest(unittest.TestCase):
         self.assertTrue(np.sum(bb["col2_w"]) == 1)
         bb = lb.inverse_transform(bb)
         self.assertTrue("col2_w" not in bb.columns)
+
+    def test_inverse_transform_booleans(self):
+        d = {"col1": [True, False, True, True]}
+        df = pd.DataFrame(data=d)
+        lb = LabelBinarizer()
+        lb.fit(df, "col1")
+
+        bb = lb.transform(df, "col1")
+        self.assertTrue("col1_True" in bb.columns)
+        self.assertEqual(bb["col1_True"].dtype, "int64")
+        self.assertEqual(bb["col1_True"][0], 1)
+        self.assertEqual(bb["col1_True"][1], 0)
+        self.assertEqual(bb["col1_True"][2], 1)
+        self.assertEqual(bb["col1_True"][3], 1)
+
+        bb = lb.inverse_transform(bb)
+        self.assertTrue("col1_True" not in bb.columns)
+        self.assertEqual(bb["col1"].dtype, "bool")
+        self.assertEqual(bb["col1"][0], True)
+        self.assertEqual(bb["col1"][1], False)
+        self.assertEqual(bb["col1"][2], True)
+        self.assertEqual(bb["col1"][3], True)
 
 
 if __name__ == "__main__":
