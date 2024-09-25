@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
@@ -78,6 +79,8 @@ class PreprocessingCategorical(object):
                     if transformed_values.dtype != X.loc[:, column].dtype and \
                         (X.loc[:, column].dtype == bool or X.loc[:, column].dtype == int):
                         X = X.astype({column: transformed_values.dtype})
+                    if isinstance(X[column].dtype, pd.CategoricalDtype):
+                        X[column] = X[column].astype('object')
                     X.loc[:, column] = transformed_values
 
             return X
