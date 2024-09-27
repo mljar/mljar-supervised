@@ -138,7 +138,7 @@ class MultiClassNeuralNetworkAlgorithmTest(unittest.TestCase):
             "num_class": 3,
         }
 
-        lb = preprocessing.LabelBinarizer()
+        lb = preprocessing.LabelEncoder()
         lb.fit(cls.y)
         cls.y = lb.transform(cls.y)
 
