@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 import types
+import uuid
 from abc import ABC
 from copy import deepcopy
 
@@ -107,6 +108,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._underprivileged_groups = []
         self._optuna_verbose = True
         self._n_jobs = -1
+        self._id = str(uuid.uuid4())
 
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
@@ -2380,26 +2382,26 @@ a:hover {{
                 content_html = "\n".join(new_content)
 
         # change links
-        if page_type == "automl-report-main":
+        if page_type == f"automl-report-main-{self._id}":
             for f in os.listdir(dir_path):
                 if os.path.exists(os.path.join(dir_path, f, "README.md")):
                     old = f'href="{f}/README.html"'
-                    new = f"onclick=\"toggleShow('{f}');toggleShow('automl-report-main')\" "
+                    new = f"onclick=\"toggleShow('{f}-{self._id}');toggleShow('automl-report-main-{self._id}')\" "
                     content_html = content_html.replace(old, new)
 
         # other links
         if me is not None:
             old = 'href="../README.html"'
-            new = f"onclick=\"toggleShow('{me}');toggleShow('automl-report-main')\" "
+            new = f"onclick=\"toggleShow('{me}-{self._id}');toggleShow('automl-report-main-{self._id}')\" "
             content_html = content_html.replace(old, new)
 
         beginning = ""
 
-        if page_type == "automl-report-main":
+        if page_type == f"automl-report-main-{self._id}":
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
-                beginning += "<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                beginning += f"<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main-{self._id}')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
         content_html = beginning + content_html
 
@@ -2424,8 +2426,8 @@ margin-right: auto;display: block;"/>\n\n"""
         body = ""
         fname = os.path.join(self._results_path, "README.md")
         body += (
-            '<div id="automl-report-main">\n'
-            + self._md_to_html(fname, "automl-report-main", self._results_path)
+            f'<div id="automl-report-main-{self._id}">\n'
+            + self._md_to_html(fname, f"automl-report-main-{self._id}", self._results_path)
             + "\n\n</div>\n\n"
         )
 
@@ -2433,7 +2435,7 @@ margin-right: auto;display: block;"/>\n\n"""
             fname = os.path.join(self._results_path, f, "README.md")
             if os.path.exists(fname):
                 body += (
-                    f'<div id="{f}" style="display: none">\n'
+                    f'<div id="{f}-{self._id}" style="display: none">\n'
                     + self._md_to_html(
                         fname, "sub", os.path.join(self._results_path, f), f
                     )
@@ -2462,7 +2464,7 @@ margin-right: auto;display: block;"/>\n\n"""
     </style>
 </head>
 <body>
-    <div class="mljar-automl-report">
+    <div class="mljar-automl-report-{self._id}">
     {body}
     <div>
 </body>
