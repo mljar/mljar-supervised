@@ -82,7 +82,7 @@ Of course, you can further customize the details of each `mode` to meet the requ
 ## What's good in it? 
 
 - It uses many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
-- It can compute Ensemble based on a greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
+- It can compute Ensemble based on a greedy algorithm from [Caruana paper](https://dl.acm.org/doi/10.1145/1015330.1015432).
 - It can stack models to build a level 2 ensemble (available in `Compete` mode or after setting the `stack_models` parameter).
 - It can do features preprocessing, like missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing.
 - It can do advanced features engineering, like [Golden Features](https://supervised.mljar.com/features/golden_features/), [Features Selection](https://supervised.mljar.com/features/features_selection/), Text and Time Transformations.
