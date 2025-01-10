@@ -87,7 +87,7 @@ def save_rules(tree, feature_names, class_names, model_file_path, learner_name):
         logger.info(f"Problem with extracting decision tree rules. {str(e)}")
 
 
-class DecisionTreeAlgorithm(SklearnAlgorithm, BaseEstimator, ClassifierMixin):
+class DecisionTreeAlgorithm(ClassifierMixin, SklearnAlgorithm):
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
 
@@ -161,7 +161,7 @@ class DecisionTreeAlgorithm(SklearnAlgorithm, BaseEstimator, ClassifierMixin):
             )
 
 
-class DecisionTreeRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
+class DecisionTreeRegressorAlgorithm(RegressorMixin, SklearnAlgorithm):
     algorithm_name = "Decision Tree"
     algorithm_short_name = "Decision Tree"
 

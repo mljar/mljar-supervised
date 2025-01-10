@@ -351,7 +351,7 @@ lgbr_params = copy.deepcopy(lgbm_bin_params)
 lgbr_params["objective"] = ["regression"]
 
 
-class LgbmClassifier(LightgbmAlgorithm, ClassifierMixin):
+class LgbmClassifier(ClassifierMixin, LightgbmAlgorithm):
     pass
 
 
@@ -392,7 +392,7 @@ regression_default_params = {
 }
 
 
-class LgbmRegressor(LightgbmAlgorithm, RegressorMixin):
+class LgbmRegressor(RegressorMixin, LightgbmAlgorithm):
     pass
 
 

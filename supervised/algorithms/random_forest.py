@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm, ClassifierMixin):
+class RandomForestAlgorithm(ClassifierMixin, SklearnTreesEnsembleClassifierAlgorithm):
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"
 
@@ -50,7 +50,7 @@ class RandomForestAlgorithm(SklearnTreesEnsembleClassifierAlgorithm, ClassifierM
 
 
 class RandomForestRegressorAlgorithm(
-    SklearnTreesEnsembleRegressorAlgorithm, RegressorMixin
+    RegressorMixin, SklearnTreesEnsembleRegressorAlgorithm
 ):
     algorithm_name = "Random Forest"
     algorithm_short_name = "Random Forest"

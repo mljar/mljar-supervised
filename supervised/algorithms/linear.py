@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class LinearAlgorithm(SklearnAlgorithm, ClassifierMixin):
+class LinearAlgorithm(ClassifierMixin, SklearnAlgorithm):
     algorithm_name = "Logistic Regression"
     algorithm_short_name = "Linear"
 
@@ -104,7 +104,7 @@ class LinearAlgorithm(SklearnAlgorithm, ClassifierMixin):
             )
 
 
-class LinearRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
+class LinearRegressorAlgorithm(RegressorMixin, SklearnAlgorithm):
     algorithm_name = "Linear Regression"
     algorithm_short_name = "Linear"
 
