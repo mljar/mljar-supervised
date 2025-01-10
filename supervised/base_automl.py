@@ -739,7 +739,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # If Inputs are not pandas dataframes use scikit-learn validation for X array
         if not isinstance(X, pd.DataFrame):
             # Validate X as array
-            X = check_array(X, ensure_2d=False, force_all_finite=False)
+            X = check_array(X, ensure_2d=False, ensure_all_finite=False)
             # Force X to be 2D
             X = np.atleast_2d(X)
             # Create Pandas dataframe from np.arrays, columns get names with the schema: feature_{index}
