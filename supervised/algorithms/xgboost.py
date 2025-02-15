@@ -367,7 +367,7 @@ required_preprocessing = [
 ]
 
 
-class XgbClassifier(XgbAlgorithm, ClassifierMixin):
+class XgbClassifier(ClassifierMixin, XgbAlgorithm):
     pass
 
 
@@ -398,7 +398,7 @@ regression_required_preprocessing = [
 ]
 
 
-class XgbRegressor(XgbAlgorithm, RegressorMixin):
+class XgbRegressor(RegressorMixin, XgbAlgorithm):
     pass
 
 

@@ -63,7 +63,7 @@ class NNFit(SklearnAlgorithm):
             self.classes_ = np.unique(y)
 
 
-class MLPAlgorithm(NNFit, ClassifierMixin):
+class MLPAlgorithm(ClassifierMixin, NNFit):
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 
@@ -94,7 +94,7 @@ class MLPAlgorithm(NNFit, ClassifierMixin):
         return "logloss"
 
 
-class MLPRegressorAlgorithm(NNFit, RegressorMixin):
+class MLPRegressorAlgorithm(RegressorMixin, NNFit):
     algorithm_name = "Neural Network"
     algorithm_short_name = "Neural Network"
 

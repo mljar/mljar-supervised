@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm, ClassifierMixin):
+class ExtraTreesAlgorithm(ClassifierMixin, SklearnTreesEnsembleClassifierAlgorithm):
     algorithm_name = "Extra Trees Classifier"
     algorithm_short_name = "Extra Trees"
 
@@ -50,7 +50,7 @@ class ExtraTreesAlgorithm(SklearnTreesEnsembleClassifierAlgorithm, ClassifierMix
 
 
 class ExtraTreesRegressorAlgorithm(
-    SklearnTreesEnsembleRegressorAlgorithm, RegressorMixin
+    RegressorMixin, SklearnTreesEnsembleRegressorAlgorithm
 ):
     algorithm_name = "Extra Trees Regressor"
     algorithm_short_name = "Extra Trees"

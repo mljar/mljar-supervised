@@ -2,7 +2,6 @@ import logging
 
 import matplotlib
 
-matplotlib.use("Agg")
 import warnings
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
@@ -429,7 +428,14 @@ class AutoML(BaseAutoML):
         Returns:
             AutoML object: Returns `self`
         """
-        return self._fit(X, y, sample_weight, cv, sensitive_features)
+        try:
+            original_backend = matplotlib.get_backend()
+            matplotlib.use("Agg")
+            return self._fit(X, y, sample_weight, cv, sensitive_features)
+        except Exception as e:
+            raise e
+        finally:
+            matplotlib.use(original_backend)
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """

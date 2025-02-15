@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
-from xgboost import XGBClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 from supervised.utils.importance import PermutationImportance
 
@@ -16,7 +16,7 @@ class PermutationImportanceTest(unittest.TestCase):
         X = pd.DataFrame(X, columns=[f"f{i}" for i in range(3)])
         y = np.random.randint(0, 2, rows)
 
-        model = XGBClassifier(n_estimators=1, max_depth=2)
+        model = DecisionTreeClassifier(max_depth=1)
         model.fit(X, y)
 
         with tempfile.TemporaryDirectory() as tmpdir:

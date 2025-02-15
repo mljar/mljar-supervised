@@ -370,7 +370,7 @@ required_preprocessing = [
 ]
 
 
-class CBClassifier(CatBoostAlgorithm, ClassifierMixin):
+class CBClassifier(ClassifierMixin, CatBoostAlgorithm):
     pass
 
 
@@ -422,7 +422,7 @@ regression_default_params = {
 }
 
 
-class CBRegressor(CatBoostAlgorithm, RegressorMixin):
+class CBRegressor(RegressorMixin, CatBoostAlgorithm):
     pass
 
 

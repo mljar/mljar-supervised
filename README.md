@@ -1,16 +1,4 @@
 
-# New way for visual programming!
-
-We are working on new way for visual programming. We developed desktop application called [MLJAR Studio](https://mljar.com). 
-It is a notebook based development environment with interactive code recipes and managed Python environment. All running locally on your machine. We are waiting for your feedback.
-
-<p align="center">
-  <img 
-    alt="mljar AutoML"
-    src="https://raw.githubusercontent.com/pplonski/pplonski/main/media/piece-of-code.png" width="88%" />  
-</p>
-
----
 
 # MLJAR Automated Machine Learning for Humans
 
@@ -49,6 +37,10 @@ It is a notebook based development environment with interactive code recipes and
 </p>
 
 ---
+
+Watch full AutoML training in Python under 2 minutes. The training is done in [MLJAR Studio](https://mljar.com).
+
+[![AutoML demo](https://img.youtube.com/vi/bqaScD31Pf8/0.jpg)](https://www.youtube.com/watch?v=bqaScD31Pf8)
 
 ## Table of Contents
 

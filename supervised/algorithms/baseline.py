@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
 
 
-class BaselineClassifierAlgorithm(SklearnAlgorithm, ClassifierMixin):
+class BaselineClassifierAlgorithm(ClassifierMixin, SklearnAlgorithm):
     algorithm_name = "Baseline Classifier"
     algorithm_short_name = "Baseline"
 
@@ -42,7 +42,7 @@ class BaselineClassifierAlgorithm(SklearnAlgorithm, ClassifierMixin):
         )
 
 
-class BaselineRegressorAlgorithm(SklearnAlgorithm, RegressorMixin):
+class BaselineRegressorAlgorithm(RegressorMixin, SklearnAlgorithm):
     algorithm_name = "Baseline Regressor"
     algorithm_short_name = "Baseline"
 

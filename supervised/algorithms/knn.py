@@ -21,7 +21,7 @@ logger.setLevel(LOG_LEVEL)
 KNN_ROWS_LIMIT = 1000
 
 
-class KNNFit(SklearnAlgorithm, ClassifierMixin):
+class KNNFit(SklearnAlgorithm):
     def file_extension(self):
         return "k_neighbors"
 
@@ -61,7 +61,7 @@ class KNNFit(SklearnAlgorithm, ClassifierMixin):
             return None
 
 
-class KNeighborsAlgorithm(KNNFit, RegressorMixin):
+class KNeighborsAlgorithm(ClassifierMixin, KNNFit):
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 
@@ -78,7 +78,7 @@ class KNeighborsAlgorithm(KNNFit, RegressorMixin):
         )
 
 
-class KNeighborsRegressorAlgorithm(KNNFit):
+class KNeighborsRegressorAlgorithm(RegressorMixin, KNNFit):
     algorithm_name = "k-Nearest Neighbors"
     algorithm_short_name = "Nearest Neighbors"
 
