@@ -436,6 +436,13 @@ class AutoML(BaseAutoML):
             raise e
         finally:
             matplotlib.use(original_backend)
+            try:
+                if 'inline' in original_backend:
+                    import matplotlib_inline
+                    matplotlib_inline.backend_inline._enable_matplotlib_integration()
+            except:
+                pass
+
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """
