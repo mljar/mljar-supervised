@@ -16,7 +16,6 @@ class PreprocessingTuner:
 
     CATEGORICALS_MIX = "categorical_mix"  # mix int and one-hot
     CATEGORICALS_ALL_INT = "categoricals_all_integers"
-    CATEGORICALS_LOO = "categoricals_loo"
 
     @staticmethod
     def get(
@@ -63,10 +62,6 @@ class PreprocessingTuner:
                         preprocessing_to_apply += [
                             PreprocessingCategorical.CONVERT_ONE_HOT
                         ]
-
-                elif categorical_strategy == PreprocessingTuner.CATEGORICALS_LOO:
-                    preprocessing_to_apply += [PreprocessingCategorical.CONVERT_LOO]
-                    convert_to_integer_will_be_applied = True  # maybe scale needed
                 else:  # all integers
                     preprocessing_to_apply += [PreprocessingCategorical.CONVERT_INTEGER]
                     convert_to_integer_will_be_applied = True  # maybe scale needed

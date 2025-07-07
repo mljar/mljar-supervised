@@ -93,11 +93,6 @@ class MljarTuner:
 
         strategies = []
         for k, v in self._data_info["columns_info"].items():
-            # if (
-            #    "categorical" in v
-            #    and PreprocessingTuner.CATEGORICALS_LOO not in strategies
-            # ):
-            #    strategies += [PreprocessingTuner.CATEGORICALS_LOO]
 
             if (
                 PreprocessingCategorical.FEW_CATEGORIES in v
@@ -170,8 +165,6 @@ class MljarTuner:
         categorical_strategies = self._apply_categorical_strategies()
         if PreprocessingTuner.CATEGORICALS_MIX in categorical_strategies:
             all_steps += ["mix_encoding"]
-        if PreprocessingTuner.CATEGORICALS_LOO in categorical_strategies:
-            all_steps += ["loo_encoding"]
         if self._golden_features and self._can_apply_golden_features():
             all_steps += ["golden_features"]
         if self._kmeans_features and self._can_apply_kmeans_features():
@@ -221,8 +214,6 @@ class MljarTuner:
                 return self.get_not_so_random_params(models_cnt, models)
             elif step == "mix_encoding":
                 return self.get_mix_categorical_strategy(models, total_time_limit)
-            elif step == "loo_encoding":
-                return self.get_loo_categorical_strategy(models, total_time_limit)
             elif step == "golden_features":
                 return self.get_golden_features_params(
                     models, results_path, total_time_limit
@@ -989,11 +980,6 @@ class MljarTuner:
             current_models, PreprocessingTuner.CATEGORICALS_MIX, total_time_limit
         )
 
-    def get_loo_categorical_strategy(self, current_models, total_time_limit):
-        return self.get_categorical_strategy(
-            current_models, PreprocessingTuner.CATEGORICALS_LOO, total_time_limit
-        )
-
     def get_categorical_strategy(self, current_models, strategy, total_time_limit):
         model_selection_time_limit = (
             None if total_time_limit is None else 0.1 * total_time_limit
@@ -1040,8 +1026,6 @@ class MljarTuner:
                     if convert_categorical:
                         if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
                             new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
-                        elif strategy == PreprocessingTuner.CATEGORICALS_LOO:
-                            new_preproc += [PreprocessingCategorical.CONVERT_LOO]
                         elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
                             if few_categories:
                                 new_preproc += [
@@ -1058,7 +1042,6 @@ class MljarTuner:
                 # if there is already a name of categorical strategy in the name
                 # please remove it to avoid confusion (I hope!)
                 for st in [
-                    PreprocessingTuner.CATEGORICALS_LOO,
                     PreprocessingTuner.CATEGORICALS_ALL_INT,
                     PreprocessingTuner.CATEGORICALS_MIX,
                 ]:

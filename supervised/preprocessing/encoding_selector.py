@@ -14,7 +14,6 @@ class EncodingSelector:
 
     @staticmethod
     def get(X, y, column):
-        # return PreprocessingCategorical.CONVERT_LOO
         try:
             unique_cnt = len(np.unique(X.loc[~pd.isnull(X[column]), column]))
             if unique_cnt <= 20:

@@ -202,8 +202,7 @@ class Preprocessing(object):
 
         for convert_method in [
             PreprocessingCategorical.CONVERT_INTEGER,
-            PreprocessingCategorical.CONVERT_ONE_HOT,
-            PreprocessingCategorical.CONVERT_LOO,
+            PreprocessingCategorical.CONVERT_ONE_HOT
         ]:
             cols_to_process = list(
                 filter(
