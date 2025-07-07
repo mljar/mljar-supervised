@@ -40,7 +40,7 @@
 
 Watch full AutoML training in Python under 2 minutes. The training is done in [MLJAR Studio](https://mljar.com).
 
-[![AutoML demo](https://img.youtube.com/vi/bqaScD31Pf8/0.jpg)](https://www.youtube.com/watch?v=bqaScD31Pf8)
+[![](https://github.com/mljar/studio/blob/main/media/mljar-studio-automl-get-started.jpg?raw=true)](https://youtu.be/t_opxR5dbPU) 
 
 ## Table of Contents
 

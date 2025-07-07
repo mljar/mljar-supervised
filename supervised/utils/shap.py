@@ -119,13 +119,14 @@ class PlotSHAP:
         classes = None
         if class_names is not None and len(class_names):
             classes = class_names
-
-        shap.summary_plot(
-            shap_values, X_vald, plot_type="bar", show=False, class_names=classes
-        )
-        fig.tight_layout(pad=2.0)
-        fig.savefig(os.path.join(model_file_path, f"{learner_name}_shap_summary.png"))
-        plt.close("all")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            shap.summary_plot(
+                shap_values, X_vald, plot_type="bar", show=False, class_names=classes
+            )
+            fig.tight_layout(pad=2.0)
+            fig.savefig(os.path.join(model_file_path, f"{learner_name}_shap_summary.png"))
+            plt.close("all")
 
         vals = None
         if isinstance(shap_values, list):
