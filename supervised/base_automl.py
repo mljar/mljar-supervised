@@ -1438,7 +1438,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
         )
     
-    def do_prediction_union(self, X, model_list = []):
+    def _do_prediction_union(self, X, model_list = []):
         predictions = []
 
         for i, model in enumerate(model_list):
@@ -1568,6 +1568,8 @@ class BaseAutoML(BaseEstimator, ABC):
         # Model selection logic
         match prediction_mode:
             case 'best':
+                if n_models < 1 or n_models > len(self._models):
+                    raise AutoMLException("Invalid number of models provided for prediction.")
                 # Select the top n_models from self._models
                 for i in range(n_models):
                     selected_models.append(self._models[i])
@@ -1627,7 +1629,7 @@ class BaseAutoML(BaseEstimator, ABC):
         # ------------------------------------------------------------------
         if len(selected_models) > 1:
             # Perform the union of predictions for all selected models
-            predictions = self.do_prediction_union(X, selected_models)
+            predictions = self._do_prediction_union(X, selected_models)
 
             # Select the correct output columns depending on the task
             if self._ml_task != REGRESSION:
