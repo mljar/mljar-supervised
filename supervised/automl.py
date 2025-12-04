@@ -444,7 +444,7 @@ class AutoML(BaseAutoML):
                 pass
 
 
-    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
+    def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame], prediction_mode = 'best', n_models = 1, custom_models = []) -> numpy.ndarray:
         """
         Computes predictions from AutoML best model.
 
@@ -461,7 +461,7 @@ class AutoML(BaseAutoML):
         Raises:
             AutoMLException: Model has not yet been fitted.
         """
-        return self._predict(X)
+        return self._predict(X, prediction_mode, n_models, custom_models)
 
     def predict_proba(
         self, X: Union[List, numpy.ndarray, pandas.DataFrame]

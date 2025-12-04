@@ -1209,6 +1209,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
             if not self._models:
                 raise AutoMLException("No models produced.")
+            
+            #se der erro de compatibilidade fazer um self._ordered_models
+            self._models = sorted(self._models, key=lambda x: x.get_final_loss())
             self._fit_level = "finished"
             self.save_progress()
             self.select_and_save_best(show_warnings=True)
@@ -1434,6 +1437,23 @@ class BaseAutoML(BaseEstimator, ABC):
                 + [required_model_name]
             )
         )
+    
+    def do_prediction_union(self, X, model_list = []):
+        predictions = []
+
+        for i, model in enumerate(model_list):
+            prediction = self._base_predict(X, model)
+
+            if i > 0:
+                prediction = prediction.add_suffix(f"_{i}")
+
+            predictions.append(prediction)
+
+        df_union = pd.concat(predictions, axis=1)
+
+        return df_union
+
+        
 
     def _base_predict(self, X, model=None):
         if model is None:
@@ -1504,16 +1524,140 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X):
-        predictions = self._base_predict(X)
-        # Return predictions
-        # If classification task the result is in column 'label'
-        # If regression task the result is in column 'prediction'
-        return (
-            predictions["label"].to_numpy()
-            if self._ml_task != REGRESSION
-            else predictions["prediction"].to_numpy()
-        )
+    def _predict(self, X, prediction_mode='best', n_models=1, custom_models=[]):
+        """
+        Generates predictions using one or multiple models based on the selected prediction mode.
+
+        Parameters
+        ----------
+        X : array-like, pandas.DataFrame
+            Input data to generate predictions for.
+
+        prediction_mode : str, default='best'
+            Model selection strategy:
+            
+            - 'best': selects the top `n_models` models ranked by performance.
+            - 'custom': selects only the models explicitly listed in `custom_models`.
+            - 'all': uses all trained models.
+            
+        n_models : int, default=1
+            Number of top models to select when using mode 'best'.
+            Must be > 0.
+
+        custom_models : list, default=[]
+            List of model names to be used when `prediction_mode='custom'`.
+            Raises an exception if any provided model name does not exist.
+
+        Returns
+        -------
+        numpy.ndarray
+            - If a single model is selected: returns a 1D array of predictions.
+            - If multiple models are selected: returns a 2D array (n_samples x n_models),
+            containing predictions from each model side-by-side.
+
+        Raises
+        ------
+        AutoMLException
+            - If no models were selected.
+            - If invalid prediction mode is provided.
+            - If custom models are missing or invalid.
+        """
+
+        selected_models = []
+
+        # Model selection logic
+        match prediction_mode:
+            case 'best':
+                # Select the top n_models from self._models
+                for i in range(n_models):
+                    selected_models.append(self._models[i])
+
+            case 'custom':
+                # Must specify custom model names
+                if not custom_models:
+                    raise AutoMLException("No custom models were provided.")
+                
+                # Collect valid model names available in the system
+                available = {m.get_name() for m in self._models}
+
+                # Detect invalid names passed by the user
+                invalid = [name for name in custom_models if name not in available]
+
+                # If any invalid custom model name is found → raise detailed error
+                if invalid:
+                    raise AutoMLException(
+                        f"The following custom models are not available: {invalid}\n"
+                        f"Available models are: {[m.get_name() for m in self._models]}"
+                    )
+                
+                # Select the models that match the requested names
+                filtered_models = [
+                    m for m in self._models if m.get_name() in custom_models
+                ]
+
+                for model in filtered_models:
+                    selected_models.append(model)
+
+            case 'all':
+                # Use every available model
+                selected_models = self._models
+
+            case _:
+                # Invalid prediction mode
+                raise AutoMLException(f"Invalid prediction mode '{prediction_mode}'.")
+            
+        n_selected = len(selected_models)
+        
+        if n_selected > 0:
+            selected_model_names = [m.get_name() for m in selected_models]
+            model_list_str = ", ".join(selected_model_names)
+
+            if n_selected == 1:
+                print(
+                    f"Prediction Mode: '{prediction_mode}'. "
+                    f"Using 1 model: {model_list_str}."
+                )
+            else:
+                print(
+                    f"Prediction Mode: '{prediction_mode}'. "
+                    f"Using {n_selected} models for multi-prediction output, and resulting array columns are formatted as follows: {model_list_str}"
+                )
+        # ------------------------------------------------------------------
+        # MULTI-MODEL PREDICTION (returns 2D array)
+        # ------------------------------------------------------------------
+        if len(selected_models) > 1:
+            # Perform the union of predictions for all selected models
+            predictions = self.do_prediction_union(X, selected_models)
+
+            # Select the correct output columns depending on the task
+            if self._ml_task != REGRESSION:
+                # Multi-class/binary classification → use "label" columns
+                cols = [c for c in predictions.columns if c.startswith("label")]
+            else:
+                # Regression → use "prediction" columns
+                cols = [c for c in predictions.columns if c.startswith("prediction")]
+
+            # Return predictions as a 2D numpy array (n_samples x n_models)
+            return predictions[cols].to_numpy()
+
+        # ------------------------------------------------------------------
+        # SINGLE-MODEL PREDICTION (returns 1D array)
+        # ------------------------------------------------------------------
+        elif len(selected_models) == 1:
+            predictions = self._base_predict(X, selected_models[0])
+
+            return (
+                predictions["label"].to_numpy()
+                if self._ml_task != REGRESSION
+                else predictions["prediction"].to_numpy()
+            )
+
+        # ------------------------------------------------------------------
+        # NO MODELS SELECTED → ERROR
+        # ------------------------------------------------------------------
+        else:
+            raise AutoMLException("Prediction failed: no models were selected.")       
+
 
     def _predict_proba(self, X):
         # Check is task type is correct
