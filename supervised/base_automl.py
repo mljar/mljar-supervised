@@ -1210,7 +1210,7 @@ class BaseAutoML(BaseEstimator, ABC):
             if not self._models:
                 raise AutoMLException("No models produced.")
             
-            #se der erro de compatibilidade fazer um self._ordered_models
+            #sorting models by lowest loss
             self._models = sorted(self._models, key=lambda x: x.get_final_loss())
             self._fit_level = "finished"
             self.save_progress()
