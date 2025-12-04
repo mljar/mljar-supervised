@@ -1653,12 +1653,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 if self._ml_task != REGRESSION
                 else predictions["prediction"].to_numpy()
             )
-
-        # ------------------------------------------------------------------
-        # NO MODELS SELECTED → ERROR
-        # ------------------------------------------------------------------
-        else:
-            raise AutoMLException("Prediction failed: no models were selected.")       
+    
 
 
     def _predict_proba(self, X):
