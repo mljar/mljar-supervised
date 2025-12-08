@@ -1524,7 +1524,7 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return predictions
 
-    def _predict(self, X, prediction_mode='best', n_models=1, custom_models=[]):
+    def _predict(self, X, models=[]):
         """
         Generates predictions using one or multiple models based on the selected prediction mode.
 
@@ -1537,14 +1537,14 @@ class BaseAutoML(BaseEstimator, ABC):
             Model selection strategy:
             
             - 'best': selects the top `n_models` models ranked by performance.
-            - 'custom': selects only the models explicitly listed in `custom_models`.
+            - 'custom': selects only the models explicitly listed in `models`.
             - 'all': uses all trained models.
             
         n_models : int, default=1
             Number of top models to select when using mode 'best'.
             Must be > 0.
 
-        custom_models : list, default=[]
+        models : list, default=[]
             List of model names to be used when `prediction_mode='custom'`.
             Raises an exception if any provided model name does not exist.
 
@@ -1564,66 +1564,33 @@ class BaseAutoML(BaseEstimator, ABC):
         """
 
         selected_models = []
-
-        # Model selection logic
-        match prediction_mode:
-            case 'best':
-                if n_models < 1 or n_models > len(self._models):
-                    raise AutoMLException("Invalid number of models provided for prediction.")
-                # Select the top n_models from self._models
-                for i in range(n_models):
-                    selected_models.append(self._models[i])
-
-            case 'custom':
-                # Must specify custom model names
-                if not custom_models:
-                    raise AutoMLException("No custom models were provided.")
-                
-                # Collect valid model names available in the system
-                available = {m.get_name() for m in self._models}
-
-                # Detect invalid names passed by the user
-                invalid = [name for name in custom_models if name not in available]
-
-                # If any invalid custom model name is found → raise detailed error
-                if invalid:
-                    raise AutoMLException(
-                        f"The following custom models are not available: {invalid}\n"
-                        f"Available models are: {[m.get_name() for m in self._models]}"
-                    )
-                
-                # Select the models that match the requested names
-                filtered_models = [
-                    m for m in self._models if m.get_name() in custom_models
-                ]
-
-                for model in filtered_models:
-                    selected_models.append(model)
-
-            case 'all':
-                # Use every available model
-                selected_models = self._models
-
-            case _:
-                # Invalid prediction mode
-                raise AutoMLException(f"Invalid prediction mode '{prediction_mode}'.")
-            
-        n_selected = len(selected_models)
+        n_models = len(models)
         
-        if n_selected > 0:
-            selected_model_names = [m.get_name() for m in selected_models]
-            model_list_str = ", ".join(selected_model_names)
+        if n_models >= 1:
+            # Collect valid model names available in the system
+            available = [m.get_name() for m in self._models]
 
-            if n_selected == 1:
-                print(
-                    f"Prediction Mode: '{prediction_mode}'. "
-                    f"Using 1 model: {model_list_str}."
+            # Detect invalid names passed by the user
+            invalid = [name for name in models if name not in available]
+
+            # If any invalid custom model name is found → raise detailed error
+            if invalid:
+                raise AutoMLException(
+                    f"The following custom models are not available: {invalid}\n"
+                    f"Available models are: {available}"
                 )
-            else:
-                print(
-                    f"Prediction Mode: '{prediction_mode}'. "
-                    f"Using {n_selected} models for multi-prediction output, and resulting array columns are formatted as follows: {model_list_str}"
-                )
+            
+            # Select the models that match the requested names
+            filtered_models = [
+                m for m in self._models if m.get_name() in models
+            ]
+
+            for model in filtered_models:
+                selected_models.append(model)
+        else:
+            selected_models.append(self._best_model)
+
+        print(f'Models being used for prediction: {[model.get_name() for model in selected_models]}')
         # ------------------------------------------------------------------
         # MULTI-MODEL PREDICTION (returns 2D array)
         # ------------------------------------------------------------------
