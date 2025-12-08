@@ -1526,27 +1526,17 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _predict(self, X, models=[]):
         """
-        Generates predictions using one or multiple models based on the selected prediction mode.
+        Generates predictions using one or multiple models based on the selected models.
 
         Parameters
         ----------
         X : array-like, pandas.DataFrame
             Input data to generate predictions for.
 
-        prediction_mode : str, default='best'
-            Model selection strategy:
-            
-            - 'best': selects the top `n_models` models ranked by performance.
-            - 'custom': selects only the models explicitly listed in `models`.
-            - 'all': uses all trained models.
-            
-        n_models : int, default=1
-            Number of top models to select when using mode 'best'.
-            Must be > 0.
-
         models : list, default=[]
-            List of model names to be used when `prediction_mode='custom'`.
+            List of model names to be used.
             Raises an exception if any provided model name does not exist.
+            If no models are provided, use the best one.
 
         Returns
         -------
