@@ -58,13 +58,15 @@ class PreprocessingCategorical(object):
                 lbl = LabelEncoder()
                 lbl.from_json(lbl_params)
                 transformed_values = lbl.transform(X.loc[:, column])
+                col_dtype = X.loc[:, column].dtype
                 # check for pandas FutureWarning: Setting an item
                 # of incompatible dtype is deprecated and will raise
                 # in a future error of pandas.
-                if transformed_values.dtype != X.loc[:, column].dtype and \
-                    (X.loc[:, column].dtype == bool or X.loc[:, column].dtype == int):
+                if transformed_values.dtype != col_dtype and \
+                    (col_dtype == bool or col_dtype == int):
                     X = X.astype({column: transformed_values.dtype})
-                if isinstance(X[column].dtype, pd.CategoricalDtype):
+                # pandas string/categorical extension dtypes reject integer arrays.
+                if isinstance(col_dtype, pd.CategoricalDtype) or pd.api.types.is_string_dtype(col_dtype):
                     X[column] = X[column].astype('object')
                 X.loc[:, column] = transformed_values
 

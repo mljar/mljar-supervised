@@ -15,7 +15,7 @@ class TotalTimeConstraintTest(unittest.TestCase):
         callback = TotalTimeConstraint(params)
         callback.add_and_set_learner(learner={})
         callback.on_learner_train_start(logs=None)
-        time.sleep(0.1)
+        callback.train_start_time = time.time() - 0.2
         with self.assertRaises(NotTrainedException) as context:
             callback.on_learner_train_end(logs=None)
         self.assertTrue("Stop training after the first fold" in str(context.exception))

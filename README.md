@@ -474,6 +474,10 @@ For details please check [mljar-supervised docs](https://supervised.mljar.com).
 
 # Installation  
 
+Compatibility:
+- Python `>=3.9`
+- NumPy `>=2.0,<3`
+
 From PyPi repository:
 
 ```
@@ -496,7 +500,7 @@ python setup.py install
 Installation for development
 ```
 git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.6
+virtualenv venv --python=python3.9
 source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
@@ -504,7 +508,7 @@ pip install -r requirements_dev.txt
 
 Running in the docker:
 ```
-FROM python:3.7-slim-buster
+FROM python:3.9-slim-buster
 RUN apt-get update && apt-get -y update
 RUN apt-get install -y build-essential python3-pip python3-dev
 RUN pip3 -q install pip --upgrade

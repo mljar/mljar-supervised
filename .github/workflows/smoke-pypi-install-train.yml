@@ -1,0 +1,47 @@
+name: Smoke test PyPI install + train
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        python-version: ["3.9", "3.12"]
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Graphviz
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install graphviz
+
+      - name: Install Graphviz
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install graphviz
+
+      - name: Install Graphviz
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install graphviz
+
+      - name: Install package from PyPI
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U mljar-supervised
+
+      - name: Smoke train
+        run: |
+          python -c "from sklearn.datasets import make_classification; from supervised import AutoML; X,y=make_classification(n_samples=120,n_features=8,n_informative=4,random_state=42); automl=AutoML(mode='Explain',algorithms=['Baseline','Linear','Decision Tree'],train_ensemble=False,stack_models=False,explain_level=0,total_time_limit=30,results_path='automl_smoke'); automl.fit(X,y); preds=automl.predict(X[:5]); print(preds)"

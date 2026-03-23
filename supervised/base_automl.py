@@ -805,7 +805,7 @@ class BaseAutoML(BaseEstimator, ABC):
             sensitive_features.reset_index(drop=True, inplace=True)
 
             for col in sensitive_features.columns:
-                if not sensitive_features[col].dtype.name in ["category", "object"]:
+                if pd.api.types.is_numeric_dtype(sensitive_features[col].dtype):
                     self.verbose_print("Sensitive features should be categorical")
                     self.verbose_print(
                         f"Apply automatic binarization for feature {col}"
