@@ -46,6 +46,11 @@ from supervised.utils.data_validation import (
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
+from supervised.utils.report_structured import (
+    build_structured_report,
+    save_structured_report,
+    to_markdown,
+)
 from supervised.utils.utils import dump_data, load_data
 
 logger = logging.getLogger(__name__)
@@ -2474,6 +2479,34 @@ margin-right: auto;display: block;"/>\n\n"""
             fout.write(report_content)
 
         return self._show_report(main_readme_html, width, height)
+
+    def _report_structured(self, format="markdown", model_details=True):
+        self._results_path = self._get_results_path()
+        if self._fit_level != "finished":
+            self.load(self._results_path)
+        elif self._models is None or len(self._models) == 0:
+            # Handle objects where fit() returned early because results already exist.
+            # In that case, fit_level can be "finished" but models might not be loaded.
+            self.load(self._results_path)
+
+        if self._models is None or len(self._models) == 0:
+            raise AutoMLException(
+                "This model has not been fitted yet. Please call `fit()` first."
+            )
+
+        if format not in ["markdown", "dict", "json"]:
+            raise ValueError(
+                f"Wrong format '{format}'. Allowed formats are: markdown, dict, json."
+            )
+
+        payload = build_structured_report(self)
+        save_structured_report(payload, self._results_path)
+
+        if format == "dict":
+            return payload
+        if format == "json":
+            return json.dumps(payload, indent=4)
+        return to_markdown(payload, model_details)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
         metric = self._best_model.get_metric()

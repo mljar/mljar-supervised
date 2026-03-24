@@ -535,6 +535,9 @@ class AutoML(BaseAutoML):
     def report(self, width=900, height=1200):
         return self._report(width, height)
 
+    def report_structured(self, format="markdown", model_details=True):
+        return self._report_structured(format, model_details)
+
     def need_retrain(
         self,
         X: Union[numpy.ndarray, pandas.DataFrame],
