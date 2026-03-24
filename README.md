@@ -29,7 +29,10 @@
 
 **Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
 
-**Looking for commercial support**: Please contact us by [email](https://mljar.com/contact/) for details
+**Use MLJAR Studio (Easiest Way to Run MLJAR AutoML)**  
+MLJAR Studio is the easiest way to run MLJAR AutoML, with conversational notebooks and AutoLab experiments (autonomous AI for ML pipeline optimization).  
+Start quickly, iterate faster, and manage experiments in one place.  
+[Try MLJAR Studio](https://mljar.com)
 
 
 <p align="center">
