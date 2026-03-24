@@ -472,6 +472,46 @@ To get predicted probabilites with information about class label please use the 
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
 
+## Structured Report for LLMs
+
+The AutoML object can generate a structured report that is easier to analyze with LLMs and external tools:
+
+```python
+from supervised import AutoML
+
+automl = AutoML(results_path="AutoML_example")
+automl.fit(X, y)
+
+# Default output is markdown text
+markdown_report = automl.report_structured()
+print(markdown_report)
+```
+
+You can also get programmatic formats:
+
+```python
+# Python dictionary
+payload = automl.report_structured(format="dict")
+
+# JSON string
+payload_json = automl.report_structured(format="json")
+```
+
+Each call creates/updates:
+
+```text
+<results_path>/report_structured.json
+```
+
+Use the `model_details` argument to control markdown verbosity:
+
+```python
+compact = automl.report_structured(model_details=False)
+detailed = automl.report_structured(model_details=True)
+```
+
+The detailed markdown includes per-model metric tables, fairness details (if used), and feature importance summaries when importance files are available.
+
 # Installation  
 
 Compatibility:
