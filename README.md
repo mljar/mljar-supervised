@@ -38,15 +38,10 @@
 
 ---
 
-Watch full AutoML training in Python under 2 minutes. The training is done in [MLJAR Studio](https://mljar.com).
-
-[![](https://github.com/mljar/studio/blob/main/media/mljar-studio-automl-get-started.jpg?raw=true)](https://youtu.be/t_opxR5dbPU) 
-
 ## Table of Contents
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
- - [AutoML Web App with GUI](https://github.com/mljar/mljar-supervised#automl-web-app-with-user-interface)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
  - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
@@ -100,14 +95,6 @@ Of course, you can further customize the details of each `mode` to meet the requ
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
 </p>
-
-# AutoML Web App with User Interface
-
-We created a Web App with GUI, so you don't need to write any code 🐍. Just upload your data. Please check the Web App at [github.com/mljar/automl-app](https://github.com/mljar/automl-app). You can run this Web App locally on your computer, so your data is safe and secure :cat:
-
-<kbd>
-<img src="https://github.com/mljar/automl-app/blob/main/media/web-app.gif" alt="AutoML training in Web App"></img>
-</kbd>
 
 # Automatic Documentation
 
