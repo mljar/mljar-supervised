@@ -29,7 +29,7 @@ jobs:
       - name: Install Graphviz
         if: startsWith(matrix.os, 'macos')
         run: |
-          brew install graphviz
+          brew install graphviz libomp
 
       - name: Install Graphviz
         if: matrix.os == 'windows-latest'
