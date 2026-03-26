@@ -493,14 +493,14 @@ Each call creates/updates:
 <results_path>/report_structured.json
 ```
 
-Use the `model_details` argument to control markdown verbosity:
+Use `model_name` to display detailed metrics for one selected model:
 
 ```python
-compact = automl.report_structured(model_details=False)
-detailed = automl.report_structured(model_details=True)
+compact = automl.report_structured()
+detailed = automl.report_structured(model_name="3_Linear")
 ```
 
-The detailed markdown includes per-model metric tables, fairness details (if used), and feature importance summaries when importance files are available.
+When `model_name` is provided, the markdown includes detailed metrics, fairness details (if used), and feature importance summaries for that model.
 
 # Installation  
 

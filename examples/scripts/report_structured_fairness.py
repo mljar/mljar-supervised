@@ -1,3 +1,16 @@
+"""
+Example: structured report for fairness-aware classification.
+
+What this script does:
+- Trains AutoML with sensitive features and fairness constraints.
+- Prints the compact structured report output.
+- Selects one model from leaderboard and prints detailed output for that model.
+
+Why this helps:
+- Keeps default report concise.
+- Allows targeted fairness/metrics inspection only for a chosen model.
+"""
+
 import os
 
 import pandas as pd
@@ -37,16 +50,22 @@ def main():
     )
     automl.fit(X, y, sensitive_features=sensitive_features)
 
-    print("\n=== report_structured(model_details=False) ===\n")
-    print(automl.report_structured(model_details=False))
+    print("\n=== report_structured() ===\n")
+    print(automl.report_structured())
 
-    print("\n=== report_structured(model_details=True) ===\n")
-    print(automl.report_structured(model_details=True))
-
-    payload = automl.report_structured(format="dict", model_details=False)
+    payload = automl.report_structured(format="dict")
     print("\nTop-level keys:", sorted(payload.keys()))
-    print("Number of models in report:", len(payload.get("models", [])))
-    print("Fairness summary available:", payload.get("fairness_summary") is not None)
+    selected_model_name = None
+    leaderboard = payload.get("leaderboard", [])
+    if len(leaderboard) > 1:
+        selected_model_name = leaderboard[1].get("name")
+    elif leaderboard:
+        selected_model_name = leaderboard[0].get("name")
+    print("Selected model:", selected_model_name)
+
+    if selected_model_name:
+        print(f"\n=== report_structured(model_name='{selected_model_name}') ===\n")
+        print(automl.report_structured(model_name=selected_model_name))
 
     report_path = os.path.join(results_path, "report_structured.json")
     print("Structured report JSON:", report_path)

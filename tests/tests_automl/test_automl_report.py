@@ -76,19 +76,48 @@ class AutoMLReportTest(unittest.TestCase):
         self.assertTrue(isinstance(payload["models"], list))
         self.assertGreater(len(payload["models"]), 0)
 
-        payload_dict = model.report_structured(format="dict", model_details=False)
+        payload_dict = model.report_structured(format="dict")
         self.assertTrue(isinstance(payload_dict, dict))
-        self.assertTrue("models" in payload_dict)
-        self.assertGreater(len(payload_dict["models"]), 0)
+        self.assertTrue("leaderboard" in payload_dict)
+        self.assertTrue("global_feature_importance" in payload_dict)
+        self.assertFalse("best_model" in payload_dict)
+        self.assertFalse("models" in payload_dict)
+        self.assertFalse("run_summary" in payload_dict)
 
         payload_json = model.report_structured(format="json")
         self.assertTrue(isinstance(payload_json, str))
         parsed = json.loads(payload_json)
-        self.assertTrue("run_summary" in parsed)
+        self.assertTrue("leaderboard" in parsed)
+        self.assertTrue("global_feature_importance" in parsed)
+        self.assertFalse("best_model" in parsed)
+        self.assertFalse("models" in parsed)
 
-        details_markdown = model.report_structured(model_details=True)
-        self.assertTrue("## Model Details" in details_markdown)
-        self.assertTrue("## 1_Baseline" in details_markdown)
+        gfi = payload_dict.get("global_feature_importance", {})
+        if gfi.get("available"):
+            n = gfi.get("n_features", 0)
+            k = gfi.get("selection_k", 0)
+            if n < 10:
+                self.assertEqual(k, min(3, n))
+            elif n < 20:
+                self.assertEqual(k, min(5, n))
+            else:
+                self.assertEqual(k, min(10, n))
+            self.assertEqual(len(gfi.get("top", [])), k)
+            self.assertEqual(len(gfi.get("bottom", [])), k)
+            self.assertTrue("## Global Feature Importance (Averaged Across Models)" in markdown_report)
+
+        details_markdown = model.report_structured(model_name="1_Baseline")
+        self.assertTrue("# MLJAR AutoML report for 1_Baseline" in details_markdown)
+        self.assertTrue("## Hyperparameters" in details_markdown)
+
+        details_dict = model.report_structured(format="dict", model_name="1_Baseline")
+        self.assertTrue("selected_model" in details_dict)
+        self.assertEqual(details_dict["selected_model"]["name"], "1_Baseline")
+        self.assertTrue("hyperparameters" in details_dict["selected_model"])
+        self.assertTrue(isinstance(details_dict["selected_model"]["hyperparameters"], dict))
+
+        with self.assertRaises(AutoMLException):
+            model.report_structured(model_name="not_existing_model")
 
         for m in payload.get("models", []):
             fi = m.get("feature_importance", {})

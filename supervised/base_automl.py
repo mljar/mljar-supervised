@@ -47,6 +47,7 @@ from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.report_structured import (
+    build_compact_view,
     build_structured_report,
     save_structured_report,
     to_markdown,
@@ -2480,7 +2481,7 @@ margin-right: auto;display: block;"/>\n\n"""
 
         return self._show_report(main_readme_html, width, height)
 
-    def _report_structured(self, format="markdown", model_details=True):
+    def _report_structured(self, format="markdown", model_name=None):
         self._results_path = self._get_results_path()
         if self._fit_level != "finished":
             self.load(self._results_path)
@@ -2502,11 +2503,16 @@ margin-right: auto;display: block;"/>\n\n"""
         payload = build_structured_report(self)
         save_structured_report(payload, self._results_path)
 
+        try:
+            output_payload = build_compact_view(payload, model_name)
+        except ValueError as e:
+            raise AutoMLException(str(e))
+
         if format == "dict":
-            return payload
+            return output_payload
         if format == "json":
-            return json.dumps(payload, indent=4)
-        return to_markdown(payload, model_details)
+            return json.dumps(output_payload, indent=4)
+        return to_markdown(output_payload, model_name)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
         metric = self._best_model.get_metric()

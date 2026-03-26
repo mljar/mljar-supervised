@@ -41,6 +41,35 @@ def _serialize_metrics_value(value):
     return value
 
 
+def _to_json_safe(value):
+    if isinstance(value, dict):
+        return {str(k): _to_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_to_json_safe(v) for v in value]
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def _extract_hyperparameters(model):
+    try:
+        if hasattr(model, "learner_params") and isinstance(model.learner_params, dict):
+            return _to_json_safe(model.learner_params)
+    except Exception:
+        pass
+
+    # Fallback for models without learner_params (e.g. Ensemble).
+    try:
+        model_type = model.get_type()
+    except Exception:
+        model_type = None
+    if model_type is not None:
+        return {"model_type": model_type}
+    return {}
+
+
 def _extract_additional_metrics(model):
     try:
         additional = model.get_additional_metrics()
@@ -56,9 +85,39 @@ def _extract_additional_metrics(model):
         ]:
             if key in additional:
                 metrics[key] = _serialize_metrics_value(additional.get(key))
+        if "fairness_metrics" in additional:
+            metrics["fairness_metrics_details"] = _extract_fairness_metrics_details(
+                additional.get("fairness_metrics")
+            )
         return metrics
     except Exception:
         return None
+
+
+def _extract_fairness_metrics_details(fairness_metrics):
+    if not isinstance(fairness_metrics, dict):
+        return None
+
+    fairness_threshold = None
+    optimization = fairness_metrics.get("fairness_optimization")
+    if isinstance(optimization, dict):
+        fairness_threshold = optimization.get("fairness_threshold")
+
+    details = {}
+    for feature_name, values in fairness_metrics.items():
+        if feature_name == "fairness_optimization" or not isinstance(values, dict):
+            continue
+        details[feature_name] = {
+            "metrics": _serialize_metrics_value(values.get("metrics")),
+            "stats": _serialize_metrics_value(values.get("stats")),
+            "fairness_metric_name": values.get("fairness_metric_name"),
+            "fairness_metric_value": _to_float_or_none(values.get("fairness_metric_value")),
+            "is_fair": _to_bool(values.get("is_fair")),
+            "privileged_value": values.get("privileged_value"),
+            "underprivileged_value": values.get("underprivileged_value"),
+            "fairness_threshold": fairness_threshold,
+        }
+    return details
 
 
 def _compute_feature_importance_summary(model_dir):
@@ -126,6 +185,104 @@ def _compute_feature_importance_summary(model_dir):
     }
 
 
+def _load_model_importance_vector(model_dir):
+    imp_files = []
+    try:
+        imp_files = [
+            f
+            for f in os.listdir(model_dir)
+            if f.endswith("_importance.csv") and "shap" not in f
+        ]
+    except Exception:
+        return None
+
+    if not imp_files:
+        return None
+
+    frames = []
+    for fname in imp_files:
+        fpath = os.path.join(model_dir, fname)
+        try:
+            df = pd.read_csv(fpath, index_col=0)
+            if df.empty:
+                continue
+            numeric_df = df.select_dtypes(include=np.number)
+            if numeric_df.empty:
+                continue
+            frames.append(numeric_df)
+        except Exception:
+            continue
+
+    if not frames:
+        return None
+
+    concat = pd.concat(frames, axis=1, join="outer")
+    mean_importance = concat.mean(axis=1).fillna(0.0)
+    if mean_importance.empty:
+        return None
+    return mean_importance
+
+
+def _compute_global_feature_importance(automl):
+    rank_series = []
+    for model in automl._models:
+        model_dir = os.path.join(automl._results_path, model.get_name())
+        importance = _load_model_importance_vector(model_dir)
+        if importance is None:
+            continue
+        # 1 = most important feature, higher rank = less important.
+        rank_series.append(importance.rank(ascending=False, method="average"))
+
+    if not rank_series:
+        return {"available": False, "reason": "no_importance_files"}
+
+    rank_df = pd.concat(rank_series, axis=1)
+    n_models_used = int(rank_df.shape[1])
+    n_features = int(rank_df.shape[0])
+    if n_features == 0:
+        return {"available": False, "reason": "empty_rank_data"}
+
+    models_present = rank_df.notna().sum(axis=1)
+    fill_values = pd.Series([s.max() + 1.0 for s in rank_series], index=rank_df.columns)
+    rank_df = rank_df.fillna(fill_values)
+    mean_rank = rank_df.mean(axis=1).sort_values(ascending=True)
+
+    if n_features < 10:
+        k = 3
+    elif n_features < 20:
+        k = 5
+    else:
+        k = 10
+    k = min(k, n_features)
+
+    top_slice = mean_rank.head(k)
+    bottom_slice = mean_rank.tail(k)
+
+    return {
+        "available": True,
+        "method": "mean_rank_across_models",
+        "n_models_used": n_models_used,
+        "n_features": n_features,
+        "selection_k": k,
+        "top": [
+            {
+                "feature": str(feature),
+                "mean_rank": float(rank_value),
+                "models_present": int(models_present.get(feature, 0)),
+            }
+            for feature, rank_value in top_slice.items()
+        ],
+        "bottom": [
+            {
+                "feature": str(feature),
+                "mean_rank": float(rank_value),
+                "models_present": int(models_present.get(feature, 0)),
+            }
+            for feature, rank_value in bottom_slice.items()
+        ],
+    }
+
+
 def _model_to_dict(automl, model):
     model_name = model.get_name()
     model_dir = os.path.join(automl._results_path, model_name)
@@ -145,6 +302,7 @@ def _model_to_dict(automl, model):
             "readme_html": os.path.join(model_dir, "README.html"),
         },
     }
+    model_dict["hyperparameters"] = _extract_hyperparameters(model)
     model_dict["metrics"] = _extract_additional_metrics(model)
     model_dict["feature_importance"] = _compute_feature_importance_summary(model_dir)
 
@@ -225,6 +383,7 @@ def build_structured_report(automl):
             "fairness_threshold": automl._fairness_threshold,
         },
         "leaderboard": leaderboard,
+        "global_feature_importance": _compute_global_feature_importance(automl),
         "best_model": best_model,
         "fairness_summary": fairness_summary,
         "models": [_model_to_dict(automl, m) for m in automl._models],
@@ -248,7 +407,7 @@ def save_structured_report(payload, results_path):
     return fname
 
 
-def _append_split_table(lines, title, table_obj):
+def _append_split_table(lines, title, table_obj, heading_level="###"):
     if table_obj is None:
         return
     columns = table_obj.get("columns", [])
@@ -264,262 +423,255 @@ def _append_split_table(lines, title, table_obj):
     if show_index:
         columns = ["index"] + list(columns)
         data = [[index[i]] + row for i, row in enumerate(data)]
-    lines.append(f"### {title}")
+    lines.append(f"{heading_level} {title}")
     lines.append("")
     lines.append(tabulate(data, headers=columns, tablefmt="pipe"))
     lines.append("")
 
 
-def to_markdown(payload, model_details=True):
+def _append_model_metrics(lines, model):
+    metrics = model.get("metrics") or {}
+    _append_split_table(
+        lines, "Metric details", metrics.get("max_metrics"), heading_level="##"
+    )
+    _append_split_table(
+        lines, "Confusion matrix", metrics.get("confusion_matrix"), heading_level="##"
+    )
+    threshold = metrics.get("threshold")
+    if threshold is not None:
+        lines.append(f"Threshold: `{threshold}`")
+        lines.append("")
+
+
+def _append_hyperparameters(lines, model):
+    hyperparameters = dict(model.get("hyperparameters") or {})
+    hyperparameters.pop("model_type", None)
+    model_type = str(model.get("model_type") or "")
+    if model_type in {"Baseline", "Decision Tree", "Neural Network"}:
+        hyperparameters.pop("n_jobs", None)
+    lines.append("## Hyperparameters")
+    lines.append("")
+    if not hyperparameters:
+        lines.append("_No hyperparameters available._")
+        lines.append("")
+        return
+
+    rows = [[str(k), hyperparameters.get(k)] for k in sorted(hyperparameters.keys())]
+    lines.append(tabulate(rows, headers=["Parameter", "Value"], tablefmt="pipe"))
+    lines.append("")
+
+
+def _append_feature_importance(lines, model, heading_level="###"):
+    fi = model.get("feature_importance") or {}
+    if fi.get("available"):
+        k = fi.get("selection_k")
+        top_rows = [[row.get("feature"), row.get("importance")] for row in fi.get("top", [])]
+        worst_rows = [
+            [row.get("feature"), row.get("importance")] for row in fi.get("worst", [])
+        ]
+        lines.append(
+            f"{heading_level} Most Influential Features (Top {k} by permutation importance)"
+        )
+        lines.append("")
+        lines.append(tabulate(top_rows, headers=["Feature", "Importance"], tablefmt="pipe"))
+        lines.append("")
+        lines.append(
+            f"{heading_level} Least Influential Features (Bottom {k} by permutation importance)"
+        )
+        lines.append("")
+        lines.append(
+            tabulate(worst_rows, headers=["Feature", "Importance"], tablefmt="pipe")
+        )
+        lines.append("")
+
+
+def _append_fairness(lines, model, title):
+    fairness = model.get("fairness")
+    if fairness is None:
+        return
+    lines.append(title)
+    lines.append("")
+    fairness_rows = [
+        ["is_fair", fairness.get("is_fair")],
+        ["worst_fairness", fairness.get("worst_fairness")],
+        ["best_fairness", fairness.get("best_fairness")],
+    ]
+    lines.append(tabulate(fairness_rows, headers=["Field", "Value"], tablefmt="pipe"))
+    sf = fairness.get("sensitive_features", [])
+    if sf:
+        lines.append("")
+        lines.append(
+            tabulate(
+                [[s.get("feature"), s.get("fairness_metric_value")] for s in sf],
+                headers=["Sensitive Feature", "Fairness Metric Value"],
+                tablefmt="pipe",
+            )
+        )
+    lines.append("")
+
+
+def _append_fairness_metrics_details(lines, model, heading_level="###"):
+    metrics = model.get("metrics") or {}
+    fairness_details = metrics.get("fairness_metrics_details") or {}
+    if not fairness_details:
+        return
+
+    for feature_name, values in fairness_details.items():
+        lines.append(f"{heading_level} Fairness metrics for {feature_name} feature")
+        lines.append("")
+
+        _append_split_table(lines, "Fairness group metrics", values.get("metrics"))
+        _append_split_table(lines, "Fairness summary statistics", values.get("stats"))
+
+        fairness_metric_name = values.get("fairness_metric_name")
+        fairness_metric_value = values.get("fairness_metric_value")
+        is_fair = values.get("is_fair")
+        fairness_threshold = values.get("fairness_threshold")
+        privileged_value = values.get("privileged_value")
+        underprivileged_value = values.get("underprivileged_value")
+
+        fair_str = "fair" if is_fair else "unfair"
+        lines.append(f"{heading_level} Is model fair for {feature_name} feature?")
+        lines.append("")
+
+        threshold_str = ""
+        if fairness_threshold is not None and fairness_metric_name is not None:
+            if "ratio" in str(fairness_metric_name).lower():
+                threshold_str = f"It should be higher than {fairness_threshold}."
+            else:
+                threshold_str = f"It should be lower than {fairness_threshold}."
+
+        lines.append(f"Model is {fair_str} for {feature_name} feature.")
+        if fairness_metric_name is not None and fairness_metric_value is not None:
+            lines.append(
+                f"The {fairness_metric_name} is {fairness_metric_value}. {threshold_str}".strip()
+            )
+        if is_fair is False:
+            if underprivileged_value is not None:
+                lines.append(f"Underprivileged value is {underprivileged_value}.")
+            if privileged_value is not None:
+                lines.append(f"Privileged value is {privileged_value}.")
+        lines.append("")
+
+
+def _find_model(models, model_name):
+    for model in models:
+        if model.get("name") == model_name:
+            return model
+    return None
+
+
+def build_compact_view(payload, model_name=None):
+    compact = {
+        "created_at_utc": payload.get("created_at_utc"),
+        "mljar_supervised_version": payload.get("mljar_supervised_version"),
+        "results_path": payload.get("results_path"),
+        "leaderboard": payload.get("leaderboard", []),
+        "global_feature_importance": payload.get("global_feature_importance"),
+    }
+    if model_name is not None:
+        selected = _find_model(payload.get("models", []), model_name)
+        if selected is None:
+            available_models = sorted(
+                [m.get("name") for m in payload.get("models", []) if m.get("name")]
+            )
+            raise ValueError(
+                f"Model '{model_name}' not found. Available models: {available_models}"
+            )
+        compact["selected_model"] = selected
+    return compact
+
+
+def to_markdown(payload, model_name=None):
     lines = []
-    lines.append("# MLJAR AutoML Report")
-    lines.append("")
-    lines.append("## Run Summary")
-    lines.append("")
-    run_summary = payload.get("run_summary", {})
-    for key, value in run_summary.items():
-        lines.append(f"- **{key}**: {value}")
+    selected_model = payload.get("selected_model")
+    if selected_model is None:
+        lines.append("# MLJAR AutoML Report")
+    else:
+        lines.append(f"# MLJAR AutoML report for {selected_model.get('name')}")
     lines.append("")
 
-    lines.append("## Leaderboard")
-    lines.append("")
-    leaderboard = payload.get("leaderboard", [])
-    if leaderboard:
-        df = pd.DataFrame(leaderboard)
-        preferred_cols = [
-            c
-            for c in ["name", "model_type", "metric_type", "metric_value", "train_time"]
-            if c in df.columns
-        ]
-        if preferred_cols:
-            df = df[preferred_cols]
-        lines.append(tabulate(df.values, headers=list(df.columns), tablefmt="pipe"))
-    else:
-        lines.append("_No models found._")
-    lines.append("")
-
-    lines.append("## Best Model")
-    lines.append("")
-    best_model = payload.get("best_model")
-    if best_model is None:
-        lines.append("_No best model available._")
-    else:
-        scalar_keys = [
-            "name",
-            "model_type",
-            "metric_type",
-            "metric_value",
-            "train_time",
-            "is_valid",
-            "is_stacked",
-        ]
-        for key in scalar_keys:
-            if key in best_model:
-                lines.append(f"- **{key}**: {best_model.get(key)}")
-        if best_model.get("involved_models"):
-            lines.append("- **involved_models**:")
-            for model_name in best_model.get("involved_models", []):
-                lines.append(f"  - {model_name}")
+    if selected_model is None:
+        lines.append("## Leaderboard")
+        lines.append("")
+        leaderboard = payload.get("leaderboard", [])
+        if leaderboard:
+            df = pd.DataFrame(leaderboard)
+            base_cols = [
+                c
+                for c in ["name", "model_type", "metric_type", "metric_value", "train_time"]
+                if c in df.columns
+            ]
+            fairness_cols = [
+                c
+                for c in df.columns
+                if (c == "fairness_metric" or c.startswith("fairness_") or c == "is_fair")
+                and c not in base_cols
+            ]
+            preferred_cols = base_cols + fairness_cols
+            if preferred_cols:
+                df = df[preferred_cols]
+            lines.append(tabulate(df.values, headers=list(df.columns), tablefmt="pipe"))
+        else:
+            lines.append("_No models found._")
         lines.append("")
 
-        best_metrics = best_model.get("metrics") or {}
-        _append_split_table(lines, "Metric details", best_metrics.get("max_metrics"))
-        _append_split_table(
-            lines,
-            "Metric details with threshold from accuracy metric",
-            best_metrics.get("accuracy_threshold_metrics"),
-        )
-        _append_split_table(
-            lines, "Confusion matrix", best_metrics.get("confusion_matrix")
-        )
-        threshold = best_metrics.get("threshold")
-        if threshold is not None:
-            lines.append(f"Threshold: `{threshold}`")
+        global_fi = payload.get("global_feature_importance") or {}
+        if global_fi.get("available"):
+            k = global_fi.get("selection_k")
+            lines.append("## Global Feature Importance (Averaged Across Models)")
+            lines.append("")
+            lines.append(f"Method: `{global_fi.get('method')}`")
+            lines.append("")
+            lines.append(
+                f"Models used: `{global_fi.get('n_models_used')}`, Features: `{global_fi.get('n_features')}`"
+            )
             lines.append("")
 
-        best_fi = best_model.get("feature_importance") or {}
-        if best_fi.get("available"):
-            k = best_fi.get("selection_k")
             top_rows = [
-                [row.get("feature"), row.get("importance")]
-                for row in best_fi.get("top", [])
+                [row.get("feature"), row.get("mean_rank")]
+                for row in global_fi.get("top", [])
             ]
-            worst_rows = [
-                [row.get("feature"), row.get("importance")]
-                for row in best_fi.get("worst", [])
+            bottom_rows = [
+                [row.get("feature"), row.get("mean_rank")]
+                for row in global_fi.get("bottom", [])
             ]
-            lines.append(
-                f"### Most Influential Features (Top {k} by permutation importance)"
-            )
-            lines.append("")
-            lines.append(
-                tabulate(top_rows, headers=["Feature", "Importance"], tablefmt="pipe")
-            )
-            lines.append("")
-            lines.append(
-                f"### Least Influential Features (Bottom {k} by permutation importance)"
-            )
+
+            lines.append(f"### Most Influential Features (Top {k} by mean rank)")
             lines.append("")
             lines.append(
                 tabulate(
-                    worst_rows, headers=["Feature", "Importance"], tablefmt="pipe"
-                )
-            )
-            lines.append("")
-
-        best_fairness = best_model.get("fairness")
-        if best_fairness is not None:
-            lines.append("### Fairness (Best Model)")
-            lines.append("")
-            fairness_rows = [
-                ["is_fair", best_fairness.get("is_fair")],
-                ["worst_fairness", best_fairness.get("worst_fairness")],
-                ["best_fairness", best_fairness.get("best_fairness")],
-            ]
-            lines.append(
-                tabulate(fairness_rows, headers=["Field", "Value"], tablefmt="pipe")
-            )
-            sf = best_fairness.get("sensitive_features", [])
-            if sf:
-                lines.append("")
-                lines.append(
-                    tabulate(
-                        [[s.get("feature"), s.get("fairness_metric_value")] for s in sf],
-                        headers=["Sensitive Feature", "Fairness Metric Value"],
-                        tablefmt="pipe",
-                    )
-                )
-            lines.append("")
-    lines.append("")
-
-    fairness = payload.get("fairness_summary")
-    if fairness is not None:
-        lines.append("## Fairness Summary")
-        lines.append("")
-        rows = []
-        for key in [
-            "fairness_metric",
-            "fairness_threshold",
-            "best_model_is_fair",
-            "best_model_worst_fairness",
-            "best_model_best_fairness",
-        ]:
-            rows.append([key, fairness.get(key)])
-        lines.append(tabulate(rows, headers=["Field", "Value"], tablefmt="pipe"))
-        sf = fairness.get("sensitive_features", [])
-        if sf:
-            lines.append("")
-            lines.append(
-                tabulate(
-                    [[s.get("feature"), s.get("fairness_metric_value")] for s in sf],
-                    headers=["Sensitive Feature", "Fairness Metric Value"],
+                    top_rows,
+                    headers=["Feature", "Mean Rank"],
                     tablefmt="pipe",
                 )
             )
-        lines.append("")
+            lines.append("")
 
-    if model_details:
-        lines.append("## Model Details")
-        lines.append("")
-        models = payload.get("models", [])
-        if not models:
-            lines.append("_No model details available._")
+            lines.append(f"### Least Influential Features (Bottom {k} by mean rank)")
             lines.append("")
-        for model in models:
-            lines.append(f"## {model.get('name')}")
-            lines.append("")
-            summary_rows = [
-                ["model_type", model.get("model_type")],
-                ["metric_type", model.get("metric_type")],
-                ["metric_value", model.get("metric_value")],
-                ["train_time", model.get("train_time")],
-                ["is_valid", model.get("is_valid")],
-                ["is_stacked", model.get("is_stacked")],
-            ]
             lines.append(
-                tabulate(summary_rows, headers=["Field", "Value"], tablefmt="pipe")
+                tabulate(
+                    bottom_rows,
+                    headers=["Feature", "Mean Rank"],
+                    tablefmt="pipe",
+                )
             )
             lines.append("")
-
-            metrics = model.get("metrics") or {}
-            _append_split_table(lines, "Metric details", metrics.get("max_metrics"))
-            _append_split_table(
-                lines,
-                "Metric details with threshold from accuracy metric",
-                metrics.get("accuracy_threshold_metrics"),
-            )
-            _append_split_table(
-                lines, "Confusion matrix", metrics.get("confusion_matrix")
-            )
-            threshold = metrics.get("threshold")
-            if threshold is not None:
-                lines.append(f"Threshold: `{threshold}`")
-                lines.append("")
-
-            fi = model.get("feature_importance") or {}
-            if fi.get("available"):
-                k = fi.get("selection_k")
-                top_rows = [
-                    [row.get("feature"), row.get("importance")]
-                    for row in fi.get("top", [])
-                ]
-                worst_rows = [
-                    [row.get("feature"), row.get("importance")]
-                    for row in fi.get("worst", [])
-                ]
-                lines.append(
-                    f"### Most Influential Features (Top {k} by permutation importance)"
-                )
-                lines.append("")
-                lines.append(
-                    tabulate(
-                        top_rows,
-                        headers=["Feature", "Importance"],
-                        tablefmt="pipe",
-                    )
-                )
-                lines.append("")
-
-                lines.append(
-                    f"### Least Influential Features (Bottom {k} by permutation importance)"
-                )
-                lines.append("")
-                lines.append(
-                    tabulate(
-                        worst_rows,
-                        headers=["Feature", "Importance"],
-                        tablefmt="pipe",
-                    )
-                )
-                lines.append("")
-
-            fairness = model.get("fairness")
-            if fairness is not None:
-                lines.append("### Fairness")
-                lines.append("")
-                fairness_rows = [
-                    ["is_fair", fairness.get("is_fair")],
-                    ["worst_fairness", fairness.get("worst_fairness")],
-                    ["best_fairness", fairness.get("best_fairness")],
-                ]
-                lines.append(
-                    tabulate(
-                        fairness_rows, headers=["Field", "Value"], tablefmt="pipe"
-                    )
-                )
-                sf = fairness.get("sensitive_features", [])
-                if sf:
-                    lines.append("")
-                    lines.append(
-                        tabulate(
-                            [
-                                [s.get("feature"), s.get("fairness_metric_value")]
-                                for s in sf
-                            ],
-                            headers=["Sensitive Feature", "Fairness Metric Value"],
-                            tablefmt="pipe",
-                        )
-                    )
-                lines.append("")
+    else:
+        summary_rows = [
+            ["model_type", selected_model.get("model_type")],
+            ["metric_type", selected_model.get("metric_type")],
+            ["metric_value", selected_model.get("metric_value")],
+            ["train_time", selected_model.get("train_time")],
+            ["is_valid", selected_model.get("is_valid")],
+            ["is_stacked", selected_model.get("is_stacked")],
+        ]
+        lines.append(tabulate(summary_rows, headers=["Field", "Value"], tablefmt="pipe"))
+        lines.append("")
+        _append_hyperparameters(lines, selected_model)
+        _append_model_metrics(lines, selected_model)
+        _append_feature_importance(lines, selected_model, heading_level="##")
+        _append_fairness_metrics_details(lines, selected_model, heading_level="##")
 
     return "\n".join(lines)
