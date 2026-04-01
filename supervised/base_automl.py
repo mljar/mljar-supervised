@@ -55,7 +55,6 @@ from supervised.utils.report_structured import (
 from supervised.utils.utils import dump_data, load_data
 
 logger = logging.getLogger(__name__)
-logger.setLevel(LOG_LEVEL)
 
 
 class BaseAutoML(BaseEstimator, ABC):
@@ -404,7 +403,7 @@ class BaseAutoML(BaseEstimator, ABC):
     def verbose_print(self, msg):
         if self._verbose > 0:
             # self._progress_bar.write(msg)
-            print(msg)
+            logging.info(msg)
 
     def ensemble_step(self, is_stacked=False):
         if self._train_ensemble and len(self._models) > 1:
