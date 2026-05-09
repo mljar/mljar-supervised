@@ -538,6 +538,25 @@ class AutoML(BaseAutoML):
     def report_structured(self, format="markdown", model_name=None):
         return self._report_structured(format, model_name)
 
+    def get_feature_importance(
+        self,
+        model: Union[str, Literal["best"], Literal["all"]] = "best",
+        kind: Literal["raw", "normalized"] = "raw",
+    ):
+        """
+        Get feature importance for AutoML models.
+
+        Arguments:
+            model (str): Can be "best", "all", or a model name.
+            kind (str): Can be "raw" or "normalized".
+
+        Returns:
+            pandas.DataFrame or dict:
+                - DataFrame with columns: ["feature", "importance"] for "best" or model name.
+                - Dict {model_name: DataFrame} for "all".
+        """
+        return self._get_feature_importance(model=model, kind=kind)
+
     def need_retrain(
         self,
         X: Union[numpy.ndarray, pandas.DataFrame],
