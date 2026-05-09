@@ -46,7 +46,9 @@ from supervised.utils.data_validation import (
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
+from supervised.utils.importance import PermutationImportance
 from supervised.utils.report_structured import (
+    _load_model_importance_vector,
     build_compact_view,
     build_structured_report,
     save_structured_report,
@@ -287,6 +289,99 @@ class BaseAutoML(BaseEstimator, ABC):
                 ldb["metric_value"] *= -1.0
 
         return ldb
+
+    def _normalize_importance(self, importance):
+        min_value = float(importance.min())
+        max_value = float(importance.max())
+        if max_value == min_value:
+            return pd.Series(np.zeros(len(importance)), index=importance.index)
+        return (importance - min_value) / (max_value - min_value)
+
+    def _aggregate_feature_importance(self, model_name):
+        if self._results_path is None:
+            return None
+        model_dir = os.path.join(self._results_path, model_name)
+        importance = _load_model_importance_vector(model_dir)
+        if importance is None:
+            return None
+        return importance.sort_values(ascending=False)
+
+    def _compute_feature_importance_for_model(self, model):
+        if not isinstance(model, ModelFramework):
+            return False
+
+        X_path = self._X_path or os.path.join(self._results_path, "X.data")
+        y_path = self._y_path or os.path.join(self._results_path, "y.data")
+
+        try:
+            X = load_data(X_path)
+            y_data = load_data(y_path)
+            y = y_data["target"] if isinstance(y_data, pd.DataFrame) else y_data
+            model_path = os.path.join(self._results_path, model.get_name())
+            for learner, preproces in zip(model.learners, model.preprocessings):
+                learner.reload()
+                X_data, y_data, _ = preproces.transform(X.copy(), y.copy(), None)
+                PermutationImportance.compute_and_plot(
+                    learner,
+                    X_data,
+                    y_data,
+                    model_path,
+                    learner.name,
+                    metric_name=model.get_metric_name(),
+                    ml_task=self._ml_task,
+                    n_jobs=self._n_jobs,
+                )
+
+            return True
+        except Exception:
+            return False
+
+    def _model_feature_importance(self, model, kind):
+        model_name = model.get_name()
+        importance = self._aggregate_feature_importance(model_name)
+        if importance is None:
+            self._compute_feature_importance_for_model(model)
+            importance = self._aggregate_feature_importance(model_name)
+
+        if importance is None:
+            return pd.DataFrame(columns=["feature", "importance"])
+
+        if kind == "normalized":
+            importance = self._normalize_importance(importance)
+
+        return (
+            pd.DataFrame({"feature": importance.index, "importance": importance.values})
+            .sort_values("importance", ascending=False)
+            .reset_index(drop=True)
+        )
+
+    def _get_feature_importance(self, model="best", kind="raw"):
+        if kind not in ["raw", "normalized"]:
+            raise AutoMLException(
+                "Invalid kind parameter. Allowed values are: 'raw', 'normalized'."
+            )
+
+        if self._best_model is None and self.results_path is not None:
+            self._check_can_load()
+        if self._best_model is None:
+            raise AutoMLException(
+                "This model has not been fitted yet. Please call `fit()` first."
+            )
+
+        if model == "best":
+            return self._model_feature_importance(self._best_model, kind)
+
+        if model == "all":
+            return {
+                m.get_name(): self._model_feature_importance(m, kind) for m in self._models
+            }
+
+        selected = [m for m in self._models if m.get_name() == model]
+        if not selected:
+            raise AutoMLException(
+                f"Model `{model}` not found. Use 'best', 'all' or a valid model name."
+            )
+        return self._model_feature_importance(selected[0], kind)
 
     def keep_model(self, model, model_subpath):
         if model is None:
