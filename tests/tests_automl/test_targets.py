@@ -90,7 +90,7 @@ class AutoMLTargetsTest(unittest.TestCase):
         )
 
         y.iloc[1] = None
-        y.iloc[3] = np.NaN
+        y.iloc[3] = np.nan
         y.iloc[13] = np.nan
 
         automl = AutoML(

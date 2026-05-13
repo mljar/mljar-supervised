@@ -78,6 +78,7 @@ class XgbAlgorithm(BaseAlgorithm):
         self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
         self.learner_params = {
             "tree_method": "hist",
+            "device": "cpu",
             "booster": "gbtree",
             "objective": self.params.get("objective"),
             "eval_metric": self.params.get("eval_metric"),
@@ -166,7 +167,7 @@ class XgbAlgorithm(BaseAlgorithm):
         dtrain = xgb.DMatrix(
             X.values if isinstance(X, pd.DataFrame) else X,
             label=y,
-            missing=np.NaN,
+            missing=np.nan,
             weight=sample_weight,
         )
         
@@ -176,7 +177,7 @@ class XgbAlgorithm(BaseAlgorithm):
                 if isinstance(X_validation, pd.DataFrame)
                 else X_validation,
                 label=y_validation,
-                missing=np.NaN,
+                missing=np.nan,
                 weight=sample_weight_validation,
             )
         else:
@@ -264,7 +265,7 @@ class XgbAlgorithm(BaseAlgorithm):
             raise XgbAlgorithmException("Xgboost model is None")
 
         dtrain = xgb.DMatrix(
-            X.values if isinstance(X, pd.DataFrame) else X, missing=np.NaN
+            X.values if isinstance(X, pd.DataFrame) else X, missing=np.nan
         )
         # xgboost > 2.0.0 version
         if hasattr(self.model, "best_iteration"):

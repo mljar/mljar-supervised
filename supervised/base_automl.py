@@ -46,6 +46,12 @@ from supervised.utils.data_validation import (
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
+from supervised.utils.report_structured import (
+    build_compact_view,
+    build_structured_report,
+    save_structured_report,
+    to_markdown,
+)
 from supervised.utils.utils import dump_data, load_data
 
 logger = logging.getLogger(__name__)
@@ -805,7 +811,7 @@ class BaseAutoML(BaseEstimator, ABC):
             sensitive_features.reset_index(drop=True, inplace=True)
 
             for col in sensitive_features.columns:
-                if not sensitive_features[col].dtype.name in ["category", "object"]:
+                if pd.api.types.is_numeric_dtype(sensitive_features[col].dtype):
                     self.verbose_print("Sensitive features should be categorical")
                     self.verbose_print(
                         f"Apply automatic binarization for feature {col}"
@@ -2474,6 +2480,39 @@ margin-right: auto;display: block;"/>\n\n"""
             fout.write(report_content)
 
         return self._show_report(main_readme_html, width, height)
+
+    def _report_structured(self, format="markdown", model_name=None):
+        self._results_path = self._get_results_path()
+        if self._fit_level != "finished":
+            self.load(self._results_path)
+        elif self._models is None or len(self._models) == 0:
+            # Handle objects where fit() returned early because results already exist.
+            # In that case, fit_level can be "finished" but models might not be loaded.
+            self.load(self._results_path)
+
+        if self._models is None or len(self._models) == 0:
+            raise AutoMLException(
+                "This model has not been fitted yet. Please call `fit()` first."
+            )
+
+        if format not in ["markdown", "dict", "json"]:
+            raise ValueError(
+                f"Wrong format '{format}'. Allowed formats are: markdown, dict, json."
+            )
+
+        payload = build_structured_report(self)
+        save_structured_report(payload, self._results_path)
+
+        try:
+            output_payload = build_compact_view(payload, model_name)
+        except ValueError as e:
+            raise AutoMLException(str(e))
+
+        if format == "dict":
+            return output_payload
+        if format == "json":
+            return json.dumps(output_payload, indent=4)
+        return to_markdown(output_payload, model_name)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
         metric = self._best_model.get_metric()

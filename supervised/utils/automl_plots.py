@@ -23,7 +23,7 @@ if not logger.hasHandlers():
 import warnings
 import matplotlib.pyplot as plt
 
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class AutoMLPlots:
     # Original filename definitions
@@ -365,5 +365,4 @@ class AutoMLPlots:
             logger.error(traceback.format_exc())
              # Ensure plot is closed if error occurred during saving/closing
             plt.close("all")
-
 

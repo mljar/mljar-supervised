@@ -29,7 +29,10 @@
 
 **Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
 
-**Looking for commercial support**: Please contact us by [email](https://mljar.com/contact/) for details
+**Use MLJAR Studio (Easiest Way to Run MLJAR AutoML)**  
+MLJAR Studio is the easiest way to run MLJAR AutoML, with conversational notebooks and AutoLab experiments (autonomous AI for ML pipeline optimization).  
+Start quickly, iterate faster, and manage experiments in one place.  
+[Try MLJAR Studio](https://mljar.com)
 
 
 <p align="center">
@@ -38,15 +41,10 @@
 
 ---
 
-Watch full AutoML training in Python under 2 minutes. The training is done in [MLJAR Studio](https://mljar.com).
-
-[![](https://github.com/mljar/studio/blob/main/media/mljar-studio-automl-get-started.jpg?raw=true)](https://youtu.be/t_opxR5dbPU) 
-
 ## Table of Contents
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
- - [AutoML Web App with GUI](https://github.com/mljar/mljar-supervised#automl-web-app-with-user-interface)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
  - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
@@ -100,14 +98,6 @@ Of course, you can further customize the details of each `mode` to meet the requ
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
 </p>
-
-# AutoML Web App with User Interface
-
-We created a Web App with GUI, so you don't need to write any code 🐍. Just upload your data. Please check the Web App at [github.com/mljar/automl-app](https://github.com/mljar/automl-app). You can run this Web App locally on your computer, so your data is safe and secure :cat:
-
-<kbd>
-<img src="https://github.com/mljar/automl-app/blob/main/media/web-app.gif" alt="AutoML training in Web App"></img>
-</kbd>
 
 # Automatic Documentation
 
@@ -472,7 +462,51 @@ To get predicted probabilites with information about class label please use the 
 
 For details please check [mljar-supervised docs](https://supervised.mljar.com).
 
+## Structured Report for LLMs
+
+The AutoML object can generate a structured report that is easier to analyze with LLMs and external tools:
+
+```python
+from supervised import AutoML
+
+automl = AutoML(results_path="AutoML_example")
+automl.fit(X, y)
+
+# Default output is markdown text
+markdown_report = automl.report_structured()
+print(markdown_report)
+```
+
+You can also get programmatic formats:
+
+```python
+# Python dictionary
+payload = automl.report_structured(format="dict")
+
+# JSON string
+payload_json = automl.report_structured(format="json")
+```
+
+Each call creates/updates:
+
+```text
+<results_path>/report_structured.json
+```
+
+Use `model_name` to display detailed metrics for one selected model:
+
+```python
+compact = automl.report_structured()
+detailed = automl.report_structured(model_name="3_Linear")
+```
+
+When `model_name` is provided, the markdown includes detailed metrics, fairness details (if used), and feature importance summaries for that model.
+
 # Installation  
+
+Compatibility:
+- Python `>=3.9`
+- NumPy `>=2.0,<3`
 
 From PyPi repository:
 
@@ -496,7 +530,7 @@ python setup.py install
 Installation for development
 ```
 git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.6
+virtualenv venv --python=python3.9
 source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
@@ -504,7 +538,7 @@ pip install -r requirements_dev.txt
 
 Running in the docker:
 ```
-FROM python:3.7-slim-buster
+FROM python:3.9-slim-buster
 RUN apt-get update && apt-get -y update
 RUN apt-get install -y build-essential python3-pip python3-dev
 RUN pip3 -q install pip --upgrade

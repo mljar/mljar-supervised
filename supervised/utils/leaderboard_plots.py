@@ -14,7 +14,7 @@ import warnings
 
 import matplotlib.pyplot as plt
 
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 markers = {
