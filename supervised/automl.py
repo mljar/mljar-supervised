@@ -538,6 +538,11 @@ class AutoML(BaseAutoML):
     def report_structured(self, format="markdown", model_name=None):
         return self._report_structured(format, model_name)
 
+    def app(self, path="app", overwrite=False, title=None):
+        from supervised.apps import generate_app
+
+        return generate_app(self, path=path, overwrite=overwrite, title=title)
+
     def need_retrain(
         self,
         X: Union[numpy.ndarray, pandas.DataFrame],
