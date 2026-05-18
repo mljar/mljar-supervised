@@ -1,4 +1,5 @@
 import json
+from hashlib import sha1
 from textwrap import dedent
 
 
@@ -8,6 +9,8 @@ def app_support_source():
         import base64
         import io
         import json
+        import shutil
+        import zipfile
         from functools import lru_cache
         from pathlib import Path
 
@@ -19,14 +22,15 @@ def app_support_source():
 
         ROOT = Path(__file__).resolve().parent
         MANIFEST_PATH = ROOT / "mljar_app.json"
-        AUTOML_PATH = ROOT / "automl"
 
 
         @lru_cache(maxsize=1)
         def load_bundle():
             with MANIFEST_PATH.open("r", encoding="utf-8") as fin:
                 manifest = json.load(fin)
-            automl = AutoML(results_path=str(AUTOML_PATH))
+            automl_path = ensure_automl_runtime(manifest)
+            automl = AutoML(results_path=str(automl_path))
+            automl._results_path = str(automl_path)
             return {"manifest": manifest, "automl": automl}
 
 
@@ -36,6 +40,24 @@ def app_support_source():
 
         def feature_schema():
             return manifest().get("feature_schema", [])
+
+
+        def ensure_automl_runtime(manifest_payload):
+            bundle = manifest_payload.get("automl_bundle", {})
+            runtime_root = ROOT / bundle.get("runtime_root", ".automl_runtime")
+            extracted_dir = bundle.get("extracted_dir", "automl")
+            runtime_path = runtime_root / extracted_dir
+            params_path = runtime_path / "params.json"
+            if params_path.exists():
+                return runtime_path
+
+            archive_path = ROOT / bundle.get("archive_name", "automl.zip")
+            if runtime_root.exists():
+                shutil.rmtree(runtime_root)
+            runtime_root.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(archive_path, "r") as zf:
+                zf.extractall(runtime_root)
+            return runtime_path
 
 
         def create_widget(mr, feature):
@@ -326,7 +348,7 @@ def readme_md():
 
         - `predict_single.ipynb` - single-sample prediction dashboard
         - `predict_batch.ipynb` - batch CSV scoring
-        - `automl/` - copied trained AutoML artifacts
+        - `automl.zip` - minimal zipped runtime artifacts for the best prediction path
         - `mljar_app.json` - generated app manifest
         """
     ).lstrip()
@@ -444,6 +466,7 @@ def batch_notebook_source():
 def markdown_cell(source):
     return {
         "cell_type": "markdown",
+        "id": _cell_id("markdown", source),
         "metadata": {},
         "source": source,
     }
@@ -452,11 +475,17 @@ def markdown_cell(source):
 def code_cell(source):
     return {
         "cell_type": "code",
+        "id": _cell_id("code", source),
         "execution_count": None,
         "metadata": {},
         "outputs": [],
         "source": source,
     }
+
+
+def _cell_id(prefix, source):
+    digest = sha1(f"{prefix}:{source}".encode("utf-8")).hexdigest()
+    return f"{prefix}-{digest[:12]}"
 
 
 def notebook_metadata(title):

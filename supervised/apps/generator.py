@@ -1,6 +1,10 @@
 import json
 import os
 import shutil
+import shlex
+import shutil as shutil_lib
+import tempfile
+import zipfile
 
 from supervised.apps.metadata import collect_app_metadata
 from supervised.apps.templates import (
@@ -15,19 +19,43 @@ from supervised.apps.templates import (
 from supervised.exceptions import AutoMLException
 
 
-def generate_app(automl, path="app", overwrite=False, title=None):
+PUBLISHABLE_WORKSPACE_FILES = (
+    "predict_single.ipynb",
+    "predict_batch.ipynb",
+    "app_support.py",
+    "config.toml",
+    "requirements.txt",
+    "runtime.txt",
+    "automl.zip",
+)
+
+
+def generate_app(automl, path=None, overwrite=False, title=None, verbose=False):
     results_path = automl._get_results_path()
     _ensure_automl_ready(automl, results_path)
-    output_path = os.path.abspath(path)
+    output_path = _resolve_output_path(results_path, path)
     _prepare_output_dir(output_path, overwrite=overwrite)
 
-    manifest = collect_app_metadata(automl, title=title)
+    selected_models = _selected_model_names(automl)
+    manifest = collect_app_metadata(
+        automl,
+        title=title,
+        selected_models=selected_models,
+    )
     try:
-        _write_workspace(output_path, results_path, manifest)
+        _write_workspace(output_path, results_path, manifest, selected_models)
     except Exception:
         shutil.rmtree(output_path, ignore_errors=True)
         raise
+    if verbose:
+        _print_verbose_summary(output_path)
     return output_path
+
+
+def publishable_workspace_paths(output_path):
+    return [
+        os.path.join(output_path, filename) for filename in PUBLISHABLE_WORKSPACE_FILES
+    ]
 
 
 def _ensure_automl_ready(automl, results_path):
@@ -49,8 +77,21 @@ def _prepare_output_dir(output_path, overwrite=False):
     os.makedirs(output_path)
 
 
-def _write_workspace(output_path, results_path, manifest):
-    shutil.copytree(results_path, os.path.join(output_path, "automl"))
+def _resolve_output_path(results_path, path):
+    if path is None:
+        return os.path.abspath(os.path.join(results_path, "app"))
+    return os.path.abspath(path)
+
+
+def _selected_model_names(automl):
+    if automl._best_model is None:
+        automl.load(automl._get_results_path())
+    best_model_name = automl._best_model.get_name()
+    return automl.models_needed_on_predict(best_model_name)
+
+
+def _write_workspace(output_path, results_path, manifest, selected_models):
+    _create_automl_zip(output_path, results_path, selected_models)
     _write_json(os.path.join(output_path, "mljar_app.json"), manifest)
     _write_json(os.path.join(output_path, "predict_single.ipynb"), single_notebook_source())
     _write_json(os.path.join(output_path, "predict_batch.ipynb"), batch_notebook_source())
@@ -70,3 +111,92 @@ def _write_json(path, payload):
 def _write_text(path, payload):
     with open(path, "w", encoding="utf-8") as fout:
         fout.write(payload)
+
+
+def _print_verbose_summary(output_path):
+    quoted_path = shlex.quote(output_path)
+    mercury_path = shutil_lib.which("mercury")
+
+    print(f"App directory: {output_path}")
+    print(f"Enter app directory: cd {quoted_path}")
+    if mercury_path is None:
+        print("Install Mercury: pip install -r requirements.txt")
+    print("Start Mercury: mercury")
+
+
+def _create_automl_zip(output_path, results_path, selected_models):
+    zip_path = os.path.join(output_path, "automl.zip")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        bundle_root = os.path.join(temp_dir, "automl")
+        os.makedirs(bundle_root)
+        _write_json(
+            os.path.join(bundle_root, "params.json"),
+            _build_minimal_params(results_path, selected_models),
+        )
+        _copy_root_runtime_files(results_path, bundle_root, selected_models)
+        _copy_selected_model_dirs(results_path, bundle_root, selected_models)
+
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for root, _, files in os.walk(temp_dir):
+                for filename in files:
+                    file_path = os.path.join(root, filename)
+                    arcname = os.path.relpath(file_path, temp_dir)
+                    zf.write(file_path, arcname)
+
+
+def _build_minimal_params(results_path, selected_models):
+    with open(os.path.join(results_path, "params.json"), "r", encoding="utf-8") as fin:
+        params = json.load(fin)
+
+    params["saved"] = [name for name in params.get("saved", []) if name in selected_models]
+    params["load_on_predict"] = list(selected_models)
+    if "stacked" in params:
+        params["stacked"] = [
+            name for name in params.get("stacked", []) if name in selected_models
+        ]
+    params["results_path"] = "automl"
+    return params
+
+
+def _copy_root_runtime_files(results_path, bundle_root, selected_models):
+    root_files = ["data_info.json"]
+    if _needs_golden_features(results_path, selected_models):
+        root_files.append("golden_features.json")
+
+    for filename in root_files:
+        source = os.path.join(results_path, filename)
+        if os.path.exists(source):
+            shutil.copy2(source, os.path.join(bundle_root, filename))
+
+
+def _needs_golden_features(results_path, selected_models):
+    for model_name in selected_models:
+        framework_path = os.path.join(results_path, model_name, "framework.json")
+        if not os.path.exists(framework_path):
+            continue
+        with open(framework_path, "r", encoding="utf-8") as fin:
+            framework = json.load(fin)
+        for preprocessing in framework.get("preprocessing", []):
+            if "golden_features" in preprocessing:
+                return True
+    return False
+
+
+def _copy_selected_model_dirs(results_path, bundle_root, selected_models):
+    for model_name in selected_models:
+        source = os.path.join(results_path, model_name)
+        target = os.path.join(bundle_root, model_name)
+        if os.path.isdir(source):
+            shutil.copytree(source, target, ignore=_ignore_non_runtime_files)
+
+
+def _ignore_non_runtime_files(_, names):
+    ignored = []
+    for name in names:
+        lower = name.lower()
+        if lower in {"readme.md", "readme.html"}:
+            ignored.append(name)
+            continue
+        if lower.endswith((".png", ".svg", ".html", ".md", ".log")):
+            ignored.append(name)
+    return ignored

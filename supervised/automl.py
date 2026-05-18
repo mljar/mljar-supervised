@@ -538,10 +538,33 @@ class AutoML(BaseAutoML):
     def report_structured(self, format="markdown", model_name=None):
         return self._report_structured(format, model_name)
 
-    def app(self, path="app", overwrite=False, title=None):
+    def app(self, path=None, overwrite=False, title=None, verbose=False):
         from supervised.apps import generate_app
 
-        return generate_app(self, path=path, overwrite=overwrite, title=title)
+        return generate_app(
+            self, path=path, overwrite=overwrite, title=title, verbose=verbose
+        )
+
+    def publish_app(
+        self,
+        url=None,
+        path=None,
+        overwrite=False,
+        title=None,
+        open_browser=True,
+        timeout=300,
+    ):
+        from supervised.apps import publish_app_from_automl
+
+        return publish_app_from_automl(
+            self,
+            url=url,
+            path=path,
+            overwrite=overwrite,
+            title=title,
+            open_browser=open_browser,
+            timeout=timeout,
+        )
 
     def need_retrain(
         self,

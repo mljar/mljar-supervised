@@ -12,10 +12,11 @@ from supervised.algorithms.registry import (
 from supervised.utils.utils import load_data
 
 
-def collect_app_metadata(automl, title=None):
+def collect_app_metadata(automl, title=None, selected_models=None):
     report = automl.report_structured(format="dict")
     X = _load_training_frame(automl)
     feature_schema = _build_feature_schema(automl, X)
+    selected_models = list(selected_models or [])
     return {
         "schema_version": 1,
         "bundle_type": "automl_prediction_bundle",
@@ -43,6 +44,12 @@ def collect_app_metadata(automl, title=None):
         ),
         "leaderboard": report.get("leaderboard", {}),
         "selected_model": report.get("selected_model"),
+        "automl_bundle": {
+            "archive_name": "automl.zip",
+            "runtime_root": ".automl_runtime",
+            "extracted_dir": "automl",
+            "selected_models": selected_models,
+        },
         "supports": {
             "single_sample": True,
             "batch_prediction": True,
