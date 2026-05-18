@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
+from supervised.fairness.certificate import build_certificate_info
+
 
 def _get_package_version():
     try:
@@ -118,6 +120,13 @@ def _extract_fairness_metrics_details(fairness_metrics):
             "fairness_threshold": fairness_threshold,
         }
     return details
+
+
+def _append_certificate_info(target, certificate_info):
+    if certificate_info is None:
+        return
+    target["certificate_url"] = certificate_info.get("certificate_url")
+    target["certificate_params"] = certificate_info.get("certificate_params")
 
 
 def _compute_feature_importance_summary(model_dir):
@@ -323,6 +332,16 @@ def _model_to_dict(automl, model):
             "best_fairness": _to_float_or_none(model.get_best_fairness()),
             "sensitive_features": sensitive,
         }
+        _append_certificate_info(
+            model_dict["fairness"],
+            build_certificate_info(
+                model_name,
+                automl._ml_task,
+                (model_dict.get("metrics") or {}).get("fairness_metrics_details"),
+                worst_fairness=model_dict["fairness"]["worst_fairness"],
+                is_fair=model_dict["fairness"]["is_fair"],
+            ),
+        )
 
     return model_dict
 
@@ -357,6 +376,18 @@ def build_structured_report(automl):
                 for sf in automl._best_model.get_sensitive_features_names()
             ],
         }
+        if best_model is not None:
+            _append_certificate_info(
+                fairness_summary,
+                {
+                    "certificate_url": (best_model.get("fairness") or {}).get(
+                        "certificate_url"
+                    ),
+                    "certificate_params": (best_model.get("fairness") or {}).get(
+                        "certificate_params"
+                    ),
+                },
+            )
 
     payload = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -507,6 +538,44 @@ def _append_fairness(lines, model, title):
                 tablefmt="pipe",
             )
         )
+    certificate_url = fairness.get("certificate_url")
+    if certificate_url:
+        lines.append("")
+        lines.append("### Fairness Certificate")
+        lines.append("")
+        lines.append(f"[View fairness certificate]({certificate_url})")
+    lines.append("")
+
+
+def _append_main_fairness_summary(lines, fairness_summary):
+    if fairness_summary is None:
+        return
+    lines.append("## Fairness Summary")
+    lines.append("")
+    fairness_rows = [
+        ["fairness_metric", fairness_summary.get("fairness_metric")],
+        ["fairness_threshold", fairness_summary.get("fairness_threshold")],
+        ["best_model_is_fair", fairness_summary.get("best_model_is_fair")],
+        ["best_model_worst_fairness", fairness_summary.get("best_model_worst_fairness")],
+        ["best_model_best_fairness", fairness_summary.get("best_model_best_fairness")],
+    ]
+    lines.append(tabulate(fairness_rows, headers=["Field", "Value"], tablefmt="pipe"))
+    sf = fairness_summary.get("sensitive_features", [])
+    if sf:
+        lines.append("")
+        lines.append(
+            tabulate(
+                [[s.get("feature"), s.get("fairness_metric_value")] for s in sf],
+                headers=["Sensitive Feature", "Fairness Metric Value"],
+                tablefmt="pipe",
+            )
+        )
+    certificate_url = fairness_summary.get("certificate_url")
+    if certificate_url:
+        lines.append("")
+        lines.append("### Fairness Certificate")
+        lines.append("")
+        lines.append(f"[View fairness certificate]({certificate_url})")
     lines.append("")
 
 
@@ -568,6 +637,7 @@ def build_compact_view(payload, model_name=None):
         "results_path": payload.get("results_path"),
         "leaderboard": payload.get("leaderboard", []),
         "global_feature_importance": payload.get("global_feature_importance"),
+        "fairness_summary": payload.get("fairness_summary"),
     }
     if model_name is not None:
         selected = _find_model(payload.get("models", []), model_name)
@@ -658,6 +728,7 @@ def to_markdown(payload, model_name=None):
                 )
             )
             lines.append("")
+        _append_main_fairness_summary(lines, payload.get("fairness_summary"))
     else:
         summary_rows = [
             ["model_type", selected_model.get("model_type")],
@@ -669,6 +740,7 @@ def to_markdown(payload, model_name=None):
         ]
         lines.append(tabulate(summary_rows, headers=["Field", "Value"], tablefmt="pipe"))
         lines.append("")
+        _append_fairness(lines, selected_model, "## Fairness Summary")
         _append_hyperparameters(lines, selected_model)
         _append_model_metrics(lines, selected_model)
         _append_feature_importance(lines, selected_model, heading_level="##")

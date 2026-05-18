@@ -482,8 +482,20 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
+                is_fair = all(
+                    values.get("is_fair", True)
+                    for key, values in fairness_metrics.items()
+                    if key != "fairness_optimization"
+                )
                 FairnessReport.save_classification(
-                    fairness_metrics, fout, model_path, is_multi=False
+                    fairness_metrics,
+                    fout,
+                    model_path,
+                    model_desc.splitlines()[0].replace("# Summary of ", "", 1),
+                    BINARY_CLASSIFICATION,
+                    None,
+                    is_fair,
+                    is_multi=False,
                 )
 
             AdditionalMetrics.add_learning_curves(fout)
@@ -522,8 +534,20 @@ class AdditionalMetrics:
 
             if fairness_metrics is not None:
                 # we treat multiclass problem as several binary problems
+                is_fair = all(
+                    values.get("is_fair", True)
+                    for key, values in fairness_metrics.items()
+                    if key != "fairness_optimization"
+                )
                 FairnessReport.save_classification(
-                    fairness_metrics, fout, model_path, is_multi=True
+                    fairness_metrics,
+                    fout,
+                    model_path,
+                    model_desc.splitlines()[0].replace("# Summary of ", "", 1),
+                    MULTICLASS_CLASSIFICATION,
+                    None,
+                    is_fair,
+                    is_multi=True,
                 )
 
             AdditionalMetrics.add_learning_curves(fout)
@@ -562,7 +586,20 @@ class AdditionalMetrics:
             )
 
             if fairness_metrics is not None:
-                FairnessReport.regression(fairness_metrics, fout, model_path)
+                is_fair = all(
+                    values.get("is_fair", True)
+                    for key, values in fairness_metrics.items()
+                    if key != "fairness_optimization"
+                )
+                FairnessReport.regression(
+                    fairness_metrics,
+                    fout,
+                    model_path,
+                    model_desc.splitlines()[0].replace("# Summary of ", "", 1),
+                    REGRESSION,
+                    None,
+                    is_fair,
+                )
 
             AdditionalMetrics.add_learning_curves(fout)
             AdditionalMetrics.add_tree_viz(fout, model_path, fold_cnt, repeat_cnt)

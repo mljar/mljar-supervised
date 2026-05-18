@@ -26,6 +26,7 @@ from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
 from supervised.exceptions import AutoMLException, NotTrainedException
+from supervised.fairness.report import FairnessReport
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 # disable EDA
@@ -1387,6 +1388,17 @@ class BaseAutoML(BaseEstimator, ABC):
                 LeaderboardPlots.compute(
                     ldb, self._results_path, fout, self._fairness_threshold
                 )
+                if self._fairness_metric is not None and self._best_model is not None:
+                    additional_metrics = self._best_model.get_additional_metrics() or {}
+                    fairness_metrics = additional_metrics.get("fairness_metrics")
+                    certificate_info = FairnessReport.certificate_info(
+                        self._best_model.get_name(),
+                        self._ml_task,
+                        fairness_metrics,
+                        self._best_model.get_worst_fairness(),
+                        self._best_model.is_fair(),
+                    )
+                    FairnessReport.write_certificate_section(fout, certificate_info)
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)

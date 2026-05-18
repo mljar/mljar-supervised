@@ -1,11 +1,45 @@
 import os
 
+from supervised.fairness.certificate import (
+    build_certificate_info,
+    fairness_metrics_to_details,
+)
+
 
 class FairnessReport:
     """Saves information about fairness in the report."""
 
     @staticmethod
-    def save_classification(fairness_metrics, fout, model_path, is_multi=False):
+    def certificate_info(model_name, ml_task, fairness_metrics, worst_fairness, is_fair):
+        fairness_details = fairness_metrics_to_details(fairness_metrics)
+        return build_certificate_info(
+            model_name,
+            ml_task,
+            fairness_details,
+            worst_fairness=worst_fairness,
+            is_fair=is_fair,
+        )
+
+    @staticmethod
+    def write_certificate_section(fout, certificate_info):
+        if not certificate_info:
+            return
+        fout.write("\n\n## Fairness Certificate\n\n")
+        fout.write(
+            f"[View fairness certificate]({certificate_info['certificate_url']})\n"
+        )
+
+    @staticmethod
+    def save_classification(
+        fairness_metrics,
+        fout,
+        model_path,
+        model_name,
+        ml_task,
+        worst_fairness,
+        is_fair,
+        is_multi=False,
+    ):
         for k, v in fairness_metrics.items():
             if k == "fairness_optimization":
                 continue
@@ -71,8 +105,17 @@ class FairnessReport:
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
 
+        FairnessReport.write_certificate_section(
+            fout,
+            FairnessReport.certificate_info(
+                model_name, ml_task, fairness_metrics, worst_fairness, is_fair
+            ),
+        )
+
     @staticmethod
-    def regression(fairness_metrics, fout, model_path):
+    def regression(
+        fairness_metrics, fout, model_path, model_name, ml_task, worst_fairness, is_fair
+    ):
         for k, v in fairness_metrics.items():
             if k == "fairness_optimization":
                 continue
@@ -114,3 +157,10 @@ class FairnessReport:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
+
+        FairnessReport.write_certificate_section(
+            fout,
+            FairnessReport.certificate_info(
+                model_name, ml_task, fairness_metrics, worst_fairness, is_fair
+            ),
+        )
