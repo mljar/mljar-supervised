@@ -566,6 +566,11 @@ class AutoML(BaseAutoML):
             timeout=timeout,
         )
 
+    def local_app(self):
+        from supervised.apps import run_local_app_from_automl
+
+        return run_local_app_from_automl(self)
+
     def need_retrain(
         self,
         X: Union[numpy.ndarray, pandas.DataFrame],
