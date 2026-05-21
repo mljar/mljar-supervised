@@ -26,7 +26,7 @@ class FairnessReport:
             return
         fout.write("\n\n## Fairness Certificate\n\n")
         fout.write(
-            f"[View fairness certificate]({certificate_info['certificate_url']})\n"
+            f"[View and download fairness certificate]({certificate_info['certificate_url']})\n"
         )
 
     @staticmethod
@@ -99,18 +99,21 @@ class FairnessReport:
                     )
                 if v.get("privileged_value") is not None:
                     fout.write(f'Privileged value is {v["privileged_value"]}.\n')
+         
+            # add fairness cerificate
+            FairnessReport.write_certificate_section(
+                fout,
+                FairnessReport.certificate_info(
+                    model_name, ml_task, fairness_metrics, worst_fairness, is_fair
+                ),
+            )
 
             for figure in v["figures"]:
                 fout.write(f"\n\n### {figure['title']}\n\n")
                 figure["figure"].savefig(os.path.join(model_path, figure["fname"]))
                 fout.write(f"\n![]({figure['fname']})\n\n")
 
-        FairnessReport.write_certificate_section(
-            fout,
-            FairnessReport.certificate_info(
-                model_name, ml_task, fairness_metrics, worst_fairness, is_fair
-            ),
-        )
+        
 
     @staticmethod
     def regression(

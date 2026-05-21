@@ -538,12 +538,6 @@ def _append_fairness(lines, model, title):
                 tablefmt="pipe",
             )
         )
-    certificate_url = fairness.get("certificate_url")
-    if certificate_url:
-        lines.append("")
-        lines.append("### Fairness Certificate")
-        lines.append("")
-        lines.append(f"[View fairness certificate]({certificate_url})")
     lines.append("")
 
 
@@ -570,12 +564,6 @@ def _append_main_fairness_summary(lines, fairness_summary):
                 tablefmt="pipe",
             )
         )
-    certificate_url = fairness_summary.get("certificate_url")
-    if certificate_url:
-        lines.append("")
-        lines.append("### Fairness Certificate")
-        lines.append("")
-        lines.append(f"[View fairness certificate]({certificate_url})")
     lines.append("")
 
 

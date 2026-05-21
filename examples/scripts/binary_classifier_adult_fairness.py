@@ -25,3 +25,6 @@ automl = AutoML(
 )
 
 automl.fit(X_train, y_train, sensitive_features=S_train)
+
+report = automl.report_structured()
+print(report)

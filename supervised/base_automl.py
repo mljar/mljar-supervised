@@ -1385,9 +1385,6 @@ class BaseAutoML(BaseEstimator, ABC):
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(
-                    ldb, self._results_path, fout, self._fairness_threshold
-                )
                 if self._fairness_metric is not None and self._best_model is not None:
                     additional_metrics = self._best_model.get_additional_metrics() or {}
                     fairness_metrics = additional_metrics.get("fairness_metrics")
@@ -1399,6 +1396,9 @@ class BaseAutoML(BaseEstimator, ABC):
                         self._best_model.is_fair(),
                     )
                     FairnessReport.write_certificate_section(fout, certificate_info)
+                LeaderboardPlots.compute(
+                    ldb, self._results_path, fout, self._fairness_threshold
+                )
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
