@@ -64,6 +64,7 @@ class TimeController:
         ratios = {
             "default_algorithms": 0.3,
             "not_so_random": 0.35,
+            "optuna_search": 0.55,
             "mix_encoding": 0.05,
             "golden_features": 0.05,
             "kmeans_features": 0.05,
@@ -79,6 +80,7 @@ class TimeController:
             in [
                 "default_algorithms",
                 "not_so_random",
+                "optuna_search",
                 "boost_on_errors",
                 "mix_encoding",
                 "golden_features",
@@ -238,6 +240,11 @@ class TimeController:
 
             tt /= tune_algs_cnt  # give time equally for each algorithm
             tt /= k_folds  # time is per learner (per fold)
+            return tt
+        if fit_level == "optuna_search":
+            tt = self.time_should_use(fit_level)
+            tt /= tune_algs_cnt
+            tt /= k_folds
             return tt
 
         if "hill_climbing" in fit_level:

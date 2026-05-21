@@ -19,3 +19,9 @@ class NotTrainedException(Exception):
     def __init__(self, message):
         super(NotTrainedException, self).__init__(message)
         logger.debug(message)
+
+
+class TrialPrunedException(Exception):
+    def __init__(self, message):
+        super(TrialPrunedException, self).__init__(message)
+        logger.debug(message)

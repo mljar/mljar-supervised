@@ -73,8 +73,13 @@ class AutoML(BaseAutoML):
         kmeans_features: Union[Literal["auto"], bool] = "auto",
         mix_encoding: Union[Literal["auto"], bool] = "auto",
         max_single_prediction_time: Optional[Union[int, float]] = None,
+        optuna_search: bool = True,
         optuna_time_budget: Optional[int] = None,
         optuna_init_params: dict = {},
+        optuna_search_trials: Optional[int] = None,
+        optuna_search_warmup_trials: Optional[int] = None,
+        optuna_search_prune_after_first_fold: Optional[bool] = None,
+        optuna_search_first_fold_margin: Optional[Union[int, float]] = None,
         optuna_verbose: bool = True,
         fairness_metric: str = "auto",
         fairness_threshold: Union[Literal["auto"], float] = "auto",
@@ -237,6 +242,9 @@ class AutoML(BaseAutoML):
                 Ideal for creating ML pipelines used as REST API. Time is in seconds. By default (`max_single_prediction_time=None`) models are not optimized for fast predictions,
                 except the mode `Perform`. For the mode `Perform` the default is `0.5` seconds.
 
+            optuna_search (boolean): Enable `optuna_search` step in `mode="Compete"`. Set to `True` by default.
+                If set to `False`, `mode="Compete"` will use previous `not_so_random` and `hill_climbing` optimization flow.
+
             optuna_time_budget (int): The time in seconds which should be used by Optuna to tune each algorithm. It is time for tuning single algorithm.
                 If you select two algorithms: Xgboost and CatBoost, and set optuna_time_budget=1000, then Xgboost will be tuned for 1000 seconds and CatBoost will be tuned for 1000 seconds.
                 What is more, the tuning is made for each data type, for example for raw data and for data with inserted Golden Features.
@@ -244,6 +252,19 @@ class AutoML(BaseAutoML):
 
             optuna_init_params (dict): If you have already tuned parameters from Optuna you can reuse them by setting this parameter.
                 This parameter is only used when `mode="Optuna"`. The dict should have structure and params as specified in the MLJAR AutoML .
+
+            optuna_search_trials (int): Number of Optuna trials per algorithm in `mode="Compete"` `optuna_search` step.
+                Default value is 50.
+
+            optuna_search_warmup_trials (int): Number of warmup/startup trials for Optuna TPE sampler in `mode="Compete"` `optuna_search` step.
+                Default value is 10.
+
+            optuna_search_prune_after_first_fold (boolean): Whether to prune obviously weak `optuna_search` trials after first fold in `mode="Compete"`.
+                Default value is True.
+
+            optuna_search_first_fold_margin (float): Relative margin used in first-fold pruning in `mode="Compete"`.
+                Trial is pruned when first-fold loss is greater than: `best_loss + margin * abs(best_loss)`.
+                Default value is 0.1.
 
             optuna_verbose (boolean): If true the Optuna tuning details are displayed. Set to `True` by default.
 
@@ -391,8 +412,15 @@ class AutoML(BaseAutoML):
         self.kmeans_features = kmeans_features
         self.mix_encoding = mix_encoding
         self.max_single_prediction_time = max_single_prediction_time
+        self.optuna_search = optuna_search
         self.optuna_time_budget = optuna_time_budget
         self.optuna_init_params = optuna_init_params
+        self.optuna_search_trials = optuna_search_trials
+        self.optuna_search_warmup_trials = optuna_search_warmup_trials
+        self.optuna_search_prune_after_first_fold = (
+            optuna_search_prune_after_first_fold
+        )
+        self.optuna_search_first_fold_margin = optuna_search_first_fold_margin
         self.optuna_verbose = optuna_verbose
         self.fairness_metric = fairness_metric
         self.fairness_threshold = fairness_threshold

@@ -11,7 +11,7 @@ X = df[df.columns[:-1]]
 y = df["y"]
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25)
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.25, random_state=13)
 
 
 automl = AutoML(
@@ -21,6 +21,8 @@ automl = AutoML(
     hill_climbing_steps=3,
     top_models_to_improve=3,
     train_ensemble=True,
+    mode="Compete",
+    optuna_search=False
 )
 
 automl.fit(X_train, y_train)

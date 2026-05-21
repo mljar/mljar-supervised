@@ -17,7 +17,7 @@ from supervised.algorithms.registry import (
     AlgorithmsRegistry,
 )
 from supervised.callbacks.callback_list import CallbackList
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import AutoMLException, TrialPrunedException
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
@@ -74,6 +74,13 @@ class ModelFramework:
         self._optuna_time_budget = params.get("optuna_time_budget")
         self._optuna_init_params = params.get("optuna_init_params", {})
         self._optuna_verbose = params.get("optuna_verbose", True)
+        self._optuna_search_prune_after_first_fold = params.get(
+            "optuna_search_prune_after_first_fold", False
+        )
+        self._optuna_search_first_fold_margin = params.get(
+            "optuna_search_first_fold_margin", 0.1
+        )
+        self._optuna_search_best_loss = params.get("optuna_search_best_loss")
 
         self._fairness_metric = params.get("fairness_metric")
         self._fairness_threshold = params.get("fairness_threshold")
@@ -327,6 +334,25 @@ class ModelFramework:
                 del validation_data
 
                 gc.collect()
+
+                if (
+                    self._optuna_search_prune_after_first_fold
+                    and repeat == 0
+                    and k_fold == 0
+                    and self._optuna_search_best_loss is not None
+                ):
+                    early_stopping = self.callbacks.get("early_stopping")
+                    fold_loss = None
+                    if early_stopping is not None:
+                        fold_loss = early_stopping.best_loss.get(self.learners[-1].uid)
+                    if fold_loss is not None:
+                        margin = float(self._optuna_search_first_fold_margin)
+                        best_loss = float(self._optuna_search_best_loss)
+                        threshold = best_loss + margin * max(abs(best_loss), 1e-12)
+                        if float(fold_loss) > threshold:
+                            raise TrialPrunedException(
+                                f"Fold-1 loss {np.round(float(fold_loss), 6)} is worse than prune threshold {np.round(float(threshold), 6)}"
+                            )
 
         # end of validation loop
         self.callbacks.on_framework_train_end()

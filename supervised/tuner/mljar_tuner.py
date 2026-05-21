@@ -4,6 +4,7 @@ import logging
 import os
 
 import numpy as np
+import optuna
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 
@@ -84,6 +85,205 @@ class MljarTuner:
         self._underprivileged_groups = underprivileged_groups
         self._seed = seed
         self._unique_params_keys = []
+        self._optuna_step_enabled = tuner_params.get("optuna_search", False)
+        self._optuna_trials = int(tuner_params.get("optuna_trials", 50))
+        self._optuna_warmup_trials = int(tuner_params.get("optuna_warmup_trials", 10))
+        self._optuna_search_prune_after_first_fold = bool(
+            tuner_params.get("optuna_search_prune_after_first_fold", True)
+        )
+        self._optuna_search_first_fold_margin = float(
+            tuner_params.get("optuna_search_first_fold_margin", 0.1)
+        )
+        self._optuna_studies = {}
+        self._optuna_pending = {}
+        self._optuna_generated = {}
+        self._optuna_current_algorithm_idx = 0
+        self._optuna_counter = 0
+
+    def _should_apply_internal_optuna(self):
+        return self._optuna_time_budget is not None and not self._optuna_step_enabled
+
+    def _optuna_model_types(self):
+        order = [
+            "LightGBM",
+            "Xgboost",
+            "CatBoost",
+            "Random Forest",
+            "Extra Trees",
+            "Neural Network",
+            "Nearest Neighbors",
+        ]
+        return [
+            model_type
+            for model_type in order
+            if model_type in self._algorithms and not self.skip_if_rows_cols_limit(model_type)
+        ]
+
+    def _optuna_study(self, model_type):
+        if model_type not in self._optuna_studies:
+            sampler = optuna.samplers.TPESampler(
+                seed=self._seed + len(self._optuna_studies),
+                n_startup_trials=min(self._optuna_warmup_trials, self._optuna_trials),
+            )
+            self._optuna_studies[model_type] = optuna.create_study(
+                direction="minimize", sampler=sampler
+            )
+            self._optuna_generated[model_type] = 0
+        return self._optuna_studies[model_type]
+
+    def _choose_next_optuna_model_type(self):
+        model_types = self._optuna_model_types()
+        if not model_types:
+            return None
+        while self._optuna_current_algorithm_idx < len(model_types):
+            model_type = model_types[self._optuna_current_algorithm_idx]
+            if self._optuna_generated.get(model_type, 0) < self._optuna_trials:
+                return model_type
+            self._optuna_current_algorithm_idx += 1
+        return None
+
+    def _sample_optuna_learner(self, model_type, trial):
+        if model_type == "LightGBM":
+            use_regularization = trial.suggest_categorical(
+                "use_regularization", [True, False]
+            )
+            lambda_l1 = 0.0
+            lambda_l2 = 0.0
+            if use_regularization:
+                lambda_l1 = trial.suggest_float("lambda_l1", 1e-6, 1.0, log=True)
+                lambda_l2 = trial.suggest_float("lambda_l2", 1e-6, 1.0, log=True)
+            return {
+                "learning_rate": trial.suggest_float(
+                    "learning_rate", 0.001, 0.1, log=True
+                ),
+                "num_leaves": trial.suggest_int("num_leaves", 16, 1024),
+                "lambda_l1": lambda_l1,
+                "lambda_l2": lambda_l2,
+                "feature_fraction": trial.suggest_float("feature_fraction", 0.3, 1.0),
+                "bagging_fraction": trial.suggest_float("bagging_fraction", 0.7, 1.0),
+                "bagging_freq": 1,
+                "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 1, 100),
+                "num_boost_round": 1000,
+                "extra_trees": trial.suggest_categorical("extra_trees", [True, False]),
+            }
+        if model_type == "Xgboost":
+            return {
+                "eta": trial.suggest_categorical("eta", [0.0125, 0.025, 0.05, 0.1]),
+                "max_depth": trial.suggest_int("max_depth", 3, 10),
+                "lambda": trial.suggest_float("lambda", 1e-6, 100.0, log=True),
+                "alpha": trial.suggest_float("alpha", 1e-6, 100.0, log=True),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                "min_child_weight": trial.suggest_int("min_child_weight", 1, 64),
+            }
+        if model_type == "CatBoost":
+            return {
+                "learning_rate": trial.suggest_categorical(
+                    "learning_rate", [0.05, 0.1, 0.2]
+                ),
+                "depth": trial.suggest_int("depth", 3, 10),
+                "l2_leaf_reg": trial.suggest_float("l2_leaf_reg", 1e-3, 100.0, log=True),
+                "random_strength": trial.suggest_float("random_strength", 1e-6, 20.0),
+                "rsm": trial.suggest_float("rsm", 0.5, 1.0),
+                "min_data_in_leaf": trial.suggest_int("min_data_in_leaf", 1, 100),
+            }
+        if model_type in ["Random Forest", "Extra Trees"]:
+            params = {
+                "max_depth": trial.suggest_int("max_depth", 4, 40),
+                "min_samples_split": trial.suggest_int("min_samples_split", 2, 64),
+                "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 32),
+                "max_features": trial.suggest_float("max_features", 0.1, 1.0),
+            }
+            if self._ml_task != REGRESSION:
+                params["criterion"] = trial.suggest_categorical(
+                    "criterion", ["gini", "entropy"]
+                )
+            return params
+        if model_type == "Neural Network":
+            return {
+                "dense_1_size": trial.suggest_int("dense_1_size", 16, 256),
+                "dense_2_size": trial.suggest_int("dense_2_size", 8, 128),
+                "learning_rate": trial.suggest_categorical(
+                    "learning_rate", [0.001, 0.003, 0.01, 0.03, 0.1]
+                ),
+                "learning_rate_type": trial.suggest_categorical(
+                    "learning_rate_type", ["constant", "adaptive"]
+                ),
+                "alpha": trial.suggest_float("alpha", 1e-7, 1.0, log=True),
+            }
+        if model_type == "Nearest Neighbors":
+            return {
+                "n_neighbors": trial.suggest_int("n_neighbors", 3, 128),
+                "weights": trial.suggest_categorical("weights", ["uniform", "distance"]),
+            }
+        return {}
+
+    def get_optuna_params(self, models_cnt, current_models):
+        for _ in range(100):
+            model_type = self._choose_next_optuna_model_type()
+            if model_type is None:
+                return []
+
+            study = self._optuna_study(model_type)
+            trial = study.ask()
+
+            params = self._get_model_params(
+                model_type, seed=self._seed + trial.number + 1, params_type="default"
+            )
+            if params is None:
+                return []
+
+            sampled = self._sample_optuna_learner(model_type, trial)
+            params["learner"].update(sampled)
+            params["status"] = "initialized"
+            params["final_loss"] = None
+            params["train_time"] = None
+            params["data_type"] = "original"
+            params["optuna_model_type"] = model_type
+            params["optuna_trial_number"] = trial.number
+            params["optuna_study_direction"] = "minimize"
+            params["optuna_search_prune_after_first_fold"] = (
+                self._optuna_search_prune_after_first_fold
+            )
+            params["optuna_search_first_fold_margin"] = (
+                self._optuna_search_first_fold_margin
+            )
+            try:
+                params["optuna_search_best_loss"] = float(study.best_value)
+            except Exception:
+                params["optuna_search_best_loss"] = None
+            self._optuna_counter += 1
+            model_index = models_cnt + self._optuna_counter
+            suffix = model_type.replace(" ", "")
+            params["name"] = f"{model_index}_Optuna_{suffix}_T{trial.number + 1}"
+
+            unique_params_key = MljarTuner.get_params_key(params)
+            if unique_params_key in self._unique_params_keys:
+                study.tell(trial, state=optuna.trial.TrialState.FAIL)
+                continue
+
+            self._optuna_pending[params["name"]] = {
+                "model_type": model_type,
+                "trial": trial.number,
+            }
+            self._optuna_generated[model_type] = (
+                self._optuna_generated.get(model_type, 0) + 1
+            )
+            return [params]
+        return []
+
+    def update_optuna_trial(self, model_name, objective_value, state):
+        pending = self._optuna_pending.get(model_name)
+        if pending is None:
+            return
+        model_type = pending["model_type"]
+        trial_number = pending["trial"]
+        study = self._optuna_study(model_type)
+        if state == optuna.trial.TrialState.COMPLETE and objective_value is not None:
+            study.tell(trial_number, float(objective_value))
+        else:
+            study.tell(trial_number, state=state)
+        del self._optuna_pending[model_name]
 
     def _apply_categorical_strategies(self):
         if self._data_info is None:
@@ -159,7 +359,9 @@ class MljarTuner:
             for i in range(10):
                 all_steps += [f"unfairness_mitigation_update_{i+1}"]
 
-        if self._start_random_models > 1:
+        if self._optuna_step_enabled:
+            all_steps += ["optuna_search"]
+        elif self._start_random_models > 1:
             all_steps += ["not_so_random"]
 
         categorical_strategies = self._apply_categorical_strategies()
@@ -172,8 +374,9 @@ class MljarTuner:
         if self._features_selection:
             all_steps += ["insert_random_feature"]
             all_steps += ["features_selection"]
-        for i in range(self._hill_climbing_steps):
-            all_steps += [f"hill_climbing_{i+1}"]
+        if not self._optuna_step_enabled:
+            for i in range(self._hill_climbing_steps):
+                all_steps += [f"hill_climbing_{i+1}"]
         if (
             self._boost_on_errors
             and self._fairness_metric is None
@@ -212,6 +415,8 @@ class MljarTuner:
                 return self.fairness_optimization(models, results_path)
             elif step == "not_so_random":
                 return self.get_not_so_random_params(models_cnt, models)
+            elif step == "optuna_search":
+                return self.get_optuna_params(models_cnt, models)
             elif step == "mix_encoding":
                 return self.get_mix_categorical_strategy(models, total_time_limit)
             elif step == "golden_features":
@@ -382,7 +587,7 @@ class MljarTuner:
             params["data_type"] = "fairness"
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -479,7 +684,7 @@ class MljarTuner:
             params["data_type"] = "fairness"
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -581,7 +786,7 @@ class MljarTuner:
             params["data_type"] = "fairness"
             if "model_architecture_json" in params["learner"]:
                 del params["learner"]["model_architecture_json"]
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -653,7 +858,7 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] += "_stacked"
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -785,7 +990,7 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = "original"
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -852,7 +1057,7 @@ class MljarTuner:
                 params["final_loss"] = None
                 params["train_time"] = None
                 params["data_type"] = "original"
-                if self._optuna_time_budget is not None:
+                if self._should_apply_internal_optuna():
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
                     params["optuna_verbose"] = self._optuna_verbose
@@ -1051,7 +1256,7 @@ class MljarTuner:
                 params["final_loss"] = None
                 params["train_time"] = None
                 params["data_type"] = params.get("data_type", "") + "_" + strategy
-                if self._optuna_time_budget is not None:
+                if self._should_apply_internal_optuna():
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
                     params["optuna_verbose"] = self._optuna_verbose
@@ -1156,7 +1361,7 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = params.get("data_type", "") + "_golden_features"
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -1189,7 +1394,7 @@ class MljarTuner:
             params["final_loss"] = None
             params["train_time"] = None
             params["data_type"] = params.get("data_type", "") + "_kmeans_features"
-            if self._optuna_time_budget is not None:
+            if self._should_apply_internal_optuna():
                 params["optuna_time_budget"] = self._optuna_time_budget
                 params["optuna_init_params"] = self._optuna_init_params
                 params["optuna_verbose"] = self._optuna_verbose
@@ -1267,7 +1472,7 @@ class MljarTuner:
         params["explain_level"] = 1
         if "model_architecture_json" in params["learner"]:
             del params["learner"]["model_architecture_json"]
-        if self._optuna_time_budget is not None:
+        if self._should_apply_internal_optuna():
             # dont tune algorithm with random feature inserted
             # algorithm will be tuned after feature selection
             params["optuna_time_budget"] = None
@@ -1326,7 +1531,7 @@ class MljarTuner:
                 params["data_type"] = (
                     params.get("data_type", "") + "_features_selection"
                 )
-                if self._optuna_time_budget is not None:
+                if self._should_apply_internal_optuna():
                     params["optuna_time_budget"] = self._optuna_time_budget
                     params["optuna_init_params"] = self._optuna_init_params
                     params["optuna_verbose"] = self._optuna_verbose
@@ -1488,7 +1693,7 @@ class MljarTuner:
         params["data_type"] = "boost_on_error"
         if "model_architecture_json" in params["learner"]:
             del params["learner"]["model_architecture_json"]
-        if self._optuna_time_budget is not None:
+        if self._should_apply_internal_optuna():
             params["optuna_time_budget"] = self._optuna_time_budget
             params["optuna_init_params"] = self._optuna_init_params
             params["optuna_verbose"] = self._optuna_verbose

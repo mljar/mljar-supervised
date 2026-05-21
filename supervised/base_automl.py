@@ -10,6 +10,7 @@ from copy import deepcopy
 
 import joblib
 import numpy as np
+import optuna
 import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, r2_score
@@ -25,7 +26,7 @@ from supervised.algorithms.registry import (
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
-from supervised.exceptions import AutoMLException, NotTrainedException
+from supervised.exceptions import AutoMLException, NotTrainedException, TrialPrunedException
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 # disable EDA
@@ -106,8 +107,13 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = None
         self._mix_encoding = None
         self._max_single_prediction_time = None
+        self._optuna_search = None
         self._optuna_time_budget = None
         self._optuna_init_params = {}
+        self._optuna_search_trials = None
+        self._optuna_search_warmup_trials = None
+        self._optuna_search_prune_after_first_fold = None
+        self._optuna_search_first_fold_margin = None
         self._fairness_metric = None
         self._fairness_threshold = None
         self._privileged_groups = []
@@ -119,10 +125,28 @@ class BaseAutoML(BaseEstimator, ABC):
     def _get_tuner_params(
         self, start_random_models, hill_climbing_steps, top_models_to_improve
     ):
+        optuna_trials = self._optuna_search_trials
+        if optuna_trials is None:
+            optuna_trials = 50
+        optuna_warmup_trials = self._optuna_search_warmup_trials
+        if optuna_warmup_trials is None:
+            optuna_warmup_trials = 10
+        optuna_warmup_trials = min(optuna_warmup_trials, optuna_trials)
+        prune_after_first_fold = self._optuna_search_prune_after_first_fold
+        if prune_after_first_fold is None:
+            prune_after_first_fold = True
+        first_fold_margin = self._optuna_search_first_fold_margin
+        if first_fold_margin is None:
+            first_fold_margin = 0.1
         return {
             "start_random_models": start_random_models,
             "hill_climbing_steps": hill_climbing_steps,
             "top_models_to_improve": top_models_to_improve,
+            "optuna_search": self._mode == "Compete" and bool(self._optuna_search),
+            "optuna_trials": int(optuna_trials),
+            "optuna_warmup_trials": int(optuna_warmup_trials),
+            "optuna_search_prune_after_first_fold": bool(prune_after_first_fold),
+            "optuna_search_first_fold_margin": float(first_fold_margin),
         }
 
     def _check_can_load(self):
@@ -179,8 +203,23 @@ class BaseAutoML(BaseEstimator, ABC):
             self._max_single_prediction_time = params.get(
                 "max_single_prediction_time", self._max_single_prediction_time
             )
+            self._optuna_search = params.get("optuna_search", self._optuna_search)
             self._n_jobs = params.get("n_jobs", self._n_jobs)
             self._random_state = params.get("random_state", self._random_state)
+            self._optuna_search_trials = params.get(
+                "optuna_search_trials", self._optuna_search_trials
+            )
+            self._optuna_search_warmup_trials = params.get(
+                "optuna_search_warmup_trials", self._optuna_search_warmup_trials
+            )
+            self._optuna_search_prune_after_first_fold = params.get(
+                "optuna_search_prune_after_first_fold",
+                self._optuna_search_prune_after_first_fold,
+            )
+            self._optuna_search_first_fold_margin = params.get(
+                "optuna_search_first_fold_margin",
+                self._optuna_search_first_fold_margin,
+            )
             stacked_models = params.get("stacked")
 
             best_model_name = params.get("best_model")
@@ -448,11 +487,29 @@ class BaseAutoML(BaseEstimator, ABC):
             if mode == "training":
                 oof = m.get_out_of_folds()
             else:
+                train_oof = m.get_out_of_folds()
+                train_prediction_cols = [
+                    c for c in train_oof.columns if "prediction" in c
+                ]
                 oof = m.predict(X)
-                if self._ml_task == BINARY_CLASSIFICATION:
-                    cols = [f for f in oof.columns if "prediction" in f]
-                    if len(cols) == 2:
-                        oof = pd.DataFrame({"prediction": oof[cols[1]]})
+                pred_cols = [c for c in oof.columns if "prediction" in c]
+
+                # Keep stacked feature names stable between training and predict:
+                # use prediction column naming from training out-of-fold schema.
+                if train_prediction_cols:
+                    if len(train_prediction_cols) == 1 and pred_cols:
+                        source_col = pred_cols[0]
+                        if self._ml_task == BINARY_CLASSIFICATION and len(pred_cols) > 1:
+                            source_col = pred_cols[1]
+                        oof = pd.DataFrame(
+                            {train_prediction_cols[0]: oof[source_col]}, index=oof.index
+                        )
+                    elif all(c in oof.columns for c in train_prediction_cols):
+                        oof = oof[train_prediction_cols].copy()
+                    elif pred_cols:
+                        use = min(len(train_prediction_cols), len(pred_cols))
+                        oof = oof[pred_cols[:use]].copy()
+                        oof.columns = train_prediction_cols[:use]
 
             cols = [f for f in oof.columns if "prediction" in f]
             oof = oof[cols]
@@ -1005,9 +1062,18 @@ class BaseAutoML(BaseEstimator, ABC):
         self._kmeans_features = self._get_kmeans_features()
         self._mix_encoding = self._get_mix_encoding()
         self._max_single_prediction_time = self._get_max_single_prediction_time()
+        self._optuna_search = self._get_optuna_search()
         self._optuna_time_budget = self._get_optuna_time_budget()
         self._optuna_init_params = self._get_optuna_init_params()
         self._optuna_verbose = self._get_optuna_verbose()
+        self._optuna_search_trials = self._get_optuna_search_trials()
+        self._optuna_search_warmup_trials = self._get_optuna_search_warmup_trials()
+        self._optuna_search_prune_after_first_fold = (
+            self._get_optuna_search_prune_after_first_fold()
+        )
+        self._optuna_search_first_fold_margin = (
+            self._get_optuna_search_first_fold_margin()
+        )
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
 
@@ -1146,6 +1212,100 @@ class BaseAutoML(BaseEstimator, ABC):
                             " submit a Github issue at https://github.com/mljar/mljar-supervised/issues/new."
                         )
 
+                if step == "optuna_search":
+                    generated_params = self._all_params.get(step, [])
+                    if not self._time_ctrl.enough_time_for_step(self._fit_level):
+                        self.verbose_print(f"Skip {step} because of the time limit.")
+                        continue
+                    self.verbose_print("* Step optuna_search will iteratively check trial models")
+
+                    while True:
+                        params = None
+                        for p in generated_params:
+                            if p.get("status", "") not in [
+                                "trained",
+                                "skipped",
+                                "error",
+                                "pruned",
+                            ]:
+                                params = p
+                                break
+
+                        if params is None:
+                            new_params = tuner.generate_params(
+                                step,
+                                self._models,
+                                self._results_path,
+                                self._stacked_models,
+                                self._total_time_limit,
+                            )
+                            if not new_params:
+                                break
+                            generated_params += new_params
+                            params = new_params[0]
+
+                        try:
+                            trained = self.train_model(params)
+                            params["status"] = "trained" if trained else "skipped"
+                            if trained:
+                                params["final_loss"] = self._models[-1].get_final_loss()
+                                params["train_time"] = self._models[-1].get_train_time()
+                                tuner.update_optuna_trial(
+                                    params.get("name"),
+                                    params.get("final_loss"),
+                                    optuna.trial.TrialState.COMPLETE,
+                                )
+                            else:
+                                params["final_loss"] = None
+                                params["train_time"] = None
+                                tuner.update_optuna_trial(
+                                    params.get("name"),
+                                    None,
+                                    optuna.trial.TrialState.PRUNED,
+                                )
+                                if not self._time_ctrl.enough_time(
+                                    params["learner"]["model_type"], self._fit_level
+                                ):
+                                    self.save_progress(step, generated_params)
+                                    break
+                        except NotTrainedException as e:
+                            params["status"] = "error"
+                            params["final_loss"] = None
+                            params["train_time"] = None
+                            self.verbose_print(params.get("name") + " not trained. " + str(e))
+                            tuner.update_optuna_trial(
+                                params.get("name"),
+                                None,
+                                optuna.trial.TrialState.FAIL,
+                            )
+                        except TrialPrunedException as e:
+                            params["status"] = "pruned"
+                            params["final_loss"] = None
+                            params["train_time"] = None
+                            self.verbose_print(params.get("name") + " pruned. " + str(e))
+                            tuner.update_optuna_trial(
+                                params.get("name"),
+                                None,
+                                optuna.trial.TrialState.PRUNED,
+                            )
+                        except Exception as e:
+                            import traceback
+
+                            self._update_errors_report(
+                                params.get("name"), str(e) + "\n" + traceback.format_exc()
+                            )
+                            params["status"] = "error"
+                            params["final_loss"] = None
+                            params["train_time"] = None
+                            tuner.update_optuna_trial(
+                                params.get("name"),
+                                None,
+                                optuna.trial.TrialState.FAIL,
+                            )
+
+                        self.save_progress(step, generated_params)
+                    continue
+
                 generated_params = []
                 if step in self._all_params:
                     generated_params = self._all_params[step]
@@ -1175,7 +1335,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
 
                 for params in generated_params:
-                    if params.get("status", "") in ["trained", "skipped", "error"]:
+                    if params.get("status", "") in [
+                        "trained",
+                        "skipped",
+                        "error",
+                        "pruned",
+                    ]:
                         self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
 
@@ -1188,8 +1353,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         else:
                             trained = self.train_model(params)
                         params["status"] = "trained" if trained else "skipped"
-                        params["final_loss"] = self._models[-1].get_final_loss()
-                        params["train_time"] = self._models[-1].get_train_time()
+                        if trained:
+                            params["final_loss"] = self._models[-1].get_final_loss()
+                            params["train_time"] = self._models[-1].get_train_time()
+                        else:
+                            params["final_loss"] = None
+                            params["train_time"] = None
 
                         if (
                             self._adjust_validation
@@ -1203,6 +1372,9 @@ class BaseAutoML(BaseEstimator, ABC):
                         self.verbose_print(
                             params.get("name") + " not trained. " + str(e)
                         )
+                    except TrialPrunedException as e:
+                        params["status"] = "pruned"
+                        self.verbose_print(params.get("name") + " pruned. " + str(e))
                     except Exception as e:
                         import traceback
 
@@ -1352,8 +1524,13 @@ class BaseAutoML(BaseEstimator, ABC):
                 "kmeans_features": self._kmeans_features,
                 "mix_encoding": self._mix_encoding,
                 "max_single_prediction_time": self._max_single_prediction_time,
+                "optuna_search": self._optuna_search,
                 "n_jobs": self._n_jobs,
                 "random_state": self._random_state,
+                "optuna_search_trials": self._optuna_search_trials,
+                "optuna_search_warmup_trials": self._optuna_search_warmup_trials,
+                "optuna_search_prune_after_first_fold": self._optuna_search_prune_after_first_fold,
+                "optuna_search_first_fold_margin": self._optuna_search_first_fold_margin,
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
             }
@@ -1896,6 +2073,13 @@ class BaseAutoML(BaseEstimator, ABC):
         else:
             return deepcopy(self.max_single_prediction_time)
 
+    def _get_optuna_search(self):
+        """Gets the current optuna_search"""
+        self._validate_optuna_search()
+        if self._get_mode() != "Compete":
+            return False
+        return deepcopy(self.optuna_search)
+
     def _get_optuna_time_budget(self):
         """Gets the current optuna_time_budget"""
         self._validate_optuna_time_budget()
@@ -1925,6 +2109,42 @@ class BaseAutoML(BaseEstimator, ABC):
         if self._get_mode() != "Optuna":
             return True
         return deepcopy(self.optuna_verbose)
+
+    def _get_optuna_search_trials(self):
+        """Gets the current optuna_search_trials"""
+        self._validate_optuna_search_trials()
+        if self._get_mode() != "Compete":
+            return None
+        if self.optuna_search_trials is None:
+            return 50
+        return deepcopy(self.optuna_search_trials)
+
+    def _get_optuna_search_warmup_trials(self):
+        """Gets the current optuna_search_warmup_trials"""
+        self._validate_optuna_search_warmup_trials()
+        if self._get_mode() != "Compete":
+            return None
+        if self.optuna_search_warmup_trials is None:
+            return 10
+        return deepcopy(self.optuna_search_warmup_trials)
+
+    def _get_optuna_search_prune_after_first_fold(self):
+        """Gets the current optuna_search_prune_after_first_fold"""
+        self._validate_optuna_search_prune_after_first_fold()
+        if self._get_mode() != "Compete":
+            return None
+        if self.optuna_search_prune_after_first_fold is None:
+            return True
+        return deepcopy(self.optuna_search_prune_after_first_fold)
+
+    def _get_optuna_search_first_fold_margin(self):
+        """Gets the current optuna_search_first_fold_margin"""
+        self._validate_optuna_search_first_fold_margin()
+        if self._get_mode() != "Compete":
+            return None
+        if self.optuna_search_first_fold_margin is None:
+            return 0.1
+        return deepcopy(self.optuna_search_first_fold_margin)
 
     def _get_n_jobs(self):
         """Gets the current n_jobs"""
@@ -2148,6 +2368,10 @@ class BaseAutoML(BaseEstimator, ABC):
             self.max_single_prediction_time, "max_single_prediction_time"
         )
 
+    def _validate_optuna_search(self):
+        """Validates optuna_search parameter"""
+        check_bool(self.optuna_search, "optuna_search")
+
     def _validate_optuna_time_budget(self):
         """Validates optuna_time_budget parameter"""
         if self.optuna_time_budget is None:
@@ -2168,6 +2392,47 @@ class BaseAutoML(BaseEstimator, ABC):
         if self.optuna_verbose is None:
             return
         check_bool(self.optuna_verbose, "optuna_verbose")
+
+    def _validate_optuna_search_trials(self):
+        """Validates optuna_search_trials parameter"""
+        if self.optuna_search_trials is None:
+            return
+        check_greater_than_zero_integer(
+            self.optuna_search_trials, "optuna_search_trials"
+        )
+
+    def _validate_optuna_search_warmup_trials(self):
+        """Validates optuna_search_warmup_trials parameter"""
+        if self.optuna_search_warmup_trials is None:
+            return
+        check_positive_integer(
+            self.optuna_search_warmup_trials, "optuna_search_warmup_trials"
+        )
+
+    def _validate_optuna_search_prune_after_first_fold(self):
+        """Validates optuna_search_prune_after_first_fold parameter"""
+        if self.optuna_search_prune_after_first_fold is None:
+            return
+        check_bool(
+            self.optuna_search_prune_after_first_fold,
+            "optuna_search_prune_after_first_fold",
+        )
+
+    def _validate_optuna_search_first_fold_margin(self):
+        """Validates optuna_search_first_fold_margin parameter"""
+        if self.optuna_search_first_fold_margin is None:
+            return
+        if not (
+            isinstance(self.optuna_search_first_fold_margin, int)
+            or isinstance(self.optuna_search_first_fold_margin, float)
+        ):
+            raise ValueError(
+                f"'optuna_search_first_fold_margin' must be an integer or float, got '{type(self.optuna_search_first_fold_margin)}'."
+            )
+        if self.optuna_search_first_fold_margin < 0:
+            raise ValueError(
+                f"'optuna_search_first_fold_margin' must be equal or greater than zero, got '{self.optuna_search_first_fold_margin}'."
+            )
 
     def _validate_n_jobs(self):
         """Validates mix_encoding parameter"""
