@@ -14,8 +14,6 @@ def app_support_source():
         from functools import lru_cache
         from pathlib import Path
 
-        import matplotlib.pyplot as plt
-        import numpy as np
         import pandas as pd
 
         from supervised import AutoML
@@ -40,6 +38,18 @@ def app_support_source():
 
         def feature_schema():
             return manifest().get("feature_schema", [])
+
+
+        def _get_matplotlib_pyplot():
+            import matplotlib.pyplot as plt
+
+            return plt
+
+
+        def _get_numpy():
+            import numpy as np
+
+            return np
 
 
         def ensure_automl_runtime(manifest_payload):
@@ -158,6 +168,8 @@ def app_support_source():
         def plot_probabilities(result):
             if not result["probabilities"]:
                 return
+            plt = _get_matplotlib_pyplot()
+            np = _get_numpy()
             labels = [item["label"] for item in result["probabilities"]]
             values = [item["value"] for item in result["probabilities"]]
             fig, ax = plt.subplots(figsize=(8, max(3, 0.6 * len(labels))))
@@ -176,6 +188,7 @@ def app_support_source():
             gfi = manifest().get("global_feature_importance", {})
             if not gfi.get("available"):
                 return
+            plt = _get_matplotlib_pyplot()
             top = gfi.get("top", [])[:8]
             if not top:
                 return
@@ -210,6 +223,7 @@ def app_support_source():
 
         def plot_batch_summary(scored_df):
             task = manifest()["model_task"]
+            plt = _get_matplotlib_pyplot()
             fig, ax = plt.subplots(figsize=(8, 4))
             if task == "regression":
                 scored_df["prediction"].plot(kind="hist", bins=12, color="#577590", ax=ax)
@@ -229,6 +243,7 @@ def app_support_source():
             counts = distribution.get("counts")
             if not edges or not counts:
                 return
+            plt = _get_matplotlib_pyplot()
             centers = [(edges[i] + edges[i + 1]) / 2.0 for i in range(len(edges) - 1)]
             widths = [edges[i + 1] - edges[i] for i in range(len(edges) - 1)]
             fig, ax = plt.subplots(figsize=(8, 3))
@@ -249,6 +264,7 @@ def app_support_source():
             counts = distribution.get("counts", [])
             if not labels or not counts:
                 return
+            plt = _get_matplotlib_pyplot()
             colors = ["#023047" if str(sample_value) == label else "#8ecae6" for label in labels]
             fig, ax = plt.subplots(figsize=(8, 3))
             ax.bar(labels, counts, color=colors)
@@ -341,7 +357,7 @@ def readme_md():
         3. Start Mercury:
 
         ```bash
-        mercury
+        python -m mercury
         ```
 
         ## Files
@@ -362,20 +378,30 @@ def single_notebook_source():
                 dedent(
                     """
                     import mercury as mr
-                    from app_support import (
-                        create_widget,
-                        feature_schema,
-                        plot_feature_context,
-                        plot_feature_importance,
-                        plot_probabilities,
-                        predict_single,
-                        render_single_dashboard,
-                        widgets_to_dataframe,
-                    )
+                    APP_IMPORT_ERROR = None
+                    try:
+                        from app_support import (
+                            create_widget,
+                            feature_schema,
+                            plot_feature_context,
+                            plot_feature_importance,
+                            plot_probabilities,
+                            predict_single,
+                            render_single_dashboard,
+                            widgets_to_dataframe,
+                        )
+                    except Exception as exc:
+                        APP_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
+                        mr.Markdown(
+                            "## App initialization failed\\n\\n"
+                            "The app could not import its runtime dependencies.\\n\\n"
+                            f"`{APP_IMPORT_ERROR}`"
+                        )
 
-                    mr.Markdown(
-                        "Use the widgets in the sidebar to set a sample and re-run the notebook to inspect the prediction."
-                    )
+                    if APP_IMPORT_ERROR is None:
+                        mr.Markdown(
+                            "Use the widgets in the sidebar to set a sample and re-run the notebook to inspect the prediction."
+                        )
                     """
                 ).strip()
             ),
@@ -383,28 +409,40 @@ def single_notebook_source():
                 dedent(
                     """
                     widgets = {}
-                    for feature in feature_schema():
-                        widgets[feature["name"]] = create_widget(mr, feature)
-                    input_df = widgets_to_dataframe(widgets)
+                    if APP_IMPORT_ERROR is None:
+                        for feature in feature_schema():
+                            widgets[feature["name"]] = create_widget(mr, feature)
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    result = predict_single(input_df)
-                    render_single_dashboard(mr, result)
-                    mr.JSON(result["input"])
-                    mr.Table(result["table"])
+                    input_df = None
+                    if APP_IMPORT_ERROR is None:
+                        input_df = widgets_to_dataframe(widgets)
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    plot_probabilities(result)
-                    plot_feature_context(input_df)
-                    plot_feature_importance()
+                    result = None
+                    if APP_IMPORT_ERROR is None:
+                        result = predict_single(input_df)
+                        render_single_dashboard(mr, result)
+                        mr.JSON(result["input"])
+                        mr.Table(result["table"])
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    if APP_IMPORT_ERROR is None:
+                        plot_probabilities(result)
+                        plot_feature_context(input_df)
+                        plot_feature_importance()
                     """
                 ).strip()
             ),
@@ -423,36 +461,48 @@ def batch_notebook_source():
                 dedent(
                     """
                     import mercury as mr
-                    from app_support import batch_predict, csv_download_payload, plot_batch_summary
+                    APP_IMPORT_ERROR = None
+                    try:
+                        from app_support import batch_predict, csv_download_payload, plot_batch_summary
+                    except Exception as exc:
+                        APP_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
+                        mr.Markdown(
+                            "## App initialization failed\\n\\n"
+                            "The app could not import its runtime dependencies.\\n\\n"
+                            f"`{APP_IMPORT_ERROR}`"
+                        )
 
-                    uploader = mr.UploadFile(
-                        label="Upload CSV for batch scoring",
-                        accept=".csv",
-                        max_file_size="100MB",
-                    )
+                    uploader = None
+                    if APP_IMPORT_ERROR is None:
+                        uploader = mr.UploadFile(
+                            label="Upload CSV for batch scoring",
+                            accept=".csv",
+                            max_file_size="100MB",
+                        )
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    scored_df, error_message = batch_predict(uploader)
-                    if error_message:
-                        mr.Markdown(error_message)
-                    elif scored_df is not None:
-                        mr.Markdown(f"## Scored rows\\n\\n`{len(scored_df)}`")
-                        mr.Table(scored_df.head(20))
-                        mr.Download(
-                            csv_download_payload(scored_df),
-                            filename="predictions.csv",
-                            mime="text/csv",
-                            is_base64=True,
-                            label="Download predictions",
-                            position="inline",
-                        )
-                        plot_batch_summary(scored_df)
-                    else:
-                        mr.Markdown("Upload a CSV file to begin batch prediction.")
+                    if APP_IMPORT_ERROR is None:
+                        scored_df, error_message = batch_predict(uploader)
+                        if error_message:
+                            mr.Markdown(error_message)
+                        elif scored_df is not None:
+                            mr.Markdown(f"## Scored rows\\n\\n`{len(scored_df)}`")
+                            mr.Table(scored_df.head(20))
+                            mr.Download(
+                                csv_download_payload(scored_df),
+                                filename="predictions.csv",
+                                mime="text/csv",
+                                is_base64=True,
+                                label="Download predictions",
+                                position="inline",
+                            )
+                            plot_batch_summary(scored_df)
+                        else:
+                            mr.Markdown("Upload a CSV file to begin batch prediction.")
                     """
                 ).strip()
             ),

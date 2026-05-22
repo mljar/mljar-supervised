@@ -1,9 +1,14 @@
 import io
+import subprocess
 import unittest
 from unittest.mock import MagicMock, patch
 
 from supervised import AutoML
-from supervised.apps.local_runner import _process_failure_message, run_local_app_from_automl
+from supervised.apps.local_runner import (
+    _process_failure_message,
+    _stop_process,
+    run_local_app_from_automl,
+)
 from supervised.exceptions import AutoMLException
 
 
@@ -25,6 +30,7 @@ class AutoMLLocalAppTests(unittest.TestCase):
     ):
         process = MagicMock()
         process.poll.return_value = None
+        process.wait.side_effect = KeyboardInterrupt()
         mock_popen.return_value = process
         model = AutoML(results_path="LocalAppModel")
 
@@ -39,6 +45,7 @@ class AutoMLLocalAppTests(unittest.TestCase):
         self.assertEqual(model._local_app_url, "http://127.0.0.1:9988")
         self.assertIs(model._local_app_process, process)
         self.assertIn("Local app URL: http://127.0.0.1:9988", stdout.getvalue())
+        process.terminate.assert_called_once()
 
     @patch("supervised.apps.local_runner.generate_app", return_value="/tmp/appdir")
     @patch("supervised.apps.local_runner.shutil.which", return_value=None)
@@ -53,3 +60,13 @@ class AutoMLLocalAppTests(unittest.TestCase):
             message = _process_failure_message(2, "/tmp/fake.log")
         self.assertIn("Mercury server exited with code 2.", message)
         self.assertIn("boom", message)
+
+    def test_stop_process_kills_when_terminate_times_out(self):
+        process = MagicMock()
+        process.poll.return_value = None
+        process.wait.side_effect = [subprocess.TimeoutExpired(cmd="mercury", timeout=5), None]
+
+        _stop_process(process)
+
+        process.terminate.assert_called_once()
+        process.kill.assert_called_once()

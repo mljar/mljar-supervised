@@ -2,13 +2,19 @@ import io
 import os
 import shutil
 import unittest
+from urllib import error as urllib_error
 from unittest.mock import patch
 
 from sklearn import datasets
 
 from supervised import AutoML
 from supervised.apps.generator import PUBLISHABLE_WORKSPACE_FILES
-from supervised.apps.publisher import BrowserTokenSession, generate_machine_learning_slug
+from supervised.apps.publisher import (
+    BrowserTokenSession,
+    PlatformApiError,
+    PlatformClient,
+    generate_machine_learning_slug,
+)
 from supervised.exceptions import AutoMLException
 
 
@@ -57,6 +63,16 @@ class FakePublishingClient:
         return None
 
 
+class FailingUploadClient(FakePublishingClient):
+    def upload_bytes(self, upload_url, body):
+        raise PlatformApiError("SignatureDoesNotMatch", status=403, payload={})
+
+
+class FailingCreateSiteClient(FakePublishingClient):
+    def create_site(self, title, subdomain, domain):
+        raise PlatformApiError("http_400", status=400, payload={})
+
+
 class BrowserTokenSessionTests(unittest.TestCase):
     @patch("supervised.apps.publisher.webbrowser.open", return_value=False)
     @patch("supervised.apps.publisher.PlatformClient")
@@ -79,6 +95,61 @@ class BrowserTokenSessionTests(unittest.TestCase):
 
         self.assertEqual(token, "app.jwt.token")
         self.assertIn("/app/desktop-login?session_id=session-1&auth_mode=signin", stdout.getvalue())
+
+
+class PlatformClientTests(unittest.TestCase):
+    @patch("supervised.apps.publisher.http.client.HTTPSConnection")
+    def test_upload_bytes_does_not_force_content_type_header(self, mock_urlopen):
+        connection = mock_urlopen.return_value
+        response = connection.getresponse.return_value
+        response.status = 200
+        response.read.return_value = b""
+
+        client = PlatformClient(base_url="https://platform.mljar.com", token="token")
+        client.upload_bytes("https://upload.example/file", b"body")
+
+        connection.request.assert_called_once_with("PUT", "/file", body=b"body", headers={})
+        connection.close.assert_called_once()
+
+    @patch("supervised.apps.publisher.http.client.HTTPSConnection")
+    def test_upload_bytes_preserves_non_json_http_error_body(self, mock_connection_class):
+        connection = mock_connection_class.return_value
+        response = connection.getresponse.return_value
+        response.status = 403
+        response.read.return_value = b"<Error><Code>SignatureDoesNotMatch</Code></Error>"
+
+        client = PlatformClient(base_url="https://platform.mljar.com", token="token")
+
+        with self.assertRaises(PlatformApiError) as ctx:
+            client.upload_bytes("https://upload.example/file", b"body")
+
+        self.assertIn("SignatureDoesNotMatch", str(ctx.exception))
+        self.assertEqual(
+            ctx.exception.payload.get("raw_body"),
+            "<Error><Code>SignatureDoesNotMatch</Code></Error>",
+        )
+        connection.close.assert_called_once()
+
+    @patch("supervised.apps.publisher.urllib_request.urlopen")
+    def test_request_preserves_non_json_http_error_body(self, mock_urlopen):
+        mock_urlopen.side_effect = urllib_error.HTTPError(
+            url="https://platform.mljar.com/api/sites/",
+            code=403,
+            msg="Forbidden",
+            hdrs=None,
+            fp=io.BytesIO(b"<Error><Code>SignatureDoesNotMatch</Code></Error>"),
+        )
+
+        client = PlatformClient(base_url="https://platform.mljar.com", token="token")
+
+        with self.assertRaises(PlatformApiError) as ctx:
+            client._request("GET", "/api/sites/")
+
+        self.assertIn("SignatureDoesNotMatch", str(ctx.exception))
+        self.assertEqual(
+            ctx.exception.payload.get("raw_body"),
+            "<Error><Code>SignatureDoesNotMatch</Code></Error>",
+        )
 
 
 class AutoMLPublishAppTests(unittest.TestCase):
@@ -116,7 +187,9 @@ class AutoMLPublishAppTests(unittest.TestCase):
     ):
         model = self._trained_model()
 
-        url = model.publish_app(open_browser=False)
+        stdout = io.StringIO()
+        with patch("sys.stdout", stdout):
+            url = model.publish_app(open_browser=False)
 
         self.assertEqual(url, "https://feature-lab.ismvp.org")
         self.assertIsNotNone(FakePublishingClient.created_site)
@@ -126,6 +199,59 @@ class AutoMLPublishAppTests(unittest.TestCase):
             sorted(PUBLISHABLE_WORKSPACE_FILES),
         )
         self.assertEqual(len(FakePublishingClient.upload_calls), len(PUBLISHABLE_WORKSPACE_FILES))
+        output = stdout.getvalue()
+        self.assertIn("Start app publish", output)
+        self.assertIn("Creating app workspace", output)
+        self.assertIn("Signing in to MLJAR platform", output)
+        self.assertIn("Creating app URL", output)
+        self.assertIn("Created app URL: https://feature-lab.ismvp.org", output)
+        self.assertIn("Uploading file: predict_single.ipynb", output)
+        self.assertIn("Finished. You can access your app at: https://feature-lab.ismvp.org", output)
+
+    @patch("supervised.apps.publisher.generate_machine_learning_slug", return_value="feature-lab")
+    @patch("supervised.apps.publisher.PlatformClient", FakePublishingClient)
+    @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
+    def test_publish_app_overwrites_default_workspace_if_it_exists(
+        self, _mock_authenticate, _mock_slug
+    ):
+        model = self._trained_model()
+        os.makedirs(self.app_dir)
+        stale_file = os.path.join(self.app_dir, "stale.txt")
+        with open(stale_file, "w", encoding="utf-8") as fout:
+            fout.write("stale")
+
+        with patch("sys.stdout", new_callable=io.StringIO):
+            url = model.publish_app(open_browser=False)
+
+        self.assertEqual(url, "https://feature-lab.ismvp.org")
+        self.assertFalse(os.path.exists(stale_file))
+        self.assertTrue(FakePublishingClient.registered_calls)
+
+    @patch("supervised.apps.publisher.generate_machine_learning_slug", return_value="feature-lab")
+    @patch("supervised.apps.publisher.PlatformClient", FakePublishingClient)
+    @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
+    def test_publish_app_saves_and_prints_last_successful_url(
+        self, _mock_authenticate, _mock_slug
+    ):
+        model = self._trained_model()
+
+        first_stdout = io.StringIO()
+        with patch("sys.stdout", first_stdout):
+            first_url = model.publish_app(open_browser=False)
+
+        self.assertEqual(first_url, "https://feature-lab.ismvp.org")
+        state_path = os.path.join(self.automl_dir, "publish_app_state.json")
+        self.assertTrue(os.path.exists(state_path))
+        with open(state_path, "r", encoding="utf-8") as fin:
+            state = json.load(fin)
+        self.assertEqual(state.get("last_published_url"), first_url)
+
+        second_stdout = io.StringIO()
+        with patch("sys.stdout", second_stdout):
+            second_url = model.publish_app(open_browser=False)
+
+        self.assertEqual(second_url, first_url)
+        self.assertIn(f"Last published app URL: {first_url}", second_stdout.getvalue())
 
     @patch("supervised.apps.publisher.PlatformClient", FakePublishingClient)
     @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
@@ -141,7 +267,9 @@ class AutoMLPublishAppTests(unittest.TestCase):
         ]
         model = self._trained_model()
 
-        url = model.publish_app(url="https://model-lab.ismvp.org", open_browser=False)
+        stdout = io.StringIO()
+        with patch("sys.stdout", stdout):
+            url = model.publish_app(url="https://model-lab.ismvp.org", open_browser=False)
 
         self.assertEqual(url, "https://model-lab.ismvp.org")
         self.assertIsNone(FakePublishingClient.created_site)
@@ -150,13 +278,58 @@ class AutoMLPublishAppTests(unittest.TestCase):
             {site_id for site_id, _, _ in FakePublishingClient.registered_calls},
             {303},
         )
+        output = stdout.getvalue()
+        self.assertIn("Checking existing app URL: https://model-lab.ismvp.org", output)
+        self.assertIn("Using app URL: https://model-lab.ismvp.org", output)
 
     @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
     def test_publish_app_raises_when_target_url_not_found(self, _mock_authenticate):
         model = self._trained_model()
         with patch("supervised.apps.publisher.PlatformClient", FakePublishingClient):
-            with self.assertRaises(AutoMLException):
-                model.publish_app(url="https://missing.ismvp.org", open_browser=False)
+            stdout = io.StringIO()
+            with patch("sys.stdout", stdout):
+                url = model.publish_app(url="https://missing.ismvp.org", open_browser=False)
+        self.assertIsNone(url)
+        self.assertIn("Publish app failed:", stdout.getvalue())
+        self.assertIn("Could not find Mercury app", stdout.getvalue())
+
+    @patch("supervised.apps.publisher.generate_machine_learning_slug", return_value="feature-lab")
+    @patch("supervised.apps.publisher.PlatformClient", FailingUploadClient)
+    @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
+    def test_publish_app_reports_filename_when_upload_fails(
+        self, _mock_authenticate, _mock_slug
+    ):
+        model = self._trained_model()
+
+        stdout = io.StringIO()
+        with patch("sys.stdout", stdout):
+            url = model.publish_app(open_browser=False)
+
+        self.assertIsNone(url)
+        message = stdout.getvalue()
+        self.assertIn("Publish app failed:", message)
+        self.assertIn("Failed to upload", message)
+        self.assertIn("predict_single.ipynb", message)
+        self.assertIn("SignatureDoesNotMatch", message)
+
+    @patch("supervised.apps.publisher.generate_machine_learning_slug", return_value="feature-lab")
+    @patch("supervised.apps.publisher.PlatformClient", FailingCreateSiteClient)
+    @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
+    def test_publish_app_reports_create_site_context_for_opaque_bad_request(
+        self, _mock_authenticate, _mock_slug
+    ):
+        model = self._trained_model()
+
+        stdout = io.StringIO()
+        with patch("sys.stdout", stdout):
+            url = model.publish_app(open_browser=False)
+
+        self.assertIsNone(url)
+        message = stdout.getvalue()
+        self.assertIn("Publish app failed:", message)
+        self.assertIn("https://feature-lab.ismvp.org", message)
+        self.assertIn("The platform rejected the app creation request.", message)
+        self.assertIn("account limits, permissions, or invalid app settings", message)
 
     def test_publish_app_raises_when_model_not_trained(self):
         model = AutoML(
@@ -166,10 +339,14 @@ class AutoMLPublishAppTests(unittest.TestCase):
             random_state=1,
             results_path=self.automl_dir,
         )
-        with self.assertRaises(AutoMLException):
-            model.publish_app(open_browser=False)
+        stdout = io.StringIO()
+        with patch("sys.stdout", stdout):
+            url = model.publish_app(open_browser=False)
+        self.assertIsNone(url)
+        self.assertIn("Publish app failed:", stdout.getvalue())
+        self.assertIn("Please call `fit()` first.", stdout.getvalue())
 
     def test_generate_machine_learning_slug_is_readable(self):
         slug = generate_machine_learning_slug(existing_slugs={"boost-lab"})
-        self.assertRegex(slug, r"^[a-z0-9]+-[a-z0-9]+(?:-[a-f0-9]{4})?$")
+        self.assertRegex(slug, r"^[a-z0-9]+-[a-z0-9]+-[a-f0-9]{4}$")
         self.assertNotEqual(slug, "boost-lab")

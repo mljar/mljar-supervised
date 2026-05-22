@@ -1,5 +1,4 @@
 import os
-import shlex
 import shutil
 import socket
 import subprocess
@@ -47,7 +46,7 @@ def run_local_app_from_automl(automl):
     print(f"Local app URL: {url}")
     automl._local_app_process = process
     automl._local_app_url = url
-    return url
+    return _wait_for_local_app_shutdown(process, log_path, url)
 
 
 def _get_free_port():
@@ -83,6 +82,30 @@ def _process_failure_message(returncode, log_path):
     if tail:
         message += f" Last log output:\n{tail}"
     return message
+
+
+def _wait_for_local_app_shutdown(process, log_path, url):
+    try:
+        returncode = process.wait()
+    except KeyboardInterrupt:
+        _stop_process(process)
+        return url
+
+    if returncode not in (None, 0):
+        raise AutoMLException(_process_failure_message(returncode, log_path))
+    return url
+
+
+def _stop_process(process, timeout=5):
+    if process.poll() is not None:
+        return
+
+    process.terminate()
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
 
 
 def _read_log_tail(log_path, max_chars=2000):

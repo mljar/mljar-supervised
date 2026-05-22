@@ -1,8 +1,8 @@
+import importlib
 import json
 import os
 import shutil
 import shlex
-import shutil as shutil_lib
 import tempfile
 import zipfile
 
@@ -30,7 +30,7 @@ PUBLISHABLE_WORKSPACE_FILES = (
 )
 
 
-def generate_app(automl, path=None, overwrite=False, title=None, verbose=False):
+def generate_app(automl, path=None, overwrite=False, title=None, verbose=True):
     results_path = automl._get_results_path()
     _ensure_automl_ready(automl, results_path)
     output_path = _resolve_output_path(results_path, path)
@@ -115,12 +115,16 @@ def _write_text(path, payload):
 
 def _print_verbose_summary(output_path):
     quoted_path = shlex.quote(output_path)
-    mercury_path = shutil_lib.which("mercury")
 
     print(f"App directory: {output_path}")
     print(f"Enter app directory: cd {quoted_path}")
-    if mercury_path is None:
-        print("Install Mercury: pip install -r requirements.txt")
+    try:
+        importlib.import_module("mercury")
+    except ImportError:
+        print(
+            "Mercury is not available in the current Python environment. "
+            "Install it with: pip install -r requirements.txt"
+        )
     print("Start Mercury: mercury")
 
 

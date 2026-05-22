@@ -36,7 +36,8 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
-        output_path = model.app()
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            output_path = model.app()
 
         self.assertEqual(output_path, os.path.abspath(self.app_dir))
         for path in [
@@ -63,6 +64,8 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertEqual(len(manifest["feature_schema"]), iris.data.shape[1])
         self.assertEqual(manifest["python_requires"], ">=3.10")
         self.assertEqual(manifest["automl_bundle"]["archive_name"], "automl.zip")
+        self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", stdout.getvalue())
+        self.assertIn("Start Mercury: mercury", stdout.getvalue())
 
     def test_app_raises_when_output_exists(self):
         model = AutoML(
@@ -104,7 +107,7 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
-        with patch("supervised.apps.generator.shutil_lib.which", return_value="/tmp/mercury"):
+        with patch("supervised.apps.generator.importlib.import_module", return_value=object()):
             with patch("sys.stdout", new_callable=StringIO) as stdout:
                 model.app(verbose=True)
 
@@ -112,9 +115,9 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", output)
         self.assertIn(f"cd {os.path.abspath(self.app_dir)}", output)
         self.assertIn("Start Mercury: mercury", output)
-        self.assertNotIn("Install Mercury:", output)
+        self.assertNotIn("Mercury is not available.", output)
 
-    def test_app_verbose_prints_install_command_when_mercury_missing(self):
+    def test_app_verbose_prints_install_message_when_mercury_import_fails(self):
         model = AutoML(
             algorithms=["Baseline"],
             explain_level=0,
@@ -124,12 +127,19 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
-        with patch("supervised.apps.generator.shutil_lib.which", return_value=None):
+        with patch(
+            "supervised.apps.generator.importlib.import_module",
+            side_effect=ImportError(),
+        ):
             with patch("sys.stdout", new_callable=StringIO) as stdout:
                 model.app(verbose=True)
 
         output = stdout.getvalue()
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", output)
         self.assertIn(f"cd {os.path.abspath(self.app_dir)}", output)
-        self.assertIn("Install Mercury: pip install -r requirements.txt", output)
+        self.assertIn(
+            "Mercury is not available in the current Python environment. "
+            "Install it with: pip install -r requirements.txt",
+            output,
+        )
         self.assertIn("Start Mercury: mercury", output)

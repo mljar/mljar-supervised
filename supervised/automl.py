@@ -538,7 +538,7 @@ class AutoML(BaseAutoML):
     def report_structured(self, format="markdown", model_name=None):
         return self._report_structured(format, model_name)
 
-    def app(self, path=None, overwrite=False, title=None, verbose=False):
+    def app(self, path=None, overwrite=False, title=None, verbose=True):
         from supervised.apps import generate_app
 
         return generate_app(
@@ -553,6 +553,7 @@ class AutoML(BaseAutoML):
         title=None,
         open_browser=True,
         timeout=300,
+        verbose=True,
     ):
         from supervised.apps import publish_app_from_automl
 
@@ -564,6 +565,7 @@ class AutoML(BaseAutoML):
             title=title,
             open_browser=open_browser,
             timeout=timeout,
+            verbose=verbose,
         )
 
     def local_app(self):
