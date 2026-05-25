@@ -1,9 +1,12 @@
 import logging
 import os
 import warnings
+import sklearn
+
 
 import pandas as pd
 from sklearn.inspection import permutation_importance
+from packaging import version
 
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
@@ -23,8 +26,11 @@ def log_loss_eps(y_true, y_pred):
     ll = log_loss(y_true, y_pred)
     return ll
 
+if version.parse(sklearn.__version__) >= version.parse("1.4.0"):
+    log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, response_method="predict_proba")
+else:
+    log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, needs_proba=True)
 
-log_loss_scorer = make_scorer(log_loss_eps, greater_is_better=False, response_method="predict_proba")
 
 
 class PermutationImportance:
