@@ -686,6 +686,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "cols": X.shape[1],
             "target_is_numeric": target_is_numeric,
             "columns_info": columns_and_target_info["columns_info"],
+            "columns_values": self._save_columns_values(X, columns_and_target_info["columns_info"]),
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features_in_,
             "is_sample_weighted": sample_weight is not None,
@@ -700,6 +701,19 @@ class BaseAutoML(BaseEstimator, ABC):
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4, cls=MLJSONEncoder))
+
+    def _save_columns_values(self, X, columns_info):
+        values = {}
+        for col, info in columns_info.items():
+            if "categorical" not in info and "text_transform" not in info:
+                continue
+            non_null = X[col].dropna()
+            if non_null.empty:
+                continue
+            unique_values = pd.Series([str(v) for v in pd.unique(non_null)]).tolist()
+            if "few_categories" in info:
+                values[col] = unique_values[:20]
+        return values
 
     def save_progress(self, step=None, generated_params=None):
         if step is not None and generated_params is not None:

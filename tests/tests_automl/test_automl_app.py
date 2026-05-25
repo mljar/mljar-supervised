@@ -5,6 +5,7 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 
+import pandas as pd
 from sklearn import datasets
 
 from supervised import AutoML
@@ -12,6 +13,8 @@ from supervised.exceptions import AutoMLException
 
 
 iris = datasets.load_iris()
+digits = datasets.load_digits()
+titanic = pd.read_csv("tests/data/Titanic/train.csv")
 
 
 class AutoMLAppTest(unittest.TestCase):
@@ -65,7 +68,10 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertEqual(manifest["python_requires"], ">=3.10")
         self.assertEqual(manifest["automl_bundle"]["archive_name"], "automl.zip")
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", stdout.getvalue())
-        self.assertIn("Start Mercury: mercury", stdout.getvalue())
+        self.assertIn(
+            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            stdout.getvalue(),
+        )
 
     def test_app_raises_when_output_exists(self):
         model = AutoML(
@@ -114,7 +120,10 @@ class AutoMLAppTest(unittest.TestCase):
         output = stdout.getvalue()
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", output)
         self.assertIn(f"cd {os.path.abspath(self.app_dir)}", output)
-        self.assertIn("Start Mercury: mercury", output)
+        self.assertIn(
+            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            output,
+        )
         self.assertNotIn("Mercury is not available.", output)
 
     def test_app_verbose_prints_install_message_when_mercury_import_fails(self):
@@ -142,4 +151,59 @@ class AutoMLAppTest(unittest.TestCase):
             "Install it with: pip install -r requirements.txt",
             output,
         )
-        self.assertIn("Start Mercury: mercury", output)
+        self.assertIn(
+            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            output,
+        )
+
+    def test_app_generates_batch_only_workspace_for_wide_datasets(self):
+        model = AutoML(
+            algorithms=["Baseline"],
+            explain_level=0,
+            verbose=0,
+            random_state=1,
+            results_path=self.automl_dir,
+        )
+        model.fit(digits.data, digits.target)
+
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            output_path = model.app()
+
+        self.assertEqual(output_path, os.path.abspath(self.app_dir))
+        self.assertFalse(os.path.exists(os.path.join(self.app_dir, "predict_single.ipynb")))
+        self.assertTrue(os.path.exists(os.path.join(self.app_dir, "predict_batch.ipynb")))
+
+        with open(os.path.join(self.app_dir, "mljar_app.json"), "r") as fin:
+            manifest = json.load(fin)
+
+        self.assertEqual(manifest["default_notebook"], "predict_batch.ipynb")
+        self.assertEqual(len(manifest["notebooks"]), 1)
+        self.assertEqual(manifest["notebooks"][0]["filename"], "predict_batch.ipynb")
+        self.assertFalse(manifest["supports"]["single_sample"])
+        self.assertGreater(len(manifest["feature_schema"]), 15)
+        output = stdout.getvalue()
+        self.assertIn("Single prediction UI was skipped", output)
+        self.assertIn("Generated app includes batch CSV prediction only.", output)
+
+    def test_app_populates_select_choices_for_categorical_feature(self):
+        model = AutoML(
+            algorithms=["Baseline"],
+            explain_level=0,
+            verbose=0,
+            random_state=1,
+            results_path=self.automl_dir,
+        )
+        X = titanic[titanic.columns[2:]]
+        y = titanic["Survived"]
+        model.fit(X, y)
+
+        with patch("sys.stdout", new_callable=StringIO):
+            model.app()
+
+        with open(os.path.join(self.app_dir, "mljar_app.json"), "r") as fin:
+            manifest = json.load(fin)
+
+        sex_feature = next(feature for feature in manifest["feature_schema"] if feature["name"] == "Sex")
+        self.assertEqual(sex_feature["widget"], "select")
+        self.assertIn("male", sex_feature["choices"])
+        self.assertIn("female", sex_feature["choices"])

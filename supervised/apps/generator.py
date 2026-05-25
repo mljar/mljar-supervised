@@ -93,8 +93,15 @@ def _selected_model_names(automl):
 def _write_workspace(output_path, results_path, manifest, selected_models):
     _create_automl_zip(output_path, results_path, selected_models)
     _write_json(os.path.join(output_path, "mljar_app.json"), manifest)
-    _write_json(os.path.join(output_path, "predict_single.ipynb"), single_notebook_source())
-    _write_json(os.path.join(output_path, "predict_batch.ipynb"), batch_notebook_source())
+    notebook_sources = {
+        "predict_single.ipynb": single_notebook_source(),
+        "predict_batch.ipynb": batch_notebook_source(),
+    }
+    for notebook in manifest.get("notebooks", []):
+        filename = notebook.get("filename")
+        payload = notebook_sources.get(filename)
+        if payload is not None:
+            _write_json(os.path.join(output_path, filename), payload)
     _write_text(os.path.join(output_path, "app_support.py"), app_support_source())
     _write_text(os.path.join(output_path, "config.toml"), config_toml(manifest["title"]))
     _write_text(os.path.join(output_path, "requirements.txt"), requirements_txt())
@@ -115,8 +122,17 @@ def _write_text(path, payload):
 
 def _print_verbose_summary(output_path):
     quoted_path = shlex.quote(output_path)
+    mercury_command = f"mercury --working-dir={quoted_path}"
+    manifest = _load_manifest(output_path)
 
     print(f"App directory: {output_path}")
+    if manifest and not manifest.get("supports", {}).get("single_sample", True):
+        feature_count = len(manifest.get("feature_schema", []))
+        print(
+            "Single prediction UI was skipped because the model has "
+            f"{feature_count} features, which is above the 15-feature limit."
+        )
+        print("Generated app includes batch CSV prediction only.")
     print(f"Enter app directory: cd {quoted_path}")
     try:
         importlib.import_module("mercury")
@@ -125,7 +141,15 @@ def _print_verbose_summary(output_path):
             "Mercury is not available in the current Python environment. "
             "Install it with: pip install -r requirements.txt"
         )
-    print("Start Mercury: mercury")
+    print(f"Start Mercury: {mercury_command}")
+
+
+def _load_manifest(output_path):
+    manifest_path = os.path.join(output_path, "mljar_app.json")
+    if not os.path.exists(manifest_path):
+        return None
+    with open(manifest_path, "r", encoding="utf-8") as fin:
+        return json.load(fin)
 
 
 def _create_automl_zip(output_path, results_path, selected_models):

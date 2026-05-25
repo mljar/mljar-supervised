@@ -23,4 +23,4 @@ print(predictions)
 print(f"Accuracy: {accuracy_score(test['Survived'], predictions)*100.0:.2f}%")
 
 
-automl.publish_app()
+automl.local_app()

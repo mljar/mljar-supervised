@@ -156,32 +156,27 @@ def app_support_source():
 
         def render_single_dashboard(mr, result):
             if result["task"] == "regression":
-                mr.Markdown(f"## Predicted value\\n\\n`{result['prediction']:.6g}`")
+                _ = mr.Indicator(
+                    value=f"{result['prediction']:.6g}",
+                    label="Predicted value",
+                    display_now=True,
+                )
             else:
-                headline = f"## Predicted label\\n\\n`{result['prediction']}`"
+                indicators = [
+                    mr.Indicator(
+                        value=str(result["prediction"]),
+                        label="Predicted label",
+                    )
+                ]
                 if result["probabilities"]:
                     top = max(result["probabilities"], key=lambda item: item["value"])
-                    headline += f"\\n\\nTop probability: `{top['value']:.3f}`"
-                mr.Markdown(headline)
-
-
-        def plot_probabilities(result):
-            if not result["probabilities"]:
-                return
-            plt = _get_matplotlib_pyplot()
-            np = _get_numpy()
-            labels = [item["label"] for item in result["probabilities"]]
-            values = [item["value"] for item in result["probabilities"]]
-            fig, ax = plt.subplots(figsize=(8, max(3, 0.6 * len(labels))))
-            y_pos = np.arange(len(labels))
-            ax.barh(y_pos, values, color="#0b7285")
-            ax.set_yticks(y_pos)
-            ax.set_yticklabels(labels)
-            ax.set_xlim(0.0, 1.0)
-            ax.set_xlabel("Probability")
-            ax.set_title("Class probabilities")
-            plt.tight_layout()
-            plt.show()
+                    indicators.append(
+                        mr.Indicator(
+                            value=f"{top['value']:.3f}",
+                            label="Top probability",
+                        )
+                    )
+                _ = mr.Indicator(indicators, display_now=True)
 
 
         def plot_feature_importance():
@@ -357,7 +352,7 @@ def readme_md():
         3. Start Mercury:
 
         ```bash
-        python -m mercury
+        mercury --working-dir=.
         ```
 
         ## Files
@@ -385,23 +380,22 @@ def single_notebook_source():
                             feature_schema,
                             plot_feature_context,
                             plot_feature_importance,
-                            plot_probabilities,
                             predict_single,
                             render_single_dashboard,
                             widgets_to_dataframe,
                         )
                     except Exception as exc:
                         APP_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
-                        mr.Markdown(
+                        _ = mr.Markdown(
                             "## App initialization failed\\n\\n"
                             "The app could not import its runtime dependencies.\\n\\n"
                             f"`{APP_IMPORT_ERROR}`"
                         )
+                        mr.Stop()
 
-                    if APP_IMPORT_ERROR is None:
-                        mr.Markdown(
-                            "Use the widgets in the sidebar to set a sample and re-run the notebook to inspect the prediction."
-                        )
+                    _ = mr.Markdown(
+                        "Use the widgets in the sidebar to set a sample and re-run the notebook to inspect the prediction."
+                    )
                     """
                 ).strip()
             ),
@@ -409,40 +403,57 @@ def single_notebook_source():
                 dedent(
                     """
                     widgets = {}
-                    if APP_IMPORT_ERROR is None:
-                        for feature in feature_schema():
-                            widgets[feature["name"]] = create_widget(mr, feature)
+                    for feature in feature_schema():
+                        widgets[feature["name"]] = create_widget(mr, feature)
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    input_df = None
-                    if APP_IMPORT_ERROR is None:
-                        input_df = widgets_to_dataframe(widgets)
+                    input_df = widgets_to_dataframe(widgets)
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    result = None
-                    if APP_IMPORT_ERROR is None:
-                        result = predict_single(input_df)
-                        render_single_dashboard(mr, result)
-                        mr.JSON(result["input"])
-                        mr.Table(result["table"])
+                    result = predict_single(input_df)
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    if APP_IMPORT_ERROR is None:
-                        plot_probabilities(result)
-                        plot_feature_context(input_df)
-                        plot_feature_importance()
+                    render_single_dashboard(mr, result)
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    mr.JSON(result["input"])
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    _ = mr.Table(result["table"])
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    plot_feature_context(input_df)
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    plot_feature_importance()
                     """
                 ).strip()
             ),
@@ -466,43 +477,41 @@ def batch_notebook_source():
                         from app_support import batch_predict, csv_download_payload, plot_batch_summary
                     except Exception as exc:
                         APP_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
-                        mr.Markdown(
+                        _ = mr.Markdown(
                             "## App initialization failed\\n\\n"
                             "The app could not import its runtime dependencies.\\n\\n"
                             f"`{APP_IMPORT_ERROR}`"
                         )
+                        mr.Stop()
 
-                    uploader = None
-                    if APP_IMPORT_ERROR is None:
-                        uploader = mr.UploadFile(
-                            label="Upload CSV for batch scoring",
-                            accept=".csv",
-                            max_file_size="100MB",
-                        )
+                    uploader = mr.UploadFile(
+                        label="Upload CSV for batch scoring",
+                        accept=".csv",
+                        max_file_size="100MB",
+                    )
                     """
                 ).strip()
             ),
             code_cell(
                 dedent(
                     """
-                    if APP_IMPORT_ERROR is None:
-                        scored_df, error_message = batch_predict(uploader)
-                        if error_message:
-                            mr.Markdown(error_message)
-                        elif scored_df is not None:
-                            mr.Markdown(f"## Scored rows\\n\\n`{len(scored_df)}`")
-                            mr.Table(scored_df.head(20))
-                            mr.Download(
-                                csv_download_payload(scored_df),
-                                filename="predictions.csv",
-                                mime="text/csv",
-                                is_base64=True,
-                                label="Download predictions",
-                                position="inline",
-                            )
-                            plot_batch_summary(scored_df)
-                        else:
-                            mr.Markdown("Upload a CSV file to begin batch prediction.")
+                    scored_df, error_message = batch_predict(uploader)
+                    if error_message:
+                        _ = mr.Markdown(error_message)
+                    elif scored_df is not None:
+                        _ = mr.Markdown(f"## Scored rows\\n\\n`{len(scored_df)}`")
+                        _ = mr.Table(scored_df.head(20))
+                        mr.Download(
+                            csv_download_payload(scored_df),
+                            filename="predictions.csv",
+                            mime="text/csv",
+                            is_base64=True,
+                            label="Download predictions",
+                            position="inline",
+                        )
+                        plot_batch_summary(scored_df)
+                    else:
+                        _ = mr.Markdown("Upload a CSV file to begin batch prediction.")
                     """
                 ).strip()
             ),

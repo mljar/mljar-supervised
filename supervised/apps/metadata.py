@@ -11,31 +11,45 @@ from supervised.algorithms.registry import (
 )
 from supervised.utils.utils import load_data
 
+SINGLE_SAMPLE_FEATURE_LIMIT = 15
+
 
 def collect_app_metadata(automl, title=None, selected_models=None):
     report = automl.report_structured(format="dict")
     X = _load_training_frame(automl)
-    feature_schema = _build_feature_schema(automl, X)
+    feature_schema = _build_feature_schema(
+        automl,
+        X,
+        automl._data_info.get("columns_values", {}),
+    )
     selected_models = list(selected_models or [])
+    single_sample_available = len(feature_schema) <= SINGLE_SAMPLE_FEATURE_LIMIT
+    notebooks = [
+        {
+            "filename": "predict_batch.ipynb",
+            "kind": "batch_prediction",
+            "title": "Batch Prediction",
+        }
+    ]
+    default_notebook = "predict_batch.ipynb"
+    if single_sample_available:
+        notebooks.insert(
+            0,
+            {
+                "filename": "predict_single.ipynb",
+                "kind": "single_sample",
+                "title": "Single Prediction",
+            },
+        )
+        default_notebook = "predict_single.ipynb"
     return {
         "schema_version": 1,
         "bundle_type": "automl_prediction_bundle",
         "title": title or _default_title(automl),
         "model_task": automl._ml_task,
         "results_dir_name": "automl",
-        "default_notebook": "predict_single.ipynb",
-        "notebooks": [
-            {
-                "filename": "predict_single.ipynb",
-                "kind": "single_sample",
-                "title": "Single Prediction",
-            },
-            {
-                "filename": "predict_batch.ipynb",
-                "kind": "batch_prediction",
-                "title": "Batch Prediction",
-            },
-        ],
+        "default_notebook": default_notebook,
+        "notebooks": notebooks,
         "feature_schema": feature_schema,
         "class_labels": _get_class_labels(automl),
         "global_feature_importance": report.get(
@@ -51,7 +65,7 @@ def collect_app_metadata(automl, title=None, selected_models=None):
             "selected_models": selected_models,
         },
         "supports": {
-            "single_sample": True,
+            "single_sample": single_sample_available,
             "batch_prediction": True,
             "predict_proba": automl._ml_task != REGRESSION,
         },
@@ -81,17 +95,18 @@ def _load_training_frame(automl):
     return X
 
 
-def _build_feature_schema(automl, X):
+def _build_feature_schema(automl, X, columns_values=None):
     columns_info = deepcopy(automl._data_info.get("columns_info", {}))
+    columns_values = columns_values or {}
     feature_schema = []
     for column in automl._data_info.get("columns", []):
         info = columns_info.get(column, [])
         series = X[column] if X is not None and column in X.columns else None
-        feature_schema.append(_build_feature(column, info, series))
+        feature_schema.append(_build_feature(column, info, series, columns_values.get(column)))
     return feature_schema
 
 
-def _build_feature(name, info, series):
+def _build_feature(name, info, series, fallback_values=None):
     kind = _infer_kind(info, series)
     feature = {
         "name": name,
@@ -102,11 +117,11 @@ def _build_feature(name, info, series):
         "default": None,
     }
     if series is None:
-        return _fill_missing_feature_defaults(feature)
+        return _fill_missing_feature_defaults(feature, fallback_values)
 
     non_null = series.dropna()
     if non_null.empty:
-        return _fill_missing_feature_defaults(feature)
+        return _fill_missing_feature_defaults(feature, fallback_values)
 
     if kind == "numeric":
         return _build_numeric_feature(feature, non_null)
@@ -220,7 +235,7 @@ def _build_textual_feature(feature, series):
     return feature
 
 
-def _fill_missing_feature_defaults(feature):
+def _fill_missing_feature_defaults(feature, fallback_values=None):
     if feature["kind"] == "numeric":
         feature.update(
             {
@@ -234,7 +249,14 @@ def _fill_missing_feature_defaults(feature):
     elif feature["kind"] == "boolean":
         feature.update({"dtype": "bool", "default": False, "choices": [False, True]})
     else:
-        feature.update({"dtype": "str", "default": "", "choices": []})
+        choices = [str(v) for v in (fallback_values or [])]
+        feature.update(
+            {
+                "dtype": "str",
+                "default": choices[0] if choices else "",
+                "choices": choices,
+            }
+        )
     return feature
 
 

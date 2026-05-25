@@ -44,6 +44,7 @@ def run_local_app_from_automl(automl):
     _wait_until_ready(url, process, log_path)
     webbrowser.open(url)
     print(f"Local app URL: {url}")
+    print("Press Ctrl+C to stop the local app.")
     automl._local_app_process = process
     automl._local_app_url = url
     return _wait_for_local_app_shutdown(process, log_path, url)

@@ -45,6 +45,7 @@ class AutoMLLocalAppTests(unittest.TestCase):
         self.assertEqual(model._local_app_url, "http://127.0.0.1:9988")
         self.assertIs(model._local_app_process, process)
         self.assertIn("Local app URL: http://127.0.0.1:9988", stdout.getvalue())
+        self.assertIn("Press Ctrl+C to stop the local app.", stdout.getvalue())
         process.terminate.assert_called_once()
 
     @patch("supervised.apps.local_runner.generate_app", return_value="/tmp/appdir")
