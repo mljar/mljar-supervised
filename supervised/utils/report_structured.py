@@ -578,16 +578,6 @@ def _append_fairness_metrics_details(lines, model, heading_level="###"):
         lines.append(f"{heading_level} Fairness metrics for {feature_name} feature")
         lines.append("")
 
-
-def _append_certificate_section(lines, payload, heading_level):
-    certificate_url = (payload or {}).get("certificate_url")
-    if not certificate_url:
-        return
-    lines.append(f"{heading_level} Fairness Certificate")
-    lines.append("")
-    lines.append(f"[View and download fairness certificate]({certificate_url})")
-    lines.append("")
-
         _append_split_table(lines, "Fairness group metrics", values.get("metrics"))
         _append_split_table(lines, "Fairness summary statistics", values.get("stats"))
 
@@ -620,6 +610,16 @@ def _append_certificate_section(lines, payload, heading_level):
             if privileged_value is not None:
                 lines.append(f"Privileged value is {privileged_value}.")
         lines.append("")
+
+
+def _append_certificate_section(lines, payload, heading_level):
+    certificate_url = (payload or {}).get("certificate_url")
+    if not certificate_url:
+        return
+    lines.append(f"{heading_level} Fairness Certificate")
+    lines.append("")
+    lines.append(f"[View and download fairness certificate]({certificate_url})")
+    lines.append("")
 
 
 def _find_model(models, model_name):
