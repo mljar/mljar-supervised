@@ -3,5 +3,5 @@ black
 pytest-cov
 coveralls
 mkdocs-material==5.5.12
-Pygments==2.6.1
+Pygments==2.20.0
 mkdocstrings
