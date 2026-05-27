@@ -38,7 +38,7 @@ I add `vsx` flags to see what's going on.
 
 ## Documentation :scroll:
 
-The project documentation is on GitHub at [mljar/docs](https://github.com/mljar/docs) repository. Deployed docs are available at [https://supervised.mljar.com](https://supervised.mljar.com).
+The project documentation source is in this repository under `docs/`. Deployed docs are available at [https://supervised.mljar.com](https://supervised.mljar.com).
 
 ## Contributor License Agreement :necktie:
 

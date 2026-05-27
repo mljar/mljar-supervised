@@ -1,4 +1,4 @@
-# Classify Titanic passangers
+# Classify Titanic passengers
 
 In this example, I would like to show you how to analyze Titanic dataset with AutoML [`mljar-supervised`](https://github.com/mljar/mljar-supervised). The AutoML will do all the job and let's go through all results.
 
@@ -43,11 +43,11 @@ I will show you step by step what above code produced based on the training data
 
 ## The `Explain` mode
 
-The default `mode` for [`mljar-supervised`](https://github.com/mljar/mljar-suerpvised) is `Explain`, which means that:
+The default `mode` for [`mljar-supervised`](https://github.com/mljar/mljar-supervised) is `Explain`, which means that:
 
 - there will be used `75% / 25%` for train / test split for model training and evaluation,
 - there will be trained following algorithms: `Baseline`, `Decision Tree`, `Linear`, `Random Forest`, `Xgboost`, `Neural Network`, and `Ensemble`,
-- the [full explanations](/features/explain/) will be created.
+- the [full explanations](../features/explain.md) will be created.
 
 All results created during `AutoML` training will be saved to the hard drive. There will be **Markdown report** in the `README.md` file for each model available (no black-boxes!).
 
@@ -80,7 +80,7 @@ The performance is presented in the plots:
 
 ## The `Baseline`
 
-The `Baseline` algorithm is very important during initial analysis. It tells us about [quality of our data](/tutorials/random/) and helps to check if we need Machine Learning to solve this problem. 
+The `Baseline` algorithm is very important during initial analysis. It tells us about the [quality of our data](random.md) and helps to check if we need Machine Learning to solve this problem. 
 
 Let's compute the percentage difference between the best model (`Ensemble`) and the `Baseline`:
 

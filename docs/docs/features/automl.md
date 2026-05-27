@@ -20,7 +20,7 @@ One model is trained for each of the algorithms. By analyzing results of each mo
 - `Baseline` will provide the baseline result without complex ML involved. 
     - `Baseline` returns the most frequent label from the training data for classification tasks.
     - `Baseline` returns the mean of the target from training data for regression tasks.
-    - If further results are much better than `Baseline` results, **it justify the use of Machine Learning**. Take a look at [tutorial with classification of random data](/tutorials/random/).
+    - If further results are much better than `Baseline` results, **it justifies the use of Machine Learning**. Take a look at the [tutorial with classification of random data](../tutorials/random.md).
 - `Decision Tree` will provide results for simple tree (with `max_depth` up to 4). The tree will be visualized with [`dtreeviz`](https://github.com/parrt/dtreeviz) package, so you can easily check in the Markdown report what are the rules in the tree. 
 - `Linear` will provide simple ML model. You can inspect coefficients of the model.
 
@@ -84,7 +84,7 @@ There will be trained:
 
 ## `golden_features`
 
-Golden Features are new features constructed from original data which have great predictive power. Please see the [Golden Features](/features/golden_features/) section in the documentation for more details about how are they constructed. 
+Golden Features are new features constructed from original data which have great predictive power. Please see the [Golden Features](golden_features.md) section in the documentation for more details about how they are constructed. 
 
 The Golden Features are constructed only once during `AutoML` fit. They are saved in `results_path` in `golden_features.json` file.
 
@@ -101,7 +101,7 @@ There is trained `1` model for each algorithm. The hyperparameters used in the m
 
 ## `insert_random_feature`
 
-This step is a first part of Feature Selection procedure. Please refer to the [Features Selection](/features/features_selection/) section in the documentation for details.
+This step is a first part of Feature Selection procedure. Please refer to the [Features Selection](features_selection.md) section in the documentation for details.
 
 During this step:
 
@@ -116,7 +116,7 @@ During this step:
 
 ## `features_selection`
 
-This step is a second part of Feature Selection procedure. Please refer to the [Features Selection](/features/features_selection/) section in the documentation for details.
+This step is a second part of Feature Selection procedure. Please refer to the [Features Selection](features_selection.md) section in the documentation for details.
 
 In this step:
 
@@ -182,4 +182,3 @@ During `ensemble_stacked` all models from previous steps are ensembled (stacked 
 
 !!! info "To skip `ensemble_stacked` step"
     Please set `train_ensemble=False` in the `AutoML` constructor to skip `ensemble` step.
-

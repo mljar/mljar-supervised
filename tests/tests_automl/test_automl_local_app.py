@@ -30,7 +30,7 @@ class AutoMLLocalAppTests(unittest.TestCase):
     ):
         process = MagicMock()
         process.poll.return_value = None
-        process.wait.side_effect = KeyboardInterrupt()
+        process.wait.side_effect = [KeyboardInterrupt(), None]
         mock_popen.return_value = process
         model = AutoML(results_path="LocalAppModel")
 

@@ -54,7 +54,7 @@ There are 3 built-in modes available in `AutoML`:
 
 ## Custom modes
 
-User can define his own modes by setting the parameters in `AutoML` constructor ([`AutoML` API](/api)).
+User can define custom modes by setting the parameters in the `AutoML` constructor ([`AutoML` API](../api.md)).
 
 Example setting:
 

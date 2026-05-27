@@ -38,4 +38,4 @@ df["predictions"] = automl.predict(X)
 
 The example report with fairness metrics reported for each model generated automatically by AutoML:
 
-![Fairness report](/images/regression-fairness-report.gif)
+![Fairness report](../images/regression-fairness-report.gif)

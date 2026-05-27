@@ -59,8 +59,7 @@ automl.fit(X, y, sensitive_features=sensitive_features)
 
 When using AutoML with fairness aware training for multiclass classification task, fairness metrics are reported for each class value. The AutoML leaderboard with fairness metrics for each class (please open the below image in the new tab for better quality).
 
-![AutoML Leaderboard with fairness metric](/images/multiclass-classification-automl-leaderboard-fairness.png)
+![AutoML Leaderboard with fairness metric](../images/multiclass-classification-automl-leaderboard-fairness.png)
 
 The report generated automatically after AutoML training:
-![Fairness report](/images/multiclass-fairness-report.gif)
-
+![Fairness report](../images/multiclass-fairness-report.gif)

@@ -48,10 +48,10 @@ automl.fit(X_train, y_train, sensitive_features=S_train)
 ```
 
 You should get much more models in the leaderboard:
-![AutoML leaderboard with fairness metrics](/images/binary-classification-automl-leaderboard.png)
+![AutoML leaderboard with fairness metrics](../images/binary-classification-automl-leaderboard.png)
 
 Performance plot vs fairness metric:
-![AutoML performance vs fairness](/images/binary-classification-performance-vs-fairness.png)
+![AutoML performance vs fairness](../images/binary-classification-performance-vs-fairness.png)
 
 ### Change mode 
 
@@ -97,11 +97,10 @@ automl.fit(X_train, y_train, sensitive_features=S_train)
 ```
 
 AutoML leaderboard for training with multiple sensitive features. Please notice that fairness metric is reported for each sensitive feature:
-![AutoML leaderboard for multiple sensitive features](/images/binary-classification-multiple-sensitive-features-leaderboard.png)
+![AutoML leaderboard for multiple sensitive features](../images/binary-classification-multiple-sensitive-features-leaderboard.png)
 
 Models performance (logloss) vs fairness metric on `sex` feature:
-![Performance vs sex fairness](/images/binary-classification-sex.png)
+![Performance vs sex fairness](../images/binary-classification-sex.png)
 
 Models performance (logloss) vs fairness metric on `age` feature:
-![Performance vs age fairness](/images/binary-classification-age.png)
-
+![Performance vs age fairness](../images/binary-classification-age.png)

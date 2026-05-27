@@ -43,21 +43,23 @@ From source code:
 ```
 git clone https://github.com/mljar/mljar-supervised.git
 cd mljar-supervised
-python setup.py install
+pip install .
 ```
 
 Installation for development
 ```
 git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.6
-source venv/bin/activate
+cd mljar-supervised
+python -m venv venv
+. venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
+pip install -e .
 ```
 
 Running in docker with Jupyter notebook:
 ```
-FROM python:3.7-slim-buster
+FROM python:3.12-slim
 RUN apt-get update && apt-get -y update
 RUN apt-get install -y build-essential python3-pip python3-dev
 RUN pip3 -q install pip --upgrade

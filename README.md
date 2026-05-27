@@ -68,7 +68,7 @@ Start quickly, iterate faster, and manage experiments in one place.
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black box, as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
 The `mljar-supervised` will help you with:
- - explaining and understanding your data (Automatic Exploratory Data Analysis),
+ - explaining and understanding your data through model reports, feature importance, and SHAP explanations,
  - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
  - creating Markdown reports from analysis with details about all models (Automatic-Documentation),
  - saving, re-running, and loading the analysis and ML models.

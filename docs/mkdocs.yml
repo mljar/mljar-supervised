@@ -66,7 +66,6 @@ nav:
     - Golden Features: features/golden_features.md
     - Features Selection: features/features_selection.md
     - Algorithms: features/algorithms.md
-    - EDA: features/eda.md
     - Explainability: features/explain.md
     - Stacking Ensemble: features/stacking-ensemble.md
     
@@ -76,7 +75,7 @@ nav:
   - AutoML API: api.md
   - Roadmap: roadmap.md
   - Tutorials:
-    - Classify Titanic Passangers: tutorials/titanic.md
+    - Classify Titanic Passengers: tutorials/titanic.md
     - Classify Random Data: tutorials/random.md
     - Fairness Binary Classification: tutorials/fairness-binary-classification.md
     - Fairness Multiclass Classification: tutorials/fairness-multiclass-classification.md
