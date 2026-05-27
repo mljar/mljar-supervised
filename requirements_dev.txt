@@ -1,7 +1,7 @@
-pytest
+pytest>=9.0.3
 black
 pytest-cov
 coveralls
-mkdocs-material==5.5.12
-Pygments==2.6.1
+mkdocs-material>=9.5.32
+Pygments>=2.20.0
 mkdocstrings
