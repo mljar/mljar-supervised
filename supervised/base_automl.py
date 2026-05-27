@@ -145,7 +145,9 @@ class BaseAutoML(BaseEstimator, ABC):
             self._model_subpaths = params["saved"]
             self._mode = params.get("mode", self._mode)
             self._ml_task = params.get("ml_task", self._ml_task)
-            self._results_path = params.get("results_path", self._results_path)
+            # The loaded directory is the source of truth. Serialized results_path
+            # can be stale or intentionally rewritten for packaged app bundles.
+            self._results_path = path
             self._total_time_limit = params.get(
                 "total_time_limit", self._total_time_limit
             )
@@ -1419,14 +1421,16 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def get_ensemble_models(self, ensemble_name="Ensemble"):
         try:
-            with open(os.path.join(self.results_path, ensemble_name, "ensemble.json")) as file:
+            results_path = self._get_results_path()
+            with open(os.path.join(results_path, ensemble_name, "ensemble.json")) as file:
                 params = json.load(file)
             return [m["model"] for m in params["selected_models"]]
         except Exception as e:
             return []
 
     def models_needed_on_predict(self, required_model_name):
-        with open(os.path.join(self.results_path, "params.json")) as file:
+        results_path = self._get_results_path()
+        with open(os.path.join(results_path, "params.json")) as file:
             params = json.load(file)
         saved_models = params.get("saved", [])
         stacked_models = params.get("stacked", [])

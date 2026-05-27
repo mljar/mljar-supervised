@@ -8,44 +8,47 @@ from supervised.exceptions import AutoMLException
 
 
 class AutoMLModelsNeededForPredictTest(unittest.TestCase):
+    def _write_predict_artifacts(self, tmpdir):
+        params = {
+            "saved": [
+                "model_1",
+                "model_2",
+                "model_3",
+                "unused_model",
+                "Ensemble",
+                "model_4_Stacked",
+                "Stacked_Ensemble",
+            ],
+            "stacked": ["Ensemble", "model_1", "model_2"],
+        }
+        with open(os.path.join(tmpdir, "params.json"), "w") as fout:
+            fout.write(json.dumps(params))
+        os.mkdir(os.path.join(tmpdir, "Ensemble"))
+        with open(os.path.join(tmpdir, "Ensemble", "ensemble.json"), "w") as fout:
+            params = {
+                "selected_models": [
+                    {"model": "model_2"},
+                    {"model": "model_3"},
+                ]
+            }
+            fout.write(json.dumps(params))
+        os.mkdir(os.path.join(tmpdir, "Stacked_Ensemble"))
+        with open(
+            os.path.join(tmpdir, "Stacked_Ensemble", "ensemble.json"), "w"
+        ) as fout:
+            params = {
+                "selected_models": [
+                    {"model": "Ensemble"},
+                    {"model": "model_4_Stacked"},
+                ]
+            }
+            fout.write(json.dumps(params))
+
     # models_needed_on_predict
 
     def test_models_needed_on_predict(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            params = {
-                "saved": [
-                    "model_1",
-                    "model_2",
-                    "model_3",
-                    "unused_model",
-                    "Ensemble",
-                    "model_4_Stacked",
-                    "Stacked_Ensemble",
-                ],
-                "stacked": ["Ensemble", "model_1", "model_2"],
-            }
-            with open(os.path.join(tmpdir, "params.json"), "w") as fout:
-                fout.write(json.dumps(params))
-            os.mkdir(os.path.join(tmpdir, "Ensemble"))
-            with open(os.path.join(tmpdir, "Ensemble", "ensemble.json"), "w") as fout:
-                params = {
-                    "selected_models": [
-                        {"model": "model_2"},
-                        {"model": "model_3"},
-                    ]
-                }
-                fout.write(json.dumps(params))
-            os.mkdir(os.path.join(tmpdir, "Stacked_Ensemble"))
-            with open(
-                os.path.join(tmpdir, "Stacked_Ensemble", "ensemble.json"), "w"
-            ) as fout:
-                params = {
-                    "selected_models": [
-                        {"model": "Ensemble"},
-                        {"model": "model_4_Stacked"},
-                    ]
-                }
-                fout.write(json.dumps(params))
+            self._write_predict_artifacts(tmpdir)
 
             automl = AutoML(results_path=tmpdir)
             with self.assertRaises(AutoMLException) as context:
@@ -76,3 +79,33 @@ class AutoMLModelsNeededForPredictTest(unittest.TestCase):
             self.assertTrue("model_4_Stacked" in l)
             self.assertTrue("Stacked_Ensemble" in l)
             self.assertTrue(len(l) == 6)
+
+    def test_models_needed_on_predict_with_resolved_results_path_only(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self._write_predict_artifacts(tmpdir)
+
+            automl = AutoML()
+            automl._results_path = tmpdir
+
+            l = automl.models_needed_on_predict("Ensemble")
+            self.assertTrue("model_2" in l)
+            self.assertTrue("model_3" in l)
+            self.assertTrue("Ensemble" in l)
+            self.assertTrue(len(l) == 3)
+
+    def test_load_uses_actual_loaded_path_not_serialized_results_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            params = {
+                "saved": [],
+                "results_path": "automl",
+                "fit_level": "finished",
+            }
+            with open(os.path.join(tmpdir, "params.json"), "w") as fout:
+                fout.write(json.dumps(params))
+            with open(os.path.join(tmpdir, "data_info.json"), "w") as fout:
+                fout.write(json.dumps({"n_features": 1}))
+
+            automl = AutoML()
+            automl.load(tmpdir)
+
+            self.assertEqual(automl._results_path, tmpdir)

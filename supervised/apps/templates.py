@@ -432,14 +432,8 @@ def single_notebook_source():
             code_cell(
                 dedent(
                     """
-                    mr.JSON(result["input"])
-                    """
-                ).strip()
-            ),
-            code_cell(
-                dedent(
-                    """
-                    _ = mr.Table(result["table"])
+                    if result["task"] != "regression":
+                        _ = mr.Table(result["table"])
                     """
                 ).strip()
             ),
