@@ -565,6 +565,7 @@ def _append_main_fairness_summary(lines, fairness_summary):
             )
         )
     lines.append("")
+    _append_certificate_section(lines, fairness_summary, heading_level="##")
 
 
 def _append_fairness_metrics_details(lines, model, heading_level="###"):
@@ -576,6 +577,16 @@ def _append_fairness_metrics_details(lines, model, heading_level="###"):
     for feature_name, values in fairness_details.items():
         lines.append(f"{heading_level} Fairness metrics for {feature_name} feature")
         lines.append("")
+
+
+def _append_certificate_section(lines, payload, heading_level):
+    certificate_url = (payload or {}).get("certificate_url")
+    if not certificate_url:
+        return
+    lines.append(f"{heading_level} Fairness Certificate")
+    lines.append("")
+    lines.append(f"[View and download fairness certificate]({certificate_url})")
+    lines.append("")
 
         _append_split_table(lines, "Fairness group metrics", values.get("metrics"))
         _append_split_table(lines, "Fairness summary statistics", values.get("stats"))
@@ -729,6 +740,7 @@ def to_markdown(payload, model_name=None):
         lines.append(tabulate(summary_rows, headers=["Field", "Value"], tablefmt="pipe"))
         lines.append("")
         _append_fairness(lines, selected_model, "## Fairness Summary")
+        _append_certificate_section(lines, selected_model.get("fairness"), heading_level="###")
         _append_hyperparameters(lines, selected_model)
         _append_model_metrics(lines, selected_model)
         _append_feature_importance(lines, selected_model, heading_level="##")

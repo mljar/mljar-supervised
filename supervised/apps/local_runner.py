@@ -27,6 +27,7 @@ def run_local_app_from_automl(automl):
 
     port = _get_free_port()
     url = f"http://{LOCAL_APP_HOST}:{port}"
+    os.makedirs(app_dir, exist_ok=True)
     log_path = os.path.join(app_dir, ".local_app.log")
     with open(log_path, "w", encoding="utf-8") as log_file:
         process = subprocess.Popen(

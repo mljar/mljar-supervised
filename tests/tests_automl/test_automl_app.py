@@ -113,7 +113,12 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
-        with patch("supervised.apps.generator.importlib.import_module", return_value=object()):
+        def import_module(name):
+            if name == "mercury":
+                return object()
+            raise AssertionError(f"Unexpected import_module call for {name}")
+
+        with patch("supervised.apps.generator.importlib.import_module", side_effect=import_module):
             with patch("sys.stdout", new_callable=StringIO) as stdout:
                 model.app(verbose=True)
 
@@ -136,9 +141,14 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
+        def import_module(name):
+            if name == "mercury":
+                raise ImportError("mercury not installed")
+            raise AssertionError(f"Unexpected import_module call for {name}")
+
         with patch(
             "supervised.apps.generator.importlib.import_module",
-            side_effect=ImportError(),
+            side_effect=import_module,
         ):
             with patch("sys.stdout", new_callable=StringIO) as stdout:
                 model.app(verbose=True)
