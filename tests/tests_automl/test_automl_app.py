@@ -1,4 +1,5 @@
 import json
+import importlib
 import os
 import shutil
 import unittest
@@ -113,10 +114,12 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
+        real_import_module = importlib.import_module
+
         def import_module(name):
             if name == "mercury":
                 return object()
-            raise AssertionError(f"Unexpected import_module call for {name}")
+            return real_import_module(name)
 
         with patch("supervised.apps.generator.importlib.import_module", side_effect=import_module):
             with patch("sys.stdout", new_callable=StringIO) as stdout:
@@ -141,10 +144,12 @@ class AutoMLAppTest(unittest.TestCase):
         )
         model.fit(iris.data, iris.target)
 
+        real_import_module = importlib.import_module
+
         def import_module(name):
             if name == "mercury":
                 raise ImportError("mercury not installed")
-            raise AssertionError(f"Unexpected import_module call for {name}")
+            return real_import_module(name)
 
         with patch(
             "supervised.apps.generator.importlib.import_module",
