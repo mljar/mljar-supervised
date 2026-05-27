@@ -58,7 +58,7 @@ The table with models:
 |              | 6_Default_NeuralNetwork_SelectedFeatures         | Neural Network | logloss       |       0.695517 |         4.56 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Random_Data/AutoML_1k6_Default_NeuralNetwork_SelectedFeatures/README.md)         |
 |              | 4_Default_RandomForest_SelectedFeatures          | Random Forest  | logloss       |       0.696178 |         5.78 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Random_Data/AutoML_1k4_Default_RandomForest_SelectedFeatures/README.md)          |
 |              | 5_Default_Xgboost_RandomFeature_SelectedFeatures | Xgboost        | logloss       |       0.686194 |         1    | [Results link](https://github.com/mljar/mljar-examples/tree/master/Random_Data/AutoML_1k5_Default_Xgboost_RandomFeature_SelectedFeatures/README.md) |
-| **the best** | Ensemble                                         | Ensemble       | logloss       |       0.683784 |         0.77 | [Results link](Ensemble/README.md)  
+| **the best** | Ensemble                                         | Ensemble       | logloss       |       0.683784 |         0.77 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Random_Data/AutoML_1k/Ensemble/README.md)  
 
 
 Results plotted:
@@ -120,4 +120,3 @@ Red flags :triangular_flag_on_post: during training Machine Learning models that
 - The percentage difference between the best model and the `Baseline` model is very small (smaller than `5%`).
 - Models are overfitting very fast.
 - All features are dropped during the feature selection procedure.
-

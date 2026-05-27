@@ -410,7 +410,7 @@ class AutoML(BaseAutoML):
         sensitive_features: Optional[
             Union[numpy.ndarray, pandas.Series, pandas.DataFrame]
         ] = None,
-    ):
+    ) -> "AutoML":
         """Fit the AutoML model.
 
         Arguments:
@@ -426,7 +426,7 @@ class AutoML(BaseAutoML):
             sensitive_features (pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
 
         Returns:
-            AutoML object: Returns `self`
+            AutoML: Returns `self`.
         """
         try:
             original_backend = matplotlib.get_backend()
@@ -597,7 +597,7 @@ class AutoML(BaseAutoML):
                 on new data then there is a need to retrain. This value should be set depending on your project needs.
                 Sometimes, 10% is enough, but for some projects, it can be even lower than 1%.
 
-            Returns:
-                boolean: Decides if there is a need to retrain the AutoML.
+        Returns:
+            bool: Decides if there is a need to retrain the AutoML.
         """
         return self._need_retrain(X, y, sample_weight, decrease)
