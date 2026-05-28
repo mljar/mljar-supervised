@@ -62,6 +62,7 @@ class AutoMLAppTest(unittest.TestCase):
             manifest = json.load(fin)
 
         self.assertEqual(manifest["bundle_type"], "automl_prediction_bundle")
+        self.assertEqual(manifest["title"], "MLJAR AutoML")
         self.assertEqual(manifest["default_notebook"], "predict_single.ipynb")
         self.assertEqual(len(manifest["notebooks"]), 2)
         self.assertEqual(manifest["model_task"], "multiclass_classification")

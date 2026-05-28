@@ -154,6 +154,44 @@ def app_support_source():
             return base64.b64encode(csv_data.encode("utf-8")).decode("ascii")
 
 
+        def render_batch_dashboard(mr, scored_df):
+            task = manifest()["model_task"]
+            indicators = [mr.Indicator(value=str(len(scored_df)), label="Scored rows")]
+            if task == "regression":
+                prediction_series = pd.to_numeric(scored_df["prediction"], errors="coerce").dropna()
+                if not prediction_series.empty:
+                    indicators.append(
+                        mr.Indicator(
+                            value=f"{float(prediction_series.mean()):.6g}",
+                            label="Mean prediction",
+                        )
+                    )
+                    indicators.append(
+                        mr.Indicator(
+                            value=f"{float(prediction_series.median()):.6g}",
+                            label="Median prediction",
+                        )
+                    )
+            else:
+                label_counts = scored_df["label"].astype(str).value_counts()
+                if not label_counts.empty:
+                    top_label = str(label_counts.index[0])
+                    top_share = float(label_counts.iloc[0]) / float(len(scored_df))
+                    indicators.append(
+                        mr.Indicator(
+                            value=top_label,
+                            label="Most common label",
+                        )
+                    )
+                    indicators.append(
+                        mr.Indicator(
+                            value=f"{top_share:.1%}",
+                            label="Top label share",
+                        )
+                    )
+            _ = mr.Indicator(indicators, display_now=True)
+
+
         def render_single_dashboard(mr, result):
             if result["task"] == "regression":
                 _ = mr.Indicator(
@@ -468,7 +506,12 @@ def batch_notebook_source():
                     import mercury as mr
                     APP_IMPORT_ERROR = None
                     try:
-                        from app_support import batch_predict, csv_download_payload, plot_batch_summary
+                        from app_support import (
+                            batch_predict,
+                            csv_download_payload,
+                            plot_batch_summary,
+                            render_batch_dashboard,
+                        )
                     except Exception as exc:
                         APP_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
                         _ = mr.Markdown(
@@ -493,8 +536,10 @@ def batch_notebook_source():
                     if error_message:
                         _ = mr.Markdown(error_message)
                     elif scored_df is not None:
-                        _ = mr.Markdown(f"## Scored rows\\n\\n`{len(scored_df)}`")
-                        _ = mr.Table(scored_df.head(20))
+                        _ = mr.Markdown(
+                            "## Batch prediction results\\n\\n"
+                            "Review the scored preview below and download the full predictions CSV."
+                        )
                         mr.Download(
                             csv_download_payload(scored_df),
                             filename="predictions.csv",
@@ -503,9 +548,32 @@ def batch_notebook_source():
                             label="Download predictions",
                             position="inline",
                         )
-                        plot_batch_summary(scored_df)
                     else:
                         _ = mr.Markdown("Upload a CSV file to begin batch prediction.")
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    if scored_df is not None:
+                        render_batch_dashboard(mr, scored_df)
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    if scored_df is not None:
+                        _ = mr.Table(scored_df.head(20))
+                    """
+                ).strip()
+            ),
+            code_cell(
+                dedent(
+                    """
+                    if scored_df is not None:
+                        plot_batch_summary(scored_df)
                     """
                 ).strip()
             ),

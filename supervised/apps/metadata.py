@@ -74,8 +74,7 @@ def collect_app_metadata(automl, title=None, selected_models=None):
 
 
 def _default_title(automl):
-    task = automl._ml_task.replace("_", " ").title() if automl._ml_task else "AutoML"
-    return f"MLJAR AutoML {task} App"
+    return "MLJAR AutoML"
 
 
 def _load_training_frame(automl):
