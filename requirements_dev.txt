@@ -3,7 +3,7 @@ pytest>=9.0.3; python_version >= "3.10"
 black
 pytest-cov
 coveralls
-mkdocs-material>=9.5.32
+mkdocs-material[imaging]>=9.5.32
 Pygments>=2.20.0
 mkdocstrings
 mkdocstrings-python

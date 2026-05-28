@@ -1,3 +1,9 @@
+---
+description: Fairness-aware regression with MLJAR AutoML on the housing dataset, including fairness metrics and generated fairness reports.
+social:
+  cards_layout: default/variant
+---
+
 # Fairness aware AutoML on regression task
 
 Please run the [example script](https://github.com/mljar/mljar-supervised/blob/master/examples/scripts/regression_housing_fairness.py) to train AutoML on Housing dataset with `large_B` as sensitive feature.

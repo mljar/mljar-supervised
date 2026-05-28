@@ -1,3 +1,9 @@
+---
+description: Learn how to use MLJAR AutoML on random data to detect weak signal, compare against the baseline, and recognize overfitting and low-value features.
+social:
+  cards_layout: default/variant
+---
+
 # Run AutoML on random data - seeking signal in the data
 
 Have you ever consider using Machine Learning and wasn't sure about it? Would you like to know when using Machine Learning is justified? Would you like to know how to check if there is a 'signal' in your data? I've trained [AutoML](https://github.com/mljar/mljar-supervised) on random data an present results here to help you get a better ML understanding when to use ML and how good is your data. 

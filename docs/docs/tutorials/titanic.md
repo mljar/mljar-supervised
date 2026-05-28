@@ -1,3 +1,9 @@
+---
+description: End-to-end Titanic classification tutorial with MLJAR AutoML, including training, leaderboard interpretation, explainability, and prediction accuracy.
+social:
+  cards_layout: default/variant
+---
+
 # Classify Titanic passengers
 
 In this example, I would like to show you how to analyze Titanic dataset with AutoML [`mljar-supervised`](https://github.com/mljar/mljar-supervised). The AutoML will do all the job and let's go through all results.

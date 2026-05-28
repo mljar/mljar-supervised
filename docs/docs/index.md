@@ -1,4 +1,10 @@
-# Get started 
+---
+description: Automated machine learning for Python with support for tabular classification and regression, model explainability, fairness-aware learning, and generated Markdown reports.
+social:
+  cards_layout: default
+---
+
+# MLJAR AutoML for Python
 
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
@@ -11,8 +17,9 @@
 [![Downloads](https://pepy.tech/badge/mljar-supervised)](https://pepy.tech/project/mljar-supervised)
 
 
+`mljar-supervised` is an automated machine learning library for Python that works with tabular data. It helps train machine learning models, tune hyperparameters, explain predictions, evaluate fairness, and generate detailed Markdown reports for classification and regression tasks.
 
-The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model).
+The `mljar-supervised` package is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct machine learning models, and perform hyper-parameter tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model).
 
 The `mljar-supervised` will help you with:
 

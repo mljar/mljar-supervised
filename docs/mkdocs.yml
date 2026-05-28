@@ -1,4 +1,9 @@
-site_name: AutoML mljar-supervised 
+site_name: MLJAR AutoML for Python
+site_url: https://supervised.mljar.com/
+site_description: Automated machine learning for Python with model training, explainability, fairness-aware learning, and report generation for tabular data.
+site_author: MLJAR
+docs_dir: docs
+site_dir: site
 
 theme:
     name: material
@@ -35,6 +40,11 @@ markdown_extensions:
 
 plugins:
   - search
+  - social:
+      cards_layout: default
+      cards_layout_options:
+        background_color: "#0f6cbd"
+        color: "#ffffff"
   - mkdocstrings
 
 extra:

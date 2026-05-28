@@ -1,3 +1,9 @@
+---
+description: Fairness-aware multiclass classification with MLJAR AutoML, including per-class fairness metrics and automated fairness reporting.
+social:
+  cards_layout: default/variant
+---
+
 # Fairness aware AutoML on multiclass classification task
 
 Please run the [example script](https://github.com/mljar/mljar-supervised/blob/master/examples/scripts/multi_class_drug_fairness.py) to train AutoML on Drug dataset with `Gender` as sensitive feature.

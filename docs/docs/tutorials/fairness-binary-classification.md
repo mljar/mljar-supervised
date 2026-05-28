@@ -1,3 +1,9 @@
+---
+description: Fairness-aware binary classification with MLJAR AutoML on the Adult dataset, including demographic parity metrics, multiple sensitive features, and fairness-performance tradeoffs.
+social:
+  cards_layout: default/variant
+---
+
 # Fairness aware AutoML on binary classification task
 
 Please run the [example script](https://github.com/mljar/mljar-supervised/blob/master/examples/scripts/binary_classifier_adult_fairness.py) to get example results for binary classification task on Adult dataset with `sex` as sensitive feature.
