@@ -160,10 +160,20 @@ class AutoML(BaseAutoML):
 
                 Example:
 
-                    Cross-validation exmaple:
+                    Cross-validation example:
                     {
                         "validation_type": "kfold",
                         "k_folds": 5,
+                        "shuffle": True,
+                        "stratify": True,
+                        "random_seed": 123
+                    }
+
+                    Repeated k-fold cross-validation example:
+                    {
+                        "validation_type": "kfold",
+                        "k_folds": 5,
+                        "n_repetitions": 3,
                         "shuffle": True,
                         "stratify": True,
                         "random_seed": 123

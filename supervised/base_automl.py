@@ -337,7 +337,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _expected_learners_cnt(self):
         try:
-            repeats = self._validation_strategy.get("repeats", 1)
+            repeats = self._validation_strategy.get(
+                "repeats", self._validation_strategy.get("n_repetitions", 1)
+            )
             folds = self._validation_strategy.get("k_folds", 1)
             return repeats * folds
         except Exception as e:
@@ -961,7 +963,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self.verbose_print("Disable stacking for split validation")
             self._stack_models = False
             self._boost_on_errors = False
-        if "repeats" in self._validation_strategy:
+        if "repeats" in self._validation_strategy or "n_repetitions" in self._validation_strategy:
             if self._stack_models:
                 self.verbose_print("Disable stacking for repeated validation")
             self._stack_models = False
