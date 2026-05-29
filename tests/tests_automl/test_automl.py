@@ -14,10 +14,13 @@ from supervised import AutoML
 from supervised.exceptions import AutoMLException
 
 iris = datasets.load_iris()
-housing = datasets.fetch_california_housing()
-# limit data size for faster tests
-housing.data = housing.data[:500]
-housing.target = housing.target[:500]
+housing = datasets.make_regression(
+    n_samples=500,
+    n_features=8,
+    n_informative=8,
+    noise=5.0,
+    random_state=123,
+)
 breast_cancer = datasets.load_breast_cancer()
 
 
@@ -152,10 +155,10 @@ class AutoMLTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
-        model.fit(housing.data, housing.target)
+        model.fit(housing[0], housing[1])
         with self.assertRaises(AutoMLException) as context:
             # Try to call predict_proba in regression task
-            model.predict_proba(housing.data)
+            model.predict_proba(housing[0])
 
     def test_iris_dataset(self):
         """Tests AutoML in the iris dataset (Multiclass classification)"""
@@ -170,8 +173,8 @@ class AutoMLTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
-        score = model.fit(housing.data, housing.target).score(
-            housing.data, housing.target
+        score = model.fit(housing[0], housing[1]).score(
+            housing[0], housing[1]
         )
         self.assertGreater(score, 0.5)
 

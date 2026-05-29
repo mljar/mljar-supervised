@@ -8,10 +8,13 @@ from sklearn import datasets
 from supervised import AutoML
 
 iris = datasets.load_iris()
-housing = datasets.fetch_california_housing()
-# limit data size for faster tests
-housing.data = housing.data[:500]
-housing.target = housing.target[:500]
+housing = datasets.make_regression(
+    n_samples=500,
+    n_features=8,
+    n_informative=8,
+    noise=5.0,
+    random_state=123,
+)
 breast_cancer = datasets.load_breast_cancer()
 
 
@@ -46,8 +49,8 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
-        score_1 = model.fit(housing.data, housing.target).score(
-            housing.data, housing.target
+        score_1 = model.fit(housing[0], housing[1]).score(
+            housing[0], housing[1]
         )
         self.assertGreater(score_1, 0.5)
 
@@ -55,10 +58,10 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=1, random_state=1, results_path=self.automl_dir
         )
-        sample_weight = np.ones(housing.data.shape[0])
+        sample_weight = np.ones(housing[0].shape[0])
         score_2 = model.fit(
-            housing.data, housing.target, sample_weight=sample_weight
-        ).score(housing.data, housing.target, sample_weight=sample_weight)
+            housing[0], housing[1], sample_weight=sample_weight
+        ).score(housing[0], housing[1], sample_weight=sample_weight)
         assert_almost_equal(score_1, score_2)
 
     def test_breast_cancer_dataset(self):
