@@ -111,6 +111,8 @@ class PreprocessingUtils(object):
     @staticmethod
     def get_most_frequent(x):
         a = x.value_counts()
+        if a.empty:
+            return None
         first = sorted(dict(a).items(), key=lambda x: -x[1])[0]
         return first[0]
 
