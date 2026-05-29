@@ -6,6 +6,8 @@ social:
 
 # API documentation
 
+If you are looking for how trained models are stored and reloaded, see [Save and Load models](features/save-and-load-models.md).
+
 ## `AutoML` class
 
 ::: supervised.automl.AutoML

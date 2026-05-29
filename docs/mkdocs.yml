@@ -73,6 +73,7 @@ nav:
   - Features: 
     - Apps: features/apps.md
     - Preprocessing: features/preprocessing.md
+    - Save and Load models: features/save-and-load-models.md
     - Steps of AutoML: features/automl.md
     - AutoML modes: features/modes.md
     - Golden Features: features/golden_features.md
