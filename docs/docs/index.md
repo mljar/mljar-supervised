@@ -21,6 +21,8 @@ social:
 
 The `mljar-supervised` package is designed to save time for a data scientist :sunglasses:. It abstracts the common way to preprocess the data, construct machine learning models, and perform hyper-parameter tuning to find the best model :trophy:. It is no black-box as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model).
 
+If you want to understand what happens to raw input data before training, see [Preprocessing](features/preprocessing.md).
+
 The `mljar-supervised` will help you with:
 
 - explaining and understanding your data,
