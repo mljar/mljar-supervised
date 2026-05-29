@@ -41,11 +41,12 @@ def time_constraint(env):
 
 
 def xgboost_eval_metric(ml_task, automl_eval_metric):
-    # the mapping is almost the same
     eval_metric_name = automl_eval_metric
     if ml_task == MULTICLASS_CLASSIFICATION:
         if automl_eval_metric == "logloss":
             eval_metric_name = "mlogloss"
+        elif automl_eval_metric in ["f1", "accuracy"]:
+            eval_metric_name = automl_eval_metric  # será manejado como custom_metric
     return eval_metric_name
 
 
