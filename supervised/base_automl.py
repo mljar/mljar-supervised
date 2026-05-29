@@ -2545,6 +2545,9 @@ margin-right: auto;display: block;"/>\n\n"""
         return to_markdown(output_payload, model_name)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
+        if self._best_model is None:
+            if self.results_path is not None:
+                self.load(self.results_path)
         metric = self._best_model.get_metric()
 
         X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(

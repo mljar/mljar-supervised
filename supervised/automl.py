@@ -19,6 +19,7 @@ from typing_extensions import (
 
 from supervised.base_automl import BaseAutoML
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.report_structured import _compute_global_feature_importance
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s", level=logging.ERROR
@@ -540,6 +541,42 @@ class AutoML(BaseAutoML):
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y, sample_weight)
+
+    def get_feature_importance(self) -> Optional[pandas.DataFrame]:
+        """
+        Returns the global feature importance computed across all trained models.
+
+        The importance is calculated as the mean rank of each feature across
+        all individual models. Features are sorted from most to least important.
+
+        Returns:
+            pandas.DataFrame or None:
+                DataFrame with columns ``feature`` and ``mean_rank`` (lower rank
+                means more important), sorted by importance descending. Returns
+                ``None`` if importance data is not available (e.g., no models
+                have been fitted yet or importance files are missing).
+
+        Raises:
+            AutoMLException: Model has not yet been fitted.
+        """
+        if self._best_model is None:
+            from supervised.exceptions import AutoMLException
+
+            raise AutoMLException(
+                "AutoML object has not been fitted yet. "
+                "Call fit() before accessing feature importance."
+            )
+
+        result = _compute_global_feature_importance(self)
+        if not result.get("available"):
+            return None
+
+        rows = result.get("top", []) + result.get("bottom", [])
+        df = pandas.DataFrame(rows)
+        if df.empty:
+            return None
+        df = df.sort_values("mean_rank", ascending=True).reset_index(drop=True)
+        return df
 
     def report(self, width=900, height=1200):
         return self._report(width, height)
