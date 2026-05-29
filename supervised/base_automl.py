@@ -673,7 +673,13 @@ class BaseAutoML(BaseEstimator, ABC):
                         ] = new_sensitive_features.loc[j]
 
     def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
-        target_is_numeric = pd.api.types.is_numeric_dtype(y)
+        # Resolve category dtype before numeric check so that targets like
+        # pd.Series([0, 1, 1]).astype('category') are correctly identified
+        # as numeric (the categories themselves are numeric).
+        if isinstance(y, pd.Series) and isinstance(y.dtype, pd.CategoricalDtype):
+            target_is_numeric = pd.api.types.is_numeric_dtype(y.cat.categories)
+        else:
+            target_is_numeric = pd.api.types.is_numeric_dtype(y)
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
@@ -791,6 +797,19 @@ class BaseAutoML(BaseEstimator, ABC):
             y = np.array(y.iloc[:, 0])
             y = check_array(y, ensure_2d=False)
             y = pd.Series(np.array(y), name="target")
+
+        # If y is a pd.Series with category dtype (e.g. user called
+        # df[col].astype('category') on the target column), convert it to
+        # the underlying dtype so that downstream code (LightGBM, sklearn,
+        # dtype checks, etc.) can handle it correctly.
+        if isinstance(y, pd.Series) and isinstance(y.dtype, pd.CategoricalDtype):
+            if pd.api.types.is_numeric_dtype(y.cat.categories):
+                # Numeric categories (e.g. 0, 1, 2 stored as category) —
+                # restore to the actual numeric dtype.
+                y = y.astype(y.cat.categories.dtype)
+            else:
+                # String/object categories — convert to plain object dtype.
+                y = y.astype(object)
 
         if sample_weight is not None:
             if isinstance(sample_weight, np.ndarray):
