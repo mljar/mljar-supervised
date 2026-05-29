@@ -86,6 +86,8 @@ nav:
   - AutoML API: api.md
   - Roadmap: roadmap.md
   - Tutorials:
+    - Share Classification Model as App: tutorials/app-classification.md
+    - Share Regression Model as App: tutorials/app-regression.md
     - Classify Titanic Passengers: tutorials/titanic.md
     - Classify Random Data: tutorials/random.md
     - Fairness Binary Classification: tutorials/fairness-binary-classification.md

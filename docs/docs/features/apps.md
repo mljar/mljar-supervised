@@ -137,3 +137,10 @@ If the trained model has more than `15` features, the generated app will include
 - use `publish_app()` when you want the fastest hosted deployment
 - use manual startup or your own server when you need full control
 - regenerate the app after retraining the model
+
+## Tutorials
+
+If you want a beginner-friendly walkthrough after training a model, check:
+
+- [Share a classification model as an app](../tutorials/app-classification.md)
+- [Share a regression model as an app](../tutorials/app-regression.md)
