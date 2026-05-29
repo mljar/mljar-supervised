@@ -28,6 +28,8 @@ The `mljar-supervised` will help you with:
 - creating Markdown reports from analysis with details about all models,
 - saving, re-running and loading the analysis and ML models.
 
+It can also generate Mercury apps from trained models for local use, quick publishing, or deployment on your own server. See the [Apps](features/apps.md) guide.
+
 ## What's good in it? 
 
 - `mljar-supervised` creates markdown reports from AutoML training full of ML details and charts. 
