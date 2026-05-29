@@ -214,6 +214,8 @@ All models are automatically saved to be able to restore the training after inte
 - for multiclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
 
+You can also pass a custom Python function directly as `eval_metric`. See the docs for [Custom eval metric](https://supervised.mljar.com/features/custom-eval-metric/).
+
 If you don't find the `eval_metric` that you need, please add a new issue. We will add it.
 
 

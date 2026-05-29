@@ -150,11 +150,20 @@ class AutoML(BaseAutoML):
 
             stack_models (boolean): Whether a models stack gets created at the end of the training. Stack level is 1.
 
-            eval_metric (str): The metric to be used in early stopping and to compare models.
+            eval_metric (str or function): The metric to be used in early stopping and to compare models.
 
                 - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
                 - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
                 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+
+                You can also pass a custom Python function directly. The expected interface is:
+
+                `def my_metric(y_true, y_predicted, sample_weight=None): return score`
+
+                The returned value is always minimized. If you want to maximize a metric,
+                for example precision or F1, return its negative value. For classification
+                tasks, `y_predicted` can contain probabilities, so thresholding or `argmax`
+                might be needed inside the custom metric.
 
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
 

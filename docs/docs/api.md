@@ -7,6 +7,7 @@ social:
 # API documentation
 
 If you are looking for how trained models are stored and reloaded, see [Save and Load models](features/save-and-load-models.md).
+If you need a user-defined evaluation function, see [Custom eval metric](features/custom-eval-metric.md).
 
 ## `AutoML` class
 

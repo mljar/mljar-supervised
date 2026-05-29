@@ -72,6 +72,7 @@ nav:
   - Get started: index.md
   - Features: 
     - Apps: features/apps.md
+    - Custom eval metric: features/custom-eval-metric.md
     - Preprocessing: features/preprocessing.md
     - Save and Load models: features/save-and-load-models.md
     - Steps of AutoML: features/automl.md
