@@ -26,6 +26,78 @@ One model is trained for each of the algorithms. By analyzing results of each mo
 
 The models in this step should be quickly trained, so you will get fast intuition about your data and the solved problem.
 
+## `adjust_validation`
+
+This step is used only in selected `Compete` mode runs.
+
+Its purpose is to quickly estimate how expensive full validation will be and adjust the validation strategy to the available time budget.
+
+In practice, `mljar-supervised`:
+
+- trains a fast `Decision Tree` first,
+- measures how long it takes,
+- uses that as a rough estimate of training cost,
+- then decides whether the available budget can afford:
+  - split validation,
+  - `5`-fold cross-validation,
+  - or `10`-fold cross-validation.
+
+If there is enough time, AutoML switches from fast split validation to cross-validation.
+
+If there is not enough time, it stays with split validation.
+
+So this step is not an extra modeling trick. It is a budget-aware calibration step used to choose a realistic validation strategy.
+
+### When does it appear?
+
+You can see `adjust_validation` when:
+
+- `mode="Compete"`
+- `total_time_limit` is set
+- `validation_strategy="auto"`
+- validation was not already forced to the fastest split mode
+
+### What can happen after this step?
+
+Depending on the estimated budget:
+
+- AutoML can switch to `5`-fold CV
+- AutoML can switch to `10`-fold CV
+- AutoML can stay with split validation
+
+There are also two side effects that can surprise users:
+
+- the first `Decision Tree` used only for estimation can be removed
+- stacking can be disabled:
+  - for small datasets
+  - or when split validation is kept
+
+### Why can the first `Decision Tree` disappear?
+
+If AutoML decides to switch from split validation to cross-validation, it removes the initial `Decision Tree` that was trained only to estimate speed. After that, training continues with the adjusted validation strategy.
+
+### Why can stacking be disabled?
+
+Stacking needs validation outputs that are not always practical in the fastest split-based setup. It can also be disabled for small datasets after validation adjustment.
+
+### How to avoid this step?
+
+If you do not want automatic validation adjustment, set validation explicitly in `AutoML`:
+
+```python
+automl = AutoML(
+    mode="Compete",
+    validation_strategy={
+        "validation_type": "kfold",
+        "k_folds": 5,
+        "shuffle": True,
+        "stratify": True,
+    },
+)
+```
+
+If validation is explicitly provided, AutoML will use it instead of trying to adjust it automatically.
+
 ## `default_algorithms`
 
 In this step, the models are trained with default hyperparameters. Regardless of the data, the hyperparameter values used are always the same for each algorithm. In this step, you can compare the results of default models from other datasets and get intuition about your problem complexity.

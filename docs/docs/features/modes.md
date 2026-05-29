@@ -51,6 +51,9 @@ There are 3 built-in modes available in `AutoML`:
 |Top models imporoved in each `hill_climbing` step | `0`|`2`|`3`|
 |**Total models** tuned for each algorithm[^1] | `1`|about `13`[^2]|about `22`[^2]|
 
+!!! note
+    In `Compete` mode, AutoML can automatically adjust validation based on the observed training speed and the available `total_time_limit`. This can introduce the `adjust_validation` step in logs and may switch validation between split, `5`-fold CV, and `10`-fold CV. See [Steps of AutoML](automl.md#adjust_validation).
+
 
 ## Custom modes
 
