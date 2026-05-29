@@ -4,6 +4,17 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+def _get_feature_names(vectorizer):
+    """Return feature names from a TfidfVectorizer, compatible with both old and new sklearn.
+
+    Older sklearn (pre-0.24) uses ``get_feature_names()``, while newer sklearn
+    (>= 0.24) uses ``get_feature_names_out()``.
+    """
+    if hasattr(vectorizer, "get_feature_names_out"):
+        return vectorizer.get_feature_names_out()
+    return vectorizer.get_feature_names()
+
+
 class TextTransformer(object):
     def __init__(self):
         self._new_columns = []
@@ -22,7 +33,7 @@ class TextTransformer(object):
 
         x = X[column][~pd.isnull(X[column])]
         self._vectorizer.fit(x)
-        for f in list(self._vectorizer.get_feature_names_out()):
+        for f in list(_get_feature_names(self._vectorizer)):
             new_col = self._old_column + "_" + f
             self._new_columns += [new_col]
 
