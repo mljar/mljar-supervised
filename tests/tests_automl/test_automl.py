@@ -168,6 +168,24 @@ class AutoMLTest(unittest.TestCase):
         score = model.fit(iris.data, iris.target).score(iris.data, iris.target)
         self.assertGreater(score, 0.5)
 
+    def test_get_leaderboard(self):
+        """Tests that get_leaderboard() returns a valid DataFrame after fitting"""
+        model = AutoML(
+            explain_level=0,
+            verbose=0,
+            random_state=1,
+            results_path=self.automl_dir,
+        )
+        model.fit(iris.data, iris.target)
+
+        ldb = model.get_leaderboard()
+
+        self.assertIsInstance(ldb, pd.DataFrame)
+        for col in ["name", "model_type", "metric_type", "metric_value", "train_time"]:
+            self.assertIn(col, ldb.columns)
+        # multiple models trained, leaderboard should have more than one row
+        self.assertGreater(len(ldb), 1)
+
     def test_housing_dataset(self):
         """Tests AutoML in the housing dataset (Regression)"""
         model = AutoML(

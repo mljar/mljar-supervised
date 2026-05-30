@@ -28,7 +28,6 @@ logger.setLevel(LOG_LEVEL)
 
 
 class AutoML(BaseAutoML):
-
     """
     Automated Machine Learning for supervised tasks (binary classification, multiclass classification, regression).
     """
@@ -446,12 +445,12 @@ class AutoML(BaseAutoML):
         finally:
             matplotlib.use(original_backend)
             try:
-                if 'inline' in original_backend:
+                if "inline" in original_backend:
                     import matplotlib_inline
+
                     matplotlib_inline.backend_inline._enable_matplotlib_integration()
             except:
                 pass
-
 
     def predict(self, X: Union[List, numpy.ndarray, pandas.DataFrame]) -> numpy.ndarray:
         """
@@ -540,6 +539,26 @@ class AutoML(BaseAutoML):
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y, sample_weight)
+
+    def get_leaderboard(
+        self,
+        filter_random_feature: bool = False,
+        original_metric_values: bool = False,
+    ) -> pandas.DataFrame:
+        """Returns a leaderboard DataFrame with a summary of all trained models.
+
+        Arguments:
+            filter_random_feature (bool):
+                If True, models trained with a random feature are filtered out.
+
+            original_metric_values (bool):
+                If True, returns original metric values (not negated for minimized metrics).
+
+        Returns:
+            pandas.DataFrame: DataFrame with columns: name, model_type, metric_type,
+                metric_value, train_time.
+        """
+        return super().get_leaderboard(filter_random_feature, original_metric_values)
 
     def report(self, width=900, height=1200):
         return self._report(width, height)
