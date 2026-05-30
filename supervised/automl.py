@@ -89,7 +89,7 @@ class AutoML(BaseAutoML):
 
         Arguments:
             results_path (str): The path with results. If None, then the name of directory will be generated with the template: AutoML_{number},
-                where the number can be from 1 to 1,000 - depends which direcory name will be available.
+                where the number can be from 1 to 1,000 - depends which directory name will be available.
                 If the `results_path` will point to directory with AutoML results (`params.json` must be present),
                 then all models will be loaded.
 
@@ -154,7 +154,7 @@ class AutoML(BaseAutoML):
 
                 - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
                 - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
-                - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+                - for regression: `rmse`, `mse`, `mae`, `r2`, `map`, `spearman`, `pearson` - default is `rmse` (if left "auto")
 
                 You can also pass a custom Python function directly. The expected interface is:
 
@@ -169,10 +169,20 @@ class AutoML(BaseAutoML):
 
                 Example:
 
-                    Cross-validation exmaple:
+                    Cross-validation example:
                     {
                         "validation_type": "kfold",
                         "k_folds": 5,
+                        "shuffle": True,
+                        "stratify": True,
+                        "random_seed": 123
+                    }
+
+                    Repeated k-fold cross-validation example:
+                    {
+                        "validation_type": "kfold",
+                        "k_folds": 5,
+                        "n_repetitions": 3,
                         "shuffle": True,
                         "stratify": True,
                         "random_seed": 123
@@ -270,7 +280,7 @@ class AutoML(BaseAutoML):
                 - `group_loss_ratio` - default metric.
 
 
-            fairness_threshold (float): The treshold value for fairness metric.
+            fairness_threshold (float): The threshold value for fairness metric.
                 The direction optimization (below or above threshold) of fairness metric is determined automatically.
 
                 Default values:
@@ -278,8 +288,8 @@ class AutoML(BaseAutoML):
                 - for `demographic_parity_difference` the metric value should be below 0.1,
                 - for `demographic_parity_ratio` the metric value should be above 0.8,
                 - for `equalized_odds_difference` the metric value should be below 0.1,
-                - for `equalized_odds_ratio` the metric value shoule be above 0.8.
-                - for `group_loss_ratio` the metric value shoule be above 0.8.
+                - for `equalized_odds_ratio` the metric value should be above 0.8.
+                - for `group_loss_ratio` the metric value should be above 0.8.
 
                 For `group_loss_difference` the default threshold value can't be set because it depends on the dataset.
                 If `group_loss_difference` metric is used and `fairness_threshold` is not specified manually, then an exception will be raised.

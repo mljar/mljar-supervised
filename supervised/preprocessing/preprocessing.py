@@ -281,14 +281,14 @@ class Preprocessing(object):
             drop_cols = [c for c in self._drop_features if c in available_cols]
             if len(drop_cols) == X_train.shape[1]:
                 raise AutoMLException(
-                    "All features are droppped! Your data looks like random data."
+                    "All features are dropped! Your data looks like random data."
                 )
             if drop_cols:
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols
 
         if X_train is not None:
-            # there can be catagorical columns (in CatBoost) which cant be clipped
+            # there can be categorical columns (in CatBoost) which can't be clipped
             numeric_cols = X_train.select_dtypes(include="number").columns.tolist()
             X_train[numeric_cols] = X_train[numeric_cols].clip(
                 lower=np.finfo(np.float32).min + 1000,
@@ -374,7 +374,7 @@ class Preprocessing(object):
             # we should notice user about it!
             # warnings should go to the separate file ...
             # warnings.warn(
-            #    "There are columns {} with missing values which didnt have missing values in train dataset.".format(
+            #    "There are columns {} with missing values which didn't have missing values in train dataset.".format(
             #        list(
             #            X_validation.columns[np.where(np.sum(pd.isnull(X_validation)))]
             #        )
@@ -415,7 +415,7 @@ class Preprocessing(object):
             X_validation.drop(self._drop_features, axis=1, inplace=True)
 
         if X_validation is not None:
-            # there can be catagorical columns (in CatBoost) which cant be clipped
+            # there can be categorical columns (in CatBoost) which can't be clipped
             numeric_cols = X_validation.select_dtypes(include="number").columns.tolist()
             X_validation[numeric_cols] = X_validation[numeric_cols].clip(
                 lower=np.finfo(np.float32).min + 1000,

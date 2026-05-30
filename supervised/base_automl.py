@@ -337,7 +337,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def _expected_learners_cnt(self):
         try:
-            repeats = self._validation_strategy.get("repeats", 1)
+            repeats = self._validation_strategy.get(
+                "repeats", self._validation_strategy.get("n_repetitions", 1)
+            )
             folds = self._validation_strategy.get("k_folds", 1)
             return repeats * folds
         except Exception as e:
@@ -949,7 +951,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
         else:
-            # cant stack models for train/test split
+            # can't stack models for train/test split
             self._stack_models = False
             self.verbose_print("Disable stacking for split validation")
 
@@ -961,7 +963,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self.verbose_print("Disable stacking for split validation")
             self._stack_models = False
             self._boost_on_errors = False
-        if "repeats" in self._validation_strategy:
+        if "repeats" in self._validation_strategy or "n_repetitions" in self._validation_strategy:
             if self._stack_models:
                 self.verbose_print("Disable stacking for repeated validation")
             self._stack_models = False
@@ -972,7 +974,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self.tuner._stack_models = self._stack_models
             self.tuner._boost_on_errors = self._boost_on_errors
 
-        # update Time Controler
+        # update Time Controller
         if self._time_ctrl is not None:
             self._time_ctrl._is_stacking = self._stack_models
 
@@ -1037,10 +1039,10 @@ class BaseAutoML(BaseEstimator, ABC):
         self._adjust_validation = False
         self._apply_constraints()
         if not self._adjust_validation:
-            # if there is no validation adjustement
+            # if there is no validation adjustment
             # then we can apply stack_models constraints immediately
-            # if there is validation adjustement
-            # then we will apply contraints after the adjustement
+            # if there is validation adjustment
+            # then we will apply constraints after the adjustment
             self._apply_constraints_stack_models()
 
         try:
@@ -1078,7 +1080,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             # Automatic Exloratory Data Analysis
             # I disabled EDA, because it won't be supported
-            # I recomend use pandas_profiling or Sweetviz
+            # I recommend use pandas_profiling or Sweetviz
             # if self._explain_level == 2:
             #     EDA.compute(X, y, os.path.join(self._results_path, "EDA"))
 
@@ -2062,7 +2064,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "mse",
             "mae",
             "r2",
-            "mape",
+            "map",
             "spearman",
             "pearson",
         ]:

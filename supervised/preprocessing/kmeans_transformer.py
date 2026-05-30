@@ -36,8 +36,8 @@ class KMeansTransformer(object):
             )
             return
         if X.shape[1] == 0:
-            self._error = f"KMeans not created. No continous features. Input data shape: {X.shape}, {y.shape}"
-            raise AutoMLException("KMeans Features not created. No continous features.")
+            self._error = f"KMeans not created. No continuous features. Input data shape: {X.shape}, {y.shape}"
+            raise AutoMLException("KMeans Features not created. No continuous features.")
 
         start_time = time.time()
 

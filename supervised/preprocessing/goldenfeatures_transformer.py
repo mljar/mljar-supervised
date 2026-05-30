@@ -140,9 +140,9 @@ class GoldenFeaturesTransformer(object):
             )
             return
         if X.shape[1] == 0:
-            self._error = f"Golden Features not created. No continous features. Input data shape: {X.shape}, {y.shape}"
+            self._error = f"Golden Features not created. No continuous features. Input data shape: {X.shape}, {y.shape}"
             self.save()
-            raise AutoMLException("Golden Features not created. No continous features.")
+            raise AutoMLException("Golden Features not created. No continuous features.")
 
         start_time = time.time()
         combinations = itertools.combinations(X.columns, r=2)

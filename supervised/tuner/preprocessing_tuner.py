@@ -95,7 +95,7 @@ class PreprocessingTuner:
                 ):
                     preprocessing_to_apply += [Scale.SCALE_NORMAL]
 
-            # remeber which preprocessing we need to apply
+            # remember which preprocessing we need to apply
             if preprocessing_to_apply:
                 columns_preprocessing[col] = preprocessing_to_apply
 

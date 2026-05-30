@@ -50,7 +50,7 @@ def catboost_eval_metric(ml_task, eval_metric):
             "rmse": "RMSE",
             "mse": "mse",
             "mae": "MAE",
-            "mape": "MAPE",
+            "map": "MAP",
             "r2": "R2",
             "spearman": "spearman",
             "pearson": "pearson",
@@ -73,7 +73,7 @@ def catboost_objective(ml_task, eval_metric):
             "spearman",
             "pearson",
             "user_defined_metric",
-        ]:  # cant optimize them directly
+        ]:  # can't optimize them directly
             objective = "RMSE"
     return objective
 
@@ -333,8 +333,8 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return "mse"
         elif metric == "MAE":
             return "mae"
-        elif metric == "MAPE":
-            return "mape"
+        elif metric == "MAP":
+            return "map"
         elif metric in ["F1", "TotalF1:average=Micro"]:
             return "f1"
         elif metric == "Accuracy":
@@ -404,7 +404,7 @@ AlgorithmsRegistry.add(
 )
 
 regression_params = copy.deepcopy(classification_params)
-regression_params["loss_function"] = ["RMSE", "MAE", "MAPE"]
+regression_params["loss_function"] = ["RMSE", "MAE", "MAP"]
 
 regression_required_preprocessing = [
     "missing_values_inputation",

@@ -91,7 +91,7 @@ class ModelFramework:
     def predictions(
         self,
         learner,
-        preproces,
+        preprocess,
         X_train,
         y_train,
         sample_weight,
@@ -106,17 +106,17 @@ class ModelFramework:
         y_validation_true = y_validation
         y_validation_predicted = learner.predict(X_validation)
 
-        y_train_true = preproces.inverse_scale_target(y_train_true)
-        y_train_predicted = preproces.inverse_scale_target(y_train_predicted)
-        y_validation_true = preproces.inverse_scale_target(y_validation_true)
-        y_validation_predicted = preproces.inverse_scale_target(y_validation_predicted)
+        y_train_true = preprocess.inverse_scale_target(y_train_true)
+        y_train_predicted = preprocess.inverse_scale_target(y_train_predicted)
+        y_validation_true = preprocess.inverse_scale_target(y_validation_true)
+        y_validation_predicted = preprocess.inverse_scale_target(y_validation_predicted)
 
         y_validation_columns = []
         if self._ml_task == MULTICLASS_CLASSIFICATION:
-            # y_train_true = preproces.inverse_categorical_target(y_train_true)
-            # y_validation_true = preproces.inverse_categorical_target(y_validation_true)
+            # y_train_true = preprocess.inverse_categorical_target(y_train_true)
+            # y_validation_true = preprocess.inverse_categorical_target(y_validation_true)
             # get columns, omit the last one (it is label)
-            y_validation_columns = preproces.prepare_target_labels(
+            y_validation_columns = preprocess.prepare_target_labels(
                 y_validation_predicted
             ).columns.tolist()[:-1]
         elif self._ml_task == BINARY_CLASSIFICATION:
@@ -643,7 +643,7 @@ class ModelFramework:
             trees_in_iteration=self.additional_params.get("trees_in_step"),
         )
 
-        # call additional metics just to be sure they are computed
+        # call additional metrics just to be sure they are computed
         self._additional_metrics = self.get_additional_metrics()
 
         AdditionalMetrics.save(
@@ -721,6 +721,7 @@ class ModelFramework:
         for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
+            learner_subpath = os.path.normpath(learner_subpath)
             learner_path = os.path.join(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]

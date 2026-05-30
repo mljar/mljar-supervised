@@ -102,7 +102,7 @@ class MljarTuner:
                 strategies += [PreprocessingTuner.CATEGORICALS_MIX]
 
             if len(strategies) == 1:  # disable loo encoding
-                # cant add more
+                # can't add more
                 # stop
                 break
 
@@ -112,7 +112,7 @@ class MljarTuner:
         if self._data_info is None:
             return False
 
-        # are there any continous
+        # are there any continuous
         continous_cols = 0
         for k, v in self._data_info["columns_info"].items():
             if "categorical" not in v:
@@ -133,7 +133,7 @@ class MljarTuner:
         if self._data_info is None:
             return False
 
-        # are there any continous
+        # are there any continuous
         continous_cols = 0
         for k, v in self._data_info["columns_info"].items():
             if "categorical" not in v:
@@ -181,7 +181,7 @@ class MljarTuner:
         ):
             # we can turn boost on errors only if there is not fairness optimization
             # boost on errors will not work for custom validation strategy
-            # because we cant assure that we have all samples in out-of-folds predictions
+            # because we can't assure that we have all samples in out-of-folds predictions
             all_steps += ["boost_on_errors"]
         if self._train_ensemble:
             all_steps += ["ensemble"]
@@ -271,7 +271,7 @@ class MljarTuner:
                     }
                 ]
 
-            # didnt find anything matching the step, return empty array
+            # didn't find anything matching the step, return empty array
             return []
         except Exception as e:
             import traceback
@@ -349,7 +349,7 @@ class MljarTuner:
                 samples_weight[ii & (target == 0)] = max(ws[0], 0.01)
                 samples_weight[ii & (target == 1)] = max(
                     ws[1], 0.01
-                )  # weight cant be negative
+                )  # weight can't be negative
 
             samples_weight = samples_weight * target.shape[0] / np.sum(samples_weight)
 
@@ -1288,7 +1288,7 @@ class MljarTuner:
         drop_features = json.load(open(fname, "r"))
         print("Drop features", drop_features)
 
-        # in case of droping only one feature (random_feature)
+        # in case of dropping only one feature (random_feature)
         # skip this step
         if len(drop_features) <= 1:
             return None

@@ -292,7 +292,7 @@ class FairnessMetrics:
                 mean_squared_error(t, p, sample_weight=sample_weight)
             ),
             "R2": r2_score,
-            "MAPE": mean_absolute_percentage_error,
+            "MAP": mean_absolute_percentage_error,
             "SPEARMAN": spearman,
             "PEARSON": pearson,
         }
