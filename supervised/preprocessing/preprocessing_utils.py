@@ -10,7 +10,7 @@ class PreprocessingUtilsException(Exception):
 
 class PreprocessingUtils(object):
     CATEGORICAL = "categorical"
-    CONTINOUS = "continous"
+    CONTINUOUS = "continuous"
     DISCRETE = "discrete"
     DATETIME = "datetime"
     TEXT = "text"
@@ -26,7 +26,7 @@ class PreprocessingUtils(object):
 
         data_type = PreprocessingUtils.CATEGORICAL
         if col_type.startswith("float"):
-            data_type = PreprocessingUtils.CONTINOUS
+            data_type = PreprocessingUtils.CONTINUOUS
         elif col_type.startswith("int") or col_type.startswith("uint"):
             data_type = PreprocessingUtils.DISCRETE
         elif col_type.startswith("datetime"):

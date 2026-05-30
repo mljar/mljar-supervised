@@ -363,7 +363,7 @@ class Metric(object):
             "mae",
             "mse",
             "r2",  # negative r2
-            "mape",
+            "map",
             "spearman",  # negative
             "pearson",  # negative
             "f1",  # negative
@@ -385,7 +385,7 @@ class Metric(object):
             self.metric = mean_absolute_error
         elif self.name == "r2":
             self.metric = negative_r2
-        elif self.name == "mape":
+        elif self.name == "map":
             self.metric = mean_absolute_percentage_error
         elif self.name == "spearman":
             self.metric = negative_spearman

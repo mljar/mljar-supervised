@@ -149,7 +149,7 @@ class AdditionalMetrics:
 
         threshold = float(max_metrics["accuracy"]["threshold"])
 
-        # updating resopnse variable for accuracy metric
+        # updating response variable for accuracy metric
         response = (predictions > threshold).astype(int)
 
         # accuracy threshold metrics
@@ -346,7 +346,7 @@ class AdditionalMetrics:
                 mean_squared_error(t, p, sample_weight=sample_weight)
             ),
             "R2": r2_score,
-            "MAPE": mean_absolute_percentage_error,
+            "MAP": mean_absolute_percentage_error,
         }
         max_metrics = {}
         for k, v in regression_metrics.items():

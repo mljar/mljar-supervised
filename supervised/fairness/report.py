@@ -100,7 +100,7 @@ class FairnessReport:
                 if v.get("privileged_value") is not None:
                     fout.write(f'Privileged value is {v["privileged_value"]}.\n')
          
-            # add fairness cerificate
+            # add fairness certificate
             FairnessReport.write_certificate_section(
                 fout,
                 FairnessReport.certificate_info(

@@ -50,7 +50,7 @@ class TimeController:
             tc._start_time -= tc.already_spend()  # update time with already spend
             return tc
         except Exception as e:
-            logger.error(f"Cant load TimeController from json, {str(e)}")
+            logger.error(f"Can't load TimeController from json, {str(e)}")
             pass
         return None
 

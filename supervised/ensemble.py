@@ -167,13 +167,13 @@ class Ensemble:
                 m for m in models if m.is_fast_enough(self._max_single_prediction_time)
             ]:
                 raise NotTrainedException(
-                    "Can't contruct ensemble with prediction time smaller than limit."
+                    "Can't construct ensemble with prediction time smaller than limit."
                 )
 
         # check if we can construct fair ensemble
         if self._fairness_metric is not None:
             if not [m for m in models if m.is_fair()]:
-                raise NotTrainedException("Can't contruct fair ensemble.")
+                raise NotTrainedException("Can't construct fair ensemble.")
 
         oofs = {}
         sensitive_features = None
@@ -336,10 +336,10 @@ class Ensemble:
         self.sensitive_features = sensitive_features
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
-        self.best_algs = []  # selected algoritms indices from each loop
+        self.best_algs = []  # selected algorithms indices from each loop
 
         total_prediction_time = 0
-        best_sum = None  # sum of best algorihtms
+        best_sum = None  # sum of best algorithms
         for j in range(len(oofs)):  # iterate over all solutions
             min_score = self.metric.get_maximum()
             best_model = None
@@ -379,7 +379,7 @@ class Ensemble:
                 self.best_loss = min_score
                 selected_algs_cnt = j
 
-            self.best_algs.append(best_model)  # save the best algoritm
+            self.best_algs.append(best_model)  # save the best algorithm
             # update best_sum value
             best_sum = (
                 oofs[best_model] if best_sum is None else best_sum + oofs[best_model]
@@ -531,7 +531,7 @@ class Ensemble:
 
         LearningCurves.plot_for_ensemble(self._scores, self.metric.name, model_path)
 
-        # call additional metics just to be sure they are computed
+        # call additional metrics just to be sure they are computed
         self._additional_metrics = self.get_additional_metrics()
 
         AdditionalMetrics.save(

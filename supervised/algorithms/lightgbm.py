@@ -61,7 +61,7 @@ def lightgbm_eval_metric(ml_task, automl_eval_metric):
             "rmse": "rmse",
             "mse": "l2",
             "mae": "l1",
-            "mape": "mape",
+            "map": "map",
             "r2": "custom",
             "spearman": "custom",
             "pearson": "custom",

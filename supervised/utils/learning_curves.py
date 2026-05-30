@@ -57,7 +57,7 @@ class LearningCurves:
             )
 
             fold, repeat = learner_name_to_fold_repeat(ln)
-            repeat_str = f" Reapeat {repeat+1}," if repeat is not None else ""
+            repeat_str = f" Repeat {repeat+1}," if repeat is not None else ""
             plt.bar(
                 f"Fold {fold+1},{repeat_str} train",
                 df.train[0],
@@ -85,7 +85,7 @@ class LearningCurves:
             )
 
             fold, repeat = learner_name_to_fold_repeat(ln)
-            repeat_str = f" Reapeat {repeat+1}," if repeat is not None else ""
+            repeat_str = f" Repeat {repeat+1}," if repeat is not None else ""
             # if trees_in_iteration is not None:
             #    df.iteration = df.iteration * trees_in_iteration
             any_none = np.sum(pd.isnull(df.train))

@@ -59,7 +59,7 @@ class PreprocessingMissingValues(object):
         X = self._transform_na_fill(X)
         # this is additional run through columns,
         # in case of transforming data with new columns with missing values
-        # X = self._make_sure_na_filled(X) # disbaled for now
+        # X = self._make_sure_na_filled(X) # disabled for now
         return X
 
     def _transform_na_fill(self, X):

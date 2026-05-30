@@ -38,7 +38,7 @@ class OptunaTuner:
             "rmse",
             "mse",
             "mae",
-            "mape",
+            "map",
             "r2",
             "spearman",
             "pearson",
@@ -123,7 +123,7 @@ class OptunaTuner:
             sampler=optuna.samplers.TPESampler(seed=self.random_state),
             pruner=optuna.pruners.MedianPruner(n_warmup_steps=self.n_warmup_steps),
         )
-        obejctive = None
+        objective = None
         if algorithm == "LightGBM":
             objective = LightgbmObjective(
                 self.ml_task,
