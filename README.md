@@ -44,6 +44,7 @@ Start quickly, iterate faster, and manage experiments in one place.
 ## Table of Contents
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
+ - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
@@ -71,6 +72,7 @@ The `mljar-supervised` will help you with:
  - explaining and understanding your data through model reports, feature importance, and SHAP explanations,
  - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
  - creating Markdown reports from analysis with details about all models (Automatic-Documentation),
+ - generating a web app for a trained model, so predictions can be used by domain experts,
  - saving, re-running, and loading the analysis and ML models.
 
 It has four built-in modes of work:
@@ -80,6 +82,45 @@ It has four built-in modes of work:
  - `Optuna` mode can be used to search for highly-tuned ML models should be used when the performance is the most important, and computation time is not limited (it is available from version `0.10.0`)
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
+
+## Generate Web Apps for Trained Models
+
+MLJAR AutoML does not stop after training a model. It can automatically generate a web app for your trained model with [Mercury](https://github.com/mljar/mercury). This is useful when you want to share predictions with domain experts, business users, researchers, or other people who do not want to work directly with Python code. 
+
+After training AutoML, generate the app files with:
+
+```python 
+from supervised import AutoML
+# AutoML training
+automl = AutoML(results_path="AutoML")
+automl.fit(X, y)
+
+# Generate a Mercury web app for the trained model
+automl.app()
+``` 
+
+You can also start the app locally:
+
+```python
+automl.local_app()
+```
+
+or publish it quickly:
+
+```python
+automl.publish_app()
+```
+
+The generated app can include:
+- single prediction dashboard,
+- batch prediction from CSV files,
+- downloadable predictions,
+- feature importance plots,
+- feature context plots for single predictions.
+
+With this feature, you can go from: CSV data -> trained ML model -> ready-to-use prediction web app.
+
+Please check the [Apps documentation](https://supervised.mljar.com/features/apps/) for details.
 
 ## What's good in it? 
 
