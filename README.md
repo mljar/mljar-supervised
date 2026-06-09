@@ -134,7 +134,8 @@ Please check the [Apps documentation](https://supervised.mljar.com/features/apps
 - It has extensive explanations. This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
 - The `mljar-supervised` uses simple linear regression and includes its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It cares about the explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm, the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with the `explain_level` parameter).
-- There is automatic documentation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics, and charts. 
+- There is automatic documentation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics, and charts.
+- It can generate Mercury web apps from trained AutoML models, so the model can be shared as an interactive prediction app.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
