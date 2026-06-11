@@ -111,6 +111,8 @@ or publish it quickly:
 automl.publish_app()
 ```
 
+`publish_app()` creates an app URL on the first publish and then reuses the last successfully published URL by default.
+
 The generated app can include:
 - single prediction dashboard,
 - batch prediction from CSV files,

@@ -89,16 +89,19 @@ automl.publish_app()
 This helper:
 
 - signs in through `platform.mljar.com`
-- creates or updates the app URL
+- creates a new app URL on the first publish
+- reuses the last successfully published app URL on later publishes
 - uploads the generated runtime files
 - prints progress and friendly error messages
 - remembers the last successfully published app URL
 
-If you want to reuse a specific published app URL:
+If you want to update a specific published app URL:
 
 ```python
 automl.publish_app(url="https://your-app.ismvp.org")
 ```
+
+The remembered URL is stored in `publish_app_state.json` inside the AutoML `results_path`.
 
 ## Publish or host manually
 

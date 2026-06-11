@@ -437,9 +437,9 @@ def publish_app_from_automl(
     verbose=True,
 ):
     try:
+        previous_url = _load_publish_state(automl).get("last_published_url")
         if verbose:
             print("Start app publish")
-            previous_url = _load_publish_state(automl).get("last_published_url")
             if previous_url:
                 print(f"Last published app URL: {previous_url}")
         overwrite_output = overwrite or path is None
@@ -458,12 +458,23 @@ def publish_app_from_automl(
         token = session.authenticate()
         client = PlatformClient(base_url=DEFAULT_PLATFORM_BASE_URL, token=token)
 
-        if url:
+        target_url = url or previous_url
+        if target_url:
             if verbose:
-                print(f"Checking existing app URL: {url}")
-            site = client.find_site_by_url(url)
+                print(f"Checking existing app URL: {target_url}")
+            site = client.find_site_by_url(target_url)
             if site is None:
-                raise AutoMLException(f"Could not find Mercury app for URL '{url}'.")
+                if url:
+                    raise AutoMLException(f"Could not find Mercury app for URL '{url}'.")
+                site_title = _workspace_title(output_path, fallback_title=title)
+                if verbose:
+                    print(
+                        f"Last published app URL not found on platform: {target_url}"
+                    )
+                    print("Creating app URL")
+                site = _create_site_with_generated_slug(client, site_title)
+                if verbose:
+                    print(f"Created app URL: {_site_url(site)}")
         else:
             site_title = _workspace_title(output_path, fallback_title=title)
             if verbose:
@@ -472,7 +483,7 @@ def publish_app_from_automl(
             if verbose:
                 print(f"Created app URL: {_site_url(site)}")
 
-        if verbose and url:
+        if verbose and target_url and site is not None:
             print(f"Using app URL: {_site_url(site)}")
 
         _upload_workspace_files(client, site, output_path, verbose=verbose)

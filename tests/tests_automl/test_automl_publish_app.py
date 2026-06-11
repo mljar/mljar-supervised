@@ -251,12 +251,48 @@ class AutoMLPublishAppTests(unittest.TestCase):
             state = json.load(fin)
         self.assertEqual(state.get("last_published_url"), first_url)
 
+        FakePublishingClient.sites = [FakePublishingClient.created_site]
+        FakePublishingClient.created_site = None
+
         second_stdout = io.StringIO()
         with patch("sys.stdout", second_stdout):
             second_url = model.publish_app(open_browser=False)
 
         self.assertEqual(second_url, first_url)
+        self.assertIsNone(FakePublishingClient.created_site)
         self.assertIn(f"Last published app URL: {first_url}", second_stdout.getvalue())
+        self.assertIn(f"Checking existing app URL: {first_url}", second_stdout.getvalue())
+        self.assertIn(f"Using app URL: {first_url}", second_stdout.getvalue())
+
+    @patch("supervised.apps.publisher.generate_machine_learning_slug", return_value="feature-lab")
+    @patch("supervised.apps.publisher.PlatformClient", FakePublishingClient)
+    @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")
+    def test_publish_app_creates_new_site_when_last_published_url_is_missing(
+        self, _mock_authenticate, _mock_slug
+    ):
+        model = self._trained_model()
+
+        first_stdout = io.StringIO()
+        with patch("sys.stdout", first_stdout):
+            first_url = model.publish_app(open_browser=False)
+
+        self.assertEqual(first_url, "https://feature-lab.ismvp.org")
+        FakePublishingClient.created_site = None
+        FakePublishingClient.sites = []
+
+        second_stdout = io.StringIO()
+        with patch("sys.stdout", second_stdout):
+            second_url = model.publish_app(open_browser=False)
+
+        self.assertEqual(second_url, first_url)
+        self.assertIsNotNone(FakePublishingClient.created_site)
+        output = second_stdout.getvalue()
+        self.assertIn(f"Checking existing app URL: {first_url}", output)
+        self.assertIn(
+            f"Last published app URL not found on platform: {first_url}",
+            output,
+        )
+        self.assertIn("Creating app URL", output)
 
     @patch("supervised.apps.publisher.PlatformClient", FakePublishingClient)
     @patch("supervised.apps.publisher.BrowserTokenSession.authenticate", return_value="app.jwt.token")

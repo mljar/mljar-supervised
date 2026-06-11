@@ -146,7 +146,8 @@ automl.publish_app()
 This helper will:
 
 - sign you in through `platform.mljar.com`,
-- create the app URL,
+- create the app URL on the first publish,
+- reuse the last successfully published app URL on later publishes,
 - upload the generated files,
 - and print the final app address.
 
