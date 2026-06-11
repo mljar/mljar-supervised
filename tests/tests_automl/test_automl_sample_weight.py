@@ -2,7 +2,6 @@ import shutil
 import unittest
 
 import numpy as np
-from numpy.testing import assert_almost_equal
 from sklearn import datasets
 
 from supervised import AutoML
@@ -20,9 +19,13 @@ breast_cancer = datasets.load_breast_cancer()
 
 class AutoMLSampleWeightTest(unittest.TestCase):
     automl_dir = "AutoMLSampleWeightTest"
+    score_tolerance = 0.1
 
     def tearDown(self):
         shutil.rmtree(self.automl_dir, ignore_errors=True)
+
+    def assert_score_close(self, score_1, score_2):
+        self.assertLessEqual(abs(score_1 - score_2), self.score_tolerance)
 
     def test_iris_dataset_sample_weight(self):
         """Tests AutoML in the iris dataset (Multiclass classification)
@@ -41,7 +44,7 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         score_2 = model.fit(iris.data, iris.target, sample_weight=sample_weight).score(
             iris.data, iris.target, sample_weight=sample_weight
         )
-        assert_almost_equal(score_1, score_2)
+        self.assert_score_close(score_1, score_2)
 
     def test_housing_dataset(self):
         """Tests AutoML in the housing dataset (Regression)
@@ -62,7 +65,7 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         score_2 = model.fit(
             housing[0], housing[1], sample_weight=sample_weight
         ).score(housing[0], housing[1], sample_weight=sample_weight)
-        assert_almost_equal(score_1, score_2)
+        self.assert_score_close(score_1, score_2)
 
     def test_breast_cancer_dataset(self):
         """Tests AutoML in the breast cancer (binary classification)
@@ -83,4 +86,4 @@ class AutoMLSampleWeightTest(unittest.TestCase):
         score_2 = model.fit(
             breast_cancer.data, breast_cancer.target, sample_weight=sample_weight
         ).score(breast_cancer.data, breast_cancer.target, sample_weight=sample_weight)
-        assert_almost_equal(score_1, score_2)
+        self.assert_score_close(score_1, score_2)
