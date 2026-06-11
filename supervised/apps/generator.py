@@ -23,6 +23,7 @@ PUBLISHABLE_WORKSPACE_FILES = (
     "predict_single.ipynb",
     "predict_batch.ipynb",
     "app_support.py",
+    "mljar_app.json",
     "config.toml",
     "requirements.txt",
     "runtime.txt",

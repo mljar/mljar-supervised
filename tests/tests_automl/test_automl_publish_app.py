@@ -199,6 +199,10 @@ class AutoMLPublishAppTests(unittest.TestCase):
             sorted(filename for _, filename, _ in FakePublishingClient.registered_calls),
             sorted(PUBLISHABLE_WORKSPACE_FILES),
         )
+        self.assertIn(
+            "mljar_app.json",
+            [filename for _, filename, _ in FakePublishingClient.registered_calls],
+        )
         self.assertEqual(len(FakePublishingClient.upload_calls), len(PUBLISHABLE_WORKSPACE_FILES))
         output = stdout.getvalue()
         self.assertIn("Start app publish", output)
