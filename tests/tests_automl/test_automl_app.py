@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn import datasets
 
 from supervised import AutoML
+from supervised.apps.templates import AI_DISCLOSURE_TEXT
 from supervised.apps.metadata import _build_numeric_feature
 from supervised.exceptions import AutoMLException
 
@@ -75,6 +76,24 @@ class AutoMLAppTest(unittest.TestCase):
             f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
             stdout.getvalue(),
         )
+
+        with open(os.path.join(self.app_dir, "config.toml"), "r", encoding="utf-8") as fin:
+            config_payload = fin.read()
+        self.assertIn(AI_DISCLOSURE_TEXT, config_payload)
+
+        with open(os.path.join(self.app_dir, "README.md"), "r", encoding="utf-8") as fin:
+            readme_payload = fin.read()
+        self.assertIn(AI_DISCLOSURE_TEXT, readme_payload)
+
+        with open(os.path.join(self.app_dir, "predict_single.ipynb"), "r", encoding="utf-8") as fin:
+            single_notebook = json.load(fin)
+        self.assertEqual(single_notebook["cells"][-1]["cell_type"], "markdown")
+        self.assertEqual(single_notebook["cells"][-1]["source"], AI_DISCLOSURE_TEXT)
+
+        with open(os.path.join(self.app_dir, "predict_batch.ipynb"), "r", encoding="utf-8") as fin:
+            batch_notebook = json.load(fin)
+        self.assertEqual(batch_notebook["cells"][-1]["cell_type"], "markdown")
+        self.assertEqual(batch_notebook["cells"][-1]["source"], AI_DISCLOSURE_TEXT)
 
     def test_app_raises_when_output_exists(self):
         model = AutoML(

@@ -48,6 +48,8 @@ from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.report_structured import (
+    AUTOMATION_CONSOLE_TEXT,
+    AUTOMATION_DISCLOSURE_TEXT,
     build_compact_view,
     build_structured_report,
     save_structured_report,
@@ -1067,6 +1069,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
             )
             self.verbose_print(f"AutoML will use algorithms: {self._algorithms}")
+            self.verbose_print(AUTOMATION_CONSOLE_TEXT)
             if self._stack_models:
                 self.verbose_print("AutoML will stack models")
             if self._train_ensemble:
@@ -1400,6 +1403,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
+                fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 if self._fairness_metric is not None and self._best_model is not None:
                     additional_metrics = self._best_model.get_additional_metrics() or {}

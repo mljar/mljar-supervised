@@ -1,7 +1,9 @@
 import os
 import shutil
 import unittest
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -12,6 +14,7 @@ from sklearn.pipeline import make_pipeline
 
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
+from supervised.utils.report_structured import AUTOMATION_CONSOLE_TEXT
 
 iris = datasets.load_iris()
 housing = datasets.make_regression(
@@ -126,6 +129,21 @@ class AutoMLTest(unittest.TestCase):
         params_after_fit = model.get_params()
         # Assert before and after params are equal
         self.assertEqual(params_before_fit, params_after_fit)
+
+    def test_fit_prints_automation_notice(self):
+        model = AutoML(
+            algorithms=["Baseline"],
+            explain_level=0,
+            verbose=1,
+            random_state=1,
+            results_path=self.automl_dir,
+        )
+        X, y = datasets.make_classification(n_samples=30, random_state=1)
+
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            model.fit(X, y)
+
+        self.assertIn(AUTOMATION_CONSOLE_TEXT, stdout.getvalue())
 
     def test_scikit_learn_pipeline_integration(self):
         """
