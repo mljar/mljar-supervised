@@ -11,6 +11,7 @@ from copy import deepcopy
 import joblib
 import numpy as np
 import pandas as pd
+import scipy.stats
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, r2_score
 from sklearn.utils.validation import check_array
@@ -1566,6 +1567,131 @@ class BaseAutoML(BaseEstimator, ABC):
     def _predict_all(self, X):
         # Make and return predictions
         return self._base_predict(X)
+
+    def _predict_uncertainty(self, X, alpha=0.05):
+        """Internal method to compute ensemble-based uncertainty intervals.
+
+        Args:
+            X (Union[List, numpy.ndarray, pandas.DataFrame]): Input features.
+            alpha (float): Significance level for the interval.
+
+        Returns:
+            pandas.DataFrame: Prediction interval results.
+        """
+        if self._best_model is None:
+            try:
+                self.load(self.results_path)
+            except Exception:
+                pass
+
+        if self._best_model is None:
+            raise AutoMLException("This model has not been fitted yet. Please call `fit()` first.")
+
+        if self._ml_task != REGRESSION:
+            raise AutoMLException(
+                f"Predict uncertainty is only supported for regression tasks. Current task is '{self._ml_task}'."
+            )
+
+        # Use the Ensemble model for uncertainty; fall back from best model if needed
+        uncertainty_model = self._best_model
+        if uncertainty_model.get_type() != "Ensemble":
+            ensemble_model = None
+            for m in self._models:
+                if m.get_type() == "Ensemble":
+                    ensemble_model = m
+                    break
+
+            # Attempt to load Ensemble from disk if not found in memory
+            if ensemble_model is None and hasattr(self, "_model_subpaths") and "Ensemble" in self._model_subpaths:
+                try:
+                    models_map = {m.get_name(): m for m in self._models}
+                    needed_submodels = self.get_ensemble_models("Ensemble")
+                    for submodel_name in needed_submodels:
+                        if submodel_name not in models_map:
+                            m = ModelFramework.load(self._results_path, submodel_name, False)
+                            self._models.append(m)
+                            models_map[m.get_name()] = m
+                    ens = Ensemble.load(self._results_path, "Ensemble", models_map)
+                    self._models.append(ens)
+                    ensemble_model = ens
+                except Exception as e:
+                    logger.warning(f"Failed to load Ensemble model: {str(e)}")
+
+            if ensemble_model is not None:
+                uncertainty_model = ensemble_model
+                logger.warning(
+                    f"The best selected model is '{self._best_model.get_type()}', not an Ensemble. "
+                    f"Using the trained Ensemble model '{ensemble_model.get_name()}' to compute uncertainty intervals."
+                )
+            else:
+                raise AutoMLException(
+                    f"Predict uncertainty is only supported when an Ensemble model is available. "
+                    f"Current best model type is '{self._best_model.get_type()}' and no Ensemble model was found."
+                )
+
+        if not (0 < alpha < 1):
+            raise AutoMLException("Parameter alpha must be between 0 and 1 exclusive.")
+
+        if not hasattr(uncertainty_model, "selected_models") or not uncertainty_model.selected_models:
+            raise AutoMLException("The ensemble model does not contain any submodels.")
+
+        X = self._build_dataframe(X)
+        if not isinstance(X.columns[0], str):
+            X.columns = [str(c) for c in X.columns]
+
+        input_columns = X.columns.tolist()
+        for column in self._data_info["columns"]:
+            if column not in input_columns:
+                raise AutoMLException(
+                    f"Missing column: {column} in input data. Cannot predict"
+                )
+
+        X = X[self._data_info["columns"]]
+        self._validate_X_predict(X)
+
+        X_stacked = None
+        if uncertainty_model._is_stacked:
+            self._perform_model_stacking()
+            X_stacked = self.get_stacked_data(X, mode="predict")
+
+        # Collect predictions from each sub-model in the ensemble
+        predictions_list = []
+        weights = []
+        for selected in uncertainty_model.selected_models:
+            submodel = selected["model"]
+            weight = selected["repeat"]
+            weights.append(weight)
+
+            if submodel._is_stacked:
+                pred = submodel.predict(X_stacked)
+            else:
+                pred = submodel.predict(X)
+
+            predictions_list.append(pred["prediction"].to_numpy())
+
+        preds_array = np.array(predictions_list)  # shape: (n_models, n_samples)
+        weights_array = np.array(weights)
+
+        # Weighted mean, variance, and standard deviation across sub-models
+        mu = np.average(preds_array, weights=weights_array, axis=0)
+        var = np.average((preds_array - mu) ** 2, weights=weights_array, axis=0)
+        std = np.sqrt(var)
+
+        # Compute interval bounds using the normal distribution z-score
+        z = scipy.stats.norm.ppf(1.0 - alpha / 2.0)
+        lower = mu - z * std
+        upper = mu + z * std
+
+        return pd.DataFrame(
+            {
+                "prediction": mu,
+                "prediction_std": std,
+                "prediction_variance": var,
+                "lower": lower,
+                "upper": upper,
+            },
+            index=X.index,
+        )
 
     def _score(self, X, y=None, sample_weight=None):
         # y default must be None for scikit-learn compatibility

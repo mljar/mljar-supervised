@@ -601,3 +601,32 @@ class AutoML(BaseAutoML):
             bool: Decides if there is a need to retrain the AutoML.
         """
         return self._need_retrain(X, y, sample_weight, decrease)
+    
+    def predict_uncertainty(
+        self,
+        X: Union[List, numpy.ndarray, pandas.DataFrame],
+        alpha: float = 0.05,
+    ) -> pandas.DataFrame:
+        """Computes the ensemble-based uncertainty intervals for a regression task.
+
+        This method estimates prediction uncertainty by analyzing the disagreement/variance
+        among the individual sub-models selected within the trained Ensemble.
+
+        Note:
+            This represents an ensemble uncertainty interval based on model disagreement, 
+            not a statistically calibrated confidence interval.
+
+        Args:
+            X (Union[List, numpy.ndarray, pandas.DataFrame]): Input features for predictions.
+            alpha (float): Significance level for the interval (e.g., alpha=0.05 for a 95% interval). 
+                Must be between 0 and 1 exclusive. Defaults to 0.05.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing:
+                - `prediction`: Weighted mean of the sub-models' predictions.
+                - `prediction_std`: Standard deviation of the sub-models' predictions.
+                - `prediction_variance`: Variance of the sub-models' predictions.
+                - `lower`: Lower bound of the uncertainty interval.
+                - `upper`: Upper bound of the uncertainty interval.
+        """
+        return self._predict_uncertainty(X, alpha)
