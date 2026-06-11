@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn import datasets
 
 from supervised import AutoML
+from supervised.apps.metadata import _build_numeric_feature
 from supervised.exceptions import AutoMLException
 
 
@@ -223,3 +224,42 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertEqual(sex_feature["widget"], "select")
         self.assertIn("male", sex_feature["choices"])
         self.assertIn("female", sex_feature["choices"])
+
+    def test_numeric_feature_uses_integer_step_for_integer_series(self):
+        feature = _build_numeric_feature(
+            {"name": "children", "kind": "numeric", "widget": "number"},
+            pd.Series([0, 1, 2, 3, 4]),
+        )
+
+        self.assertEqual(feature["dtype"], "int")
+        self.assertEqual(feature["step"], 1)
+        self.assertEqual(feature["min"], 0)
+        self.assertEqual(feature["max"], 4)
+
+    def test_numeric_feature_treats_integer_like_float_series_as_int(self):
+        feature = _build_numeric_feature(
+            {"name": "age", "kind": "numeric", "widget": "number"},
+            pd.Series([18.0, 25.0, 40.0, 67.0]),
+        )
+
+        self.assertEqual(feature["dtype"], "int")
+        self.assertEqual(feature["step"], 1)
+        self.assertEqual(feature["default"], 32)
+
+    def test_numeric_feature_uses_decimal_step_for_float_series(self):
+        feature = _build_numeric_feature(
+            {"name": "fare", "kind": "numeric", "widget": "number"},
+            pd.Series([7.25, 8.05, 12.5, 71.83]),
+        )
+
+        self.assertEqual(feature["dtype"], "float")
+        self.assertEqual(feature["step"], 0.01)
+
+    def test_numeric_feature_uses_integer_step_for_constant_numeric_series(self):
+        feature = _build_numeric_feature(
+            {"name": "dependents", "kind": "numeric", "widget": "number"},
+            pd.Series([2.0, 2.0, 2.0]),
+        )
+
+        self.assertEqual(feature["dtype"], "int")
+        self.assertEqual(feature["step"], 1)

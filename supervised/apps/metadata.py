@@ -168,16 +168,17 @@ def _build_numeric_feature(feature, series):
     clean = pd.to_numeric(series, errors="coerce").dropna()
     if clean.empty:
         return _fill_missing_feature_defaults(feature)
+    numeric_dtype = _detect_numeric_dtype(clean)
     min_value = float(clean.min())
     max_value = float(clean.max())
     median_value = float(clean.median())
     feature.update(
         {
-            "dtype": _detect_numeric_dtype(clean),
+            "dtype": numeric_dtype,
             "default": _coerce_json_number(median_value, clean),
-            "min": min_value,
-            "max": max_value,
-            "step": _numeric_step(min_value, max_value),
+            "min": _coerce_json_number(min_value, clean),
+            "max": _coerce_json_number(max_value, clean),
+            "step": _numeric_step(clean),
             "distribution": _numeric_distribution(clean),
         }
     )
@@ -267,18 +268,35 @@ def _numeric_distribution(series):
     }
 
 
-def _numeric_step(min_value, max_value):
-    spread = abs(max_value - min_value)
-    if spread == 0:
-        return 1.0
-    step = spread / 100.0
-    if step >= 1:
-        return float(max(1.0, round(step, 2)))
-    return float(round(step, 4))
+def _numeric_step(series):
+    clean = pd.to_numeric(series, errors="coerce").dropna()
+    if clean.empty:
+        return 0.1
+    if _detect_numeric_dtype(clean) == "int":
+        return 1
+
+    decimal_places = 0
+    for value in clean.tolist():
+        if not math.isfinite(value):
+            continue
+        text = f"{float(value):.10f}".rstrip("0").rstrip(".")
+        if "." in text:
+            decimal_places = max(decimal_places, len(text.split(".")[1]))
+
+    if decimal_places == 0:
+        return 1
+    decimal_places = min(decimal_places, 4)
+    return float(10 ** (-decimal_places))
 
 
 def _detect_numeric_dtype(series):
-    if pd.api.types.is_integer_dtype(series):
+    clean = pd.to_numeric(series, errors="coerce").dropna()
+    if clean.empty:
+        return "float"
+    if pd.api.types.is_integer_dtype(clean):
+        return "int"
+    values = clean.astype(float).to_numpy()
+    if np.all(np.isfinite(values)) and np.allclose(values, np.round(values), atol=1e-9):
         return "int"
     return "float"
 
