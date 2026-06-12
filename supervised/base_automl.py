@@ -117,6 +117,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._underprivileged_groups = []
         self._optuna_verbose = True
         self._n_jobs = -1
+        self._min_samples_per_class = None
         self._id = str(uuid.uuid4())
 
     def _get_tuner_params(
@@ -186,6 +187,7 @@ class BaseAutoML(BaseEstimator, ABC):
             )
             self._n_jobs = params.get("n_jobs", self._n_jobs)
             self._random_state = params.get("random_state", self._random_state)
+            self._min_samples_per_class = params.get("min_samples_per_class", 20)
             stacked_models = params.get("stacked")
 
             best_model_name = params.get("best_model")
@@ -426,6 +428,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 fairness_threshold=self._fairness_threshold,
                 privileged_groups=self._privileged_groups,
                 underprivileged_groups=self._underprivileged_groups,
+                original_rows=self._validation_strategy.get("original_rows"),
             )
             (
                 oofs,
@@ -581,10 +584,26 @@ class BaseAutoML(BaseEstimator, ABC):
         # save information about original data
         self._save_data_info(X, y, sample_weight, sensitive_features)
 
-        # handle drastic imbalance
-        # assure at least 20 samples of each class
-        # for binary and multiclass classification
-        self._handle_drastic_imbalance(X, y, sample_weight, sensitive_features)
+        # upsample classes with fewer than min_samples_per_class (for model training)
+        upsampling_info = self._handle_drastic_imbalance(
+            X, y, sample_weight, sensitive_features
+        )
+        if upsampling_info is not None:
+            self._data_info["upsampling"] = upsampling_info
+            data_info_path = os.path.join(self._results_path, "data_info.json")
+            with open(data_info_path, "w") as fout:
+                fout.write(json.dumps(self._data_info, indent=4, cls=MLJSONEncoder))
+            self._validation_strategy["original_rows"] = upsampling_info[
+                "original_rows"
+            ]
+            self.verbose_print(
+                "Upsampling applied: classes with fewer than "
+                f"{upsampling_info['min_samples_per_class']} samples were duplicated "
+                f"with replacement ({upsampling_info['original_rows']} -> "
+                f"{upsampling_info['training_rows']} rows). "
+                "Metrics and ensembles use original rows only. "
+                "Set min_samples_per_class=0 to disable."
+            )
 
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.data")
@@ -635,16 +654,23 @@ class BaseAutoML(BaseEstimator, ABC):
         self, X, y, sample_weight=None, sensitive_features=None
     ):
         if self._ml_task == REGRESSION:
-            return
+            return None
+        if self._min_samples_per_class <= 0:
+            return None
+
         classes, cnts = np.unique(y, return_counts=True)
-        min_samples_per_class = 20
+        min_samples_per_class = self._min_samples_per_class
         if self._validation_strategy is not None:
             min_samples_per_class = max(
                 min_samples_per_class, self._validation_strategy.get("k_folds", 0)
             )
+
+        original_rows = X.shape[0]
+        appended_per_class = {}
         for i in range(len(classes)):
             if cnts[i] < min_samples_per_class:
                 append_samples = min_samples_per_class - cnts[i]
+                appended_per_class[str(classes[i])] = int(append_samples)
                 new_X = (
                     X[y == classes[i]]
                     .sample(n=append_samples, replace=True, random_state=1)
@@ -673,6 +699,17 @@ class BaseAutoML(BaseEstimator, ABC):
                         sensitive_features.loc[
                             sensitive_features.shape[0]
                         ] = new_sensitive_features.loc[j]
+
+        if not appended_per_class:
+            return None
+
+        return {
+            "min_samples_per_class": int(min_samples_per_class),
+            "original_rows": int(original_rows),
+            "training_rows": int(X.shape[0]),
+            "appended_rows": int(X.shape[0] - original_rows),
+            "appended_per_class": appended_per_class,
+        }
 
     def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
@@ -1029,6 +1066,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._optuna_verbose = self._get_optuna_verbose()
         self._n_jobs = self._get_n_jobs()
         self._random_state = self._get_random_state()
+        self._min_samples_per_class = self._get_min_samples_per_class()
 
         if sensitive_features is not None:
             self._fairness_metric = self._get_fairness_metric()
@@ -1374,6 +1412,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "max_single_prediction_time": self._max_single_prediction_time,
                 "n_jobs": self._n_jobs,
                 "random_state": self._random_state,
+                "min_samples_per_class": self._min_samples_per_class,
                 "saved": self._model_subpaths,
                 "fit_level": self._fit_level,
             }
@@ -1970,6 +2009,11 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validate_random_state()
         return deepcopy(self.random_state)
 
+    def _get_min_samples_per_class(self):
+        """Gets the current min_samples_per_class"""
+        self._validate_min_samples_per_class()
+        return deepcopy(self.min_samples_per_class)
+
     def _validate_mode(self):
         """Validates mode parameter"""
         valid_modes = ["Explain", "Perform", "Compete", "Optuna"]
@@ -2210,6 +2254,10 @@ class BaseAutoML(BaseEstimator, ABC):
     def _validate_random_state(self):
         """Validates random_state parameter"""
         check_positive_integer(self.random_state, "random_state")
+
+    def _validate_min_samples_per_class(self):
+        """Validates min_samples_per_class parameter"""
+        check_positive_integer(self.min_samples_per_class, "min_samples_per_class")
 
     def _validate_fairness_metric(self):
         """Validates fariness_metric parameter"""

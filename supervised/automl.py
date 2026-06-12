@@ -83,6 +83,7 @@ class AutoML(BaseAutoML):
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
+        min_samples_per_class: int = 20,
     ):
         """
         Initialize `AutoML` object.
@@ -307,6 +308,12 @@ class AutoML(BaseAutoML):
 
             random_state (int): Controls the randomness of the `AutoML`
 
+            min_samples_per_class (int): Minimum number of samples per class required for training.
+                If a class has fewer samples, additional rows are created by random oversampling
+                with replacement before model training. Metrics, confusion matrices, and ensembles
+                are computed on original rows only. Set to ``0`` to disable oversampling.
+                The effective minimum is also at least ``k_folds`` when using k-fold validation.
+
 
         Examples:
 
@@ -409,6 +416,7 @@ class AutoML(BaseAutoML):
         self.underprivileged_groups = underprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.min_samples_per_class = min_samples_per_class
 
     def fit(
         self,

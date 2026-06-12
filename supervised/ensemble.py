@@ -19,6 +19,11 @@ from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
+from supervised.utils.oof_utils import (
+    filter_oof_to_original_rows,
+    filter_oofs_dict,
+    filter_target_to_original_rows,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -42,6 +47,7 @@ class Ensemble:
         fairness_threshold=None,
         privileged_groups=None,
         underprivileged_groups=None,
+        original_rows=None,
     ):
         self.library_version = "0.1"
         self.uid = str(uuid.uuid4())
@@ -75,6 +81,7 @@ class Ensemble:
         self._underprivileged_groups = underprivileged_groups
         self._is_fair = None
         self.sensitive_features = None
+        self._original_rows = original_rows
 
     def get_train_time(self):
         return self.train_time
@@ -208,7 +215,9 @@ class Ensemble:
             logger.debug("Get additional metrics for Ensemble")
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
-            oof_predictions = self.get_out_of_folds()
+            oof_predictions = filter_oof_to_original_rows(
+                self.get_out_of_folds(), self._original_rows
+            )
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
@@ -333,6 +342,16 @@ class Ensemble:
 
     def fit(self, oofs, y, sample_weight=None, sensitive_features=None):
         logger.debug("Ensemble.fit")
+        oofs = filter_oofs_dict(oofs, self._original_rows)
+        y = filter_target_to_original_rows(y, self._original_rows)
+        if sample_weight is not None:
+            sample_weight = filter_target_to_original_rows(
+                sample_weight, self._original_rows
+            )
+        if sensitive_features is not None:
+            sensitive_features = filter_target_to_original_rows(
+                sensitive_features, self._original_rows
+            )
         self.sensitive_features = sensitive_features
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms

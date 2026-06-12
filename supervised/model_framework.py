@@ -23,6 +23,7 @@ from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
+from supervised.utils.oof_utils import filter_oof_to_original_rows
 from supervised.validation.validation_step import ValidationStep
 
 logger = logging.getLogger(__name__)
@@ -386,7 +387,33 @@ class ModelFramework:
 
         return early_stopping.best_y_oof
 
+    def _get_oof_for_metrics(self):
+        oof = self.get_out_of_folds()
+        original_rows = self.validation_params.get("original_rows")
+        return filter_oof_to_original_rows(oof, original_rows)
+
+    def _compute_loss_from_oof(self, oof):
+        metric = self.get_metric()
+        target_cols = [c for c in oof.columns if "target" in c]
+        prediction_cols = [c for c in oof.columns if "prediction" in c]
+        sample_weight = None
+        if "sample_weight" in oof.columns:
+            sample_weight = oof["sample_weight"]
+        if "prediction" in oof.columns:
+            return metric(
+                oof[target_cols], oof["prediction"], sample_weight=sample_weight
+            )
+        return metric(
+            oof[target_cols], oof[prediction_cols], sample_weight=sample_weight
+        )
+
     def get_final_loss(self):
+        original_rows = self.validation_params.get("original_rows")
+        if original_rows is not None:
+            oof = self._get_oof_for_metrics()
+            if oof is not None and not oof.empty:
+                return self._compute_loss_from_oof(oof)
+
         if self.final_loss is not None:
             return self.final_loss
         early_stopping = self.callbacks.get("early_stopping")
@@ -463,7 +490,7 @@ class ModelFramework:
             logger.debug("Compute additional metrics")
             # 'target' - the target after processing used for model training
             # 'prediction' - out of folds predictions of the model
-            oof_predictions = self.get_out_of_folds()
+            oof_predictions = self._get_oof_for_metrics()
             prediction_cols = [c for c in oof_predictions.columns if "prediction" in c]
             target_cols = [c for c in oof_predictions.columns if "target" in c]
 
