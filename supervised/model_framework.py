@@ -625,7 +625,7 @@ class ModelFramework:
                 "is_stacked": self._is_stacked,
                 "joblib_version": joblib.__version__,
             }
-            desc["final_loss"] = str(desc["final_loss"])
+            desc["final_loss"] = desc["final_loss"]
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:
@@ -707,7 +707,13 @@ class ModelFramework:
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.train_time = json_desc.get("train_time", mf.train_time)
-        mf.final_loss = json_desc.get("final_loss", mf.final_loss)
+        final_loss = json_desc.get("final_loss", mf.final_loss)
+        if final_loss is not None:
+            try:
+                final_loss = float(final_loss)
+            except ValueError:
+                pass
+        mf.final_loss = final_loss
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
         mf._single_prediction_time = json_desc.get(
