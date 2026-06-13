@@ -33,12 +33,13 @@ class TextTransformer(object):
             )
             ii = ~pd.isnull(X[self._old_column])
             x = X[self._old_column][ii]
-            vect = self._vectorizer.transform(x)
 
             for f in self._new_columns:
                 X[f] = 0.0
 
-            X.loc[ii, self._new_columns] = vect.toarray()
+            if x.shape[0] > 0:
+                vect = self._vectorizer.transform(x)
+                X.loc[ii, self._new_columns] = vect.toarray()
             X.drop(self._old_column, axis=1, inplace=True)
         return X
 
