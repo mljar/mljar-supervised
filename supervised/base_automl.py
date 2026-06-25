@@ -242,6 +242,11 @@ class BaseAutoML(BaseEstimator, ABC):
     def get_leaderboard(
         self, filter_random_feature=False, original_metric_values=False
     ):
+        
+        
+        print(f"DEBUG: original_metric_values is {original_metric_values}")
+        print(f"DEBUG: self._eval_metric is {self._eval_metric}")
+        print(f"DEBUG: Metric.optimize_negative checks: {Metric.optimize_negative(self._eval_metric)}")
         ldb = {
             "name": [],
             "model_type": [],
@@ -289,7 +294,9 @@ class BaseAutoML(BaseEstimator, ABC):
 
         if original_metric_values:
             if Metric.optimize_negative(self._eval_metric):
-                ldb["metric_value"] *= -1.0
+                # Explicitly invert the sign and clean up any annoying -0.0 artifacts
+                ldb["metric_value"] = ldb["metric_value"] * -1.0
+                ldb["metric_value"] = ldb["metric_value"].apply(lambda x: 0.0 if x == 0.0 else x)
 
         return ldb
 
