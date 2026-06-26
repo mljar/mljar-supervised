@@ -1,5 +1,6 @@
 import shutil
 import unittest
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -51,11 +52,16 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
         y[10:12] = 2
         y = pd.Series(np.array(y), name="target")
         a._ml_task = MULTICLASS_CLASSIFICATION
-        a._handle_drastic_imbalance(X, y)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            a._handle_drastic_imbalance(X, y)
 
         self.assertEqual(X.shape[0], 130)
         self.assertEqual(X.shape[1], 3)
         self.assertEqual(y.shape[0], 130)
+        self.assertEqual(len(record), 1)
+        self.assertIn("AutoML added 30 duplicated sample(s)", str(record[0].message))
+        self.assertIn("out-of-fold predictions", str(record[0].message))
 
     def test_handle_drastic_imbalance_sample_weight(self):
         a = AutoML(
@@ -88,11 +94,16 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
 
         y = pd.Series(np.array(y), name="target")
         a._ml_task = MULTICLASS_CLASSIFICATION
-        a._handle_drastic_imbalance(X, y, sample_weight)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            a._handle_drastic_imbalance(X, y, sample_weight)
 
         self.assertEqual(X.shape[0], 138)
         self.assertEqual(X.shape[1], 3)
         self.assertEqual(y.shape[0], 138)
+        self.assertEqual(len(record), 1)
+        self.assertIn("AutoML added 38 duplicated sample(s)", str(record[0].message))
+        self.assertIn("out-of-fold predictions", str(record[0].message))
 
         self.assertEqual(np.sum(sample_weight[100:119]), 0)
         self.assertEqual(np.sum(sample_weight[119:138]), 19 * 10)
@@ -126,7 +137,16 @@ class AutoMLHandleImbalanceTest(unittest.TestCase):
         y[10:12] = 2
         sample_weight = np.ones(rows)
 
-        a.fit(X, y, sample_weight=sample_weight)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            a.fit(X, y, sample_weight=sample_weight)
+
+        self.assertTrue(
+            any(
+                "AutoML added 30 duplicated sample(s)" in str(w.message)
+                for w in record
+            )
+        )
 
         # original data **without** inserted samples to handle imbalance
         self.assertEqual(X.shape[0], rows)
