@@ -44,7 +44,7 @@ class AutoMLPlots:
             image = ax.imshow(
                 data_df,
                 interpolation="nearest",
-                cmap=plt.cm.get_cmap(cmap),
+                cmap=plt.get_cmap(cmap),
                 aspect="auto",
                 vmin=vmin, # Use provided vmin
                 vmax=vmax  # Use provided vmax
@@ -333,7 +333,7 @@ class AutoMLPlots:
             image = ax.imshow(
                 corrs,
                 interpolation="nearest",
-                cmap=plt.cm.get_cmap("Blues"),
+                cmap=plt.get_cmap("Blues"),
                 aspect="auto",
                 vmin=np.nanmin(corrs), # Use nanmin/nanmax to handle potential NaNs
                 vmax=np.nanmax(corrs)
@@ -365,4 +365,3 @@ class AutoMLPlots:
             logger.error(traceback.format_exc())
              # Ensure plot is closed if error occurred during saving/closing
             plt.close("all")
-
