@@ -92,11 +92,14 @@ automl = AutoML(
         "k_folds": 5,
         "shuffle": True,
         "stratify": True,
+        "repeats": 3,
     },
 )
 ```
 
 If validation is explicitly provided, AutoML will use it instead of trying to adjust it automatically.
+
+The `repeats` parameter runs repeated k-fold validation (default: `1`, meaning no repeats). It requires `shuffle=True` — if shuffle is disabled, repeats will automatically be reset to `1` with a warning.
 
 ## `default_algorithms`
 
