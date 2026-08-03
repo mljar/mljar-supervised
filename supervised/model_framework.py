@@ -721,6 +721,9 @@ class ModelFramework:
         for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
+            # Normalize path separators for cross-platform compatibility
+            # (models trained on Windows may have backslashes in paths)
+            learner_subpath = learner_subpath.replace("\\", "/")
             learner_path = os.path.join(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]
