@@ -5,6 +5,7 @@ import shutil
 import time
 import types
 import uuid
+import warnings
 from abc import ABC
 from copy import deepcopy
 
@@ -642,9 +643,11 @@ class BaseAutoML(BaseEstimator, ABC):
             min_samples_per_class = max(
                 min_samples_per_class, self._validation_strategy.get("k_folds", 0)
             )
+        total_append_samples = 0
         for i in range(len(classes)):
             if cnts[i] < min_samples_per_class:
                 append_samples = min_samples_per_class - cnts[i]
+                total_append_samples += append_samples
                 new_X = (
                     X[y == classes[i]]
                     .sample(n=append_samples, replace=True, random_state=1)
@@ -673,6 +676,15 @@ class BaseAutoML(BaseEstimator, ABC):
                         sensitive_features.loc[
                             sensitive_features.shape[0]
                         ] = new_sensitive_features.loc[j]
+        if total_append_samples > 0:
+            warnings.warn(
+                f"AutoML added {total_append_samples} duplicated sample(s) "
+                "before validation because some classes have fewer than "
+                f"{min_samples_per_class} samples. Validation folds and "
+                "out-of-fold predictions can include these duplicated rows.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     def _save_data_info(self, X, y, sample_weight=None, sensitive_features=None):
         target_is_numeric = pd.api.types.is_numeric_dtype(y)
