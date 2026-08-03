@@ -721,6 +721,7 @@ class ModelFramework:
         for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
+            learner_subpath = os.path.normpath(learner_subpath)
             learner_path = os.path.join(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]
