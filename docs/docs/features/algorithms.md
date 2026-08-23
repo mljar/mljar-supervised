@@ -38,13 +38,16 @@ The `Decision Tree` is using scikit-learn [`DecisionTreeRegressor`](https://scik
     The allowed values of hyperparameters:
     ```python
     dt_params = {
-        "criterion": ["mse", "friedman_mse"], 
+        "criterion": ["squared_error"],
         "max_depth": [2, 3, 4]
     }
     ```
     The default set of hyperparameters:
     ```python
-    classification_default_params = {"criterion": "mse", "max_depth": 3}
+    regression_default_params = {
+        "criterion": "squared_error",
+        "max_depth": 3
+    }
     ```
 
 For `Decision Tree` a visualization can be created with `dtreeviz` package (not to have `explain_level > 0`).

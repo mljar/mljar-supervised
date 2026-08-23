@@ -282,7 +282,6 @@ AlgorithmsRegistry.add(
 dt_regression_params = {
     "criterion": [
         "squared_error",
-        "friedman_mse",
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_depth": [2, 3, 4],
 }
