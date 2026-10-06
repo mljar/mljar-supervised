@@ -150,11 +150,20 @@ class AutoML(BaseAutoML):
 
             stack_models (boolean): Whether a models stack gets created at the end of the training. Stack level is 1.
 
-            eval_metric (str): The metric to be used in early stopping and to compare models.
+            eval_metric (str or function): The metric to be used in early stopping and to compare models.
 
                 - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
                 - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
                 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+
+                You can also pass a custom Python function directly. The expected interface is:
+
+                `def my_metric(y_true, y_predicted, sample_weight=None): return score`
+
+                The returned value is always minimized. If you want to maximize a metric,
+                for example precision or F1, return its negative value. For classification
+                tasks, `y_predicted` can contain probabilities, so thresholding or `argmax`
+                might be needed inside the custom metric.
 
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
 
@@ -410,7 +419,7 @@ class AutoML(BaseAutoML):
         sensitive_features: Optional[
             Union[numpy.ndarray, pandas.Series, pandas.DataFrame]
         ] = None,
-    ):
+    ) -> "AutoML":
         """Fit the AutoML model.
 
         Arguments:
@@ -426,7 +435,7 @@ class AutoML(BaseAutoML):
             sensitive_features (pandas.Series or pandas.DataFrame): Sensitive features to learn fair models
 
         Returns:
-            AutoML object: Returns `self`
+            AutoML: Returns `self`.
         """
         try:
             original_backend = matplotlib.get_backend()
@@ -538,7 +547,7 @@ class AutoML(BaseAutoML):
     def report_structured(self, format="markdown", model_name=None):
         return self._report_structured(format, model_name)
 
-    def app(self, path=None, overwrite=False, title=None, verbose=False):
+    def app(self, path=None, overwrite=False, title=None, verbose=True):
         from supervised.apps import generate_app
 
         return generate_app(
@@ -553,6 +562,7 @@ class AutoML(BaseAutoML):
         title=None,
         open_browser=True,
         timeout=300,
+        verbose=True,
     ):
         from supervised.apps import publish_app_from_automl
 
@@ -564,6 +574,7 @@ class AutoML(BaseAutoML):
             title=title,
             open_browser=open_browser,
             timeout=timeout,
+            verbose=verbose,
         )
 
     def local_app(self):
@@ -595,7 +606,7 @@ class AutoML(BaseAutoML):
                 on new data then there is a need to retrain. This value should be set depending on your project needs.
                 Sometimes, 10% is enough, but for some projects, it can be even lower than 1%.
 
-            Returns:
-                boolean: Decides if there is a need to retrain the AutoML.
+        Returns:
+            bool: Decides if there is a need to retrain the AutoML.
         """
         return self._need_retrain(X, y, sample_weight, decrease)

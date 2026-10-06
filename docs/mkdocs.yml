@@ -1,0 +1,99 @@
+site_name: MLJAR AutoML for Python
+site_url: https://supervised.mljar.com/
+site_description: Automated machine learning for Python with model training, explainability, fairness-aware learning, and report generation for tabular data.
+site_author: MLJAR
+docs_dir: docs
+site_dir: site
+
+theme:
+    name: material
+    #custom_dir: overrides
+    favicon: images/favicon.png
+    icon:
+        repo: fontawesome/brands/github-square
+        logo: fontawesome/solid/book-open
+    palette:
+        primary: blue
+
+
+repo_url: https://github.com/mljar/mljar-supervised
+repo_name: mljar-supervised
+
+markdown_extensions:
+    - pymdownx.highlight:
+        use_pygments: true
+    - toc:
+        permalink: true
+    - codehilite
+    - pymdownx.tabbed
+    - pymdownx.superfences
+    - admonition
+    - pymdownx.details
+    - pymdownx.emoji:
+        emoji_index: !!python/name:material.extensions.emoji.twemoji
+        emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    - attr_list
+    - def_list
+    - pymdownx.tasklist:
+        custom_checkbox: true
+    - footnotes
+
+plugins:
+  - search
+  - social:
+      cards_layout: default
+      cards_layout_options:
+        background_color: "#0f6cbd"
+        color: "#ffffff"
+  - mkdocstrings
+
+extra:
+    social:
+        - icon: fontawesome/brands/github
+          link: https://github.com/mljar/mljar-supervised
+        - icon: fontawesome/brands/slack
+          link: https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/
+        - icon: fontawesome/brands/twitter
+          link: https://twitter.com/MLJARofficial
+        - icon: fontawesome/regular/lightbulb
+          link: https://mljar.com
+    font:
+        - text: 'Ubuntu'
+        - code: 'Ubuntu Mono'
+
+edit_uri: edit/master/docs/docs/
+
+copyright: Copyright © MLJAR, Inc.
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Get started: index.md
+  - Features: 
+    - Apps: features/apps.md
+    - Custom eval metric: features/custom-eval-metric.md
+    - Preprocessing: features/preprocessing.md
+    - Save and Load models: features/save-and-load-models.md
+    - Steps of AutoML: features/automl.md
+    - AutoML modes: features/modes.md
+    - Golden Features: features/golden_features.md
+    - Features Selection: features/features_selection.md
+    - Algorithms: features/algorithms.md
+    - Explainability: features/explain.md
+    - Stacking Ensemble: features/stacking-ensemble.md
+    
+  - Get help: get_help.md
+  - How can you help?: help.md
+  - Contributing: contributing.md
+  - AutoML API: api.md
+  - Roadmap: roadmap.md
+  - Tutorials:
+    - Share Classification Model as App: tutorials/app-classification.md
+    - Share Regression Model as App: tutorials/app-regression.md
+    - Classify Titanic Passengers: tutorials/titanic.md
+    - Classify Random Data: tutorials/random.md
+    - Fairness Binary Classification: tutorials/fairness-binary-classification.md
+    - Fairness Multiclass Classification: tutorials/fairness-multiclass-classification.md
+    - Fairness Regression: tutorials/fairness-regression.md
+        

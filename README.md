@@ -5,10 +5,6 @@
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/version.svg)](https://anaconda.org/conda-forge/mljar-supervised)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/mljar-supervised.svg)](https://pypi.python.org/pypi/mljar-supervised/)
-
-
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/platforms.svg)](https://anaconda.org/conda-forge/mljar-supervised)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/license.svg)](https://anaconda.org/conda-forge/mljar-supervised)
 [![Downloads](https://pepy.tech/badge/mljar-supervised)](https://pepy.tech/project/mljar-supervised)
 
@@ -44,6 +40,7 @@ Start quickly, iterate faster, and manage experiments in one place.
 ## Table of Contents
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
+ - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
  - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
  - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
@@ -68,9 +65,10 @@ Start quickly, iterate faster, and manage experiments in one place.
 The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black box, as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
 
 The `mljar-supervised` will help you with:
- - explaining and understanding your data (Automatic Exploratory Data Analysis),
+ - explaining and understanding your data through model reports, feature importance, and SHAP explanations,
  - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
  - creating Markdown reports from analysis with details about all models (Automatic-Documentation),
+ - generating a web app for a trained model, so predictions can be used by domain experts,
  - saving, re-running, and loading the analysis and ML models.
 
 It has four built-in modes of work:
@@ -80,6 +78,47 @@ It has four built-in modes of work:
  - `Optuna` mode can be used to search for highly-tuned ML models should be used when the performance is the most important, and computation time is not limited (it is available from version `0.10.0`)
 
 Of course, you can further customize the details of each `mode` to meet the requirements.
+
+## Generate Web Apps for Trained Models
+
+MLJAR AutoML does not stop after training a model. It can automatically generate a web app for your trained model with [Mercury](https://github.com/mljar/mercury). This is useful when you want to share predictions with domain experts, business users, researchers, or other people who do not want to work directly with Python code. 
+
+After training AutoML, generate the app files with:
+
+```python 
+from supervised import AutoML
+# AutoML training
+automl = AutoML(results_path="AutoML")
+automl.fit(X, y)
+
+# Generate a Mercury web app for the trained model
+automl.app()
+``` 
+
+You can also start the app locally:
+
+```python
+automl.local_app()
+```
+
+or publish it quickly:
+
+```python
+automl.publish_app()
+```
+
+`publish_app()` creates an app URL on the first publish and then reuses the last successfully published URL by default.
+
+The generated app can include:
+- single prediction dashboard,
+- batch prediction from CSV files,
+- downloadable predictions,
+- feature importance plots,
+- feature context plots for single predictions.
+
+With this feature, you can go from: CSV data -> trained ML model -> ready-to-use prediction web app.
+
+Please check the [Apps documentation](https://supervised.mljar.com/features/apps/) for details.
 
 ## What's good in it? 
 
@@ -93,7 +132,8 @@ Of course, you can further customize the details of each `mode` to meet the requ
 - It has extensive explanations. This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
 - The `mljar-supervised` uses simple linear regression and includes its coefficients in the summary report, so you can check which features are used the most in the linear model.
 - It cares about the explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm, the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with the `explain_level` parameter).
-- There is automatic documentation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics, and charts. 
+- There is automatic documentation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics, and charts.
+- It can generate Mercury web apps from trained AutoML models, so the model can be shared as an interactive prediction app.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
@@ -213,6 +253,8 @@ All models are automatically saved to be able to restore the training after inte
 - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`- default is `logloss`
 - for multiclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
+
+You can also pass a custom Python function directly as `eval_metric`. See the docs for [Custom eval metric](https://supervised.mljar.com/features/custom-eval-metric/).
 
 If you don't find the `eval_metric` that you need, please add a new issue. We will add it.
 

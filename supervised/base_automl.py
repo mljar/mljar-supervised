@@ -48,6 +48,8 @@ from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.leaderboard_plots import LeaderboardPlots
 from supervised.utils.metric import Metric, UserDefinedEvalMetric
 from supervised.utils.report_structured import (
+    AUTOMATION_CONSOLE_TEXT,
+    AUTOMATION_DISCLOSURE_TEXT,
     build_compact_view,
     build_structured_report,
     save_structured_report,
@@ -145,7 +147,9 @@ class BaseAutoML(BaseEstimator, ABC):
             self._model_subpaths = params["saved"]
             self._mode = params.get("mode", self._mode)
             self._ml_task = params.get("ml_task", self._ml_task)
-            self._results_path = params.get("results_path", self._results_path)
+            # The loaded directory is the source of truth. Serialized results_path
+            # can be stale or intentionally rewritten for packaged app bundles.
+            self._results_path = path
             self._total_time_limit = params.get(
                 "total_time_limit", self._total_time_limit
             )
@@ -686,6 +690,7 @@ class BaseAutoML(BaseEstimator, ABC):
             "cols": X.shape[1],
             "target_is_numeric": target_is_numeric,
             "columns_info": columns_and_target_info["columns_info"],
+            "columns_values": self._save_columns_values(X, columns_and_target_info["columns_info"]),
             "target_info": columns_and_target_info["target_info"],
             "n_features": self.n_features_in_,
             "is_sample_weighted": sample_weight is not None,
@@ -700,6 +705,19 @@ class BaseAutoML(BaseEstimator, ABC):
         data_info_path = os.path.join(self._results_path, "data_info.json")
         with open(data_info_path, "w") as fout:
             fout.write(json.dumps(self._data_info, indent=4, cls=MLJSONEncoder))
+
+    def _save_columns_values(self, X, columns_info):
+        values = {}
+        for col, info in columns_info.items():
+            if "categorical" not in info and "text_transform" not in info:
+                continue
+            non_null = X[col].dropna()
+            if non_null.empty:
+                continue
+            unique_values = pd.Series([str(v) for v in pd.unique(non_null)]).tolist()
+            if "few_categories" in info:
+                values[col] = unique_values[:20]
+        return values
 
     def save_progress(self, step=None, generated_params=None):
         if step is not None and generated_params is not None:
@@ -1051,6 +1069,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 f"The task is {self._ml_task} with evaluation metric {self._eval_metric}"
             )
             self.verbose_print(f"AutoML will use algorithms: {self._algorithms}")
+            self.verbose_print(AUTOMATION_CONSOLE_TEXT)
             if self._stack_models:
                 self.verbose_print("AutoML will stack models")
             if self._train_ensemble:
@@ -1384,10 +1403,8 @@ class BaseAutoML(BaseEstimator, ABC):
 
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
+                fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
-                LeaderboardPlots.compute(
-                    ldb, self._results_path, fout, self._fairness_threshold
-                )
                 if self._fairness_metric is not None and self._best_model is not None:
                     additional_metrics = self._best_model.get_additional_metrics() or {}
                     fairness_metrics = additional_metrics.get("fairness_metrics")
@@ -1399,20 +1416,25 @@ class BaseAutoML(BaseEstimator, ABC):
                         self._best_model.is_fair(),
                     )
                     FairnessReport.write_certificate_section(fout, certificate_info)
+                LeaderboardPlots.compute(
+                    ldb, self._results_path, fout, self._fairness_threshold
+                )
 
                 if self._fit_level == "finished":
                     AutoMLPlots.add(self._results_path, self._models, fout)
 
     def get_ensemble_models(self, ensemble_name="Ensemble"):
         try:
-            with open(os.path.join(self.results_path, ensemble_name, "ensemble.json")) as file:
+            results_path = self._get_results_path()
+            with open(os.path.join(results_path, ensemble_name, "ensemble.json")) as file:
                 params = json.load(file)
             return [m["model"] for m in params["selected_models"]]
         except Exception as e:
             return []
 
     def models_needed_on_predict(self, required_model_name):
-        with open(os.path.join(self.results_path, "params.json")) as file:
+        results_path = self._get_results_path()
+        with open(os.path.join(results_path, "params.json")) as file:
             params = json.load(file)
         saved_models = params.get("saved", [])
         stacked_models = params.get("stacked", [])

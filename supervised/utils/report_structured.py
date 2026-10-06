@@ -9,6 +9,22 @@ from tabulate import tabulate
 
 from supervised.fairness.certificate import build_certificate_info
 
+AUTOMATION_DISCLOSURE_TEXT = (
+    "Models in this report were generated and selected automatically by MLJAR "
+    "AutoML. Review model behavior, data suitability, and decision impact "
+    "before important use."
+)
+
+AUTOMATION_CONSOLE_TEXT = (
+    "AutoML is generating and selecting models automatically. Review outputs "
+    "before important use."
+)
+
+
+def _append_automation_disclosure(lines):
+    lines.append(f"> {AUTOMATION_DISCLOSURE_TEXT}")
+    lines.append("")
+
 
 def _get_package_version():
     try:
@@ -538,12 +554,6 @@ def _append_fairness(lines, model, title):
                 tablefmt="pipe",
             )
         )
-    certificate_url = fairness.get("certificate_url")
-    if certificate_url:
-        lines.append("")
-        lines.append("### Fairness Certificate")
-        lines.append("")
-        lines.append(f"[View fairness certificate]({certificate_url})")
     lines.append("")
 
 
@@ -570,13 +580,8 @@ def _append_main_fairness_summary(lines, fairness_summary):
                 tablefmt="pipe",
             )
         )
-    certificate_url = fairness_summary.get("certificate_url")
-    if certificate_url:
-        lines.append("")
-        lines.append("### Fairness Certificate")
-        lines.append("")
-        lines.append(f"[View fairness certificate]({certificate_url})")
     lines.append("")
+    _append_certificate_section(lines, fairness_summary, heading_level="##")
 
 
 def _append_fairness_metrics_details(lines, model, heading_level="###"):
@@ -623,6 +628,16 @@ def _append_fairness_metrics_details(lines, model, heading_level="###"):
         lines.append("")
 
 
+def _append_certificate_section(lines, payload, heading_level):
+    certificate_url = (payload or {}).get("certificate_url")
+    if not certificate_url:
+        return
+    lines.append(f"{heading_level} Fairness Certificate")
+    lines.append("")
+    lines.append(f"[View and download fairness certificate]({certificate_url})")
+    lines.append("")
+
+
 def _find_model(models, model_name):
     for model in models:
         if model.get("name") == model_name:
@@ -660,6 +675,7 @@ def to_markdown(payload, model_name=None):
     else:
         lines.append(f"# MLJAR AutoML report for {selected_model.get('name')}")
     lines.append("")
+    _append_automation_disclosure(lines)
 
     if selected_model is None:
         lines.append("## Leaderboard")
@@ -741,6 +757,7 @@ def to_markdown(payload, model_name=None):
         lines.append(tabulate(summary_rows, headers=["Field", "Value"], tablefmt="pipe"))
         lines.append("")
         _append_fairness(lines, selected_model, "## Fairness Summary")
+        _append_certificate_section(lines, selected_model.get("fairness"), heading_level="###")
         _append_hyperparameters(lines, selected_model)
         _append_model_metrics(lines, selected_model)
         _append_feature_importance(lines, selected_model, heading_level="##")

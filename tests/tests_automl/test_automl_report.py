@@ -14,6 +14,7 @@ from sklearn.pipeline import make_pipeline
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
 from supervised.fairness.certificate import build_certificate_info
+from supervised.utils.report_structured import AUTOMATION_DISCLOSURE_TEXT
 
 iris = datasets.load_iris()
 
@@ -42,6 +43,7 @@ class AutoMLReportTest(unittest.TestCase):
         with open(report_path, "r") as fin:
             content = fin.read()
         self.assertTrue("AutoML Leaderboard" in content)
+        self.assertIn(AUTOMATION_DISCLOSURE_TEXT, content)
 
     def test_report_structured(self):
         model = AutoML(
@@ -56,6 +58,7 @@ class AutoMLReportTest(unittest.TestCase):
         markdown_report = model.report_structured()
         self.assertTrue(isinstance(markdown_report, str))
         self.assertTrue("# MLJAR AutoML Report" in markdown_report)
+        self.assertIn(AUTOMATION_DISCLOSURE_TEXT, markdown_report)
 
         report_json_path = os.path.join(self.automl_dir, "report_structured.json")
         self.assertTrue(os.path.exists(report_json_path))
@@ -109,6 +112,7 @@ class AutoMLReportTest(unittest.TestCase):
 
         details_markdown = model.report_structured(model_name="1_Baseline")
         self.assertTrue("# MLJAR AutoML report for 1_Baseline" in details_markdown)
+        self.assertIn(AUTOMATION_DISCLOSURE_TEXT, details_markdown)
         self.assertTrue("## Hyperparameters" in details_markdown)
 
         details_dict = model.report_structured(format="dict", model_name="1_Baseline")

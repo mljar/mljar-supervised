@@ -1,7 +1,9 @@
 import os
 import shutil
 import unittest
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -12,12 +14,16 @@ from sklearn.pipeline import make_pipeline
 
 from supervised import AutoML
 from supervised.exceptions import AutoMLException
+from supervised.utils.report_structured import AUTOMATION_CONSOLE_TEXT
 
 iris = datasets.load_iris()
-housing = datasets.fetch_california_housing()
-# limit data size for faster tests
-housing.data = housing.data[:500]
-housing.target = housing.target[:500]
+housing = datasets.make_regression(
+    n_samples=500,
+    n_features=8,
+    n_informative=8,
+    noise=5.0,
+    random_state=123,
+)
 breast_cancer = datasets.load_breast_cancer()
 
 
@@ -124,6 +130,21 @@ class AutoMLTest(unittest.TestCase):
         # Assert before and after params are equal
         self.assertEqual(params_before_fit, params_after_fit)
 
+    def test_fit_prints_automation_notice(self):
+        model = AutoML(
+            algorithms=["Baseline"],
+            explain_level=0,
+            verbose=1,
+            random_state=1,
+            results_path=self.automl_dir,
+        )
+        X, y = datasets.make_classification(n_samples=30, random_state=1)
+
+        with patch("sys.stdout", new_callable=StringIO) as stdout:
+            model.fit(X, y)
+
+        self.assertIn(AUTOMATION_CONSOLE_TEXT, stdout.getvalue())
+
     def test_scikit_learn_pipeline_integration(self):
         """
         Tests if AutoML is working on a scikit-learn's pipeline
@@ -152,10 +173,10 @@ class AutoMLTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
-        model.fit(housing.data, housing.target)
+        model.fit(housing[0], housing[1])
         with self.assertRaises(AutoMLException) as context:
             # Try to call predict_proba in regression task
-            model.predict_proba(housing.data)
+            model.predict_proba(housing[0])
 
     def test_iris_dataset(self):
         """Tests AutoML in the iris dataset (Multiclass classification)"""
@@ -170,8 +191,8 @@ class AutoMLTest(unittest.TestCase):
         model = AutoML(
             explain_level=0, verbose=0, random_state=1, results_path=self.automl_dir
         )
-        score = model.fit(housing.data, housing.target).score(
-            housing.data, housing.target
+        score = model.fit(housing[0], housing[1]).score(
+            housing[0], housing[1]
         )
         self.assertGreater(score, 0.5)
 
