@@ -134,7 +134,7 @@ def _build_feature(name, info, series, fallback_values=None):
 def _infer_kind(info, series):
     if "datetime_transform" in info:
         return "datetime"
-    if "text_transform" in info:
+    if "text_transform" in info or "ip_transform" in info:
         return "text"
     if "categorical" in info:
         if series is not None:

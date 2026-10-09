@@ -37,6 +37,8 @@ class DataInfo:
                 columns_info[col] += ["datetime_transform"]
             elif PreprocessingUtils.is_text(X[col]):
                 columns_info[col] = ["text_transform"]  # override other transforms
+            elif PreprocessingUtils.is_ip(X[col]):
+                columns_info[col] += ["ip_transform"]
             else:
                 # numeric type, check if scale needed
                 if PreprocessingUtils.is_scale_needed(X[col]):

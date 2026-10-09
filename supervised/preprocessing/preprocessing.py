@@ -9,6 +9,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer
+from supervised.preprocessing.ip_transformer import IPTransformer
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.preprocessing.goldenfeatures_transformer import (
     GoldenFeaturesTransformer,
@@ -50,6 +51,7 @@ class Preprocessing(object):
         self._remove_columns = []
         self._datetime_transforms = []
         self._text_transforms = []
+        self._ip_transforms = []
         self._golden_features = None
         self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
@@ -164,6 +166,15 @@ class Preprocessing(object):
             new_text_columns += t._new_columns
         # end of text transform
 
+        ip_scaled_columns = {}
+        for col, steps in columns_preprocessing.items():
+            if "ip_transform" in steps:
+                t = IPTransformer()
+                t.fit(X_train, col)
+                X_train = t.transform(X_train)
+                self._ip_transforms.append(t)
+                ip_scaled_columns[col] = t._new_columns
+
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
                 filter(
@@ -239,6 +250,11 @@ class Preprocessing(object):
                     columns_preprocessing,
                 )
             )
+            cols_to_process = [
+                generated
+                for col in cols_to_process
+                for generated in ip_scaled_columns.get(col, [col])
+            ]
             if (
                 len(cols_to_process)
                 and len(new_datetime_columns)
@@ -358,6 +374,10 @@ class Preprocessing(object):
         for tt in self._text_transforms:
             if X_validation is not None and tt is not None:
                 X_validation = tt.transform(X_validation)
+
+        for ip in self._ip_transforms:
+            if X_validation is not None:
+                X_validation = ip.transform(X_validation)
 
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
@@ -528,6 +548,10 @@ class Preprocessing(object):
 
     def to_json(self):
         preprocessing_params = {}
+        if self._ip_transforms:
+            preprocessing_params["ip_transforms"] = [
+                ip.to_json() for ip in self._ip_transforms
+            ]
         if self._remove_columns:
             preprocessing_params["remove_columns"] = self._remove_columns
         if self._missing_values is not None and len(self._missing_values):
@@ -591,6 +615,11 @@ class Preprocessing(object):
 
     def from_json(self, data_json, results_path):
         self._params = data_json.get("params", self._params)
+        self._ip_transforms = []
+        for ip_params in data_json.get("ip_transforms", []):
+            ip = IPTransformer()
+            ip.from_json(ip_params)
+            self._ip_transforms.append(ip)
 
         if "remove_columns" in data_json:
             self._remove_columns = data_json.get("remove_columns", [])

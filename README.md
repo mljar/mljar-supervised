@@ -421,6 +421,8 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 
 ## :point_right: More Examples
 
+- [**IP address classification**](examples/scripts/binary_classifier_ip_addresses.py) - train on raw IPv4/IPv6 strings and verify predictions after reload; see the [tutorial](docs/docs/tutorials/ip-addresses.md).
+
 - [**Income classification**](https://github.com/mljar/mljar-examples/tree/master/Income_classification) - it is a binary classification task on census data
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data

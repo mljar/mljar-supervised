@@ -3,6 +3,8 @@ import pandas as pd
 from scipy import stats
 from sklearn import preprocessing
 
+from supervised.preprocessing.ip_transformer import parse_ip
+
 
 class PreprocessingUtilsException(Exception):
     pass
@@ -14,6 +16,7 @@ class PreprocessingUtils(object):
     DISCRETE = "discrete"
     DATETIME = "datetime"
     TEXT = "text"
+    IP = "ip"
 
     @staticmethod
     def get_type(x):
@@ -37,6 +40,8 @@ class PreprocessingUtils(object):
             return PreprocessingUtils.CATEGORICAL
 
         if data_type == PreprocessingUtils.CATEGORICAL:
+            if PreprocessingUtils.is_ip(x):
+                return PreprocessingUtils.IP
             # check maybe this categorical is a text
             # it is a text, if:
             # has more than 200 unique values
@@ -61,6 +66,27 @@ class PreprocessingUtils(object):
     def is_text(x_org):
         x = x_org[~pd.isnull(x_org)]
         return PreprocessingUtils.get_type(x) == PreprocessingUtils.TEXT
+
+    @staticmethod
+    def is_ip(x):
+        if str(x.dtype).startswith(("float", "int", "uint", "datetime", "category")):
+            return False
+        found = False
+        seen = set()
+        for value in x:
+            if pd.isna(value):
+                continue
+            if not isinstance(value, str) or ("." not in value and ":" not in value):
+                return False
+            if value in seen:
+                continue
+            try:
+                parse_ip(value)
+            except ValueError:
+                return False
+            seen.add(value)
+            found = True
+        return found
 
     @staticmethod
     def is_0_1(x_org):

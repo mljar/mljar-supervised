@@ -366,6 +366,7 @@ required_preprocessing = [
     "missing_values_inputation",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_as_integer",
 ]
 
@@ -410,6 +411,7 @@ regression_required_preprocessing = [
     "missing_values_inputation",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_scale",
 ]
 

@@ -89,6 +89,7 @@ nav:
   - AutoML API: api.md
   - Roadmap: roadmap.md
   - Tutorials:
+    - Train with IP Addresses: tutorials/ip-addresses.md
     - Share Classification Model as App: tutorials/app-classification.md
     - Share Regression Model as App: tutorials/app-regression.md
     - Classify Titanic Passengers: tutorials/titanic.md
