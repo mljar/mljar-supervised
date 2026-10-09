@@ -993,7 +993,7 @@ class MljarTuner:
             if m_type not in [
                 "Xgboost",
                 # "LightGBM", # use built-in categoricals (but need to int encode)
-                # "Neural Network",
+                "Neural Network",
                 # "Random Forest",
                 # "Extra Trees",
             ]:
@@ -1005,38 +1005,23 @@ class MljarTuner:
 
                 params = copy.deepcopy(m.params)
                 cols_preprocessing = params["preprocessing"]["columns_preprocessing"]
+                required_preprocessing = AlgorithmsRegistry.registry[self._ml_task][
+                    m_type
+                ]["required_preprocessing"]
+                refreshed_columns = PreprocessingTuner.get(
+                    required_preprocessing,
+                    self._data_info,
+                    self._ml_task,
+                    categorical_strategy=strategy,
+                )["columns_preprocessing"]
 
                 for col, preproc in params["preprocessing"][
                     "columns_preprocessing"
                 ].items():
-                    new_preproc = []
-                    convert_categorical = False
-
-                    for p in preproc:
-                        if "categorical" not in p:
-                            new_preproc += [p]
-                        else:
-                            convert_categorical = True
-
-                    col_data_info = self._data_info["columns_info"].get(col)
-                    few_categories = False
-                    if col_data_info is not None and "few_categories" in col_data_info:
-                        few_categories = True
-
-                    if convert_categorical:
-                        if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
-                            new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
-                        elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
-                            if few_categories:
-                                new_preproc += [
-                                    PreprocessingCategorical.CONVERT_ONE_HOT
-                                ]
-                            else:
-                                new_preproc += [
-                                    PreprocessingCategorical.CONVERT_INTEGER
-                                ]
-
-                    cols_preprocessing[col] = new_preproc
+                    if any("categorical" in step for step in preproc):
+                        # Recompute encoding and dependent scaling together,
+                        # preserving other columns and target preprocessing.
+                        cols_preprocessing[col] = refreshed_columns[col]
 
                 params["preprocessing"]["columns_preprocessing"] = cols_preprocessing
                 # if there is already a name of categorical strategy in the name

@@ -61,6 +61,16 @@ Categorical columns are detected automatically.
 
 You do not need to run `pd.get_dummies()` before training.
 
+With `mix_encoding=True`, the tuner can also try mixed categorical encoding for
+`Neural Network`: low-cardinality columns use one-hot encoding, while columns
+with many categories keep integer encoding. When switching strategies, AutoML
+rebuilds the categorical preprocessing and its dependent scaling together.
+Integer codes are scaled when the algorithm requires scaling; one-hot columns
+use their binary values by default. Scaling refers to the fitted encoder's
+actual output columns, so it never tries to scale a source column removed by
+one-hot encoding. The fitted encoders and scalers are saved and reused during
+prediction and model reload.
+
 ## Text features
 
 Text columns are detected automatically and transformed with TF-IDF.

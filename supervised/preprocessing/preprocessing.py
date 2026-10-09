@@ -166,14 +166,14 @@ class Preprocessing(object):
             new_text_columns += t._new_columns
         # end of text transform
 
-        ip_scaled_columns = {}
+        transformed_columns = {}
         for col, steps in columns_preprocessing.items():
             if "ip_transform" in steps:
                 t = IPTransformer()
                 t.fit(X_train, col)
                 X_train = t.transform(X_train)
                 self._ip_transforms.append(t)
-                ip_scaled_columns[col] = t._new_columns
+                transformed_columns[col] = t._new_columns
 
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
@@ -225,6 +225,14 @@ class Preprocessing(object):
             convert.fit(X_train, y_train)
             X_train = convert.transform(X_train)
             self._categorical += [convert]
+            # One-hot encoding removes the source column. Explicit scaling must
+            # use the fitted outputs; integer encoding/fallback keeps the source.
+            for col, encoding in convert._convert_params.items():
+                transformed_columns[col] = (
+                    encoding["new_columns"]
+                    if "unique_values" in encoding and "new_columns" in encoding
+                    else [col]
+                )
 
         # datetime transform
         cols_to_process = list(
@@ -253,7 +261,7 @@ class Preprocessing(object):
             cols_to_process = [
                 generated
                 for col in cols_to_process
-                for generated in ip_scaled_columns.get(col, [col])
+                for generated in transformed_columns.get(col, [col])
             ]
             if (
                 len(cols_to_process)
