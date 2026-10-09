@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import sklearn
 from sklearn.base import ClassifierMixin, RegressorMixin
@@ -19,9 +20,52 @@ logger.setLevel(LOG_LEVEL)
 
 
 KNN_ROWS_LIMIT = 1000
+KNN_INTERPRET_ROWS_LIMIT = 10000
 
 
 class KNNFit(SklearnAlgorithm):
+    def interpret(
+        self,
+        X_train,
+        y_train,
+        X_validation,
+        y_validation,
+        model_file_path,
+        learner_name,
+        target_name=None,
+        class_names=None,
+        metric_name=None,
+        ml_task=None,
+        explain_level=2,
+    ):
+        if explain_level <= 0:
+            return
+        # Use the full fold sizes, not the subsample used by fit(). See #97.
+        train_rows = X_train.shape[0]
+        validation_rows = X_validation.shape[0]
+        if max(train_rows, validation_rows) > KNN_INTERPRET_ROWS_LIMIT:
+            warnings.warn(
+                f"Skipping kNN interpretation: training rows={train_rows}, "
+                f"validation rows={validation_rows}; "
+                f"row limit={KNN_INTERPRET_ROWS_LIMIT}.",
+                stacklevel=2,
+            )
+            return
+        # kNN supports permutation importance, but no SHAP explainer.
+        super().interpret(
+            X_train,
+            y_train,
+            X_validation,
+            y_validation,
+            model_file_path,
+            learner_name,
+            target_name=target_name,
+            class_names=class_names,
+            metric_name=metric_name,
+            ml_task=ml_task,
+            explain_level=1,
+        )
+
     def file_extension(self):
         return "k_neighbors"
 

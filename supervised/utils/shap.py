@@ -35,7 +35,14 @@ class PlotSHAP:
             return False
         # https://github.com/mljar/mljar-supervised/issues/112 disable for NN
         # https://github.com/mljar/mljar-supervised/issues/114 disable for CatBoost
-        if algorithm.algorithm_short_name in ["Baseline", "Neural Network", "CatBoost"]:
+        # No kNN SHAP explainer is implemented. See #97.
+        if algorithm.algorithm_short_name in [
+            "Baseline",
+            "Neural Network",
+            "RealMLP",
+            "CatBoost",
+            "Nearest Neighbors",
+        ]:
             return False
         if (
             algorithm.algorithm_short_name == "Xgboost"

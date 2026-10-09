@@ -42,15 +42,35 @@ For the `explain_level >= 1` the coefficents of the `Linear` model are saved in 
 
 ## Features Importance
 
-The features importance is computed with permutation-based method (using scikit-learn [`permutation_importance`](https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html)). The features importance can be computed to any algorithm (except of course `Baseline`, which doesnt use import features at all). The importance is presented in the plot (top-25 importance features) and saved to the file `learner_*_importance.csv` for all features. It needs `explain_level >= 1`.
+The features importance is computed with permutation-based method (using scikit-learn [`permutation_importance`](https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html)). It is available for algorithms other than `Baseline`, subject to the kNN size limit below. The importance is presented in the plot (top-25 importance features) and saved to the file `learner_*_importance.csv` for all features. It needs `explain_level >= 1`.
 
 ![Permutation Importance](https://raw.githubusercontent.com/mljar/mljar-examples/master/Income_classification/AutoML_1/5_Default_Xgboost/permutation_importance.png)
+
+### kNN interpretation size limit
+
+For `Nearest Neighbors` classification and regression, interpretation is skipped
+when either the learner's training fold or validation fold has **more than
+10,000 rows**. This avoids expensive repeated predictions for permutation
+importance on large datasets. The check uses the full fold sizes, before the
+internal kNN fitting subsample; it applies at both `explain_level=1` and `2`.
+
+When both folds have at most 10,000 rows, permutation importance is available
+with `explain_level >= 1`. Exactly 10,000 rows remains eligible. kNN SHAP is
+unavailable at every dataset size because no kNN explainer is implemented.
+
+A warning reports the training and validation row counts and the
+10,000-row limit when interpretation is skipped. With `explain_level=0`, no
+interpretation is requested and no size warning is emitted.
+
+Training, predictions, evaluation metrics, and learning curves continue as usual.
+Other algorithms' interpretation behavior is unchanged. The threshold is an
+internal constant, not a public AutoML parameter.
 
 ## SHAP plots
 
 The SHAP explanations are computed if `explain_level = 2`. To compute SHAP explanations the [`shap` package](https://github.com/slundberg/shap) is used.
 
-The SHAP explanations are not available for `Baseline`, `Neural Network`, `CatBoost`.
+The SHAP explanations are not available for `Baseline`, `Neural Network`, `CatBoost`, or `Nearest Neighbors`.
 
 ### SHAP importance
 
