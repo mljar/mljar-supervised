@@ -1,5 +1,5 @@
 ---
-description: How preprocessing works in MLJAR AutoML, including missing values, categorical features, text, datetime columns, IP addresses, and prediction-time reuse of learned transforms.
+description: How preprocessing works in MLJAR AutoML, including missing values, categorical features, text, datetime columns, durations, IP addresses, and prediction-time reuse of learned transforms.
 social:
   cards_layout: default/variant
 ---
@@ -24,6 +24,7 @@ Depending on the data and the selected algorithms, `mljar-supervised` can automa
 - categorical features
 - text features
 - datetime features
+- duration features (`timedelta` columns converted to total seconds)
 - IPv4 and IPv6 address features
 - numeric scaling
 - target preprocessing
@@ -103,6 +104,38 @@ Datetime columns are detected automatically and transformed into model-ready fea
 Convert date strings to a pandas datetime dtype with `pd.to_datetime()` before training.
 
 You do not need to manually split them into year, month, day, and similar components before training.
+
+## Duration features
+
+Pandas `timedelta` columns are automatically converted to numeric **total seconds**
+before missing-value handling, scaling, and feature engineering. Each duration
+column keeps its name and produces one numeric column. Negative and fractional
+durations are supported; `NaT` becomes `NaN` and follows the algorithm's normal
+missing-value handling. Empty and constant duration columns follow the usual
+column-removal rules.
+
+```python
+X = pd.DataFrame({
+    "elapsed": pd.to_timedelta(["1 day", "500ms", "-2s", None]),
+    "temperature": [20.0, 21.0, 19.0, 22.0],
+})
+print(X)
+```
+
+Before any subsequent imputation or scaling, the features are:
+
+| Input row | `elapsed` (seconds) | `temperature` |
+| --- | ---: | ---: |
+| `1 day` | 86400.0 | 20.0 |
+| `500ms` | 0.5 | 21.0 |
+| `-2s` | -2.0 | 19.0 |
+| `NaT` | NaN | 22.0 |
+
+The fitted preprocessing saves the names of duration columns and applies the same
+conversion during validation and prediction, including after loading a saved
+model. Conversion uses the duration's actual units, rather than assuming the
+underlying values are nanoseconds. String columns are not automatically parsed
+as durations; use `pd.to_timedelta()` before training when needed.
 
 ## IP address features
 

@@ -19,6 +19,7 @@ from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.text_transformer import TextTransformer
 from supervised.utils.config import LOG_LEVEL
@@ -52,6 +53,7 @@ class Preprocessing(object):
         self._datetime_transforms = []
         self._text_transforms = []
         self._ip_transforms = []
+        self._timedelta_columns = []
         self._golden_features = None
         self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
@@ -77,6 +79,10 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
+        self._timedelta_columns = PreprocessingUtils.timedelta_columns(X_train)
+        X_train = PreprocessingUtils.convert_timedeltas(
+            X_train, self._timedelta_columns
+        )
 
         if y_train is not None:
             # target preprocessing
@@ -327,6 +333,9 @@ class Preprocessing(object):
         # doing copy to avoid SettingWithCopyWarning
         if X_validation is not None:
             X_validation = X_validation.copy(deep=False)
+            X_validation = PreprocessingUtils.convert_timedeltas(
+                X_validation, self._timedelta_columns
+            )
         if y_validation is not None:
             y_validation = y_validation.copy(deep=False)
 
@@ -556,6 +565,8 @@ class Preprocessing(object):
 
     def to_json(self):
         preprocessing_params = {}
+        if self._timedelta_columns:
+            preprocessing_params["timedelta_columns"] = self._timedelta_columns
         if self._ip_transforms:
             preprocessing_params["ip_transforms"] = [
                 ip.to_json() for ip in self._ip_transforms
@@ -623,6 +634,7 @@ class Preprocessing(object):
 
     def from_json(self, data_json, results_path):
         self._params = data_json.get("params", self._params)
+        self._timedelta_columns = data_json.get("timedelta_columns", [])
         self._ip_transforms = []
         for ip_params in data_json.get("ip_transforms", []):
             ip = IPTransformer()

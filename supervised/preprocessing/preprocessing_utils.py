@@ -19,6 +19,23 @@ class PreprocessingUtils(object):
     IP = "ip"
 
     @staticmethod
+    def timedelta_columns(X):
+        if X is None:
+            return []
+        return X.select_dtypes(include="timedelta").columns.tolist()
+
+    @staticmethod
+    def convert_timedeltas(X, columns):
+        """Represent durations in seconds, preserving NaT as NaN."""
+        if X is None or not columns:
+            return X
+        X = X.copy(deep=False)
+        for column in columns:
+            if column in X and pd.api.types.is_timedelta64_dtype(X[column].dtype):
+                X[column] = X[column].dt.total_seconds()
+        return X
+
+    @staticmethod
     def get_type(x, *, unique_count=None):
         if len(x.shape) > 1:
             if x.shape[1] != 1:

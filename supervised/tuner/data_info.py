@@ -14,6 +14,9 @@ from supervised.utils.column_scan import iter_columns
 class DataInfo:
     @staticmethod
     def compute(X, y, machinelearning_task):
+        X = PreprocessingUtils.convert_timedeltas(
+            X, PreprocessingUtils.timedelta_columns(X)
+        )
         columns_info = {}
         for col, series in iter_columns(X):
             info = []

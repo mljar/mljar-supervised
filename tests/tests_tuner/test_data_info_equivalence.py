@@ -70,7 +70,12 @@ def test_metadata_matches_reference_across_dtypes(task):
             np.arange(len(frame)) % (2 if task == "binary_classification" else 10)
         )
     )
-    assert DataInfo.compute(frame, y, task) == ReferenceDataInfo.compute(frame, y, task)
+    # #650 intentionally changes duration planning to numeric seconds. Other
+    # dtype semantics must still match the frozen reference.
+    reference_frame = frame.assign(timedelta=frame["timedelta"].dt.total_seconds())
+    assert DataInfo.compute(frame, y, task) == ReferenceDataInfo.compute(
+        reference_frame, y, task
+    )
 
 
 @pytest.mark.parametrize("name,series", list(columns().items()), ids=list(columns()))
