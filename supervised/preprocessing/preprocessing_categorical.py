@@ -3,7 +3,6 @@ import pandas as pd
 
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
-from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 class PreprocessingCategorical(object):
@@ -24,9 +23,16 @@ class PreprocessingCategorical(object):
 
     def _fit_categorical_convert(self, X):
         for column in self._columns:
-            if PreprocessingUtils.get_type(X[column]) != PreprocessingUtils.CATEGORICAL:
-                # no need to convert, already a number
+            dtype = X[column].dtype
+            if (
+                pd.api.types.is_numeric_dtype(dtype)
+                and not pd.api.types.is_bool_dtype(dtype)
+            ) or pd.api.types.is_datetime64_any_dtype(dtype):
+                # Numeric/datetime inputs are already represented by their dtype.
                 continue
+            # The preprocessing plan already selected categorical encoding.
+            # Do not rerun text detection on a fold: its cardinality ratio can
+            # differ from the full data and otherwise leave raw strings (#147).
             # limit categories - it is needed when doing one hot encoding
             # this code is also used in predict.py file
             # and transform_utils.py

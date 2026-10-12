@@ -71,6 +71,12 @@ actual output columns, so it never tries to scale a source column removed by
 one-hot encoding. The fitted encoders and scalers are saved and reused during
 prediction and model reload.
 
+The categorical encoding selected from the input data is honored in every
+training fold. A fold with a higher proportion of unique values does not switch
+the column to text or skip its encoding. This keeps raw strings out of numeric
+model inputs. One-hot encoding still falls back to integer encoding when the
+fitted column has more than 200 categories.
+
 ## Text features
 
 Text columns are detected automatically and transformed with TF-IDF.
