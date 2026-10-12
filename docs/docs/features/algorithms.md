@@ -481,6 +481,18 @@ The `Nearest Neighbor` algorithm is using scikit-learn:
 - the [`KNeighborsClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html) for classification,
 - the [`KNeighborsRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor) for regression.
 
+Training uses at most 1,000 rows by default. Regression selects a reproducible
+random subset. Classification uses stratified sampling when it retains every
+training class. For singleton classes, a small discarded partition, or an omitted
+class, a reproducible fallback keeps at least one row per class and allocates the
+remaining places approximately proportionally. Sampling is without replacement
+and uses only the training fold. AutoML reports a warning when this fallback is used.
+
+If the row cap cannot retain every training class, Nearest Neighbors raises an
+error before fitting. The selected sample must also contain at least `n_neighbors`
+rows. These errors explain which limit needs changing. This handles the internal
+subsampling failure reported in [issue #794](https://github.com/mljar/mljar-supervised/issues/794).
+
 !!! note "`Nearest Neighbor` hyperparameters"
     The allowed hyperparameters values:
     ```python
