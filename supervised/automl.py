@@ -160,9 +160,15 @@ class AutoML(BaseAutoML):
 
             eval_metric (str or function): The metric to be used in early stopping and to compare models.
 
-                - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
-                - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
+                - for binary classification: `logloss`, `auc`, `f1`, `f1_micro`, `f1_macro`, `f1_weighted`, `average_precision`, `accuracy` - default is logloss (if left "auto")
+                - for multiclass classification: `logloss`, `f1`, `f1_micro`, `f1_macro`, `f1_weighted`, `accuracy` - default is `logloss` (if left "auto")
                 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+
+                `f1` keeps its existing behavior: positive-class F1 for binary tasks and micro F1
+                for multiclass tasks. `f1_macro` averages classes equally; `f1_weighted` weights
+                each class by its support. `f1_micro` aggregates counts across all classes and
+                equals accuracy for single-label classification. `score()` returns accuracy for
+                classification regardless of `eval_metric`.
 
                 You can also pass a custom Python function directly. The expected interface is:
 
@@ -556,7 +562,7 @@ class AutoML(BaseAutoML):
         Returns:
             float: Returns a goodness of fit measure (higher is better):
 
-            - For classification tasks: returns the mean accuracy on the given test data and labels.
+            - For classification tasks: returns the mean accuracy on the given test data and labels, regardless of `eval_metric`.
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y, sample_weight)

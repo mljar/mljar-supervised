@@ -690,7 +690,19 @@ class ModelFramework:
             if "path" not in k:
                 desc += f" - **{k}**: {v}\n"
         desc += "\n## Optimized metric\n"
-        desc += f"{self.get_metric_name()}\n"
+        metric_name = self.get_metric_name()
+        averaging = {
+            "f1_micro": "micro", "f1_macro": "macro", "f1_weighted": "weighted"
+        }.get(metric_name)
+        if metric_name == "f1":
+            averaging = (
+                "micro" if self._ml_task == MULTICLASS_CLASSIFICATION
+                else "binary positive-class"
+            )
+        desc += (
+            f"{metric_name} ({averaging} averaging)\n"
+            if averaging else f"{metric_name}\n"
+        )
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
         if short_name in ["RealMLP", "TabM"]:

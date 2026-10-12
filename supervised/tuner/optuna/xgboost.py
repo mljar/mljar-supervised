@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import optuna
 import optuna_integration
@@ -8,6 +10,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.algorithms.xgboost import xgboost_eval_metric, xgboost_objective
 from supervised.utils.metric import (
+    F1_METRICS,
     Metric,
     xgboost_eval_metric_accuracy,
     xgboost_eval_metric_average_precision,
@@ -66,8 +69,10 @@ class XgboostObjective:
             self.custom_eval_metric = xgboost_eval_metric_spearman
         elif self.eval_metric_name == "pearson":
             self.custom_eval_metric = xgboost_eval_metric_pearson
-        elif self.eval_metric_name == "f1":
-            self.custom_eval_metric = xgboost_eval_metric_f1
+        elif self.eval_metric_name in F1_METRICS:
+            self.custom_eval_metric = partial(
+                xgboost_eval_metric_f1, metric_name=self.eval_metric_name, maximize=True
+            )
         elif self.eval_metric_name == "average_precision":
             self.custom_eval_metric = xgboost_eval_metric_average_precision
         elif self.eval_metric_name == "accuracy":
@@ -114,6 +119,7 @@ class XgboostObjective:
                 callbacks=[pruning_callback],
                 verbose_eval=False,
                 custom_metric=self.custom_eval_metric,
+                maximize=True if self.eval_metric_name in F1_METRICS else None,
             )
             preds = bst.predict(
                 self.dvalidation, iteration_range=(0, bst.best_iteration)

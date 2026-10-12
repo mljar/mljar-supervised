@@ -1413,6 +1413,8 @@ class MljarTuner:
             model_params["metric"] = metric
             model_params["custom_eval_metric_name"] = custom_metric
         if model_info["class"].algorithm_short_name == "CatBoost":
+            if self._eval_metric in ("f1_micro", "f1_macro", "f1_weighted"):
+                model_params["eval_metric_name"] = self._eval_metric
             model_params["eval_metric"] = catboost_eval_metric(
                 self._ml_task, self._eval_metric
             )

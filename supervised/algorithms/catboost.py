@@ -31,6 +31,9 @@ from catboost import CatBoostClassifier, CatBoostRegressor, Pool
 
 
 def catboost_eval_metric(ml_task, eval_metric):
+    if eval_metric in ("f1_micro", "f1_macro", "f1_weighted") and ml_task != REGRESSION:
+        average = eval_metric.removeprefix("f1_").capitalize()
+        return f"TotalF1:average={average}"
     if eval_metric == "user_defined_metric":
         return eval_metric
     metric_name_mapping = {
@@ -318,6 +321,12 @@ class CatBoostAlgorithm(BaseAlgorithm):
         return "catboost"
 
     def get_metric_name(self):
+        if self.params.get("eval_metric_name") in (
+            "f1_micro",
+            "f1_macro",
+            "f1_weighted",
+        ):
+            return self.params["eval_metric_name"]
         metric = self.params.get("eval_metric")
         if metric is None:
             return None
@@ -335,6 +344,10 @@ class CatBoostAlgorithm(BaseAlgorithm):
             return "mae"
         elif metric == "MAPE":
             return "mape"
+        elif metric == "TotalF1:average=Macro":
+            return "f1_macro"
+        elif metric == "TotalF1:average=Weighted":
+            return "f1_weighted"
         elif metric in ["F1", "TotalF1:average=Micro"]:
             return "f1"
         elif metric == "Accuracy":
