@@ -56,6 +56,7 @@ class AutoML(BaseAutoML):
                     "CatBoost",
                     "Neural Network",
                     "RealMLP",
+                    "TabM",
                     "Nearest Neighbors",
                 ]
             ],
@@ -146,6 +147,7 @@ class AutoML(BaseAutoML):
                 - `CatBoost`,
                 - `Neural Network`,
                 - `RealMLP` (Compete only; optional: install `mljar-supervised[realmlp]`),
+                - `TabM` (mini only, Compete only; install `mljar-supervised[tabm]`),
                 - `Nearest Neighbors`,
 
 
@@ -315,7 +317,7 @@ class AutoML(BaseAutoML):
                 Names are case-insensitive; spaces, underscores and hyphens are ignored.
                 Overrides remain fixed during random search and hill climbing.
                 Custom overrides are currently unsupported in Optuna mode.
-                Compete automatically includes RealMLP when its optional dependencies are installed.
+                Compete automatically includes RealMLP and TabM mini when their optional dependencies are installed.
                 Providing overrides alone does not select an algorithm.
 
 

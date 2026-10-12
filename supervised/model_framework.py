@@ -682,8 +682,8 @@ class ModelFramework:
         desc += f"{self.get_metric_name()}\n"
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
-        if short_name == "RealMLP":
-            desc += "\n## RealMLP training details\n\n"
+        if short_name in ["RealMLP", "TabM"]:
+            desc += f"\n## {short_name} training details\n\n"
             desc += "Permutation importance uses logloss for classification and MSE for regression. SHAP is not enabled.\n\n"
             for learner in self.learners:
                 info = getattr(learner, "training_info", {})

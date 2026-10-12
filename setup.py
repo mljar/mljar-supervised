@@ -22,6 +22,7 @@ setup(
     install_requires=open("requirements.txt").readlines(),
     extras_require={
         "realmlp": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
+        "tabm": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
         "all": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
     },
     include_package_data=True,

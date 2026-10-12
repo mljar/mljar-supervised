@@ -139,17 +139,17 @@ class RealMLPAlgorithm(BaseAlgorithm):
         self.indicators = []
         self.device = "cpu"
 
-    @staticmethod
-    def _frame(X):
+    @classmethod
+    def _frame(cls, X):
         if sparse.issparse(X):
             raise ValueError(
-                "RealMLP does not support sparse inputs; no automatic densification is performed."
+                f"{cls.algorithm_short_name} does not support sparse inputs; no automatic densification is performed."
             )
         frame = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
         if any(isinstance(dtype, pd.SparseDtype) for dtype in frame.dtypes):
-            raise ValueError("RealMLP does not support pandas sparse columns.")
+            raise ValueError(f"{cls.algorithm_short_name} does not support pandas sparse columns.")
         if not frame.columns.is_unique:
-            raise ValueError("RealMLP requires unique column names")
+            raise ValueError(f"{cls.algorithm_short_name} requires unique column names")
         return frame
 
     def _preprocess(self, X, fit=False):
@@ -179,7 +179,7 @@ class RealMLPAlgorithm(BaseAlgorithm):
                     if numeric.isna().any():
                         self.indicators.append(column)
         if set(frame.columns) != set(self.columns):
-            raise ValueError("RealMLP prediction columns must match training columns")
+            raise ValueError(f"{self.algorithm_short_name} prediction columns must match training columns")
         result = {}
         # Internal names avoid collisions between user names and missing indicators.
         for i, column in enumerate(self.columns):
@@ -223,7 +223,7 @@ class RealMLPAlgorithm(BaseAlgorithm):
         )
         if requested not in mapping:
             warnings.warn(
-                f"RealMLP uses {metric} for checkpoint selection; MLJAR still ranks models by {requested}."
+                f"{self.algorithm_short_name} uses {metric} for checkpoint selection; MLJAR still ranks models by {requested}."
             )
         return metric
 

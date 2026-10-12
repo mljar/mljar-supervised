@@ -46,6 +46,8 @@ For RealMLP, choose [CPU](docs/docs/install.md#realmlp-on-cpu) or
 and is available only in `mode="Compete"`.
 See the [installation guide](docs/docs/install.md) for copyable commands and
 checks, and the [RealMLP guide](docs/docs/features/realmlp.md) for usage.
+[TabM mini](docs/docs/features/tabm.md) is also available in Compete mode through
+`[tabm]` or `[all]`, using the same pytabkit/PyTorch dependencies and CPU/GPU setup.
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)

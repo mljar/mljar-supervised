@@ -638,6 +638,7 @@ class MljarTuner:
             "Extra Trees",
             "Neural Network",
             "RealMLP",
+            "TabM",
         ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
@@ -779,6 +780,7 @@ class MljarTuner:
             "CatBoost",
             "Neural Network",
             "RealMLP",
+            "TabM",
             "Random Forest",
             "Extra Trees",
             "Nearest Neighbors",
@@ -846,6 +848,7 @@ class MljarTuner:
             "Extra Trees",
             "Neural Network",
             "RealMLP",
+            "TabM",
             "Nearest Neighbors",
         ]
 
@@ -908,6 +911,7 @@ class MljarTuner:
             "Extra Trees",
             "Neural Network",
             "RealMLP",
+            "TabM",
             "Nearest Neighbors",
         ]:
             rest_params += generated_params[m]
@@ -926,6 +930,7 @@ class MljarTuner:
                 "Extra Trees",
                 "Neural Network",
                 "RealMLP",
+                "TabM",
                 "Nearest Neighbors",
             ]:
                 if generated_params[m]:
@@ -1226,6 +1231,7 @@ class MljarTuner:
                 "CatBoost",
                 "Neural Network",
                 "RealMLP",
+                "TabM",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1319,6 +1325,7 @@ class MljarTuner:
                 "CatBoost",
                 "Neural Network",
                 "RealMLP",
+                "TabM",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1365,7 +1372,7 @@ class MljarTuner:
             return None
 
         model_params.update(self._custom_params.get(algorithm_key(model_type), {}))
-        if model_type == 'RealMLP':
+        if model_type in ['RealMLP', 'TabM']:
             model_params['eval_metric_name'] = self._eval_metric
 
         # set eval metric

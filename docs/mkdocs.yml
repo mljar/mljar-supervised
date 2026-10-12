@@ -82,6 +82,7 @@ nav:
     - Features Selection: features/features_selection.md
     - Algorithms: features/algorithms.md
     - RealMLP: features/realmlp.md
+    - TabM mini: features/tabm.md
     - Explainability: features/explain.md
     - Stacking Ensemble: features/stacking-ensemble.md
     

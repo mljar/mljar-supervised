@@ -8,12 +8,17 @@ Choose the models and hardware you want to use:
 | RealMLP on CPU | CPU PyTorch, then MLJAR with `[realmlp]` or `[all]` |
 | RealMLP on NVIDIA GPU | CUDA PyTorch, then the same MLJAR extra |
 
+**TabM mini uses the same CPU/GPU setup.** Substitute `[tabm]` for `[realmlp]`
+in the commands below, or use `[all]` for both. The three extras currently share
+pytabkit/PyTorch dependencies, so installing any one makes both models available
+in Compete mode. See [TabM mini](features/tabm.md) for usage and tuning.
+
 There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
 RealMLP's available devices. These instructions do not change GPU support for
 other algorithms.
 
 !!! note "RealMLP release status"
-    RealMLP is currently available from source. The published PyPI 1.3.2 package
+    RealMLP and TabM mini are currently available from source. The published PyPI 1.3.2 package
     does not include the extra. Use the source commands below until a release
     with RealMLP is published. Installing `mljar-supervised[realmlp]` from an older
     release will not add RealMLP.
@@ -106,7 +111,7 @@ python -m pip install ".[realmlp]"
 
 If you already have this checkout, run the final command from its root directory.
 For all optional model dependencies, use `python -m pip install ".[all]"` instead.
-Currently `[all]` and `[realmlp]` install the same optional dependencies.
+Currently `[all]`, `[realmlp]` and `[tabm]` install the same optional dependencies.
 
 After a PyPI release includes RealMLP, the equivalent commands will be:
 

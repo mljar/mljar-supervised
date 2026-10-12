@@ -41,6 +41,10 @@ def validate_custom_params(custom_params, ml_task):
             from supervised.algorithms.realmlp import validate_options
 
             validate_options(values)
+        elif key == "tabm":
+            from supervised.algorithms.tabm import validate_options
+
+            validate_options(values)
         else:
             info = registry[names[key]]
             allowed = (set(info["params"]) | set(info["default_params"])) - protected

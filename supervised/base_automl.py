@@ -1038,22 +1038,26 @@ class BaseAutoML(BaseEstimator, ABC):
                 "custom_params currently supports random search and hill climbing, "
                 "not Optuna mode."
             )
-        if "RealMLP" in self._algorithms:
+        for algorithm in ["RealMLP", "TabM"]:
+            if algorithm not in self._algorithms:
+                continue
             if sample_weight is not None:
                 if self.algorithms == "auto":
-                    warnings.warn("RealMLP skipped because sample weights are not supported.")
-                    self._algorithms.remove("RealMLP")
-                else:
-                    raise ValueError(
-                        "RealMLP does not support sample weights. Remove RealMLP "
-                        "from algorithms for weighted training."
+                    warnings.warn(
+                        f"{algorithm} skipped because sample weights are not supported."
                     )
-            check_dependencies()
-            if self._mode == "Optuna":
+                    self._algorithms.remove(algorithm)
+                    continue
                 raise ValueError(
-                    "RealMLP currently supports MLJAR random search and hill "
-                    "climbing, not Optuna mode."
+                    f"{algorithm} does not support sample weights. "
+                    "Remove it from algorithms for weighted training."
                 )
+            if algorithm == "TabM":
+                from supervised.algorithms.tabm import check_dependencies as check_tabm
+
+                check_tabm()
+            else:
+                check_dependencies()
         self._train_ensemble = self._get_train_ensemble()
         self._stack_models = self._get_stack_models()
         self._eval_metric = self._get_eval_metric()
@@ -1778,6 +1782,12 @@ class BaseAutoML(BaseEstimator, ABC):
                 ]
                 if dependencies_available():
                     algorithms.append("RealMLP")
+                from supervised.algorithms.tabm import (
+                    dependencies_available as tabm_available,
+                )
+
+                if tabm_available():
+                    algorithms.append("TabM")
                 return algorithms
             if self._get_mode() == "Optuna":
                 return [
@@ -1789,8 +1799,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                 ]
         else:
-            if "RealMLP" in self.algorithms and self._get_mode() != "Compete":
-                raise ValueError('RealMLP is supported only in mode="Compete".')
+            if self._get_mode() != "Compete":
+                for algorithm in ["RealMLP", "TabM"]:
+                    if algorithm in self.algorithms:
+                        raise ValueError(f'{algorithm} is supported only in mode="Compete".')
             return deepcopy(self.algorithms)
 
     def _get_train_ensemble(self):

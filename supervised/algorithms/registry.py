@@ -78,5 +78,6 @@ import supervised.algorithms.lightgbm
 import supervised.algorithms.linear
 import supervised.algorithms.nn
 import supervised.algorithms.realmlp
+import supervised.algorithms.tabm
 import supervised.algorithms.random_forest
 import supervised.algorithms.xgboost

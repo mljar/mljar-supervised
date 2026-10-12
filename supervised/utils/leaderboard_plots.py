@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 markers = {
+    "TabM": {"marker": "X", "color": "#17becf"},
     "RealMLP": {"marker": "P", "color": "#9467bd"},
     "Baseline": {"color": "tab:cyan", "marker": "8"},
     "Linear": {"color": "tab:pink", "marker": "s"},

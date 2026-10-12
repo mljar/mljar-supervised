@@ -13,6 +13,8 @@ For RealMLP, choose [CPU](install.md#realmlp-on-cpu) or
 only in `mode="Compete"`.
 See [Installation](install.md) for environment setup, commands and checks, and
 [RealMLP](features/realmlp.md) for usage and resource limits.
+[TabM mini](features/tabm.md) is also available in Compete mode through `[tabm]`
+or `[all]`, with the same CPU/GPU setup.
 
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)

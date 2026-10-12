@@ -40,6 +40,7 @@ class PlotSHAP:
             "Baseline",
             "Neural Network",
             "RealMLP",
+            "TabM",
             "CatBoost",
             "Nearest Neighbors",
         ]:
