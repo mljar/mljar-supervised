@@ -6,12 +6,13 @@ social:
 
 # MLJAR AutoML for Python
 
-Install with `pip install mljar-supervised`. For the optional RealMLP neural
-network, use `pip install "mljar-supervised[realmlp]"` or
-`pip install "mljar-supervised[all]"`.
-RealMLP is available only in `mode="Compete"`.
-See [Installation](install.md) for CPU/GPU setup and [RealMLP](features/realmlp.md)
-for usage and resource limits.
+Install standard MLJAR with `python -m pip install mljar-supervised`.
+For RealMLP, choose [CPU](install.md#realmlp-on-cpu) or
+[NVIDIA GPU](install.md#realmlp-on-nvidia-gpu) setup, then install `[realmlp]` or
+`[all]`. **RealMLP currently requires installation from source** and is available
+only in `mode="Compete"`.
+See [Installation](install.md) for environment setup, commands and checks, and
+[RealMLP](features/realmlp.md) for usage and resource limits.
 
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)

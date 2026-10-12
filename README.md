@@ -39,12 +39,13 @@ Start quickly, iterate faster, and manage experiments in one place.
 
 ## Table of Contents
 
-Install MLJAR with `pip install mljar-supervised`. To add the optional RealMLP
-neural network, use `pip install "mljar-supervised[realmlp]"` or
-`pip install "mljar-supervised[all]"`, then use `AutoML(mode="Compete")`. RealMLP is used only in Compete mode.
-See the [installation guide](https://supervised.mljar.com/install/) for CPU/GPU
-setup and the [RealMLP guide](https://supervised.mljar.com/features/realmlp/)
-for data support, parameters and memory limits.
+Install standard MLJAR with `python -m pip install mljar-supervised`.
+For RealMLP, choose [CPU](docs/docs/install.md#realmlp-on-cpu) or
+[NVIDIA GPU](docs/docs/install.md#realmlp-on-nvidia-gpu) setup, then install the
+`[realmlp]` or `[all]` extra. **RealMLP currently requires installation from source**
+and is available only in `mode="Compete"`.
+See the [installation guide](docs/docs/install.md) for copyable commands and
+checks, and the [RealMLP guide](docs/docs/features/realmlp.md) for usage.
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
@@ -554,6 +555,10 @@ detailed = automl.report_structured(model_name="3_Linear")
 When `model_name` is provided, the markdown includes detailed metrics, fairness details (if used), and feature importance summaries for that model.
 
 # Installation  
+
+For standard, RealMLP CPU and RealMLP NVIDIA GPU setup, see the
+[installation guide](docs/docs/install.md). RealMLP currently requires the source
+checkout; the published PyPI 1.3.2 package does not include it.
 
 Compatibility:
 - Python `>=3.9`

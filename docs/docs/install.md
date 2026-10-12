@@ -1,57 +1,173 @@
 # Installation
 
+Choose the models and hardware you want to use:
+
+| Setup | What to install |
+|---|---|
+| Standard MLJAR | `mljar-supervised`; PyTorch is not required |
+| RealMLP on CPU | CPU PyTorch, then MLJAR with `[realmlp]` or `[all]` |
+| RealMLP on NVIDIA GPU | CUDA PyTorch, then the same MLJAR extra |
+
+There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
+RealMLP's available devices. These instructions do not change GPU support for
+other algorithms.
+
+!!! note "RealMLP release status"
+    RealMLP is currently available from source. The published PyPI 1.3.2 package
+    does not include the extra. Use the source commands below until a release
+    with RealMLP is published. Installing `mljar-supervised[realmlp]` from an older
+    release will not add RealMLP.
+
+## Create an environment
+
+Use Python 3.11 or 3.12 for the RealMLP setup covered by our CI. Create a fresh
+virtual environment for your chosen CPU or GPU build.
+
+=== "Linux / macOS"
+
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade pip
+    ```
+
+=== "Windows PowerShell"
+
+    ```powershell
+    py -3.12 -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install --upgrade pip
+    ```
+
+    If activation is unavailable, use `.\.venv\Scripts\python.exe` in place of
+    `python` in the commands below.
+
+## Standard MLJAR
+
 ```bash
 python -m pip install mljar-supervised
 ```
 
-The default installation includes the existing models. RealMLP and PyTorch are
-optional; the existing sklearn `Neural Network` does not need them.
+The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
+RealMLP is optional.
+
+## RealMLP on CPU
+
+Install PyTorch first. The examples pin version 2.11.0 for reproducibility;
+MLJAR's supported dependency range is `torch>=2.7,<3`.
+
+=== "Linux / Windows"
+
+    ```bash
+    python -m pip install "torch==2.11.0" --index-url https://download.pytorch.org/whl/cpu
+    ```
+
+=== "macOS"
+
+    ```bash
+    python -m pip install "torch==2.11.0"
+    ```
+
+    Use a Mac/Python combination with a compatible PyTorch wheel. This RealMLP
+    integration uses CPU on macOS; Apple MPS acceleration is not enabled.
+
+This selects CPU-only PyTorch. Other MLJAR dependencies, such as XGBoost on
+Linux, may still install NVIDIA libraries.
+
+Then follow [Install the RealMLP extra](#install-the-realmlp-extra).
+
+## RealMLP on NVIDIA GPU
+
+For Linux or Windows with an NVIDIA GPU and a CUDA 12.8-compatible driver:
 
 ```bash
-python -m pip install "mljar-supervised[realmlp]"
-# Or all supported optional model dependencies (currently the same):
-python -m pip install "mljar-supervised[all]"
+nvidia-smi
+python -m pip install "torch==2.11.0" --index-url https://download.pytorch.org/whl/cu128
 ```
 
-These extras are available in source checkouts containing RealMLP; until a release
-with this feature is published, install from that checkout:
+If this build does not match your hardware or driver, choose a compatible build
+from the [PyTorch installation selector](https://pytorch.org/get-started/locally/)
+or [version-specific commands](https://pytorch.org/get-started/previous-versions/).
+Keep the installed torch version within `>=2.7,<3`. RealMLP needs `torch`; it does
+not require `torchvision` or `torchaudio`.
+
+Then install the same RealMLP extra below. RealMLP currently supports a single
+CUDA device, not multi-GPU training.
+
+## Install the RealMLP extra
+
+After installing your chosen PyTorch build, install from source:
 
 ```bash
+git clone https://github.com/mljar/mljar-supervised.git
+cd mljar-supervised
 python -m pip install ".[realmlp]"
 ```
 
-RealMLP is available only in Compete mode. After installing the extra,
-`AutoML(mode="Compete")` includes it automatically. To train only RealMLP, use
-`AutoML(mode="Compete", algorithms=["RealMLP"])`. Explain and Perform stay unchanged.
+If you already have this checkout, run the final command from its root directory.
+For all optional model dependencies, use `python -m pip install ".[all]"` instead.
+Currently `[all]` and `[realmlp]` install the same optional dependencies.
 
-## CPU and NVIDIA GPU
-
-Use a fresh virtual environment. Choose the PyTorch build before installing the
-extra. The installed version must satisfy MLJAR's and pytabkit's requirements.
-
-For CPU-only PyTorch on supported platforms:
+After a PyPI release includes RealMLP, the equivalent commands will be:
 
 ```bash
-python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install "mljar-supervised[realmlp]"
+# Or all optional model dependencies:
+python -m pip install "mljar-supervised[all]"
 ```
 
-For NVIDIA GPUs, use the command supplied by the official
-[PyTorch installation selector](https://pytorch.org/get-started/locally/) for
-your operating system and driver-compatible CUDA build, then install the same
-MLJAR extra. Do not install torchvision or torchaudio solely for RealMLP.
+Installing a compatible PyTorch build first lets pip reuse that build. The extra
+adds pytabkit and the other RealMLP dependencies.
 
-Verify the result:
+## Verify the installation
 
 ```bash
-python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
 python -m pip check
+python -c "from importlib.metadata import version; import torch; print('MLJAR:', version('mljar-supervised')); print('pytabkit:', version('pytabkit')); print('torch:', torch.__version__); print('CUDA build:', torch.version.cuda); print('CUDA available:', torch.cuda.is_available())"
 ```
 
-RealMLP supports CPU and a single CUDA device. Explicit `device="cpu"` uses the
-CPU even when a GPU is available. `device="auto"` selects CUDA when available,
-otherwise CPU; it does not retry GPU memory failures on CPU. Apple MPS is not
-enabled in this integration. Optional backend support depends on available
-PyTorch wheels; the initial CI target is Python 3.11 and 3.12.
+For CPU-only PyTorch, expect `CUDA build: None` and `CUDA available: False`.
+For the NVIDIA setup, expect `CUDA available: True`. If it is false, check that
+this environment has the CUDA build installed and that `nvidia-smi` sees the GPU.
 
-See [RealMLP](features/realmlp.md) for memory budgets and examples.
+## Try RealMLP
+
+RealMLP is available only in Compete mode. `AutoML(mode="Compete")` includes it
+automatically when its optional dependencies are installed. Select it explicitly
+to train only RealMLP:
+
+```python
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
+from supervised import AutoML
+
+X, y = make_classification(
+    n_samples=1000, n_features=20, n_informative=10, random_state=42
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+automl = AutoML(
+    mode="Compete",
+    algorithms=["RealMLP"],
+    total_time_limit=120,
+    custom_params={"realmlp": {"device": "auto"}},
+)
+automl.fit(X_train, y_train)
+print(automl.predict(X_test[:5]))
+```
+
+The default `device="auto"` selects CUDA when available, otherwise CPU. To force
+CPU training, use `custom_params={"realmlp": {"device": "cpu"}}`. Setting the
+training device does not change installed packages or remove CUDA downloads.
+GPU memory failures do not trigger an automatic retry on CPU.
+
+For a short check of binary classification, multiclass classification and
+regression, run this script from the source checkout. Use a fresh output directory:
+
+```bash
+python examples/scripts/realmlp_synthetic.py --output AutoML_realmlp_check
+```
+
+The script uses CPU and eight epochs per task. See the [RealMLP guide](features/realmlp.md)
+for supported data, tuning parameters, memory limits and explanations.

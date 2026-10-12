@@ -2,8 +2,11 @@
 
 RealMLP is an optional neural model for binary classification, multiclass
 classification and single-target regression. Install
-`mljar-supervised[realmlp]` or `mljar-supervised[all]`; see
-[installation](../install.md). It trains from scratch without downloading weights.
+the `[realmlp]` or `[all]` extra from source until a release includes RealMLP.
+Choose [CPU](../install.md#realmlp-on-cpu) or
+[NVIDIA GPU](../install.md#realmlp-on-nvidia-gpu) installation and follow the
+[verification steps](../install.md#verify-the-installation). It trains from scratch
+without downloading weights.
 
 ## Example with generated data
 
@@ -143,6 +146,10 @@ These estimates are safeguards, not guarantees; there is no universal row limit.
 | `gpu_memory_limit_gb` | No additional absolute cap (GiB units) |
 | `batch_size` | Upstream default, 256 |
 | `predict_batch_size` | Wrapper chunk size, 1024 |
+
+`device="auto"` uses CUDA when available, otherwise CPU. Set `device="cpu"` to
+force CPU training. Device settings control training, not which PyTorch packages
+are installed or downloaded. Apple MPS is not enabled.
 
 `n_jobs` respects CPU affinity/container quotas. CUDA folds run sequentially in
 MLJAR. Memory failures are reported per candidate; there is no automatic
