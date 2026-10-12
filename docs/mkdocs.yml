@@ -83,6 +83,7 @@ nav:
     - Algorithms: features/algorithms.md
     - RealMLP: features/realmlp.md
     - TabM mini: features/tabm.md
+    - Kumo and TabICLv2: features/sdm.md
     - Explainability: features/explain.md
     - Stacking Ensemble: features/stacking-ensemble.md
     

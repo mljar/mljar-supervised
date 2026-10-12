@@ -45,6 +45,10 @@ def validate_custom_params(custom_params, ml_task):
             from supervised.algorithms.tabm import validate_options
 
             validate_options(values)
+        elif key in ["kumo", "tabiclv2"]:
+            from supervised.algorithms.sdm import validate_options
+
+            validate_options(values, names[key])
         else:
             info = registry[names[key]]
             allowed = (set(info["params"]) | set(info["default_params"])) - protected

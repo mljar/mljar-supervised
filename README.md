@@ -37,6 +37,9 @@ Start quickly, iterate faster, and manage experiments in one place.
 
 ---
 
+**Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
+and a pinned SDM backend. Python 3.11+ required. See [installation and usage](docs/docs/features/sdm.md).
+
 ## Table of Contents
 
 Install standard MLJAR with `python -m pip install mljar-supervised`.

@@ -199,6 +199,8 @@ class EarlyStopping(Callback):
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
         ]:
             sign = -1.0 if Metric.optimize_negative(self.metric.name) else 1.0
             with open(

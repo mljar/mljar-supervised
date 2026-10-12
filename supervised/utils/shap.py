@@ -41,6 +41,8 @@ class PlotSHAP:
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
             "CatBoost",
             "Nearest Neighbors",
         ]:

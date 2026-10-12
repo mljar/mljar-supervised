@@ -1,5 +1,10 @@
 # Installation
 
+For **Kumo and TabICLv2**, use Python 3.11+, `[tfm]` (or `[kumo]`, `[tabiclv2]`,
+`[all]`) **and a separate pinned SDM backend installation**. See the
+[Kumo/TabICLv2 instructions](features/sdm.md#installation). Weights download from
+Hugging Face on first use, not during package installation.
+
 Choose the models and hardware you want to use:
 
 | Setup | What to install |
@@ -9,7 +14,7 @@ Choose the models and hardware you want to use:
 | RealMLP on NVIDIA GPU | CUDA PyTorch, then the same MLJAR extra |
 
 **TabM mini uses the same CPU/GPU setup.** Substitute `[tabm]` for `[realmlp]`
-in the commands below, or use `[all]` for both. The three extras currently share
+in the commands below, or use `[all]` for both. These extras share
 pytabkit/PyTorch dependencies, so installing any one makes both models available
 in Compete mode. See [TabM mini](features/tabm.md) for usage and tuning.
 

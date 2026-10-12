@@ -57,6 +57,8 @@ class AutoML(BaseAutoML):
                     "Neural Network",
                     "RealMLP",
                     "TabM",
+                    "Kumo",
+                    "TabICLv2",
                     "Nearest Neighbors",
                 ]
             ],
@@ -148,6 +150,7 @@ class AutoML(BaseAutoML):
                 - `Neural Network`,
                 - `RealMLP` (Compete only; optional: install `mljar-supervised[realmlp]`),
                 - `TabM` (mini only, Compete only; install `mljar-supervised[tabm]`),
+                - `Kumo` and `TabICLv2` (Compete only; install `[tfm]` and the pinned SDM backend described in the installation guide),
                 - `Nearest Neighbors`,
 
 

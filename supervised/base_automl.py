@@ -1070,7 +1070,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "custom_params currently supports random search and hill climbing, "
                 "not Optuna mode."
             )
-        for algorithm in ["RealMLP", "TabM"]:
+        for algorithm in ["RealMLP", "TabM", "Kumo", "TabICLv2"]:
             if algorithm not in self._algorithms:
                 continue
             if sample_weight is not None:
@@ -1084,7 +1084,11 @@ class BaseAutoML(BaseEstimator, ABC):
                     f"{algorithm} does not support sample weights. "
                     "Remove it from algorithms for weighted training."
                 )
-            if algorithm == "TabM":
+            if algorithm in ["Kumo", "TabICLv2"]:
+                from supervised.algorithms.sdm import check_dependencies as check_sdm
+
+                check_sdm()
+            elif algorithm == "TabM":
                 from supervised.algorithms.tabm import check_dependencies as check_tabm
 
                 check_tabm()
@@ -1822,6 +1826,10 @@ class BaseAutoML(BaseEstimator, ABC):
 
                 if tabm_available():
                     algorithms.append("TabM")
+                from supervised.algorithms.sdm import automatic_available
+
+                if automatic_available():
+                    algorithms.extend(["Kumo", "TabICLv2"])
                 return algorithms
             if self._get_mode() == "Optuna":
                 return [
@@ -1834,7 +1842,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 ]
         else:
             if self._get_mode() != "Compete":
-                for algorithm in ["RealMLP", "TabM"]:
+                for algorithm in ["RealMLP", "TabM", "Kumo", "TabICLv2"]:
                     if algorithm in self.algorithms:
                         raise ValueError(f'{algorithm} is supported only in mode="Compete".')
             return deepcopy(self.algorithms)

@@ -18,6 +18,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 markers = {
+    "Kumo": {"marker": "D", "color": "#76b900"},
+    "TabICLv2": {"marker": "v", "color": "#8c564b"},
     "TabM": {"marker": "X", "color": "#17becf"},
     "RealMLP": {"marker": "P", "color": "#9467bd"},
     "Baseline": {"color": "tab:cyan", "marker": "8"},

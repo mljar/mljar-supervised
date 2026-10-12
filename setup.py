@@ -21,9 +21,13 @@ setup(
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=open("requirements.txt").readlines(),
     extras_require={
+        # SDM itself currently requires the separately documented pinned Git install.
+        "kumo": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "tabiclv2": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "tfm": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
         "realmlp": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
         "tabm": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
-        "all": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
+        "all": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0", "huggingface_hub>=1,<3"],
     },
     include_package_data=True,
     python_requires='>=3.9',

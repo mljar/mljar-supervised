@@ -104,9 +104,12 @@ class ModelFramework:
         sensitive_features_validation,
     ):
         y_train_true = y_train
-        y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
-        y_validation_predicted = learner.predict(X_validation)
+        if learner.algorithm_short_name in ["Kumo", "TabICLv2"]:
+            y_train_predicted, y_validation_predicted = learner.training_predictions(X_train, X_validation)
+        else:
+            y_train_predicted = learner.predict(X_train)
+            y_validation_predicted = learner.predict(X_validation)
 
         y_train_true = preproces.inverse_scale_target(y_train_true)
         y_train_predicted = preproces.inverse_scale_target(y_train_predicted)
@@ -306,7 +309,10 @@ class ModelFramework:
 
                 # save learner and free the memory
                 p = os.path.join(model_path, learner.get_fname())
-                learner.save(p)
+                if learner.algorithm_short_name in ["Kumo", "TabICLv2"]:
+                    learner.save(p, weights_root=results_path)
+                else:
+                    learner.save(p)
                 del learner.model
                 learner.model = None
                 # end of learner training
@@ -695,6 +701,13 @@ class ModelFramework:
                 desc += f"best epoch {info.get('best_epoch')}, completed epochs {info.get('completed_epochs')}, "
                 desc += f"stop reason {info.get('stop_reason')}, stopping metric {info.get('stopping_metric')}. "
                 desc += f"[Resource estimates and history]({learner.name}_training.log.json)\n"
+        if short_name in ["Kumo", "TabICLv2"]:
+            desc += "\n## In-context inference\n\n"
+            desc += "Saved artifacts retain labeled training context. SHAP is not enabled.\n\n"
+            for learner in self.learners:
+                info = getattr(learner, "training_info", {})
+                desc += f"- {learner.name}: {info.get('context_rows')} context rows from {info.get('training_rows')} training rows, {info.get('num_estimators')} estimators, {info.get('device')}. "
+                desc += f"[Checkpoint and resource details]({learner.name}_training.log.json)\n"
         return desc
 
     @staticmethod

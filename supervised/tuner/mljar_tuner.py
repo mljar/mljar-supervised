@@ -651,6 +651,8 @@ class MljarTuner:
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
         ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
@@ -793,6 +795,8 @@ class MljarTuner:
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
             "Random Forest",
             "Extra Trees",
             "Nearest Neighbors",
@@ -861,6 +865,8 @@ class MljarTuner:
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
             "Nearest Neighbors",
         ]
 
@@ -924,6 +930,8 @@ class MljarTuner:
             "Neural Network",
             "RealMLP",
             "TabM",
+            "Kumo",
+            "TabICLv2",
             "Nearest Neighbors",
         ]:
             rest_params += generated_params[m]
@@ -943,6 +951,8 @@ class MljarTuner:
                 "Neural Network",
                 "RealMLP",
                 "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Nearest Neighbors",
             ]:
                 if generated_params[m]:
@@ -1244,6 +1254,8 @@ class MljarTuner:
                 "Neural Network",
                 "RealMLP",
                 "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1338,6 +1350,8 @@ class MljarTuner:
                 "Neural Network",
                 "RealMLP",
                 "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1384,7 +1398,7 @@ class MljarTuner:
             return None
 
         model_params.update(self._custom_params.get(algorithm_key(model_type), {}))
-        if model_type in ['RealMLP', 'TabM']:
+        if model_type in ['RealMLP', 'TabM', 'Kumo', 'TabICLv2']:
             model_params['eval_metric_name'] = self._eval_metric
 
         # set eval metric

@@ -81,3 +81,5 @@ import supervised.algorithms.realmlp
 import supervised.algorithms.tabm
 import supervised.algorithms.random_forest
 import supervised.algorithms.xgboost
+
+import supervised.algorithms.sdm
