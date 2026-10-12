@@ -2358,23 +2358,25 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._ml_task = json_data.get("ml_task")
 
+    _report_html_version = 2
+
     report_style = f"""
-.styled-table {{
+.mljar-automl-report .styled-table {{
     border-collapse: collapse;
     font-size: 0.9em;
     font-family: Courier New;
 }}
 
-.styled-table td, .styled-table th {{
+.mljar-automl-report .styled-table td, .mljar-automl-report .styled-table th {{
     border: 1px solid #ddd;
     padding: 8px;
 }}
 
-.styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
+.mljar-automl-report .styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
 
-.styled-table tr:hover {{background-color: #e0ecf5;}}
+.mljar-automl-report .styled-table tr:hover {{background-color: #e0ecf5;}}
 
-.styled-table thead {{
+.mljar-automl-report .styled-table thead {{
     padding-top: 6px;
     padding-bottom: 6px;
     text-align: left;
@@ -2385,40 +2387,42 @@ class BaseAutoML(BaseEstimator, ABC):
 .mljar-automl-report {{
     font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: rgba(236, 243, 249, 0.15);
+}}
 
-
-h1 {{
+.mljar-automl-report h1 {{
     color: #004666;
     border-bottom: 1px solid rgba(0,70,102,0.3)
 }}
-h2 {{
+.mljar-automl-report h2 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
 }}
 
-ul {{
+.mljar-automl-report ul {{
     margin-top: 0px;
 }}
 
-p {{
+.mljar-automl-report p {{
     margin-top: 5px;
 }}
 
-h3 {{
+.mljar-automl-report h3 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
 }}
-a {{
+.mljar-automl-report a {{
     font-weight: bold;
     color: #004666;
 }}
 
-a:hover {{
-    cursor: pointer;
+.mljar-automl-report a:hover {{
     color: #0099CC;
 }}
+
+.mljar-automl-report a[href], .mljar-automl-report a[onclick] {{
+    cursor: pointer;
 }}
 
 """
@@ -2488,7 +2492,7 @@ a:hover {{
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
-                beginning += f"<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main-{self._id}')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                beginning += f"<h2><a onclick=\"toggleShow('optuna-{self._id}');toggleShow('automl-report-main-{self._id}')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
         content_html = beginning + content_html
 
@@ -2507,8 +2511,15 @@ margin-right: auto;display: block;"/>\n\n"""
         self._results_path = self._get_results_path()
         main_readme_html = os.path.join(self._results_path, "README.html")
 
+        report_version = (
+            f'<meta name="mljar-report-version" content="{self._report_html_version}">'
+        )
         if os.path.exists(main_readme_html):
-            return self._show_report(main_readme_html, width, height)
+            with open(main_readme_html) as fin:
+                cached_report = fin.read()
+            if report_version in cached_report:
+                return self._show_report(main_readme_html, width, height)
+            # Rebuild older HTML from the saved Markdown without retraining.
 
         body = ""
         fname = os.path.join(self._results_path, "README.md")
@@ -2546,14 +2557,15 @@ margin-right: auto;display: block;"/>\n\n"""
 <!DOCTYPE html>
 <html>
 <head>
+    {report_version}
     <style>
     {self.report_style}
     </style>
 </head>
 <body>
-    <div class="mljar-automl-report-{self._id}">
+    <div class="mljar-automl-report mljar-automl-report-{self._id}">
     {body}
-    <div>
+    </div>
 </body>
 </html>
 """
