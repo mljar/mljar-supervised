@@ -485,7 +485,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 if self._ml_task == BINARY_CLASSIFICATION:
                     cols = [f for f in oof.columns if "prediction" in f]
                     if len(cols) == 2:
-                        oof = pd.DataFrame({"prediction": oof[cols[1]]})
+                        # Match the binary OOF schema from ModelFramework.predictions.
+                        # KMeans and other preprocessors retain these training names.
+                        class_names = [c[len("prediction_"):] for c in cols]
+                        column = "prediction"
+                        if not ("0" in class_names and "1" in class_names):
+                            column = (
+                                f"prediction_0_for_{class_names[0]}_1_for_{class_names[1]}"
+                            )
+                        oof = pd.DataFrame({column: oof[cols[1]]})
 
             cols = [f for f in oof.columns if "prediction" in f]
             oof = oof[cols]
