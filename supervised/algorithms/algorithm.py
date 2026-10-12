@@ -1,4 +1,5 @@
 import uuid
+from abc import ABC, abstractmethod
 
 import numpy as np
 
@@ -9,7 +10,7 @@ from supervised.utils.importance import PermutationImportance
 from supervised.utils.shap import PlotSHAP
 
 
-class BaseAlgorithm(BaseEstimator):
+class BaseAlgorithm(BaseEstimator, ABC):
     """
     This is an abstract class.
     All algorithms inherit from BaseAlgorithm.
@@ -31,14 +32,16 @@ class BaseAlgorithm(BaseEstimator):
     def set_learner_name(self, fold, repeat, repeats):
         self.name = construct_learner_name(fold, repeat, repeats)
 
+    @abstractmethod
     def is_fitted(self):
-        # base class method
-        return False
+        """Return whether the model is loaded and ready for prediction."""
+        raise NotImplementedError
 
     def reload(self):
         if not self.is_fitted() and self.model_file_path is not None:
             self.load(self.model_file_path)
 
+    @abstractmethod
     def fit(
         self,
         X,
@@ -50,10 +53,13 @@ class BaseAlgorithm(BaseEstimator):
         log_to_file=None,
         max_time=None,
     ):
-        pass
+        """Train the model using the supplied training and validation data."""
+        raise NotImplementedError
 
+    @abstractmethod
     def predict(self, X):
-        pass
+        """Return predictions in the format expected for the model's task."""
+        raise NotImplementedError
 
     # needed for feature importance
     def predict_proba(self, X):
@@ -63,16 +69,28 @@ class BaseAlgorithm(BaseEstimator):
         return np.column_stack((1 - y, y))
 
     def update(self, update_params):
+        """Optional hook for updating parameters between training iterations."""
         pass
 
+    @abstractmethod
     def copy(self):
-        pass
+        """Return an independent copy, including the current model state."""
+        raise NotImplementedError
 
+    @abstractmethod
     def save(self, model_file_path):
-        pass
+        """Save the model state to the supplied path."""
+        raise NotImplementedError
 
+    @abstractmethod
     def load(self, model_file_path):
-        pass
+        """Load the model state from the supplied path."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def file_extension(self):
+        """Return the model artifact extension without a leading dot."""
+        raise NotImplementedError
 
     def get_fname(self):
         return f"{self.name}.{self.file_extension()}"
