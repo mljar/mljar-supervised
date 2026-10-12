@@ -707,7 +707,10 @@ class ModelFramework:
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.train_time = json_desc.get("train_time", mf.train_time)
-        mf.final_loss = json_desc.get("final_loss", mf.final_loss)
+        final_loss = json_desc.get("final_loss", mf.final_loss)
+        # Older framework files serialize losses as strings. Resumed training
+        # compares them with the numeric losses of newly trained models.
+        mf.final_loss = None if final_loss is None else float(final_loss)
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
         mf._single_prediction_time = json_desc.get(

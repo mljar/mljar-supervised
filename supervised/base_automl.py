@@ -2549,6 +2549,8 @@ margin-right: auto;display: block;"/>\n\n"""
         return to_markdown(output_payload, model_name)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
+        if self._best_model is None:
+            self.load(self.results_path)
         metric = self._best_model.get_metric()
 
         X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(
@@ -2557,12 +2559,10 @@ margin-right: auto;display: block;"/>\n\n"""
 
         if self._ml_task == BINARY_CLASSIFICATION:
             prediction = self._predict_proba(X)[:, 1]
-        if self._ml_task == MULTICLASS_CLASSIFICATION:
+        elif self._ml_task == MULTICLASS_CLASSIFICATION:
             prediction = self._predict_proba(X)
         else:
             prediction = self._predict(X)
-
-        sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
 
         new_score = metric(y, prediction, sample_weight)
         old_score = self._best_model.get_final_loss()
