@@ -407,6 +407,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
         # save the model
         mf.save(results_path, model_subpath)
+        self._save_model_blueprint(model_subpath)
 
         return True
 
@@ -440,8 +441,23 @@ class BaseAutoML(BaseEstimator, ABC):
             self.ensemble.fit(oofs, target, sample_weight, sensitive_features)
             self.keep_model(self.ensemble, ensemble_subpath)
             self.ensemble.save(self._results_path, ensemble_subpath)
+            self._save_model_blueprint(ensemble_subpath)
             return True
         return False
+
+    def _save_model_blueprint(self, model_subpath):
+        if self._explain_level != 2:
+            return
+        from supervised.utils.blueprint import save_blueprints
+
+        try:
+            save_blueprints(
+                self._results_path,
+                [model_subpath],
+                {"stacked": [m.get_name() for m in self._stacked_models or []]},
+            )
+        except (OSError, ValueError, TypeError) as exc:
+            warnings.warn(f"Could not generate model blueprints: {exc}", RuntimeWarning)
 
     def can_we_stack_them(self, y):
         # if multiclass and too many classes then No
@@ -1421,6 +1437,21 @@ class BaseAutoML(BaseEstimator, ABC):
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4, cls=MLJSONEncoder))
 
+        blueprint_models = []
+        if self._explain_level == 2:
+            from supervised.utils.blueprint import save_blueprints
+
+            try:
+                blueprint_models = save_blueprints(
+                    self._results_path, self._model_subpaths, params
+                )
+            except (OSError, ValueError, TypeError) as exc:
+                warnings.warn(f"Could not generate model blueprints: {exc}", RuntimeWarning)
+            # Cached HTML includes inline SVGs; rebuild it after report updates.
+            html_path = os.path.join(self._results_path, "README.html")
+            if os.path.exists(html_path):
+                os.remove(html_path)
+
         if self._models:
             ldb = self.get_leaderboard(original_metric_values=True)
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
@@ -1436,6 +1467,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+                if blueprint_models:
+                    fout.write("\n\n## Model blueprints\n\n")
+                    for model_name in blueprint_models:
+                        from urllib.parse import quote
+
+                        model_path = quote(model_name, safe="")
+                        fout.write(
+                            f"- [{model_name}]({model_path}/README.md)\n"
+                        )
                 skipped_weights = getattr(
                     getattr(self, "tuner", None), "_weight_skip_reported", set()
                 )
@@ -2485,6 +2525,16 @@ class BaseAutoML(BaseEstimator, ABC):
             old = 'href="../README.html"'
             new = f"onclick=\"toggleShow('{me}-{self._id}');toggleShow('automl-report-main-{self._id}')\" "
             content_html = content_html.replace(old, new)
+            # Blueprint member links navigate between inline model reports.
+            from urllib.parse import quote
+
+            for model_name in self._model_subpaths:
+                old = f'href="../{quote(model_name, safe="")}/README.md"'
+                new = (
+                    f'href="#" onclick="toggleShow(\'{model_name}-{self._id}\');'
+                    f'toggleShow(\'{me}-{self._id}\')"'
+                )
+                content_html = content_html.replace(old, new)
 
         beginning = ""
 

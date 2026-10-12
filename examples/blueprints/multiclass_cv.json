@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "name": "Multiclass_RandomForest_CV",
+  "task": "multiclass_classification",
+  "view": "prediction",
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "Input features",
+      "kind": "input",
+      "detail": ""
+    },
+    {
+      "id": "n1",
+      "label": "Fitted pipeline",
+      "kind": "model",
+      "detail": "4 learner(s); separate fitted states",
+      "learners": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "n2",
+      "label": "Fill missing values",
+      "kind": "transform",
+      "detail": "fill_na_median; 1 columns: age",
+      "columns": [
+        "age"
+      ]
+    },
+    {
+      "id": "n3",
+      "label": "Fill new missing values",
+      "kind": "transform",
+      "detail": "Conditional fallback at prediction",
+      "columns": []
+    },
+    {
+      "id": "n4",
+      "label": "Encode categories",
+      "kind": "transform",
+      "detail": "categorical_to_onehot; 1 columns: city",
+      "columns": [
+        "city"
+      ]
+    },
+    {
+      "id": "n5",
+      "label": "Scale features",
+      "kind": "transform",
+      "detail": "scale_normal; 2 columns: age, income",
+      "columns": [
+        "age",
+        "income"
+      ]
+    },
+    {
+      "id": "n6",
+      "label": "Clip numeric features",
+      "kind": "transform",
+      "detail": "Float32-safe numeric bounds",
+      "columns": []
+    },
+    {
+      "id": "n7",
+      "label": "Random Forest",
+      "kind": "learner",
+      "detail": "max_depth=6",
+      "parameters": {
+        "model_type": "Random Forest",
+        "max_depth": 6
+      }
+    },
+    {
+      "id": "n8",
+      "label": "Fitted pipeline",
+      "kind": "model",
+      "detail": "1 learner(s); separate fitted states",
+      "learners": [
+        4
+      ]
+    },
+    {
+      "id": "n9",
+      "label": "Fill missing values",
+      "kind": "transform",
+      "detail": "fill_na_median; 1 columns: age",
+      "columns": [
+        "age"
+      ]
+    },
+    {
+      "id": "n10",
+      "label": "Fill new missing values",
+      "kind": "transform",
+      "detail": "Conditional fallback at prediction",
+      "columns": []
+    },
+    {
+      "id": "n11",
+      "label": "Encode categories",
+      "kind": "transform",
+      "detail": "categorical_to_int; 1 columns: city",
+      "columns": [
+        "city"
+      ]
+    },
+    {
+      "id": "n12",
+      "label": "Scale features",
+      "kind": "transform",
+      "detail": "scale_normal; 2 columns: age, income",
+      "columns": [
+        "age",
+        "income"
+      ]
+    },
+    {
+      "id": "n13",
+      "label": "Clip numeric features",
+      "kind": "transform",
+      "detail": "Float32-safe numeric bounds",
+      "columns": []
+    },
+    {
+      "id": "n14",
+      "label": "Random Forest",
+      "kind": "learner",
+      "detail": "max_depth=6",
+      "parameters": {
+        "model_type": "Random Forest",
+        "max_depth": 6
+      }
+    },
+    {
+      "id": "n15",
+      "label": "Average learner predictions",
+      "kind": "aggregate",
+      "detail": "Equal weight across 5 fitted learner(s)"
+    },
+    {
+      "id": "n16",
+      "label": "Class probabilities / labels",
+      "kind": "output",
+      "detail": "Target decoding"
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n1"
+    },
+    {
+      "source": "n1",
+      "target": "n2"
+    },
+    {
+      "source": "n2",
+      "target": "n3"
+    },
+    {
+      "source": "n3",
+      "target": "n4"
+    },
+    {
+      "source": "n4",
+      "target": "n5"
+    },
+    {
+      "source": "n5",
+      "target": "n6"
+    },
+    {
+      "source": "n6",
+      "target": "n7"
+    },
+    {
+      "source": "n0",
+      "target": "n8"
+    },
+    {
+      "source": "n8",
+      "target": "n9"
+    },
+    {
+      "source": "n9",
+      "target": "n10"
+    },
+    {
+      "source": "n10",
+      "target": "n11"
+    },
+    {
+      "source": "n11",
+      "target": "n12"
+    },
+    {
+      "source": "n12",
+      "target": "n13"
+    },
+    {
+      "source": "n13",
+      "target": "n14"
+    },
+    {
+      "source": "n7",
+      "target": "n15",
+      "weight": 0.8,
+      "label": "4/5"
+    },
+    {
+      "source": "n14",
+      "target": "n15",
+      "weight": 0.2,
+      "label": "1/5"
+    },
+    {
+      "source": "n15",
+      "target": "n16"
+    }
+  ],
+  "footer_url": "https://mljar.com",
+  "notes": [
+    "Generated from fitted model metadata.",
+    "Matching pipeline structures are grouped; each fold/repeat retains its own fitted preprocessing and learner. Group size determines its contribution to the average."
+  ]
+}

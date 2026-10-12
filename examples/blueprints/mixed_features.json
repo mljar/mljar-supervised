@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "name": "Binary_Text_IP_Datetime",
+  "task": "binary_classification",
+  "view": "prediction",
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "Input features",
+      "kind": "input",
+      "detail": ""
+    },
+    {
+      "id": "n1",
+      "label": "Fitted pipeline",
+      "kind": "model",
+      "detail": "1 learner(s); separate fitted states",
+      "learners": [
+        0
+      ]
+    },
+    {
+      "id": "n2",
+      "label": "Text TF-IDF",
+      "kind": "transform",
+      "detail": "2 generated features; 1 columns: description",
+      "columns": [
+        "description"
+      ]
+    },
+    {
+      "id": "n3",
+      "label": "IP features",
+      "kind": "transform",
+      "detail": "2 generated features; 1 columns: client_ip",
+      "columns": [
+        "client_ip"
+      ]
+    },
+    {
+      "id": "n4",
+      "label": "Fill missing values",
+      "kind": "transform",
+      "detail": "fill_na_median; 1 columns: age",
+      "columns": [
+        "age"
+      ]
+    },
+    {
+      "id": "n5",
+      "label": "Fill new missing values",
+      "kind": "transform",
+      "detail": "Conditional fallback at prediction",
+      "columns": []
+    },
+    {
+      "id": "n6",
+      "label": "Golden features",
+      "kind": "transform",
+      "detail": "1 columns: age_ratio_income",
+      "columns": [
+        "age_ratio_income"
+      ]
+    },
+    {
+      "id": "n7",
+      "label": "K-means features",
+      "kind": "transform",
+      "detail": "2 columns: cluster_0, cluster_1",
+      "columns": [
+        "cluster_0",
+        "cluster_1"
+      ]
+    },
+    {
+      "id": "n8",
+      "label": "Encode categories",
+      "kind": "transform",
+      "detail": "categorical_to_onehot; 1 columns: city",
+      "columns": [
+        "city"
+      ]
+    },
+    {
+      "id": "n9",
+      "label": "Datetime features",
+      "kind": "transform",
+      "detail": "year, month, weekday; 1 columns: timestamp",
+      "columns": [
+        "timestamp"
+      ]
+    },
+    {
+      "id": "n10",
+      "label": "Scale features",
+      "kind": "transform",
+      "detail": "scale_normal; 2 columns: age, income",
+      "columns": [
+        "age",
+        "income"
+      ]
+    },
+    {
+      "id": "n11",
+      "label": "Select features",
+      "kind": "transform",
+      "detail": "Drop selected columns; 1 columns: unused_feature",
+      "columns": [
+        "unused_feature"
+      ]
+    },
+    {
+      "id": "n12",
+      "label": "Clip numeric features",
+      "kind": "transform",
+      "detail": "Float32-safe numeric bounds",
+      "columns": []
+    },
+    {
+      "id": "n13",
+      "label": "CatBoost",
+      "kind": "learner",
+      "detail": "depth=4",
+      "parameters": {
+        "model_type": "CatBoost",
+        "depth": 4
+      }
+    },
+    {
+      "id": "n14",
+      "label": "Average learner predictions",
+      "kind": "aggregate",
+      "detail": "Equal weight across 1 fitted learner(s)"
+    },
+    {
+      "id": "n15",
+      "label": "Class probabilities / labels",
+      "kind": "output",
+      "detail": "Target decoding"
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n1"
+    },
+    {
+      "source": "n1",
+      "target": "n2"
+    },
+    {
+      "source": "n2",
+      "target": "n3"
+    },
+    {
+      "source": "n3",
+      "target": "n4"
+    },
+    {
+      "source": "n4",
+      "target": "n5"
+    },
+    {
+      "source": "n5",
+      "target": "n6"
+    },
+    {
+      "source": "n6",
+      "target": "n7"
+    },
+    {
+      "source": "n7",
+      "target": "n8"
+    },
+    {
+      "source": "n8",
+      "target": "n9"
+    },
+    {
+      "source": "n9",
+      "target": "n10"
+    },
+    {
+      "source": "n10",
+      "target": "n11"
+    },
+    {
+      "source": "n11",
+      "target": "n12"
+    },
+    {
+      "source": "n12",
+      "target": "n13"
+    },
+    {
+      "source": "n13",
+      "target": "n14"
+    },
+    {
+      "source": "n14",
+      "target": "n15"
+    }
+  ],
+  "footer_url": "https://mljar.com",
+  "notes": [
+    "Generated from fitted model metadata."
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "name": "Binary_Ensemble",
+  "task": "binary_classification",
+  "view": "prediction",
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "Input features",
+      "kind": "input",
+      "detail": ""
+    },
+    {
+      "id": "n1",
+      "label": "Weighted average",
+      "kind": "aggregate",
+      "detail": "Combine member predictions"
+    },
+    {
+      "id": "n2",
+      "label": "LightGBM",
+      "kind": "model",
+      "detail": "Weight: 50.000%",
+      "weight": 0.5,
+      "href": "../LightGBM/README.md"
+    },
+    {
+      "id": "n3",
+      "label": "CatBoost",
+      "kind": "model",
+      "detail": "Weight: 33.333%",
+      "weight": 0.3333333333333333,
+      "href": "../CatBoost/README.md"
+    },
+    {
+      "id": "n4",
+      "label": "NeuralNetwork",
+      "kind": "model",
+      "detail": "Weight: 16.667%",
+      "weight": 0.16666666666666666,
+      "href": "../NeuralNetwork/README.md"
+    },
+    {
+      "id": "n5",
+      "label": "Class probabilities / labels",
+      "kind": "output",
+      "detail": "Target decoding"
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n2"
+    },
+    {
+      "source": "n2",
+      "target": "n1"
+    },
+    {
+      "source": "n0",
+      "target": "n3"
+    },
+    {
+      "source": "n3",
+      "target": "n1"
+    },
+    {
+      "source": "n0",
+      "target": "n4"
+    },
+    {
+      "source": "n4",
+      "target": "n1"
+    },
+    {
+      "source": "n1",
+      "target": "n5"
+    }
+  ],
+  "footer_url": "https://mljar.com",
+  "notes": [
+    "Generated from fitted model metadata."
+  ]
+}

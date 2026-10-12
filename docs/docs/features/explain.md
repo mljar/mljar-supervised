@@ -4,7 +4,47 @@ There are three modes of explanations available in [`mljar-supervised`](https://
 
 - if `explain_level` is `0` no explanations are produced. Only learning curves are plotted.
 - if `explain_level` is `1` the following explanations are produced: learning curves, importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
-- if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
+- if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations and model blueprints.
+
+## Model blueprints
+
+Set `explain_level=2` to include a prediction pipeline diagram in the README of
+every successfully saved model, including Baseline, ensembles, and stacked models.
+
+```python
+from supervised import AutoML
+
+automl = AutoML(results_path="AutoML_results", explain_level=2)
+automl.fit(X, y)
+automl.report()
+```
+
+Each model directory contains `blueprint.svg`, the diagram, and `blueprint.json`,
+its graph representation. The model's `README.md` embeds the SVG, and the main
+AutoML README links to all model reports. The HTML report displays the same diagrams.
+No additional packages are needed for blueprint generation.
+
+Blueprints use saved fitted preprocessing and learner metadata. They show the
+transformation order, learner parameters, prediction averaging, ensemble members
+and normalized weights, and stacking dependencies. Matching cross-validation fold
+pipelines are grouped, while different transformations remain separate branches.
+Each fold retains its own fitted preprocessing and learner. Stacking uses
+out-of-fold predictions for training and fitted base-model predictions at inference.
+
+The clickable SVG footer reads **Trained with MLJAR AutoML**. Generation does not
+load the training dataset or estimator. Successfully saved models keep their
+diagrams if later training is interrupted. If diagram generation fails, AutoML
+issues a warning and continues training. Blueprint generation is disabled at
+`explain_level=0` and `1`.
+
+This example uses illustrative metadata to show five multiclass cross-validation
+learners, with one using a different categorical encoding. Real AutoML blueprints
+are generated from the fitted models in your run.
+
+![Multiclass cross-validation blueprint](../images/blueprints/multiclass_cv.svg)
+
+More illustrative diagrams and a regeneration script are available in
+[the example gallery](https://github.com/mljar/mljar-supervised/tree/master/examples/blueprints).
 
 ## Learning curves
 

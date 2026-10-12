@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "name": "Mixed_Stacked_Ensemble",
+  "task": "regression",
+  "view": "prediction",
+  "nodes": [
+    {
+      "id": "n0",
+      "label": "Input features",
+      "kind": "input",
+      "detail": ""
+    },
+    {
+      "id": "n1",
+      "label": "Weighted average",
+      "kind": "aggregate",
+      "detail": "Combine member predictions"
+    },
+    {
+      "id": "n2",
+      "label": "Regression_Linear",
+      "kind": "model",
+      "detail": "Weight: 40.000%",
+      "weight": 0.4,
+      "href": "../Regression_Linear/README.md"
+    },
+    {
+      "id": "n3",
+      "label": "Regression_Stacked",
+      "kind": "model",
+      "detail": "Weight: 60.000%",
+      "weight": 0.6,
+      "href": "../Regression_Stacked/README.md"
+    },
+    {
+      "id": "n4",
+      "label": "LightGBM",
+      "kind": "model",
+      "detail": "Base model prediction",
+      "href": "../LightGBM/README.md"
+    },
+    {
+      "id": "n5",
+      "label": "CatBoost",
+      "kind": "model",
+      "detail": "Base model prediction",
+      "href": "../CatBoost/README.md"
+    },
+    {
+      "id": "n6",
+      "label": "Stacked features",
+      "kind": "aggregate",
+      "detail": "Original features + predictions"
+    },
+    {
+      "id": "n7",
+      "label": "Prediction",
+      "kind": "output",
+      "detail": "Original target units"
+    }
+  ],
+  "edges": [
+    {
+      "source": "n0",
+      "target": "n2"
+    },
+    {
+      "source": "n2",
+      "target": "n1"
+    },
+    {
+      "source": "n0",
+      "target": "n4"
+    },
+    {
+      "source": "n0",
+      "target": "n5"
+    },
+    {
+      "source": "n0",
+      "target": "n6"
+    },
+    {
+      "source": "n4",
+      "target": "n6"
+    },
+    {
+      "source": "n5",
+      "target": "n6"
+    },
+    {
+      "source": "n6",
+      "target": "n3"
+    },
+    {
+      "source": "n3",
+      "target": "n1"
+    },
+    {
+      "source": "n1",
+      "target": "n7"
+    }
+  ],
+  "footer_url": "https://mljar.com",
+  "notes": [
+    "Generated from fitted model metadata.",
+    "Stacking uses out-of-fold predictions during training and fitted base-model predictions at inference."
+  ]
+}

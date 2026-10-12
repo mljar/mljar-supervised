@@ -193,7 +193,7 @@ class AutoML(BaseAutoML):
 
                 - if `explain_level` is `0` no explanations are produced.
                 - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
-                - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
+                - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations and model blueprints embedded in each model's README.
 
                 If left `auto` AutoML will produce explanations based on the selected `mode`.
 
