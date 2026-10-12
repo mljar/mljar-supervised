@@ -59,7 +59,11 @@ class DataInfo:
 
         target_info = []
         if machinelearning_task == BINARY_CLASSIFICATION:
-            if not PreprocessingUtils.is_0_1(y):
+            # Even 0/1 labels need encoding when their dtype is categorical:
+            # LightGBM requires numeric labels rather than pandas categories.
+            if isinstance(
+                y.dtype, pd.CategoricalDtype
+            ) or not PreprocessingUtils.is_0_1(y):
                 target_info += ["convert_0_1"]
 
         if machinelearning_task == REGRESSION:
