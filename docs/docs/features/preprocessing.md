@@ -77,6 +77,12 @@ the column to text or skip its encoding. This keeps raw strings out of numeric
 model inputs. One-hot encoding still falls back to integer encoding when the
 fitted column has more than 200 categories.
 
+Boolean columns can use NumPy `bool`, object-backed booleans, pandas nullable
+`boolean`, or boolean categorical values. Integer encoding keeps their label
+codes consistent during training, prediction, and reload, including when a
+training fold contains only one boolean value. Encoded values replace the input
+column with an integer column, so nullable boolean dtypes do not reject them.
+
 ## Text features
 
 Text columns are detected automatically and transformed with TF-IDF.

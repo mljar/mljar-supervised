@@ -78,7 +78,10 @@ class PreprocessingMissingValues(object):
             return {}
         params = {
             "fill_method": self._na_fill_method,
-            "fill_params": self._na_fill_params,
+            "fill_params": {
+                column: bool(value) if isinstance(value, np.bool_) else value
+                for column, value in self._na_fill_params.items()
+            },
             "datetime_columns": list(self._datetime_columns),
         }
         for col in self._datetime_columns:
