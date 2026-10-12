@@ -574,7 +574,9 @@ class Ensemble:
                 {"model": models_map[m["model"]], "repeat": m["repeat"]}
             ]
 
-        ensemble.best_loss = json_desc.get("final_loss", ensemble.best_loss)
+        final_loss = json_desc.get("final_loss", ensemble.best_loss)
+        # Match ModelFramework: legacy metadata may store a numeric loss as text.
+        ensemble.best_loss = None if final_loss is None else float(final_loss)
         ensemble.train_time = json_desc.get("train_time", ensemble.train_time)
         ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
         predictions_fname = json_desc.get("predictions_fname")
