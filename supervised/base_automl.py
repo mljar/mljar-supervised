@@ -249,6 +249,7 @@ class BaseAutoML(BaseEstimator, ABC):
         ldb = {
             "name": [],
             "model_type": [],
+            "is_stacked": [],
             "metric_type": [],
             "metric_value": [],
             "train_time": [],
@@ -270,6 +271,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 continue
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
+            ldb["is_stacked"] += [bool(m._is_stacked)]
             ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]

@@ -27,3 +27,16 @@ The original input data is used to train several models of Level-0, and the pred
 **Ensemble stacking** means to ensemble the above-mentioned Level-0 and Level-1 models with different weight values and predict final results. The final selected Level-0 and Level-1 models and their weight values will list in the ensemble.json file which under the ensemble_stacked folder. (as shown in the figure below, repeat here means the weight value)
 
 ![](../images/ensemble_stack.png)
+
+## Stacked models in performance plots
+
+The leaderboard includes an `is_stacked` boolean alongside `model_type`.
+Performance plots, performance boxplots, and fairness plots show ordinary and
+stacked variants as separate groups, for example `CatBoost` and
+`CatBoost (stacked)`. This applies to every algorithm and to ensembles, where
+`Ensemble (stacked)` can combine ordinary and stacked models.
+
+Stacked variants keep their algorithm color and use a different marker in
+scatter plots. Boxplots summarize each group separately. Scores, model selection,
+and the underlying `model_type` are unchanged. Older leaderboard tables without
+`is_stacked` retain their original grouping.
