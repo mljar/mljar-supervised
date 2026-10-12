@@ -29,6 +29,7 @@ class NeuralNetworkObjective:
         self.y_validation = y_validation
         self.eval_metric = eval_metric
         self.seed = random_state
+        self.n_jobs = n_jobs
 
     def __call__(self, trial):
         try:
@@ -46,6 +47,7 @@ class NeuralNetworkObjective:
                 ),
                 "alpha": trial.suggest_float("alpha", 1e-8, 10.0, log=True),
                 "seed": self.seed,
+                "n_jobs": self.n_jobs,
                 "ml_task": self.ml_task,
             }
             model = Algorithm(params)

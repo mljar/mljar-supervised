@@ -35,8 +35,10 @@ from supervised.utils.learning_curves import LearningCurves
 
 
 class ModelFramework:
-    def __init__(self, params, callbacks=[]):
+
+    def __init__(self, params, callbacks=[], data_store=None):
         logger.debug("ModelFramework.__init__")
+        self._data_store = data_store
         self.uid = str(uuid.uuid4())
 
         for i in ["learner", "validation_strategy"]:  # mandatory parameters
@@ -163,7 +165,9 @@ class ModelFramework:
                 random_state=self._automl_random_state,
             )
 
-        self.validation = ValidationStep(self.validation_params)
+        self.validation = ValidationStep(
+            self.validation_params, data_store=self._data_store
+        )
 
         repeats = self.validation.get_repeats()
         for repeat in range(repeats):

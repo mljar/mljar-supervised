@@ -8,41 +8,51 @@ from supervised.algorithms.registry import (
 )
 from supervised.preprocessing.encoding_selector import EncodingSelector
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
+from supervised.utils.column_scan import iter_columns
 
 
 class DataInfo:
     @staticmethod
     def compute(X, y, machinelearning_task):
         columns_info = {}
-        for col in X.columns:
-            columns_info[col] = []
-            #
-            empty_column = np.sum(pd.isnull(X[col]) == True) == X.shape[0]
-            if empty_column:
-                columns_info[col] += ["empty_column"]
+        for col, series in iter_columns(X):
+            info = []
+            columns_info[col] = info
+            missing = pd.isnull(series)
+            if missing.all():
+                info.append("empty_column")
                 continue
-            #
-            constant_column = len(np.unique(X.loc[~pd.isnull(X[col]), col])) == 1
-            if constant_column:
-                columns_info[col] += ["constant_column"]
-                continue
-            #
-            if PreprocessingUtils.is_na(X[col]):
-                columns_info[col] += ["missing_values"]
-            #
-            if PreprocessingUtils.is_categorical(X[col]):
-                columns_info[col] += ["categorical"]
-                columns_info[col] += [EncodingSelector.get(X, y, col)]
-            elif PreprocessingUtils.is_datetime(X[col]):
-                columns_info[col] += ["datetime_transform"]
-            elif PreprocessingUtils.is_text(X[col]):
-                columns_info[col] = ["text_transform"]  # override other transforms
-            elif PreprocessingUtils.is_ip(X[col]):
-                columns_info[col] += ["ip_transform"]
+            has_missing = missing.any()
+            values = series[~missing] if has_missing else series
+            dtype_type = PreprocessingUtils._type_from_dtype(series.dtype)
+            unique_count = None
+            if dtype_type == PreprocessingUtils.CATEGORICAL:
+                # Preserve object/category comparison semantics, but reuse the
+                # count for constant, text, and encoding decisions.
+                unique_count = len(np.unique(values))
+                constant = unique_count == 1
             else:
-                # numeric type, check if scale needed
-                if PreprocessingUtils.is_scale_needed(X[col]):
-                    columns_info[col] += ["scale"]
+                # Most numeric columns vary immediately. Check a bounded prefix
+                # first, and scan the full column only if it could be constant.
+                first = values.iloc[0]
+                constant = values.iloc[:32].eq(first).all() and values.eq(first).all()
+            if constant:
+                info.append("constant_column")
+                continue
+            if has_missing:
+                info.append("missing_values")
+            data_type = PreprocessingUtils.get_type(values, unique_count=unique_count)
+            if data_type == PreprocessingUtils.CATEGORICAL:
+                info.append("categorical")
+                info.append(EncodingSelector.get(X, y, col, unique_count=unique_count))
+            elif data_type == PreprocessingUtils.DATETIME:
+                info.append("datetime_transform")
+            elif data_type == PreprocessingUtils.TEXT:
+                columns_info[col] = ["text_transform"]
+            elif data_type == PreprocessingUtils.IP:
+                info.append("ip_transform")
+            elif PreprocessingUtils._is_scale_needed(values):
+                info.append("scale")
 
         target_info = []
         if machinelearning_task == BINARY_CLASSIFICATION:

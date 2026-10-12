@@ -31,6 +31,7 @@ logger.setLevel(LOG_LEVEL)
 
 
 class MljarTuner:
+
     def __init__(
         self,
         tuner_params,
@@ -57,9 +58,11 @@ class MljarTuner:
         fairness_threshold=None,
         privileged_groups=[],
         underprivileged_groups=[],
+        data_store=None,
         custom_params=None,
     ):
         logger.debug("MljarTuner.__init__")
+        self._data_store = data_store
         self._custom_params = validate_custom_params(custom_params, ml_task)
         self._weight_skip_reported = set()
         self._start_random_models = tuner_params.get("start_random_models", 5)
@@ -294,11 +297,11 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         # we operate here on full target data (for all samples)
         # we can't load preprocessed targets from other place
@@ -367,7 +370,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -412,11 +418,11 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         sensitive_columns = list(sensitive_features.columns)
 
@@ -466,7 +472,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -516,11 +525,11 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         sensitive_columns = list(sensitive_features.columns)
 
@@ -572,7 +581,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -1506,7 +1518,10 @@ class MljarTuner:
             results_path, best_model.get_name() + "_sample_weight.data"
         )
         dump_data(
-            sample_weight_path, pd.DataFrame({"sample_weight": df_preds["order"]})
+            sample_weight_path,
+            pd.DataFrame({"sample_weight": df_preds["order"]}),
+            store=self._data_store,
+            checkpoint=True,
         )
 
         generated_params = []

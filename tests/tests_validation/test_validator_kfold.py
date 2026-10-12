@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
-from supervised.utils.utils import dump_data
+from supervised.utils.utils import Store, dump_data
 from supervised.validation.validator_kfold import KFoldValidator
 
 
@@ -23,8 +23,9 @@ class KFoldValidatorTest(unittest.TestCase):
             X_path = os.path.join(results_path, "X.data")
             y_path = os.path.join(results_path, "y.data")
 
-            dump_data(X_path, data["X"])
-            dump_data(y_path, data["y"])
+            store = Store()
+            dump_data(X_path, data["X"], store=store)
+            dump_data(y_path, data["y"], store=store)
 
             params = {
                 "shuffle": False,
@@ -34,7 +35,7 @@ class KFoldValidatorTest(unittest.TestCase):
                 "X_path": X_path,
                 "y_path": y_path,
             }
-            vl = KFoldValidator(params)
+            vl = KFoldValidator(params, data_store=store)
 
             self.assertEqual(params["k_folds"], vl.get_n_splits())
             # for train, validation in vl.split():
@@ -64,8 +65,9 @@ class KFoldValidatorTest(unittest.TestCase):
             X_path = os.path.join(results_path, "X.data")
             y_path = os.path.join(results_path, "y.data")
 
-            dump_data(X_path, data["X"])
-            dump_data(y_path, data["y"])
+            store = Store()
+            dump_data(X_path, data["X"], store=store)
+            dump_data(y_path, data["y"], store=store)
 
             params = {
                 "shuffle": False,
@@ -75,7 +77,7 @@ class KFoldValidatorTest(unittest.TestCase):
                 "X_path": X_path,
                 "y_path": y_path,
             }
-            vl = KFoldValidator(params)
+            vl = KFoldValidator(params, data_store=store)
 
             self.assertEqual(params["k_folds"], vl.get_n_splits())
 
@@ -101,8 +103,9 @@ class KFoldValidatorTest(unittest.TestCase):
             X_path = os.path.join(results_path, "X.data")
             y_path = os.path.join(results_path, "y.data")
 
-            dump_data(X_path, data["X"])
-            dump_data(y_path, data["y"])
+            store = Store()
+            dump_data(X_path, data["X"], store=store)
+            dump_data(y_path, data["y"], store=store)
 
             params = {
                 "shuffle": True,
@@ -112,7 +115,7 @@ class KFoldValidatorTest(unittest.TestCase):
                 "X_path": X_path,
                 "y_path": y_path,
             }
-            vl = KFoldValidator(params)
+            vl = KFoldValidator(params, data_store=store)
 
             self.assertEqual(params["k_folds"], vl.get_n_splits())
 
@@ -138,8 +141,9 @@ class KFoldValidatorTest(unittest.TestCase):
             X_path = os.path.join(results_path, "X.data")
             y_path = os.path.join(results_path, "y.data")
 
-            dump_data(X_path, data["X"])
-            dump_data(y_path, data["y"])
+            store = Store()
+            dump_data(X_path, data["X"], store=store)
+            dump_data(y_path, data["y"], store=store)
 
             params = {
                 "shuffle": True,
@@ -151,7 +155,7 @@ class KFoldValidatorTest(unittest.TestCase):
                 "y_path": y_path,
                 "random_seed": 1,
             }
-            vl = KFoldValidator(params)
+            vl = KFoldValidator(params, data_store=store)
 
             self.assertEqual(params["k_folds"], vl.get_n_splits())
             self.assertEqual(params["repeats"], vl.get_repeats())
@@ -182,8 +186,9 @@ class KFoldValidatorTest(unittest.TestCase):
             X_path = os.path.join(results_path, "X.data")
             y_path = os.path.join(results_path, "y.data")
 
-            dump_data(X_path, data["X"])
-            dump_data(y_path, data["y"])
+            store = Store()
+            dump_data(X_path, data["X"], store=store)
+            dump_data(y_path, data["y"], store=store)
 
             params = {
                 "shuffle": False,
@@ -200,7 +205,7 @@ class KFoldValidatorTest(unittest.TestCase):
                 expected_warning=UserWarning,
                 match="Disable repeats in validation because shuffle is disabled",
             ) as record:
-                vl = KFoldValidator(params)
+                vl = KFoldValidator(params, data_store=store)
 
             # check that only one warning was raised
             self.assertEqual(len(record), 1)

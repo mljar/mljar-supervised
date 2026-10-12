@@ -303,7 +303,10 @@ class AutoML(BaseAutoML):
 
                 Example value: `[{"sex": "Female"}]`
 
-            n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
+            n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using all processors.
+                For Neural Network, explicit limits control BLAS threads during fitting and prediction;
+                `-1` preserves the numerical libraries' existing thread settings. These native thread
+                limits are process-wide while the operation runs, not per Python thread.
 
             verbose (int): Controls the verbosity when fitting and predicting.
 

@@ -5,7 +5,6 @@ from supervised.preprocessing.preprocessing_categorical import PreprocessingCate
 
 
 class EncodingSelector:
-
     """
     EncodingSelector object decides which method should be used for categorical encoding.
 
@@ -13,9 +12,11 @@ class EncodingSelector:
     """
 
     @staticmethod
-    def get(X, y, column):
+    def get(X, y, column, *, unique_count=None):
         try:
-            unique_cnt = len(np.unique(X.loc[~pd.isnull(X[column]), column]))
+            unique_cnt = unique_count
+            if unique_cnt is None:
+                unique_cnt = len(np.unique(X.loc[~pd.isnull(X[column]), column]))
             if unique_cnt <= 20:
                 return PreprocessingCategorical.FEW_CATEGORIES
         except Exception as e:

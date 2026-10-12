@@ -56,7 +56,7 @@ from supervised.utils.report_structured import (
     save_structured_report,
     to_markdown,
 )
-from supervised.utils.utils import dump_data, load_data
+from supervised.utils.utils import Store, dump_data, load_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -70,6 +70,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
+        self._training_store = None
         self._mode = None
         self._ml_task = None
         self._results_path = None
@@ -207,6 +208,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 # join them and return unique list
                 load_models = list(np.unique(load_models + models_needed))
 
+            # Loading/resuming replaces the runtime models, including when fit
+            # is retried on the same instance after an interruption.
+            self._models = []
+            self._stacked_models = None
             models_map = {}
 
             for model_subpath in load_models:
@@ -396,6 +401,7 @@ class BaseAutoML(BaseEstimator, ABC):
         mf = ModelFramework(
             params,
             callbacks=[early_stop, total_time_constraint],
+            data_store=self._training_store,
         )
 
         # start training
@@ -557,17 +563,17 @@ class BaseAutoML(BaseEstimator, ABC):
         self._perform_model_stacking()
 
         X_stacked_path = os.path.join(self._results_path, "X_stacked.data")
-        if os.path.exists(X_stacked_path):
+        if self._training_store.contains(X_stacked_path):
             return
 
-        X = load_data(self._X_path)
+        X = load_data(self._X_path, store=self._training_store)
         org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
         new_columns = X_stacked.columns.tolist()
         added_columns = [c for c in new_columns if c not in org_columns]
 
         # save stacked train data
-        dump_data(X_stacked_path, X_stacked)
+        dump_data(X_stacked_path, X_stacked, store=self._training_store)
 
         """
         # resue old params
@@ -608,6 +614,16 @@ class BaseAutoML(BaseEstimator, ABC):
         # for binary and multiclass classification
         self._handle_drastic_imbalance(X, y, sample_weight, sensitive_features)
 
+        # App generation must not retain the full training frame after fit.
+        # Capture the same (possibly resampled) data that the old store exposed.
+        from supervised.apps.metadata import _build_feature_schema
+
+        self._data_info["app_feature_schema"] = _build_feature_schema(
+            self, X, self._data_info["columns_values"], tolerate_errors=True
+        )
+        with open(os.path.join(self._results_path, "data_info.json"), "w") as fout:
+            json.dump(self._data_info, fout, indent=4, cls=MLJSONEncoder)
+
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.data")
         self._y_path = os.path.join(self._results_path, "y.data")
@@ -617,21 +633,27 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._results_path, "sample_weight.data"
             )
             dump_data(
-                self._sample_weight_path, pd.DataFrame({"sample_weight": sample_weight})
+                self._sample_weight_path,
+                pd.DataFrame({"sample_weight": sample_weight}),
+                store=self._training_store,
             )
         self._sensitive_features_path = None
         if sensitive_features is not None:
             self._sensitive_features_path = os.path.join(
                 self._results_path, "sensitive_features.data"
             )
-            dump_data(self._sensitive_features_path, sensitive_features)
+            dump_data(
+                self._sensitive_features_path,
+                sensitive_features,
+                store=self._training_store,
+            )
 
-        dump_data(self._X_path, X)
+        dump_data(self._X_path, X, store=self._training_store)
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
-        dump_data(self._y_path, pd.DataFrame({"target": y}))
+        dump_data(self._y_path, pd.DataFrame({"target": y}), store=self._training_store)
 
         # set paths in validation parameters
         self._validation_strategy["X_path"] = self._X_path
@@ -867,11 +889,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):
-        if "Neural Network" in self._algorithms and self._n_jobs != -1:
-            self._algorithms.remove("Neural Network")
-            self.verbose_print(
-                "Neural Network algorithm was disabled because it doesn't support n_jobs parameter."
-            )
         if "Linear" in self._algorithms and not (
             self.n_rows_in_ < 10000 and self.n_features_in_ < 1000
         ):
@@ -1009,6 +1026,19 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
     def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
+        if self._training_store is not None:
+            raise AutoMLException("This AutoML instance already has an active fit")
+        store = Store()
+        self._training_store = store
+        try:
+            return self._fit_with_store(X, y, sample_weight, cv, sensitive_features)
+        finally:
+            store.clear()
+            self._training_store = None
+
+    def _fit_with_store(
+        self, X, y, sample_weight=None, cv=None, sensitive_features=None
+    ):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(
@@ -1177,6 +1207,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,
+                data_store=self._training_store,
                 custom_params=self.custom_params,
             )
             self.tuner = tuner
@@ -1712,9 +1743,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
-        elif os.path.exists(self.results_path) and os.path.exists(
-            os.path.join(self.results_path, "params.json")
-        ):  # AutoML already loaded, return path
+        elif os.path.exists(self.results_path) and (
+            os.path.exists(os.path.join(self.results_path, "params.json"))
+            or os.path.exists(os.path.join(self.results_path, "progress.json"))
+        ):  # Includes interruption before the first model was saved.
             self._results_path = path
             return path
         # Dir does not exist, create it
