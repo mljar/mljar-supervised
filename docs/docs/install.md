@@ -12,6 +12,7 @@ Choose the models and hardware you want to use:
 | Standard MLJAR | `mljar-supervised`; PyTorch is not required |
 | RealMLP on CPU | CPU PyTorch, then MLJAR with `[realmlp]` or `[all]` |
 | RealMLP on NVIDIA GPU | CUDA PyTorch, then the same MLJAR extra |
+| Kumo / TabICLv2 on CPU or NVIDIA GPU | Python 3.11+, chosen PyTorch build, `[tfm]`, then pinned SDM |
 
 **TabM mini uses the same CPU/GPU setup.** Substitute `[tabm]` for `[realmlp]`
 in the commands below, or use `[all]` for both. These extras share
@@ -19,8 +20,8 @@ pytabkit/PyTorch dependencies, so installing any one makes both models available
 in Compete mode. See [TabM mini](features/tabm.md) for usage and tuning.
 
 There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
-RealMLP's available devices. These instructions do not change GPU support for
-other algorithms.
+the available devices for RealMLP, TabM, Kumo, and TabICLv2. Other algorithms
+use their own device settings.
 
 !!! note "RealMLP release status"
     RealMLP and TabM mini are currently available from source. The published PyPI 1.3.2 package
@@ -60,6 +61,66 @@ python -m pip install mljar-supervised
 
 The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
 RealMLP is optional.
+
+## Kumo and TabICLv2 on CPU or NVIDIA GPU
+
+Use Python **3.11+** and install from source until a PyPI release includes these
+algorithms. Installation has two parts: MLJAR's optional dependencies and the
+separately pinned SDM backend. There is **no direct GitHub dependency in MLJAR's
+package metadata**; the second command explicitly installs it.
+
+Install your PyTorch build first:
+
+=== "CPU (Linux / Windows)"
+
+    ```bash
+    python -m pip install "torch==2.11.0" --index-url https://download.pytorch.org/whl/cpu
+    ```
+
+=== "NVIDIA GPU (Linux / Windows)"
+
+    For a CUDA 12.8-compatible driver:
+
+    ```bash
+    python -m pip install "torch==2.11.0" --index-url https://download.pytorch.org/whl/cu128
+    ```
+
+    For other drivers, choose a compatible build from the
+    [PyTorch installation selector](https://pytorch.org/get-started/locally/).
+    Keep PyTorch within `>=2.7,<3`.
+
+Then run **both** commands:
+
+```bash
+python -m pip install "mljar-supervised[tfm] @ git+https://github.com/mljar/mljar-supervised.git"
+python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
+```
+
+From an existing MLJAR checkout, replace the first command with
+`python -m pip install ".[tfm]"`.
+
+| Extra | Dependencies it adds | Separate SDM install needed? |
+|---|---|---|
+| `[kumo]`, `[tabiclv2]`, `[tfm]` | PyTorch, Hugging Face Hub, psutil | Yes |
+| `[all]` | Those dependencies plus pytabkit for RealMLP/TabM | Yes |
+
+The three TFM extras share dependencies; installing one does not restrict which
+of the two algorithms can be selected. SDM installs its own dependencies,
+including PyArrow and safetensors. A standard MLJAR installation does not load
+SDM or download model weights.
+
+Verify the backend and device:
+
+```bash
+python -m pip check
+python -c "from supervised.algorithms.sdm import check_dependencies; check_dependencies(); import torch; print('CUDA available:', torch.cuda.is_available())"
+```
+
+A CPU installation should print `False`. Select `algorithms=["Kumo", "TabICLv2"]`
+explicitly for CPU runs. Automatic Compete selection includes both when the tested
+backend and CUDA are available. Weights download from Hugging Face on first fit.
+See [Kumo and TabICLv2](features/sdm.md) for model sizes, tuning, memory limits,
+and offline use.
 
 ## RealMLP on CPU
 
@@ -116,7 +177,9 @@ python -m pip install ".[realmlp]"
 
 If you already have this checkout, run the final command from its root directory.
 For all optional model dependencies, use `python -m pip install ".[all]"` instead.
-Currently `[all]`, `[realmlp]` and `[tabm]` install the same optional dependencies.
+`[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds
+Hugging Face support for Kumo and TabICLv2, but their pinned SDM backend still
+requires the separate installation below.
 
 After a PyPI release includes RealMLP, the equivalent commands will be:
 

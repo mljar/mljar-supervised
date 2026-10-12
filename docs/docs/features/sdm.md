@@ -9,7 +9,7 @@ The relational model is not included.
 ## Installation
 
 Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
-[Installation](../install.md), then install MLJAR from source:
+[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install MLJAR from source:
 
 ```bash
 python -m pip install "mljar-supervised[tfm] @ git+https://github.com/mljar/mljar-supervised.git"
@@ -45,13 +45,39 @@ includes both algorithms. CPU use requires explicit algorithm selection.
 `device="auto"` uses CUDA when available, otherwise CPU; explicit `cpu`, `cuda`,
 and `cuda:<index>` are supported. This first version does not fine-tune weights.
 
-## Tuning and limits
+## What gets tuned
+
+`num_estimators` controls the number of transformed context views combined into
+one prediction. It does not train that many independent neural networks.
+`max_context_size` caps how many labeled training rows each candidate retains.
+Kumo's `size` selects a pretrained architecture; TabICLv2 has a fixed architecture.
+
+The following lists are MLJAR's search space. SDM preprocessing stays at its
+backend defaults; normalization, feature/class permutations, and softmax
+temperature are not separate tuning parameters in this integration.
+
 
 | Parameter | Allowed search values | Default |
 |---|---|---|
 | `num_estimators` | `[4, 8, 16]` | `8` |
 | `max_context_size` | `[1024, 4096, 8192]` | `4096` |
 | `size` (Kumo only) | `["small", "medium", "large"]` | `"small"` |
+
+Parameters supplied in `custom_params` are fixed values and are removed from
+search variation. For example:
+
+```python
+custom_params = {
+    "kumo": {"size": "large", "num_estimators": 8, "device": "cuda"},
+    "tabiclv2": {"num_estimators": 8, "device": "cuda"},
+}
+```
+
+Here context size can still vary. To use all registered search values, omit those
+fixed overrides. Resource settings (`device`, prediction batch size, and memory
+budgets) are controls, not accuracy-tuning parameters.
+
+## Input and resource limits
 
 Kumo tuning can try all three sizes. Fix `custom_params={"kumo": {"size": "large"}}`
 to use only large (likewise for medium or small). Larger models require more memory;
@@ -70,7 +96,8 @@ estimates. A million-row input does **not** mean a million-row context.
 
 Numerical, categorical, missing, and unseen categorical values are supported.
 Numerical missing values use context means with missing indicators; constant
-columns are handled by SDM. Sparse inputs and sample weights are rejected.
+columns are handled by SDM; entirely constant contexts are rejected. Sparse
+inputs and sample weights are rejected.
 Weighted fairness/boost-on-errors candidates skip these algorithms with a warning.
 Kumo rejects more than 500 effective columns, including generated indicators and
 category-count features, rather than silently truncating them.
@@ -99,8 +126,8 @@ the required size/task checkpoint from Hugging Face, pinned to these revisions:
 
 Both licenses permit commercial use subject to their terms. SDM code has its own
 Apache/BSD notices. Shared weights, model cards, and license notices are copied
-into `sdm_weights` in the results directory, with separate Kumo size subdirectories. Retain this directory when moving or
-sharing results. Redistribution of these weights requires retaining the notices.
+into `sdm_weights` in the results directory, with separate Kumo size subdirectories.
+Retain this directory when moving or sharing results. Redistribution of these weights requires retaining the notices.
 
 Saved learners contain **selected training rows and labels** as context. Your
 data is processed locally and is not uploaded to Hugging Face. Reload uses the
@@ -108,7 +135,12 @@ saved weights without network access. Set `local_files_only=True` to require
 cached checkpoints for initial fitting; `cache_dir` selects the HF cache.
 Pre-download by running a small fit for each task/model with internet access.
 
-Run the sklearn-generated example for all three tasks:
+## Synthetic examples
+
+The [runnable sklearn example](https://github.com/mljar/mljar-supervised/blob/master/examples/scripts/sdm_synthetic.py)
+uses `make_classification` for binary/multiclass tasks and `make_friedman1` for
+regression. It adds categorical values and missing data, holds out a test set,
+and verifies saved-model reload. Run it from a repository checkout:
 
 ```bash
 python examples/scripts/sdm_synthetic.py --device cuda --rows 1000

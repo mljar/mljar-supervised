@@ -16,10 +16,11 @@ automl = AutoML(
 )
 ```
 
-Algorithm names are case-insensitive; spaces, underscores and hyphens are
+Keys in `custom_params` are case-insensitive; spaces, underscores and hyphens are
 ignored. Values are fixed overrides, not lists of search candidates. Existing
 algorithms accept parameters from their registered search/default configuration;
-[RealMLP](realmlp.md) also accepts its documented training and memory controls.
+[RealMLP](realmlp.md), [TabM mini](tabm.md), and [Kumo/TabICLv2](sdm.md)
+also accept their documented training, inference, and memory controls.
 Unknown names and parameters are rejected. AutoML owns the task, metric, class
 count and CPU thread settings. Custom overrides are saved with the run, do not
 select algorithms automatically, and currently cannot be combined with Optuna
@@ -508,6 +509,55 @@ subsampling failure reported in [issue #794](https://github.com/mljar/mljar-supe
         "weights": "uniform"
     }
     ```
+
+## Kumo
+
+`Kumo` uses NVIDIA SDM's pretrained tabular model for binary classification,
+multiclass classification, and regression. It is available only in **Compete**
+mode and supports small, medium, and large checkpoints.
+
+Allowed tuning values:
+
+```python
+kumo_params = {
+    "size": ["small", "medium", "large"],
+    "num_estimators": [4, 8, 16],
+    "max_context_size": [1024, 4096, 8192],
+}
+kumo_default_params = {
+    "size": "small",
+    "num_estimators": 8,
+    "max_context_size": 4096,
+}
+```
+
+An estimator is a transformed view of the context using shared pretrained weights.
+The context is a bounded sample of training-fold rows. We do not train new weights
+or tune network depth/learning rate. Fix any tuning parameter through
+`custom_params={"kumo": {"size": "large", "num_estimators": 8}}`.
+
+## TabICLv2
+
+`TabICLv2` is a separate Compete algorithm using SDM's fixed v2 checkpoint.
+It supports the same three tasks and has no small/medium/large setting.
+
+```python
+tabiclv2_params = {
+    "num_estimators": [4, 8, 16],
+    "max_context_size": [1024, 4096, 8192],
+}
+tabiclv2_default_params = {
+    "num_estimators": 8,
+    "max_context_size": 4096,
+}
+```
+
+Both algorithms require Python 3.11+, an optional extra (`[tfm]`, `[kumo]`,
+`[tabiclv2]`, or `[all]`), and the separate pinned SDM installation. They reject
+sample weights and sparse input. Permutation importance is supported; SHAP is
+not enabled. See [installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu)
+and the [full model guide](sdm.md) for CPU/GPU behavior, input limits, downloads,
+and portable saves.
 
 ## Stacked Algorithm
 

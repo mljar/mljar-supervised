@@ -215,6 +215,10 @@ automl = AutoML(mode="Compete")
 ```
 
 It should be used for machine learning competitions.
+Kumo (small/medium/large) and TabICLv2 are also available with the
+[optional SDM installation](docs/docs/install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
+They are selected automatically when the backend and CUDA are available; select
+them explicitly for CPU use.
  - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: a train/test split (80/20), 5-fold CV or 10-fold CV. 
  - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network`, and `Nearest Neighbors`. It uses ensemble and **stacking**. 
  - It has only learning curves in the reports.
@@ -561,7 +565,7 @@ When `model_name` is provided, the markdown includes detailed metrics, fairness 
 
 # Installation  
 
-For standard, RealMLP CPU and RealMLP NVIDIA GPU setup, see the
+For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
 [installation guide](docs/docs/install.md). RealMLP currently requires the source
 checkout; the published PyPI 1.3.2 package does not include it.
 
