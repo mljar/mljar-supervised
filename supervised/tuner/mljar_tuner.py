@@ -224,6 +224,8 @@ class MljarTuner:
                     models, results_path, total_time_limit
                 )
             elif step == "kmeans_features":
+                if not models:
+                    return []
                 return self.get_kmeans_features_params(
                     models, results_path, total_time_limit
                 )
@@ -1100,7 +1102,9 @@ class MljarTuner:
             df_models.reset_index(drop=True, inplace=True)
 
         if exclude_golden:
-            ii = df_models["name"].apply(lambda x: "GoldenFeatures" in x)
+            # An empty apply result can have a non-boolean dtype. Keep this
+            # a row mask so filtering never drops the DataFrame's columns.
+            ii = df_models["name"].apply(lambda x: "GoldenFeatures" in x).astype(bool)
             df_models = df_models[~ii]
             df_models.reset_index(drop=True, inplace=True)
 
