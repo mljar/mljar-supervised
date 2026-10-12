@@ -16,6 +16,7 @@ from supervised.algorithms.registry import (
 from supervised.exceptions import NotTrainedException
 from supervised.model_framework import ModelFramework
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
@@ -500,12 +501,14 @@ class Ensemble:
             ]
 
     def save(self, results_path, model_subpath):
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Save the ensemble to {model_path}")
 
         predictions = self.get_out_of_folds()
-        predictions_fname = os.path.join(model_subpath, f"predictions_ensemble.csv")
-        self._oof_predictions_fname = os.path.join(results_path, predictions_fname)
+        predictions_fname = portable_artifact_path(
+            model_subpath, "predictions_ensemble.csv"
+        )
+        self._oof_predictions_fname = resolve_artifact_path(results_path, predictions_fname)
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
@@ -557,7 +560,7 @@ class Ensemble:
 
     @staticmethod
     def load(results_path, model_subpath, models_map):
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Loading ensemble from {model_path}")
 
         with open(os.path.join(model_path, "ensemble.json")) as file:
@@ -576,7 +579,7 @@ class Ensemble:
         ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
-            ensemble._oof_predictions_fname = os.path.join(
+            ensemble._oof_predictions_fname = resolve_artifact_path(
                 results_path, predictions_fname
             )
 

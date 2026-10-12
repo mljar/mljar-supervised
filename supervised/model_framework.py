@@ -20,6 +20,7 @@ from supervised.callbacks.callback_list import CallbackList
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
@@ -293,7 +294,7 @@ class ModelFramework:
                 # end of learner iters loop
                 self.callbacks.on_learner_train_end()
 
-                model_path = os.path.join(results_path, model_subpath)
+                model_path = resolve_artifact_path(results_path, model_subpath)
                 learner.interpret(
                     X_train,
                     y_train,
@@ -603,20 +604,20 @@ class ModelFramework:
 
     def save(self, results_path, model_subpath):
         start_time = time.time()
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Save the model {model_path}")
 
         type_of_predictions = (
             "validation" if "k_folds" not in self.validation_params else "out_of_folds"
         )
-        predictions_fname = os.path.join(
+        predictions_fname = portable_artifact_path(
             model_subpath, f"predictions_{type_of_predictions}.csv"
         )
-        self._oof_predictions_fname = os.path.join(results_path, predictions_fname)
+        self._oof_predictions_fname = resolve_artifact_path(results_path, predictions_fname)
         predictions = self.get_out_of_folds()
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
-        saved = [os.path.join(model_subpath, l.get_fname()) for l in self.learners]
+        saved = [portable_artifact_path(model_subpath, l.get_fname()) for l in self.learners]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:
             preprocessing = [p.to_json() for p in self.preprocessings]
@@ -712,7 +713,7 @@ class ModelFramework:
 
     @staticmethod
     def load(results_path, model_subpath, lazy_load=True):
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
 
         with open(os.path.join(model_path, "framework.json")) as file:
@@ -745,13 +746,15 @@ class ModelFramework:
         )
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
-            mf._oof_predictions_fname = os.path.join(results_path, predictions_fname)
+            mf._oof_predictions_fname = resolve_artifact_path(
+                results_path, predictions_fname
+            )
 
         mf.learners = []
         for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
-            learner_path = os.path.join(results_path, learner_subpath)
+            learner_path = resolve_artifact_path(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]
 

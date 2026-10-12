@@ -7,6 +7,10 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 
 from supervised.exceptions import AutoMLException
+from supervised.utils.artifact_paths import (
+    portable_artifact_path,
+    resolve_artifact_path,
+)
 
 
 class KMeansTransformer(object):
@@ -20,10 +24,10 @@ class KMeansTransformer(object):
         self._k_fold = k_fold
 
         if results_path is not None:
-            self._result_file = os.path.join(
+            self._result_file = portable_artifact_path(
                 self._model_name, f"kmeans_fold_{k_fold}.joblib"
             )
-            self._result_path = os.path.join(results_path, self._result_file)
+            self._result_path = resolve_artifact_path(results_path, self._result_file)
             # self.try_load()
 
     def fit(self, X, y):
@@ -94,8 +98,8 @@ class KMeansTransformer(object):
     def from_json(self, data_json, results_path):
         self._new_features = data_json.get("new_features", [])
         self._input_columns = data_json.get("input_columns", [])
-        self._result_file = data_json.get("result_file")
-        self._result_path = os.path.join(results_path, self._result_file)
+        self._result_file = portable_artifact_path(data_json["result_file"])
+        self._result_path = resolve_artifact_path(results_path, self._result_file)
         self._error = data_json.get("error")
         self.try_load()
 
