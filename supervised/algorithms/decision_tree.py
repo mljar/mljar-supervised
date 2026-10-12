@@ -166,6 +166,10 @@ class DecisionTreeRegressorAlgorithm(RegressorMixin, SklearnAlgorithm):
     algorithm_short_name = "Decision Tree"
 
     def __init__(self, params):
+        # Accept old saved/tuned parameters without passing the deprecated alias
+        # to sklearn. Copy so the caller's configuration is not modified.
+        if params.get("criterion") == "friedman_mse":
+            params = dict(params, criterion="squared_error")
         super(DecisionTreeRegressorAlgorithm, self).__init__(params)
         logger.debug("DecisionTreeRegressorAlgorithm.__init__")
         self.library_version = sklearn.__version__
@@ -283,7 +287,6 @@ AlgorithmsRegistry.add(
 dt_regression_params = {
     "criterion": [
         "squared_error",
-        "friedman_mse",
     ],  # remove "mae" because it slows down a lot https://github.com/scikit-learn/scikit-learn/issues/9626
     "max_depth": [2, 3, 4],
 }
