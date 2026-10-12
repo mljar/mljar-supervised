@@ -39,6 +39,13 @@ Start quickly, iterate faster, and manage experiments in one place.
 
 ## Table of Contents
 
+Install MLJAR with `pip install mljar-supervised`. To add the optional RealMLP
+neural network, use `pip install "mljar-supervised[realmlp]"` or
+`pip install "mljar-supervised[all]"`, then use `AutoML(mode="Compete")`. RealMLP is used only in Compete mode.
+See the [installation guide](https://supervised.mljar.com/install/) for CPU/GPU
+setup and the [RealMLP guide](https://supervised.mljar.com/features/realmlp/)
+for data support, parameters and memory limits.
+
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
  - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)

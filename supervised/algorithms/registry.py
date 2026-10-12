@@ -35,6 +35,11 @@ class AlgorithmsRegistry:
         return AlgorithmsRegistry.registry.keys()
 
     @staticmethod
+    def supports_sample_weight(ml_task, algorithm_name):
+        info = AlgorithmsRegistry.registry[ml_task].get(algorithm_name)
+        return info is not None and info['additional'].get('supports_sample_weight', True)
+
+    @staticmethod
     def get_algorithm_class(ml_task, algorithm_name):
         return AlgorithmsRegistry.registry[ml_task][algorithm_name]["class"]
 
@@ -72,5 +77,6 @@ import supervised.algorithms.knn
 import supervised.algorithms.lightgbm
 import supervised.algorithms.linear
 import supervised.algorithms.nn
+import supervised.algorithms.realmlp
 import supervised.algorithms.random_forest
 import supervised.algorithms.xgboost

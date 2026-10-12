@@ -55,6 +55,7 @@ class AutoML(BaseAutoML):
                     "Xgboost",
                     "CatBoost",
                     "Neural Network",
+                    "RealMLP",
                     "Nearest Neighbors",
                 ]
             ],
@@ -83,6 +84,7 @@ class AutoML(BaseAutoML):
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
+        custom_params: Optional[dict] = None,
     ):
         """
         Initialize `AutoML` object.
@@ -143,6 +145,7 @@ class AutoML(BaseAutoML):
                 - `Xgboost`,
                 - `CatBoost`,
                 - `Neural Network`,
+                - `RealMLP` (Compete only; optional: install `mljar-supervised[realmlp]`),
                 - `Nearest Neighbors`,
 
 
@@ -307,6 +310,14 @@ class AutoML(BaseAutoML):
 
             random_state (int): Controls the randomness of the `AutoML`
 
+            custom_params (dict): Fixed algorithm-specific overrides, keyed by algorithm
+                name, for example `{"realmlp": {"device": "auto", "hidden_width": 64}}`.
+                Names are case-insensitive; spaces, underscores and hyphens are ignored.
+                Overrides remain fixed during random search and hill climbing.
+                Custom overrides are currently unsupported in Optuna mode.
+                Compete automatically includes RealMLP when its optional dependencies are installed.
+                Providing overrides alone does not select an algorithm.
+
 
         Examples:
 
@@ -409,6 +420,7 @@ class AutoML(BaseAutoML):
         self.underprivileged_groups = underprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.custom_params = custom_params
 
     def fit(
         self,

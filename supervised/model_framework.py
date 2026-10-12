@@ -229,6 +229,7 @@ class ModelFramework:
                     # exclude optuna optimize time from model training
                     start_time += time.time() - optuna_start_time
 
+                self.learner_params.update(self.params.get("custom_params", {}))
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [
                     AlgorithmFactory.get_algorithm(copy.deepcopy(self.learner_params))
@@ -681,6 +682,15 @@ class ModelFramework:
         desc += f"{self.get_metric_name()}\n"
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
+        if short_name == "RealMLP":
+            desc += "\n## RealMLP training details\n\n"
+            desc += "Permutation importance uses logloss for classification and MSE for regression. SHAP is not enabled.\n\n"
+            for learner in self.learners:
+                info = getattr(learner, "training_info", {})
+                desc += f"- {learner.name}: architecture {info.get('hidden_sizes')}, "
+                desc += f"best epoch {info.get('best_epoch')}, completed epochs {info.get('completed_epochs')}, "
+                desc += f"stop reason {info.get('stop_reason')}, stopping metric {info.get('stopping_metric')}. "
+                desc += f"[Resource estimates and history]({learner.name}_training.log.json)\n"
         return desc
 
     @staticmethod

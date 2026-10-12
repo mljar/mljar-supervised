@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,7 @@ from supervised.algorithms.xgboost import xgboost_eval_metric
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.tuner.hill_climbing import HillClimbing
+from supervised.tuner.custom_parameters import algorithm_key, validate_custom_params
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.utils.config import LOG_LEVEL
@@ -55,8 +57,11 @@ class MljarTuner:
         fairness_threshold=None,
         privileged_groups=[],
         underprivileged_groups=[],
+        custom_params=None,
     ):
         logger.debug("MljarTuner.__init__")
+        self._custom_params = validate_custom_params(custom_params, ml_task)
+        self._weight_skip_reported = set()
         self._start_random_models = tuner_params.get("start_random_models", 5)
         self._hill_climbing_steps = tuner_params.get("hill_climbing_steps", 3)
         self._top_models_to_improve = tuner_params.get("top_models_to_improve", 3)
@@ -313,6 +318,9 @@ class MljarTuner:
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
 
+            if not self._supports_weights(model_type):
+                continue
+
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
                 continue
@@ -412,6 +420,9 @@ class MljarTuner:
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
+
+            if not self._supports_weights(model_type):
+                continue
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
@@ -513,6 +524,9 @@ class MljarTuner:
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
+
+            if not self._supports_weights(model_type):
+                continue
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
@@ -621,6 +635,7 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
         ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
@@ -761,6 +776,7 @@ class MljarTuner:
             "Xgboost",
             "CatBoost",
             "Neural Network",
+            "RealMLP",
             "Random Forest",
             "Extra Trees",
             "Nearest Neighbors",
@@ -827,6 +843,7 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
             "Nearest Neighbors",
         ]
 
@@ -888,6 +905,7 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
             "Nearest Neighbors",
         ]:
             rest_params += generated_params[m]
@@ -905,6 +923,7 @@ class MljarTuner:
                 "Random Forest",
                 "Extra Trees",
                 "Neural Network",
+                "RealMLP",
                 "Nearest Neighbors",
             ]:
                 if generated_params[m]:
@@ -940,6 +959,7 @@ class MljarTuner:
                     "Hill climbing step, for model #{0}".format(model_max_index + 1)
                 )
                 if p is not None:
+                    p.update(self._custom_params.get(algorithm_key(model_type), {}))
                     all_params = copy.deepcopy(m.params)
                     all_params["learner"] = p
 
@@ -1201,6 +1221,7 @@ class MljarTuner:
                 "LightGBM",
                 "CatBoost",
                 "Neural Network",
+                "RealMLP",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1293,6 +1314,7 @@ class MljarTuner:
                 "LightGBM",
                 "CatBoost",
                 "Neural Network",
+                "RealMLP",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1324,17 +1346,23 @@ class MljarTuner:
         return generated_params
 
     def _get_model_params(self, model_type, seed, params_type="random"):
+        if self._data_info.get('is_sample_weighted', False) and not self._supports_weights(model_type):
+            return None
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
 
         model_params = None
         if params_type == "default":
-            model_params = model_info["default_params"]
+            model_params = copy.deepcopy(model_info["default_params"])
             model_params["seed"] = seed
 
         else:
             model_params = RandomParameters.get(model_info["params"], seed + self._seed)
         if model_params is None:
             return None
+
+        model_params.update(self._custom_params.get(algorithm_key(model_type), {}))
+        if model_type == 'RealMLP':
+            model_params['eval_metric_name'] = self._eval_metric
 
         # set eval metric
         if model_info["class"].algorithm_short_name == "Xgboost":
@@ -1365,6 +1393,7 @@ class MljarTuner:
         )
 
         model_params = {
+            "custom_params": copy.deepcopy(self._custom_params.get(algorithm_key(model_type), {})),
             "additional": model_additional,
             "preprocessing": preprocessing_params,
             "validation_strategy": self._validation_strategy,
@@ -1390,6 +1419,13 @@ class MljarTuner:
             model_params["underprivileged_groups"] = self._underprivileged_groups
 
         return model_params
+
+    def _supports_weights(self, model_type):
+        supported = AlgorithmsRegistry.supports_sample_weight(self._ml_task, model_type)
+        if not supported and model_type not in self._weight_skip_reported:
+            warnings.warn(f'{model_type} skipped for sample-weighted training; compatible algorithms will continue.')
+            self._weight_skip_reported.add(model_type)
+        return supported
 
     @staticmethod
     def get_params_key(params):
@@ -1421,6 +1457,8 @@ class MljarTuner:
                 "Neural Network",
                 "Nearest Neighbors",
             ]:
+                continue
+            if not self._supports_weights(df_models["model_type"].iloc[i]):
                 continue
             if "RandomFeature" in df_models["model"].iloc[i].get_name():
                 continue

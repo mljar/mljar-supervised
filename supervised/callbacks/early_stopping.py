@@ -197,6 +197,7 @@ class EarlyStopping(Callback):
             "LightGBM",
             "CatBoost",
             "Neural Network",
+            "RealMLP",
         ]:
             sign = -1.0 if Metric.optimize_negative(self.metric.name) else 1.0
             with open(

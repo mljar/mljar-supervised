@@ -5,6 +5,7 @@ import shutil
 import time
 import types
 import uuid
+import warnings
 from abc import ABC
 from copy import deepcopy
 
@@ -157,6 +158,9 @@ class BaseAutoML(BaseEstimator, ABC):
                 "model_time_limit", self._model_time_limit
             )
             self._algorithms = params.get("algorithms", self._algorithms)
+            self.custom_params = params.get("custom_params", getattr(self, "custom_params", None))
+            if self.custom_params is None and params.get("realmlp_params") is not None:
+                self.custom_params = {"realmlp": params["realmlp_params"]}
             self._train_ensemble = params.get("train_ensemble", self._train_ensemble)
             self._stack_models = params.get("stack_models", self._stack_models)
             self._eval_metric = params.get("eval_metric", self._eval_metric)
@@ -1009,6 +1013,31 @@ class BaseAutoML(BaseEstimator, ABC):
         self._total_time_limit = self._get_total_time_limit()
         self._model_time_limit = self._get_model_time_limit()
         self._algorithms = self._get_algorithms()
+        from supervised.algorithms.realmlp import check_dependencies
+        from supervised.tuner.custom_parameters import validate_custom_params
+
+        validate_custom_params(self.custom_params, self._ml_task)
+        if self._mode == "Optuna" and any((self.custom_params or {}).values()):
+            raise ValueError(
+                "custom_params currently supports random search and hill climbing, "
+                "not Optuna mode."
+            )
+        if "RealMLP" in self._algorithms:
+            if sample_weight is not None:
+                if self.algorithms == "auto":
+                    warnings.warn("RealMLP skipped because sample weights are not supported.")
+                    self._algorithms.remove("RealMLP")
+                else:
+                    raise ValueError(
+                        "RealMLP does not support sample weights. Remove RealMLP "
+                        "from algorithms for weighted training."
+                    )
+            check_dependencies()
+            if self._mode == "Optuna":
+                raise ValueError(
+                    "RealMLP currently supports MLJAR random search and hill "
+                    "climbing, not Optuna mode."
+                )
         self._train_ensemble = self._get_train_ensemble()
         self._stack_models = self._get_stack_models()
         self._eval_metric = self._get_eval_metric()
@@ -1126,6 +1155,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,
+                custom_params=self.custom_params,
             )
             self.tuner = tuner
 
@@ -1357,6 +1387,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "total_time_limit": self._total_time_limit,
                 "model_time_limit": self._model_time_limit,
                 "algorithms": self._algorithms,
+                "custom_params": self.custom_params,
                 "train_ensemble": self._train_ensemble,
                 "stack_models": self._stack_models,
                 "eval_metric": self._eval_metric,
@@ -1405,6 +1436,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+                skipped_weights = getattr(
+                    getattr(self, "tuner", None), "_weight_skip_reported", set()
+                )
+                if skipped_weights:
+                    fout.write(
+                        "\n\nSample-weighted training was skipped for: "
+                        + ", ".join(sorted(skipped_weights))
+                        + ". These algorithms do not support sample weights.\n"
+                    )
                 if self._fairness_metric is not None and self._best_model is not None:
                     additional_metrics = self._best_model.get_additional_metrics() or {}
                     fairness_metrics = additional_metrics.get("fairness_metrics")
@@ -1683,7 +1723,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                 ]
             if self._get_mode() == "Compete":
-                return [
+                from supervised.algorithms.realmlp import dependencies_available
+
+                algorithms = [
                     "Decision Tree",
                     "Linear",
                     "Random Forest",
@@ -1694,6 +1736,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                     "Nearest Neighbors",
                 ]
+                if dependencies_available():
+                    algorithms.append("RealMLP")
+                return algorithms
             if self._get_mode() == "Optuna":
                 return [
                     "Random Forest",
@@ -1704,6 +1749,8 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                 ]
         else:
+            if "RealMLP" in self.algorithms and self._get_mode() != "Compete":
+                raise ValueError('RealMLP is supported only in mode="Compete".')
             return deepcopy(self.algorithms)
 
     def _get_train_ensemble(self):

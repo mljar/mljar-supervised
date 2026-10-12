@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 
@@ -16,7 +17,9 @@ class AlgorithmsRegistryTest(unittest.TestCase):
             "additional": {},
             "default_params": {},
         }
-        AlgorithmsRegistry.add(**model1)
+        # Do not leak the synthetic algorithm into subsequent registry-wide tests.
+        with patch.dict(AlgorithmsRegistry.registry["binary_classification"]):
+            AlgorithmsRegistry.add(**model1)
 
 
 if __name__ == "__main__":

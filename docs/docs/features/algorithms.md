@@ -1,5 +1,30 @@
 # Algorithms
 
+## Fixed custom parameters
+
+Use `custom_params` to keep selected parameters fixed during default training,
+random search and hill climbing:
+
+```python
+automl = AutoML(
+    mode="Compete",
+    algorithms=["Random Forest", "RealMLP"],
+    custom_params={
+        "random_forest": {"max_depth": 3},
+        "realmlp": {"device": "auto", "hidden_width": 64},
+    },
+)
+```
+
+Algorithm names are case-insensitive; spaces, underscores and hyphens are
+ignored. Values are fixed overrides, not lists of search candidates. Existing
+algorithms accept parameters from their registered search/default configuration;
+[RealMLP](realmlp.md) also accepts its documented training and memory controls.
+Unknown names and parameters are rejected. AutoML owns the task, metric, class
+count and CPU thread settings. Custom overrides are saved with the run, do not
+select algorithms automatically, and currently cannot be combined with Optuna
+mode. RealMLP requires the optional `[realmlp]` or `[all]` installation extra.
+
 ## Baseline
 
 ### Classification
