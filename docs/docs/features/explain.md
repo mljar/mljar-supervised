@@ -86,6 +86,114 @@ The features importance is computed with permutation-based method (using scikit-
 
 ![Permutation Importance](https://raw.githubusercontent.com/mljar/mljar-examples/master/Income_classification/AutoML_1/5_Default_Xgboost/permutation_importance.png)
 
+### Retrieve feature importance in Python
+
+Use `get_feature_importance()` after fitting or loading an `AutoML` model:
+
+```python
+# Importance for the best model, or for every saved model.
+best_importance = automl.get_feature_importance()
+all_importance = automl.get_feature_importance(model="all")
+
+# Select an exact model name from the returned results.
+model_name = all_importance["model"].iloc[0]
+model_importance = automl.get_feature_importance(model=model_name)
+normalized = automl.get_feature_importance(model="all", kind="normalized")
+```
+
+The returned pandas DataFrame always has these columns, including when empty:
+
+| Column | Meaning |
+| --- | --- |
+| `model` | Saved model name. |
+| `feature` | Feature name in the learner's preprocessed input. |
+| `importance` | Raw permutation importance or its normalized value. |
+
+Rows are sorted by decreasing importance within each model, with feature names
+breaking ties. `model="all"` returns separate results for all saved models,
+including those that are not loaded for prediction. It does not average different
+models into a single ranking. In comparison, `report_structured()` includes a
+**global ranking** based on average feature ranks across models.
+
+**Existing importance is reused.** The method reads the learner permutation CSVs
+and averages them across folds and repeats, aligning features by name. A feature
+absent from a learner is excluded from that feature's fold average. SHAP CSVs are
+not included. This retrieval works after reloading or moving the results directory
+and does not require training or evaluation data.
+
+**Missing importance is computed when you supply evaluation data.** This also
+works when training used `explain_level=0`:
+
+```python
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from supervised import AutoML
+
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=42
+)
+automl = AutoML(
+    results_path="AutoML_importance", algorithms=["Decision Tree"],
+    explain_level=0, train_ensemble=False,
+)
+automl.fit(X_train, y_train)
+
+importance = automl.get_feature_importance(X=X_test, y=y_test)
+
+# Newly computed learner CSVs are saved, so subsequent calls reuse them.
+importance_again = automl.get_feature_importance()
+restored = AutoML(results_path="AutoML_importance")
+importance_after_reload = restored.get_feature_importance()
+```
+
+Provide `X` in the original input format and `y` in the corresponding row order;
+the method applies each learner's fitted preprocessing. Prefer held-out evaluation
+data. Both arguments must be supplied together. AutoML clears its temporary
+training inputs after fitting, so it cannot compute missing importance without
+evaluation data. Missing or invalid learner CSVs are computed and saved without
+retraining or generating SHAP plots. Existing valid CSVs are kept, even if you
+supply different evaluation data. A partially cached model can therefore combine
+importance from the original validation folds with importance from the supplied
+evaluation data; these values need not match.
+
+If evaluation data is unavailable, or a learner's computation fails, a warning
+identifies the model and available learners are still averaged. A model with no
+available importance contributes no rows. Invalid arguments and unknown model
+names raise errors. Requesting missing importance for many models can take time.
+For on-demand kNN computation, evaluation inputs with more than 10,000 rows are
+skipped; you can supply a smaller evaluation dataset. Baseline models can return
+zero importance when computed on demand, although training does not generate
+importance for them.
+
+### Raw values, normalization, and ensembles
+
+`kind="raw"` preserves negative values. The scoring follows the existing training
+explanations: an increase in log loss for classification or MSE for regression
+when a feature is shuffled. Regression scores use the learner's transformed
+target, if target scaling was applied. The scores do not switch to the AutoML
+optimization metric. Negative values mean that shuffling improved the score on
+the evaluation sample; they are not clipped to zero.
+
+`kind="normalized"` applies `(value - minimum) / (maximum - minimum)` independently
+to each model's complete vector after aggregation. A constant vector becomes all
+zeros. Values lie between 0 and 1; they are not percentages and do not sum to 1.
+Normalization does not make scores from different target transformations or
+evaluation datasets directly comparable.
+
+For ensembles, the method returns a **weighted summary of member importances**,
+using each member's selection count as its weight. Features absent from a member
+contribute zero to this weighted summary. Normalization, if requested, happens
+after combining the members. If a member has no available importance, the ensemble
+contributes no rows and a warning explains why. This summary is not a direct
+permutation measurement of the ensemble's predictions.
+
+Feature names describe the learner's input after preprocessing: categorical
+encodings, generated features, and prediction columns used in stacking can appear.
+They are not automatically mapped back to the original input columns. For stacked
+models, missing importance is computed after generating the required base-model
+predictions from the supplied evaluation data.
+
 ### kNN interpretation size limit
 
 For `Nearest Neighbors` classification and regression, interpretation is skipped

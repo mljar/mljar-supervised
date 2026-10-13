@@ -567,6 +567,48 @@ class AutoML(BaseAutoML):
         """
         return self._score(X, y, sample_weight)
 
+    def get_feature_importance(
+        self, model="best", kind="raw", X=None, y=None
+    ) -> pandas.DataFrame:
+        """Retrieve permutation feature importance, computing missing values when possible.
+
+        Parameters:
+            model (str): ``"best"`` (default), ``"all"``, or an exact saved model
+                name. ``"all"`` includes models not loaded for prediction.
+            kind (str): ``"raw"`` (default) or ``"normalized"``. Normalization
+                applies min-max scaling to each model's complete importance
+                vector; constant vectors become zero.
+            X (pandas.DataFrame or numpy.ndarray): Optional evaluation features
+                in the original input format. Used only for missing importance.
+            y (array-like): Evaluation targets, required together with ``X``.
+                Prefer held-out data that was not used for training.
+
+        Returns:
+            pandas.DataFrame: Columns ``model``, ``feature``, ``importance``,
+                sorted by decreasing importance within each model. Raw values
+                average available folds/repeats and can be negative. Feature
+                names describe preprocessed inputs, including generated and
+                stacking features. Ensembles return selection-weighted member
+                summaries, not direct ensemble permutation measurements.
+
+        Notes:
+            Existing learner CSVs are reused. Missing or invalid CSVs are
+            computed using fitted preprocessing and saved for subsequent calls
+            when ``X`` and ``y`` are supplied. Training inputs are not retained
+            after ``fit()``. Without evaluation data, unavailable learners are
+            skipped with a warning; a model with no importance returns no rows.
+            An ensemble returns no rows if a member has no importance.
+            Supplying new data does not replace existing importance. Partially
+            cached models can therefore combine different evaluation datasets.
+
+        Raises:
+            ValueError: Invalid ``kind``, ``model`` type, or evaluation inputs.
+            AutoMLException: AutoML is unfitted or the model name is unknown.
+        """
+        from supervised.utils.feature_importance import get_feature_importance
+
+        return get_feature_importance(self, model=model, kind=kind, X=X, y=y)
+
     def report(self, width=900, height=1200):
         return self._report(width, height)
 

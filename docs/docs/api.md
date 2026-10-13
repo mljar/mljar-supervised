@@ -49,6 +49,20 @@ The leaderboard and model summary identify the optimization metric. Classificati
 reports also show auxiliary metrics, including accuracy; those do not change the
 selected optimization metric. See [issue #646](https://github.com/mljar/mljar-supervised/issues/646).
 
+## Feature importance
+
+`automl.get_feature_importance(model="best", kind="raw", X=None, y=None)` returns
+a pandas DataFrame with `model`, `feature`, and `importance` columns. Select the
+best model (default), an exact saved model name, or `model="all"`. Use
+`kind="normalized"` for min-max scaling independently per model.
+
+Existing permutation importance is reused. Supply evaluation `X` and `y` to
+compute and save missing importance; training inputs are not retained after
+`fit()`. Models without available importance contribute no rows and emit a warning.
+Ensembles return weighted member summaries. See
+[Retrieve feature importance](features/explain.md#retrieve-feature-importance-in-python)
+for examples, aggregation rules, and computation limitations.
+
 ## `AutoML` class
 
 ::: supervised.automl.AutoML

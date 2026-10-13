@@ -124,3 +124,35 @@ def test_kmeans_stacking_predict_and_reload(tmp_path, monkeypatch):
         loaded = AutoML(results_path=str(root))
         np.testing.assert_allclose(loaded.predict_proba(X), probabilities)
         np.testing.assert_array_equal(loaded.predict(X), labels)
+
+        # Importance uses the fitted stacked feature space, including generated
+        # KMeans and prediction columns, and persists it for read-only reuse.
+        importance = loaded.get_feature_importance(X=X, y=y)
+        assert not importance.empty
+        assert any("prediction" in feature for feature in importance.feature)
+        pd.testing.assert_frame_equal(importance, loaded.get_feature_importance())
+
+        # Loading a non-stacked best model omits stacking dependencies. A named
+        # stacked importance request must load them without replacing that best
+        # model or modifying the prediction model inventory.
+        for path in (root / stacked[0].get_name()).glob("*_importance.csv"):
+            path.unlink()
+        base = next(
+            m
+            for m in automl._models
+            if not m._is_stacked and m.get_type() != "Ensemble"
+        )
+        params["best_model"] = base.get_name()
+        params["load_on_predict"] = [base.get_name()]
+        params_path.write_text(json.dumps(params))
+        base_loaded = AutoML(results_path=str(root))
+        base_loaded.predict(X.copy())
+        assert base_loaded._stacked_models is None
+        names_before = [m.get_name() for m in base_loaded._models]
+        recomputed = base_loaded.get_feature_importance(
+            model=stacked[0].get_name(), X=X, y=y
+        )
+        pd.testing.assert_frame_equal(importance, recomputed)
+        assert [m.get_name() for m in base_loaded._models] == names_before
+        assert base_loaded._best_model.get_name() == base.get_name()
+        assert base_loaded._stacked_models is None

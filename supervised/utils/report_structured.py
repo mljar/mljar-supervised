@@ -8,6 +8,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from supervised.fairness.certificate import build_certificate_info
+from supervised.utils.importance import load_model_importance
 
 AUTOMATION_DISCLOSURE_TEXT = (
     "Models in this report were generated and selected automatically by MLJAR "
@@ -159,25 +160,10 @@ def _compute_feature_importance_summary(model_dir):
     if not imp_files:
         return {"available": False, "reason": "no_importance_files"}
 
-    frames = []
-    for fname in imp_files:
-        fpath = os.path.join(model_dir, fname)
-        try:
-            df = pd.read_csv(fpath, index_col=0)
-            if df.empty:
-                continue
-            numeric_df = df.select_dtypes(include=np.number)
-            if numeric_df.empty:
-                continue
-            frames.append(numeric_df)
-        except Exception:
-            continue
-
-    if not frames:
+    mean_importance = load_model_importance(model_dir)
+    if mean_importance is None:
         return {"available": False, "reason": "no_valid_importance_data"}
 
-    concat = pd.concat(frames, axis=1, join="outer")
-    mean_importance = concat.mean(axis=1).fillna(0.0)
     mean_importance = mean_importance.sort_values(ascending=False)
     n = int(mean_importance.shape[0])
 
@@ -211,41 +197,7 @@ def _compute_feature_importance_summary(model_dir):
 
 
 def _load_model_importance_vector(model_dir):
-    imp_files = []
-    try:
-        imp_files = [
-            f
-            for f in os.listdir(model_dir)
-            if f.endswith("_importance.csv") and "shap" not in f
-        ]
-    except Exception:
-        return None
-
-    if not imp_files:
-        return None
-
-    frames = []
-    for fname in imp_files:
-        fpath = os.path.join(model_dir, fname)
-        try:
-            df = pd.read_csv(fpath, index_col=0)
-            if df.empty:
-                continue
-            numeric_df = df.select_dtypes(include=np.number)
-            if numeric_df.empty:
-                continue
-            frames.append(numeric_df)
-        except Exception:
-            continue
-
-    if not frames:
-        return None
-
-    concat = pd.concat(frames, axis=1, join="outer")
-    mean_importance = concat.mean(axis=1).fillna(0.0)
-    if mean_importance.empty:
-        return None
-    return mean_importance
+    return load_model_importance(model_dir)
 
 
 def _compute_global_feature_importance(automl):
