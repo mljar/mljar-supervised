@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import json
+import warnings
 from unittest.mock import patch
 
 import numpy as np
@@ -310,4 +311,7 @@ def test_gpu_portable_reload(tmp_path):
     m.save(tmp_path / "gpu-model")
     m.load(tmp_path / "gpu-model")
     assert m.device == "cpu"
-    assert_allclose(p, m.predict(X[150:]), atol=1e-5, rtol=1e-4)
+    with warnings.catch_warnings(record=True) as emitted:
+        warnings.simplefilter("always")
+        assert_allclose(p, m.predict(X[150:]), atol=1e-5, rtol=1e-4)
+    assert not any("GPU available but not used" in str(w.message) for w in emitted)

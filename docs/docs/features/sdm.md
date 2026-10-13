@@ -12,7 +12,7 @@ Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
 [Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install the release candidate and pinned backend:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc1"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc2"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -21,7 +21,7 @@ python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@
 these extras do not install SDM's placeholder PyPI release. SDM is an evolving
 backend; this integration checks the tested version instead of accepting an
 untested Git revision. Standard MLJAR installation does not install these models.
-These integrations are included in `1.4.0rc1`; the stable `1.3.2` package does
+These integrations are included in `1.4.0rc2`; the stable `1.3.2` package does
 not provide them.
 
 ## Usage
@@ -109,6 +109,13 @@ heuristics, not guaranteed maximum dataset sizes. Reduce context or query batch
 size if a candidate exceeds its budget. Prediction time grows with query rows
 and context size. Deadlines are checked between query/estimator batches;
 an individual kernel or download cannot be interrupted by these checks.
+
+Version `1.4.0rc2` releases early-stopping copies when
+each learner completes, so a shared frozen network does not remain in GPU
+memory after the learner is saved and unloaded. Admission checks collect
+unreachable tensors and clear unused CUDA cache before measuring free VRAM.
+Rejection messages include the estimate, budget and free memory; genuine
+shortages still reject a candidate without changing its configuration.
 
 Classification returns probabilities in MLJAR class order. Regression returns
 the mean of the predicted quantiles, following NVIDIA's benchmark adapter.

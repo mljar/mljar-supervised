@@ -4,8 +4,8 @@ TabM is an optional neural model for binary classification, multiclass
 classification and single-target regression. MLJAR uses **only `tabm-mini`**,
 through pytabkit. The model trains from scratch and downloads no model weights.
 
-Install the `[tabm]` or `[all]` extra with version `1.4.0rc1`, for example
-`python -m pip install "mljar-supervised[tabm]==1.4.0rc1"`.
+Install the `[tabm]` or `[all]` extra with version `1.4.0rc2`, for example
+`python -m pip install "mljar-supervised[tabm]==1.4.0rc2"`.
 See [installation](../install.md) for CPU and NVIDIA GPU
 commands. `[realmlp]`, `[tabm]` and `[all]` currently share the same dependencies;
 installing any of them makes both neural models available.
@@ -109,6 +109,14 @@ Permutation importance is available with `explain_level >= 1`, using up to 1,000
 validation rows. SHAP is disabled. Reports include actual validation learning
 curves, the best epoch, stop reason and resource estimates. No per-epoch training
 curve is fabricated. Model files use Python serialization; load trusted artifacts.
+
+Starting with `1.4.0rc2`, a numerical feature with only one
+embedding interval is recorded as a diagnostic rather than repeatedly warned
+about in the console. This is valid behavior: its piecewise-linear encoding
+reduces to min-max scaling. The bins, embeddings and predictions are unchanged.
+Each learner's `*_training.log.json` records `single_bin_feature_count`; other
+backend warnings and validation errors remain visible. TabM also uses the scoped
+scikit-learn compatibility bridge described in [RealMLP](realmlp.md#explanations-and-reports).
 
 The backend adapter is derived from Apache-2.0 licensed
 [pytabkit](https://github.com/dholzmueller/pytabkit); see `LICENSE-pytabkit.txt`.

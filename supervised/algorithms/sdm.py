@@ -183,14 +183,9 @@ class SDMAlgorithm(RealMLPAlgorithm):
             )
         gpu = 0
         if self.device.startswith("cuda"):
-            import torch
+            from supervised.algorithms.realmlp_resources import available_gpu_memory
 
-            # Earlier folds/sizes can leave unused blocks in PyTorch's cache.
-            # Release those before checking driver-reported free memory, otherwise
-            # a portable reload can be rejected despite sufficient usable VRAM.
-            with torch.cuda.device(self.device):
-                torch.cuda.empty_cache()
-            free, _ = torch.cuda.mem_get_info(self.device)
+            free, _ = available_gpu_memory(self.device)
             gpu = 512 * 1024**2 + checkpoint_bytes + working
             gpu_budget = free * self.params.get("gpu_memory_fraction", 0.7)
             if self.params.get("gpu_memory_limit_gb") is not None:
@@ -199,7 +194,10 @@ class SDMAlgorithm(RealMLPAlgorithm):
                 )
             if gpu > gpu_budget:
                 raise AutoMLException(
-                    f"{self.algorithm_short_name} estimated VRAM exceeds budget; reduce max_context_size/predict_batch_size."
+                    f"{self.algorithm_short_name} estimated VRAM exceeds budget: "
+                    f"{gpu / 1024**3:.2f} GiB needed, {gpu_budget / 1024**3:.2f} GiB "
+                    f"budget on {self.device} ({free / 1024**3:.2f} GiB free); "
+                    "reduce max_context_size/predict_batch_size."
                 )
         return {"estimated_ram_bytes": host, "estimated_vram_bytes": gpu}
 

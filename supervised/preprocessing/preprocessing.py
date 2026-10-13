@@ -79,6 +79,10 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
+        # Transformations replace columns; owning the frame metadata avoids
+        # chained-assignment warnings without copying every fold's data again.
+        if X_train is not None:
+            X_train = X_train.copy(deep=False)
         self._timedelta_columns = PreprocessingUtils.timedelta_columns(X_train)
         X_train = PreprocessingUtils.convert_timedeltas(
             X_train, self._timedelta_columns

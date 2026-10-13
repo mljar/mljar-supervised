@@ -50,6 +50,13 @@ class EarlyStopping(Callback):
     def on_learner_train_start(self, logs):
         self.no_improvement_cnt = 0
 
+    def on_learner_train_end(self, logs):
+        # Scores and OOF predictions remain available for reports/ensembling.
+        # A completed learner no longer needs its in-memory checkpoint copy.
+        # SDM copies share a frozen GPU network, so retaining them pins VRAM
+        # even after ModelFramework saves and unloads the original learner.
+        self.best_models[self.learner.uid] = None
+
     def on_framework_train_end(self, logs):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'

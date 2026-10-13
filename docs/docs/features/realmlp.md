@@ -2,8 +2,8 @@
 
 RealMLP is an optional neural model for binary classification, multiclass
 classification and single-target regression. Install
-the `[realmlp]` or `[all]` extra with version `1.4.0rc1`, for example
-`python -m pip install "mljar-supervised[realmlp]==1.4.0rc1"`.
+the `[realmlp]` or `[all]` extra with version `1.4.0rc2`, for example
+`python -m pip install "mljar-supervised[realmlp]==1.4.0rc2"`.
 Choose [CPU](../install.md#realmlp-on-cpu) or
 [NVIDIA GPU](../install.md#realmlp-on-nvidia-gpu) installation and follow the
 [verification steps](../install.md#verify-the-installation). It trains from scratch
@@ -174,6 +174,22 @@ does not expose a matching per-epoch training metric here, so the train curve
 is omitted. Each learner's `*_training.log.json` records resource estimates,
 architecture, backend versions, best/completed validation epochs and stopping
 reason. The model report also includes the training summary.
+
+Starting with `1.4.0rc2`, routine Lightning INFO messages
+(device announcements, epoch-limit messages and logging-service tips) are disabled
+during MLJAR fitting and prediction. MLJAR progress and backend warnings/errors
+remain visible. Scoped compatibility bridges use the current scikit-learn finite
+validation API and PyTorch leaf-spec API; they restore upstream functions and
+logging settings after each call, including failures. Installed dependencies
+are not modified.
+
+Portable models intentionally reload on CPU. Prediction does not emit Lightning's
+GPU-available advisory for this explicit CPU inference path; other warnings remain
+visible.
+
+Completed learners release their early-stopping checkpoint copies. GPU admission
+checks collect unreachable tensors and release unused CUDA cache before measuring
+free VRAM. Real memory shortages still reject the candidate.
 
 ## Validation and benchmarks
 

@@ -24,8 +24,14 @@ from pytabkit.models.nn_models.models import PreprocessingFactory
 from pytabkit.models.nn_models.tabm import Model, make_parameter_groups
 from pytabkit.models.training.metrics import Metrics
 
+from supervised.algorithms._pytabkit_compat import (
+    PytabkitCompatibilityMixin,
+    single_bin_diagnostics,
+)
+
 
 class TimedTabMInterface(TabMSubSplitInterface):
+    @single_bin_diagnostics()
     def fit(self, ds, idxs_list, interface_resources, logger, tmp_folders, name):
         split = idxs_list[0]
         if split.val_idxs is None:
@@ -69,6 +75,7 @@ class TimedTabMInterface(TabMSubSplitInterface):
             bins = rtdl_num_embeddings.compute_bins(
                 data["train"]["x_cont"], n_bins=min(cfg["num_emb_n_bins"], n_train - 1)
             )
+        self.single_bin_feature_count = sum(len(edges) == 2 for edges in (bins or []))
         self.model_ = Model(
             n_num_features=n_numeric,
             cat_cardinalities=ds.tensor_infos["x_cat"].get_cat_sizes().numpy().tolist(),
@@ -194,7 +201,7 @@ class TimedTabMInterface(TabMSubSplitInterface):
         self.tfm_.to("cpu")
 
 
-class TabMMixin:
+class TabMMixin(PytabkitCompatibilityMixin):
     def _create_alg_interface(self, n_cv):
         if n_cv != 1:
             raise ValueError("MLJAR owns TabM cross-validation")

@@ -1,3 +1,28 @@
+## mljar-supervised 1.4.0rc2
+
+Second release candidate for 1.4.0, fixing console noise and GPU memory retention
+observed while benchmarking the optional Compete models.
+
+```bash
+python -m pip install "mljar-supervised==1.4.0rc2"
+```
+
+### Fixes and improvements
+
+- Release completed early-stopping checkpoint copies, including shared Kumo/TabICLv2 GPU networks, so later folds and candidates can reuse their memory.
+- Collect unreachable tensors and release unused CUDA cache before GPU admission checks. TabM, Kumo and TabICLv2 rejection messages now include the memory estimate, budget and available memory; genuine shortages still reject the candidate.
+- Fix pandas slice-assignment warnings and missing-value imputation writing through shared data, while preserving fold isolation without copying the full training dataset.
+- Use scoped compatibility bridges for pytabkit's deprecated scikit-learn finite-check keyword and Lightning's deprecated PyTorch leaf-spec construction. Restore upstream functions and settings after fitting or prediction, including failures.
+- Disable routine Lightning INFO output during MLJAR calls. Keep other backend warnings/errors visible and avoid the GPU-available advisory when a portable RealMLP model intentionally predicts on CPU.
+- Record TabM's valid single-bin numerical encoding as `single_bin_feature_count` in training diagnostics instead of repeating its advisory in the console. Encoding and predictions are unchanged.
+- Keep RealMLP prediction logging disabled with pytabkit 1.7.2, matching its training configuration.
+
+### Validation and compatibility
+
+- Added regression tests for preprocessing ownership, warning/logging behavior, checkpoint memory release, and GPU admission cleanup.
+- Validated Python 3.9 and pandas 3 preprocessing, both supported pytabkit releases, GPU training/reload, and a short 10-fold credit-g run with RealMLP, TabM, Kumo and TabICLv2.
+- Optional-model installation requirements, default model configurations and batch sizes are unchanged from RC1. This validation is not a full performance benchmark.
+
 ## mljar-supervised 1.4.0rc1
 
 First release candidate for 1.4.0. Install this version explicitly to test it:

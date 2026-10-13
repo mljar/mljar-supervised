@@ -1,6 +1,10 @@
 """Conservative TabM-mini admission estimates, before allocating data tensors."""
 
-from supervised.algorithms.realmlp_resources import available_memory, thread_count
+from supervised.algorithms.realmlp_resources import (
+    available_gpu_memory,
+    available_memory,
+    thread_count,
+)
 from supervised.exceptions import AutoMLException
 
 
@@ -68,7 +72,7 @@ def check_resources(model, X, X_validation, n_classes, device, params):
             "TabM estimated RAM exceeds its memory budget; use fewer rows/features or a smaller network"
         )
     if device.startswith("cuda"):
-        free, total = torch.cuda.mem_get_info(torch.device(device))
+        free, total = available_gpu_memory(torch.device(device))
         need = int(1024**3 + 1.5 * (2 * tensors + working))
         budget = min(
             free * params.get("gpu_memory_fraction", 0.7),
@@ -82,6 +86,9 @@ def check_resources(model, X, X_validation, n_classes, device, params):
         )
         if need > budget:
             raise TabMResourceError(
-                "TabM estimated GPU memory exceeds its budget; use a smaller configuration or explicitly select CPU"
+                f"TabM estimated GPU memory {need / 1024**3:.2f} GiB exceeds "
+                f"budget {budget / 1024**3:.2f} GiB on {device} "
+                f"({free / 1024**3:.2f} GiB free); use a smaller configuration "
+                "or explicitly select CPU"
             )
     return info

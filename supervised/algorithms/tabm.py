@@ -301,6 +301,7 @@ class TabMAlgorithm(RealMLPAlgorithm):
             hidden_sizes=[config["d_block"]] * config["n_blocks"],
             arch_type="tabm-mini",
             tabm_k=config["tabm_k"],
+            single_bin_feature_count=backend.single_bin_feature_count,
             pytabkit_version=self.library_version,
             torch_version=torch.__version__,
             history=history,

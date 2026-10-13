@@ -5,9 +5,12 @@ global Lightning classes. Keep this small adapter covered against pytabkit 1.7.
 """
 
 import re
+import warnings
 
 from pytabkit import RealMLP_TD_Classifier, RealMLP_TD_Regressor
 from pytabkit.models.alg_interfaces.nn_interfaces import NNAlgInterface
+
+from supervised.algorithms._pytabkit_compat import PytabkitCompatibilityMixin
 
 
 class HistoryLogger:
@@ -46,8 +49,29 @@ class HistoryInterface(NNAlgInterface):
             name,
         )
 
+    def predict(self, ds):
+        # pytabkit 1.7.2 omits the fit-time DummyLogger when constructing its
+        # prediction Trainer, unintentionally enabling Lightning's CSV logger.
+        from pytorch_lightning.loggers.logger import DummyLogger
 
-class HistoryMixin:
+        self.min_trainer_kwargs["logger"] = DummyLogger()
+        with warnings.catch_warnings():
+            if str(self.device) == "cpu":
+                # Portable RealMLP artifacts intentionally reload on CPU. This
+                # is a supported inference path, not an accidental GPU fallback.
+                warnings.filterwarnings(
+                    "ignore",
+                    message=(
+                        r"GPU available but not used\. You can set it by doing "
+                        r"`Trainer\(accelerator='gpu'\)`\.\Z"
+                    ),
+                    category=UserWarning,
+                    module=r"pytorch_lightning\.trainer\.setup\Z",
+                )
+            return super().predict(ds)
+
+
+class HistoryMixin(PytabkitCompatibilityMixin):
     def _create_alg_interface(self, n_cv):
         return HistoryInterface(**self.get_config())
 

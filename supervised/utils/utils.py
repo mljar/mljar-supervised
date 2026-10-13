@@ -29,7 +29,10 @@ class Store:
         if rows.ndim != 1:
             raise ValueError("Row selection must be a one-dimensional array")
         frame = self._data[key]
-        return frame.iloc[rows] if positional else frame.loc[rows]
+        subset = frame.iloc[rows] if positional else frame.loc[rows]
+        # Array indexing already isolates the data. Give the subset its own
+        # frame metadata too, without another copy of the selected arrays.
+        return subset.copy(deep=False)
 
     def row_count(self, key):
         return len(self._data[key])

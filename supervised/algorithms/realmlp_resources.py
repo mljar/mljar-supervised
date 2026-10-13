@@ -1,6 +1,7 @@
 """Resource admission checks for RealMLP (no torch import at module scope)."""
 
 import math
+import gc
 from pathlib import Path
 
 from joblib import cpu_count
@@ -48,6 +49,17 @@ def thread_count(n_jobs):
     if not isinstance(n_jobs, int) or isinstance(n_jobs, bool) or n_jobs == 0:
         raise ValueError("RealMLP n_jobs must be a nonzero integer")
     return min(available, n_jobs) if n_jobs > 0 else max(1, available + 1 + n_jobs)
+
+
+def available_gpu_memory(device):
+    """Measure driver memory after releasing unreachable tensors and cached blocks."""
+    import torch
+
+    gc.collect()
+    if torch.cuda.is_initialized():
+        with torch.cuda.device(device):
+            torch.cuda.empty_cache()
+    return torch.cuda.mem_get_info(device)
 
 
 def check_resources(model, X, X_validation, n_classes, device, params):
@@ -102,7 +114,7 @@ def check_resources(model, X, X_validation, n_classes, device, params):
             "a smaller network, or explicitly adjust the memory budget."
         )
     if device.startswith("cuda"):
-        free, total = torch.cuda.mem_get_info(torch.device(device))
+        free, total = available_gpu_memory(torch.device(device))
         need = int(estimate.gpu_ram_gb * 1024**3 * 1.5)
         budget = free * params.get("gpu_memory_fraction", 0.7)
         if params.get("gpu_memory_limit_gb") is not None:
