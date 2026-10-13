@@ -23,11 +23,10 @@ There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
 the available devices for RealMLP, TabM, Kumo, and TabICLv2. Other algorithms
 use their own device settings.
 
-!!! note "RealMLP release status"
-    RealMLP and TabM mini are currently available from source. The published PyPI 1.3.2 package
-    does not include the extra. Use the source commands below until a release
-    with RealMLP is published. Installing `mljar-supervised[realmlp]` from an older
-    release will not add RealMLP.
+!!! note "Release candidate"
+    Version `1.4.0rc1` adds RealMLP, TabM mini, Kumo and TabICLv2 support.
+    Select the exact release-candidate version in the commands below to test
+    these models. The stable `1.3.2` package does not include these integrations.
 
 ## Create an environment
 
@@ -59,13 +58,18 @@ virtual environment for your chosen CPU or GPU build.
 python -m pip install mljar-supervised
 ```
 
+To test the release candidate:
+
+```bash
+python -m pip install "mljar-supervised==1.4.0rc1"
+```
+
 The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
 RealMLP is optional.
 
 ## Kumo and TabICLv2 on CPU or NVIDIA GPU
 
-Use Python **3.11+** and install from source until a PyPI release includes these
-algorithms. Installation has two parts: MLJAR's optional dependencies and the
+Use Python **3.11+**. Installation has two parts: MLJAR's optional dependencies and the
 separately pinned SDM backend. There is **no direct GitHub dependency in MLJAR's
 package metadata**; the second command explicitly installs it.
 
@@ -92,7 +96,7 @@ Install your PyTorch build first:
 Then run **both** commands:
 
 ```bash
-python -m pip install "mljar-supervised[tfm] @ git+https://github.com/mljar/mljar-supervised.git"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc1"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -167,7 +171,19 @@ CUDA device, not multi-GPU training.
 
 ## Install the RealMLP extra
 
-After installing your chosen PyTorch build, install from source:
+After installing your chosen PyTorch build, install the release candidate:
+
+```bash
+python -m pip install "mljar-supervised[realmlp]==1.4.0rc1"
+# Or all optional model dependencies:
+python -m pip install "mljar-supervised[all]==1.4.0rc1"
+```
+
+`[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds
+Hugging Face support for Kumo and TabICLv2, but their pinned SDM backend still
+requires the separate installation described above.
+
+To install from source instead:
 
 ```bash
 git clone https://github.com/mljar/mljar-supervised.git
@@ -175,19 +191,8 @@ cd mljar-supervised
 python -m pip install ".[realmlp]"
 ```
 
-If you already have this checkout, run the final command from its root directory.
-For all optional model dependencies, use `python -m pip install ".[all]"` instead.
-`[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds
-Hugging Face support for Kumo and TabICLv2, but their pinned SDM backend still
-requires the separate installation below.
-
-After a PyPI release includes RealMLP, the equivalent commands will be:
-
-```bash
-python -m pip install "mljar-supervised[realmlp]"
-# Or all optional model dependencies:
-python -m pip install "mljar-supervised[all]"
-```
+From an existing checkout, run the final command from its root directory.
+Use `python -m pip install ".[all]"` for all optional model dependencies.
 
 Installing a compatible PyTorch build first lets pip reuse that build. The extra
 adds pytabkit and the other RealMLP dependencies.

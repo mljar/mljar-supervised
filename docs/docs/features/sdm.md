@@ -9,10 +9,10 @@ The relational model is not included.
 ## Installation
 
 Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
-[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install MLJAR from source:
+[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install the release candidate and pinned backend:
 
 ```bash
-python -m pip install "mljar-supervised[tfm] @ git+https://github.com/mljar/mljar-supervised.git"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc1"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -21,8 +21,8 @@ python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@
 these extras do not install SDM's placeholder PyPI release. SDM is an evolving
 backend; this integration checks the tested version instead of accepting an
 untested Git revision. Standard MLJAR installation does not install these models.
-The commands above target the source branch; a published release must contain
-this integration before its extras are usable.
+These integrations are included in `1.4.0rc1`; the stable `1.3.2` package does
+not provide them.
 
 ## Usage
 

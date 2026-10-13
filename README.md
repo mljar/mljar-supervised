@@ -566,8 +566,8 @@ When `model_name` is provided, the markdown includes detailed metrics, fairness 
 # Installation  
 
 For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
-[installation guide](docs/docs/install.md). RealMLP currently requires the source
-checkout; the published PyPI 1.3.2 package does not include it.
+[installation guide](docs/docs/install.md). Version `1.4.0rc1` is a release
+candidate that adds optional RealMLP, TabM mini, Kumo and TabICLv2 support.
 
 Compatibility:
 - Python `>=3.9`
@@ -578,6 +578,15 @@ From PyPi repository:
 ```
 pip install mljar-supervised
 ```
+
+To test the release candidate, select its exact version:
+
+```bash
+python -m pip install "mljar-supervised==1.4.0rc1"
+```
+
+See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)
+for changes and optional-model requirements.
 
 To install this package with conda run:
 ```
