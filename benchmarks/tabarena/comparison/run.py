@@ -51,11 +51,12 @@ def rss_bytes(pid):
     return total
 
 
-def execute(python, worker, case, spec, *, grace, evaluation_seconds, memory_gib):
+def execute(python, worker, case, spec, *, grace, evaluation_seconds, memory_gib, retry_failed=False):
     """Stream both output channels live, retaining every attempt and child process."""
     case.mkdir(parents=True, exist_ok=True)
     status_file = case / "status.json"
-    if status_file.exists() and read_json(status_file)["status"] in TERMINAL:
+    if (status_file.exists() and read_json(status_file)["status"] in TERMINAL
+            and not (retry_failed and read_json(status_file)["status"] != "success")):
         state = read_json(status_file)
         print(f"SKIP {spec['dataset']}: retained {state['status']} result at {case}", flush=True)
         return state
@@ -156,7 +157,7 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, choices=VERSIONS)
     parser.add_argument("--candidate-version", choices=CANDIDATE_VERSIONS,
-                        help="Comparison partner for 1.3.2 (default: 1.4.0rc2)")
+                        help="Comparison partner for 1.3.2 (default: 1.4.0rc3)")
     parser.add_argument("--suite", choices=["small", "smoke"], default="small")
     parser.add_argument("--datasets", nargs="+", choices=SMALL, help="Explicit subset; changes the saved run configuration")
     parser.add_argument("--seconds", type=int, default=3600)

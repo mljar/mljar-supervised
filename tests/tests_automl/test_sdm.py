@@ -1,8 +1,69 @@
 import os
+import weakref
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.datasets import make_classification
 from supervised import AutoML
+
+
+@pytest.mark.skipif(
+    os.environ.get("MLJAR_TEST_SDM") != "1", reason="opt-in checkpoint integration"
+)
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+def test_saved_sdm_folds_release_networks_after_prediction(
+    tmp_path, monkeypatch, algorithm
+):
+    from supervised.algorithms.factory import AlgorithmFactory
+    from supervised.algorithms.sdm import SDMAlgorithm
+    from supervised.model_framework import ModelFramework
+    from supervised.preprocessing.preprocessing import Preprocessing
+
+    X, y = make_classification(n_samples=100, n_features=4, random_state=42)
+    X = pd.DataFrame(X, columns=list("abcd"))
+    params = {
+        "model_type": algorithm,
+        "ml_task": "binary_classification",
+        "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
+        "max_context_size": 64,
+        "num_estimators": 1,
+        "local_files_only": True,
+        "n_jobs": 2,
+    }
+    learner = AlgorithmFactory.get_algorithm(params)
+    learner.fit(X[:80], y[:80], X_validation=X[80:], y_validation=y[80:])
+    expected = learner.predict(X[80:84])
+    path = str(tmp_path / learner.get_fname())
+    learner.save(path)
+    learner.unload()
+
+    framework = ModelFramework({"learner": params, "validation_strategy": {}})
+    # Ten independently loaded wrappers exercise checkpoint residency without
+    # spending the integration-test budget on ten equivalent training fits.
+    framework.learners = [
+        AlgorithmFactory.load(learner.get_params(), path, lazy_load=True)
+        for _ in range(10)
+    ]
+    framework.preprocessings = [
+        Preprocessing({"ml_task": params["ml_task"]}) for _ in range(10)
+    ]
+    networks = []
+    load = SDMAlgorithm._load_network
+
+    def tracked_load(self):
+        assert not any(network() is not None for network in networks)
+        load(self)
+        networks.append(weakref.ref(self.model))
+
+    monkeypatch.setattr(SDMAlgorithm, "_load_network", tracked_load)
+    for _ in range(2):
+        prediction = framework.predict(X[80:84])
+        np.testing.assert_allclose(
+            prediction.prediction_1, expected, rtol=1e-5, atol=1e-7
+        )
+        assert all(fold.model is None for fold in framework.learners)
+        assert not any(network() is not None for network in networks)
+    assert len(networks) == 20
 
 
 @pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])

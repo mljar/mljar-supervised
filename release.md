@@ -1,3 +1,22 @@
+## mljar-supervised 1.4.0rc3
+
+Third release candidate for 1.4.0, adding feature discovery and improving saved
+ensemble/stacked-model prediction memory use.
+
+```bash
+python -m pip install "mljar-supervised[feature-discovery]==1.4.0rc3"
+```
+
+- Add the separate `feature_discovery` step after golden features. Generate up to three feature sets with Goldmine and try them on up to three best current models, within the existing shared feature-engineering time allocation.
+- Fit discovery inside each training fold, reuse training encodings across compatible candidates, and persist frozen transformations with portable Markdown/JSON reports. Models use the `_FeatureDiscovery_<SetName>` suffix and participate in subsequent tuning, ensembling and stacking.
+- Enable discovery automatically in Compete when the optional `features-goldmine>=1.1,<1.2` dependency, Python 3.10+, and shuffled split/K-fold validation are available. Custom/grouped/time-ordered encodings are not supported. The base installation retains Python 3.9 support; `[all]` includes discovery on supported Python versions.
+- Update the TabArena launcher for RC3, retaining older environments and results, and pin features-goldmine 1.1.0 in benchmark environments.
+
+- Load saved AutoML learners lazily and release each saved fold's runtime model after prediction, including failures, to prevent fold networks accumulating in GPU memory.
+- Reuse model predictions within each stacking/ensemble request while preserving preprocessing, fold averaging, ensemble weights, and output labels. Existing artifacts work without retraining; separate requests compute fresh predictions.
+- Preserve Kumo's FP32 RMS normalization fallback for mixed-precision inputs without PyTorch's dtype-mismatch warning. Keep the original checkpoint weights, output dtype and eligible SDM optimized kernels.
+- Add normalization regression checks for FP16/BF16/FP32, empty and strided inputs, all Kumo model sizes, checkpoint compatibility and opt-in CUDA execution.
+
 ## mljar-supervised 1.4.0rc2
 
 Second release candidate for 1.4.0, fixing console noise and GPU memory retention

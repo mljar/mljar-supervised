@@ -73,6 +73,10 @@ class TimeController:
             "boost_on_errors": 0.05,
             "stack": 0.2,
         }
+        if "feature_discovery" in self._steps:
+            ratios["feature_discovery"] = 0.025 if "golden_features" in self._steps else 0.05
+            if "golden_features" in self._steps:
+                ratios["golden_features"] = 0.025
 
         if (
             fit_level
@@ -82,6 +86,7 @@ class TimeController:
                 "boost_on_errors",
                 "mix_encoding",
                 "golden_features",
+                "feature_discovery",
                 "kmeans_features",
                 "insert_random_feature",
                 "features_selection",
@@ -133,6 +138,13 @@ class TimeController:
         #    compound -= 120 # leave time for ensemble
         # maybe not needed
         return compound
+
+    def remaining_step_time(self, fit_level):
+        """Wall-clock allowance, including unused time from earlier steps."""
+        if self._total_time_limit is None or self._model_time_limit is not None:
+            return float("inf")
+        elapsed = time.time() - self._start_time
+        return max(0.0, min(self._total_time_limit, self.compound_time_should_use(fit_level)) - elapsed)
 
     def enough_time_for_step(self, fit_level):
         if fit_level in ["ensemble", "ensemble_stacked", "fairness"]:

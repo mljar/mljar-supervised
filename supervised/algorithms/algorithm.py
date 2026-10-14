@@ -41,6 +41,10 @@ class BaseAlgorithm(BaseEstimator, ABC):
         if not self.is_fitted() and self.model_file_path is not None:
             self.load(self.model_file_path)
 
+    def unload(self):
+        """Release the runtime model, retaining metadata for a later reload."""
+        self.model = None
+
     @abstractmethod
     def fit(
         self,

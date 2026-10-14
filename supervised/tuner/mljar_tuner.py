@@ -60,6 +60,7 @@ class MljarTuner:
         underprivileged_groups=[],
         data_store=None,
         custom_params=None,
+        feature_discovery=False,
     ):
         logger.debug("MljarTuner.__init__")
         self._data_store = data_store
@@ -74,6 +75,7 @@ class MljarTuner:
         self._explain_level = explain_level
         self._data_info = data_info
         self._golden_features = golden_features
+        self._feature_discovery = feature_discovery
         self._features_selection = features_selection
         self._train_ensemble = train_ensemble
         self._stack_models = stack_models
@@ -175,6 +177,8 @@ class MljarTuner:
             all_steps += ["mix_encoding"]
         if self._golden_features and self._can_apply_golden_features():
             all_steps += ["golden_features"]
+        if self._feature_discovery:
+            all_steps += ["feature_discovery"]
         if self._kmeans_features and self._can_apply_kmeans_features():
             all_steps += ["kmeans_features"]
         if self._features_selection:
@@ -1005,6 +1009,9 @@ class MljarTuner:
 
                     if "golden_features" in all_params["preprocessing"]:
                         all_params["name"] += "_GoldenFeatures"
+                    if "feature_discovery" in all_params["preprocessing"]:
+                        profile = all_params["preprocessing"]["feature_discovery"]["feature_set"]
+                        all_params["name"] += f"_FeatureDiscovery_{profile.title()}"
                     if "drop_features" in all_params["preprocessing"] and len(
                         all_params["preprocessing"]["drop_features"]
                     ):
@@ -1157,6 +1164,82 @@ class MljarTuner:
         algorithms = u[np.argsort(idx)]
 
         return df_models, algorithms
+
+    def feature_discovery_parents(self, models):
+        eligible = [
+            m
+            for m in models
+            if m.get_type() not in ("Ensemble", "Baseline")
+            and not m._is_stacked
+            and m.get_final_loss() is not None
+            and np.isfinite(m.get_final_loss())
+            and "RandomFeature" not in m.get_name()
+            and "feature_discovery" not in m.params["preprocessing"]
+        ]
+        if not eligible:
+            return []
+        ranked, _ = self.df_models_algorithms(eligible)
+        limit = min(3, self._top_models_to_improve or 3)
+        return list(ranked["model"].iloc[:limit])
+
+    def get_feature_discovery_params(self, models, parents, discoveries):
+        candidates = []
+        max_index = max(
+            (
+                int(m.get_name().split("_")[0])
+                for m in models
+                if m.get_name().split("_")[0].isdigit()
+            ),
+            default=0,
+        )
+        seen = set(self._unique_params_keys)
+        for position in range(3):
+            for parent in parents:
+                discovery = discoveries.get(parent.get_name())
+                if discovery is None or position >= len(discovery["profiles"]):
+                    continue
+                profile = discovery["profiles"][position]
+                params = copy.deepcopy(parent.params)
+                params["learner"] = copy.deepcopy(
+                    getattr(parent, "learner_params", params["learner"])
+                )
+                model_type = params["learner"]["model_type"]
+                config = copy.deepcopy(discovery)
+                config.update(
+                    {
+                        "feature_set": profile,
+                        "parent_model": parent.get_name(),
+                        "scale": "scale"
+                        in AlgorithmsRegistry.registry[self._ml_task][model_type][
+                            "required_preprocessing"
+                        ],
+                    }
+                )
+                params["preprocessing"]["feature_discovery"] = config
+                suffix = parent.get_name().split("_", 1)[-1]
+                params.update(
+                    {
+                        "name": f"{max_index + len(candidates) + 1}_{suffix}_FeatureDiscovery_{profile.title()}",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                        "data_type": params.get("data_type", "")
+                        + f"_feature_discovery_{profile}",
+                        "feature_discovery_expected_time": parent.get_train_time(),
+                    }
+                )
+                # These are trials of the parent's chosen configuration, not new Optuna studies.
+                params.pop("optuna_time_budget", None)
+                params["learner"].pop("model_architecture_json", None)
+                key_params = copy.deepcopy(params)
+                key_params["preprocessing"]["feature_discovery"].pop(
+                    "parent_model", None
+                )
+                key = self.get_params_key(key_params)
+                if key not in seen:
+                    candidates.append(params)
+                    seen.add(key)
+        return candidates
 
     def get_golden_features_params(
         self, current_models, results_path, total_time_limit

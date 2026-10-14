@@ -29,7 +29,12 @@ from supervised.ensemble import Ensemble
 from supervised.exceptions import AutoMLException, NotTrainedException
 from supervised.fairness.report import FairnessReport
 from supervised.model_framework import ModelFramework
+from supervised.prediction import PredictionContext
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.preprocessing.feature_discovery_transformer import (
+    FeatureDiscovery, check_dependencies as check_discovery_dependencies,
+    supported_validation as discovery_supports_validation,
+)
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
@@ -84,6 +89,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = None
         self._explain_level = None
         self._golden_features = None
+        self._feature_discovery = None
         self._features_selection = None
         self._start_random_models = None
         self._hill_climbing_steps = None
@@ -171,6 +177,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._verbose = params.get("verbose", self._verbose)
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
+            self._feature_discovery = params.get("feature_discovery", False)
             self._features_selection = params.get(
                 "features_selection", self._features_selection
             )
@@ -196,9 +203,6 @@ class BaseAutoML(BaseEstimator, ABC):
             best_model_name = params.get("best_model")
             load_on_predict = params.get("load_on_predict")
             self._fit_level = params.get("fit_level")
-            lazy_load = not (
-                self._fit_level is not None and self._fit_level == "finished"
-            )
             load_models = self._model_subpaths
             if load_on_predict is not None and self._fit_level == "finished":
                 load_models = load_on_predict
@@ -222,7 +226,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
                 else:
-                    m = ModelFramework.load(path, model_subpath, lazy_load)
+                    # Finished runs can contain many GPU folds. Load metadata
+                    # now; each learner reloads its artifact only when needed.
+                    m = ModelFramework.load(path, model_subpath, lazy_load=True)
                     self._models += [m]
                     models_map[m.get_name()] = m
 
@@ -358,6 +364,13 @@ class BaseAutoML(BaseEstimator, ABC):
         return 1
 
     def train_model(self, params):
+        if self._fit_level == "feature_discovery":
+            expected = params.get("feature_discovery_expected_time", 0) or 0
+            if self._time_ctrl.remaining_step_time(self._fit_level) < expected:
+                self.verbose_print(
+                    f"Skip {params['name']}: insufficient time for the estimated training cost."
+                )
+                return False
         # do we have enough time to train?
         # if not, skip
         if not self._time_ctrl.enough_time(
@@ -471,17 +484,20 @@ class BaseAutoML(BaseEstimator, ABC):
         # if multiclass and too many classes then No
         return True
 
-    def get_stacked_data(self, X, mode="training"):
+    def get_stacked_data(self, X, mode="training", prediction_context=None):
         # mode can be `training` or `predict`
         if self._stacked_models is None:
             return X
+        if mode != "training" and prediction_context is None:
+            with PredictionContext() as context:
+                return self.get_stacked_data(X, mode, prediction_context=context)
         all_oofs = []
         for m in self._stacked_models:
             oof = None
             if mode == "training":
                 oof = m.get_out_of_folds()
             else:
-                oof = m.predict(X)
+                oof = prediction_context.predict(m, X)
                 if self._ml_task == BINARY_CLASSIFICATION:
                     cols = [f for f in oof.columns if "prediction" in f]
                     if len(cols) == 2:
@@ -496,16 +512,12 @@ class BaseAutoML(BaseEstimator, ABC):
                         oof = pd.DataFrame({column: oof[cols[1]]})
 
             cols = [f for f in oof.columns if "prediction" in f]
-            oof = oof[cols]
+            oof = oof[cols].copy()
             oof.columns = [f"{m.get_name()}_{c}" for c in cols]
             all_oofs += [oof]
 
-        org_index = X.index.copy()
-        X.reset_index(drop=True, inplace=True)
-        X_stacked = pd.concat([X] + all_oofs, axis=1)
-
-        X_stacked.index = org_index.copy()
-        X.index = org_index.copy()
+        X_stacked = pd.concat([X.reset_index(drop=True)] + all_oofs, axis=1)
+        X_stacked.index = X.index.copy()
         return X_stacked
 
     def _perform_model_stacking(self):
@@ -1109,6 +1121,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = self._get_verbose()
         self._explain_level = self._get_explain_level()
         self._golden_features = self._get_golden_features()
+        self._feature_discovery = self._get_feature_discovery()
         self._features_selection = self._get_features_selection()
         self._start_random_models = self._get_start_random_models()
         self._hill_climbing_steps = self._get_hill_climbing_steps()
@@ -1221,6 +1234,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._underprivileged_groups,
                 data_store=self._training_store,
                 custom_params=self.custom_params,
+                feature_discovery=self._feature_discovery,
             )
             self.tuner = tuner
 
@@ -1264,6 +1278,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 generated_params = []
                 if step in self._all_params:
                     generated_params = self._all_params[step]
+                elif step == "feature_discovery":
+                    generated_params = self._prepare_feature_discovery()
+                    # Persist the snapshot of parents and profiles before the first trial.
+                    self.save_progress(step, generated_params)
                 else:
                     generated_params = tuner.generate_params(
                         step,
@@ -1333,6 +1351,14 @@ class BaseAutoML(BaseEstimator, ABC):
             self._fit_level = "finished"
             self.save_progress()
             self.select_and_save_best(show_warnings=True)
+
+            # Training encodings support interrupted searches, not inference.
+            discovery_root = os.path.join(self._results_path, "feature_discovery")
+            if os.path.isdir(discovery_root):
+                for directory in os.scandir(discovery_root):
+                    cache = os.path.join(directory.path, "training.joblib")
+                    if directory.is_dir() and os.path.isfile(cache):
+                        os.remove(cache)
 
             self.verbose_print(
                 f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
@@ -1460,6 +1486,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "verbose": self._verbose,
                 "explain_level": self._explain_level,
                 "golden_features": self._golden_features,
+                "feature_discovery": self._feature_discovery,
                 "features_selection": self._features_selection,
                 "start_random_models": self._start_random_models,
                 "hill_climbing_steps": self._hill_climbing_steps,
@@ -1629,18 +1656,21 @@ class BaseAutoML(BaseEstimator, ABC):
         X = X[self._data_info["columns"]]
         self._validate_X_predict(X)
 
-        # is stacked model
-        if model._is_stacked:
-            self._perform_model_stacking()
-            X_stacked = self.get_stacked_data(X, mode="predict")
-
-            if model.get_type() == "Ensemble":
-                # Ensemble is using both original and stacked data
-                predictions = model.predict(X, X_stacked)
+        with PredictionContext() as context:
+            if model._is_stacked:
+                self._perform_model_stacking()
+                X_stacked = self.get_stacked_data(
+                    X, mode="predict", prediction_context=context
+                )
+                if model.get_type() == "Ensemble":
+                    # Ensemble uses both original and stacked data.
+                    predictions = context.predict(model, X, X_stacked)
+                else:
+                    predictions = context.predict(model, X_stacked)
             else:
-                predictions = model.predict(X_stacked)
-        else:
-            predictions = model.predict(X)
+                predictions = context.predict(model, X)
+            # Labels/thresholds are applied below, outside the shared cache.
+            predictions = predictions.copy()
 
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
@@ -1960,6 +1990,81 @@ class BaseAutoML(BaseEstimator, ABC):
                 return False
         else:
             return deepcopy(self.golden_features)
+
+    def _get_feature_discovery(self):
+        value = self.feature_discovery
+        if value != "auto" and not isinstance(value, bool):
+            raise ValueError("feature_discovery must be 'auto', True or False")
+        if value is False or (value == "auto" and self._get_mode() != "Compete"):
+            return False
+        reason = None
+        if not discovery_supports_validation(self._validation_strategy):
+            reason = "Feature discovery requires shuffled split or K-fold validation; custom/group/time-ordered encoding is not supported."
+        else:
+            try:
+                check_discovery_dependencies()
+            except AutoMLException as exc:
+                reason = str(exc)
+        if reason:
+            if value is True:
+                raise AutoMLException(reason)
+            self.verbose_print("Skip feature_discovery: " + reason)
+            return False
+        return True
+
+    def _prepare_feature_discovery(self):
+        parents = self.tuner.feature_discovery_parents(self._models)
+        if not parents:
+            return []
+        remaining = self._time_ctrl.remaining_step_time("feature_discovery")
+        allocation = self._time_ctrl.time_should_use("feature_discovery")
+        if self._total_time_limit is None or self._model_time_limit is not None:
+            allocation = self._model_time_limit or 60
+        budget = min(allocation, remaining) * 0.25
+        if budget <= 0:
+            return []
+        self.verbose_print(
+            f"* Step feature_discovery: up to 3 feature sets for {len(parents)} parents; discovery budget {budget:.1f}s."
+        )
+        discovery = FeatureDiscovery(
+            self._results_path,
+            self._ml_task,
+            self._random_state,
+            self._n_jobs,
+            self._training_store,
+        )
+        started = time.monotonic()
+        prepared, configurations = {}, {}
+        groups = {joblib.hash(m.validation_params) for m in parents}
+        try:
+            for parent in parents:
+                key = joblib.hash(parent.validation_params)
+                if key not in prepared:
+                    available = budget - (time.monotonic() - started)
+                    if available <= 0:
+                        break
+                    try:
+                        prepared[key] = discovery.prepare(
+                            parent.validation_params,
+                            available / (len(groups) - len(prepared)),
+                        )
+                    except Exception:
+                        import traceback
+
+                        self._update_errors_report("feature_discovery", traceback.format_exc())
+                        prepared[key] = None
+                configurations[parent.get_name()] = prepared[key]
+        finally:
+            self._time_ctrl.log_time(
+                "feature_discovery",
+                "preprocessing",
+                "feature_discovery",
+                time.monotonic() - started,
+            )
+            self.save_progress()
+        return self.tuner.get_feature_discovery_params(
+            self._models, parents, configurations
+        )
 
     def _get_features_selection(self):
         """Gets the current features_selection"""

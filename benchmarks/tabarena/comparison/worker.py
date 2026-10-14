@@ -41,6 +41,9 @@ def score_predictions(frame, y, problem_type, n_classes=None):
     if problem_type == "binary":
         score = float(roc_auc_score(y, values[:, 1]))
         return score, 1 - score
+    # Float32 probabilities can sum to 1 +/- a few ulps. Validation above still
+    # rejects invalid rows; normalize before sklearn's float64 sum check.
+    values = values / values.sum(axis=1, keepdims=True)
     score = float(log_loss(y, values, labels=np.arange(n_classes)))
     return score, score
 

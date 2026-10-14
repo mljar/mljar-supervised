@@ -15,6 +15,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.exceptions import NotTrainedException
 from supervised.model_framework import ModelFramework
+from supervised.prediction import PredictionContext
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
 from supervised.utils.config import LOG_LEVEL
@@ -419,7 +420,11 @@ class Ensemble:
 
         self.train_time = time.time() - start_time
 
-    def predict(self, X, X_stacked=None):
+    def predict(self, X, X_stacked=None, prediction_context=None):
+        if prediction_context is None:
+            with PredictionContext() as context:
+                return self.predict(X, X_stacked, prediction_context=context)
+
         logger.debug(
             "Ensemble.predict with {} models".format(len(self.selected_models))
         )
@@ -432,9 +437,9 @@ class Ensemble:
             total_repeat += repeat
 
             if model._is_stacked:
-                y_predicted_from_model = model.predict(X_stacked)
+                y_predicted_from_model = prediction_context.predict(model, X_stacked)
             else:
-                y_predicted_from_model = model.predict(X)
+                y_predicted_from_model = prediction_context.predict(model, X)
 
             prediction_cols = []
             if self._ml_task in [BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION]:

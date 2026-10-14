@@ -29,6 +29,8 @@ def ensure_environment(version):
     spec = {"version": version, "constraints_sha256": sha256(HERE / "constraints.txt"),
             "python": "3.11", "torch": "2.11.0+cu128" if version in CANDIDATE_VERSIONS else None,
             "sdm_revision": SDM_REVISION if version in CANDIDATE_VERSIONS else None}
+    if version == "1.4.0rc3":
+        spec["features_goldmine"] = "1.1.0"
     with lock(root.parent / f"{version}.setup.lock"):
         if marker.exists():
             if read_json(marker) != spec:
@@ -41,6 +43,8 @@ def ensure_environment(version):
                      "--index-url", "https://download.pytorch.org/whl/cu128"])
         package = f"mljar-supervised{'[all]' if version in CANDIDATE_VERSIONS else ''}=={version}"
         requirements = [package, "psutil", "pyarrow", "pytest"]
+        if version == "1.4.0rc3":
+            requirements.append("features-goldmine==1.1.0")
         if version in CANDIDATE_VERSIONS:
             requirements += [f"torch=={spec['torch']}",
                              f"git+https://github.com/NVIDIA/structured-data-models.git@{SDM_REVISION}"]

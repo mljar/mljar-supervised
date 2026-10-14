@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package_version:
-        description: 'Exact version (for example 1.4.0rc2); leave empty for latest stable'
+        description: 'Exact version (for example 1.4.0rc3); leave empty for latest stable'
         required: false
         type: string
         default: ''

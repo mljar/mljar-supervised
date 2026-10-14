@@ -2,8 +2,8 @@
 
 RealMLP is an optional neural model for binary classification, multiclass
 classification and single-target regression. Install
-the `[realmlp]` or `[all]` extra with version `1.4.0rc2`, for example
-`python -m pip install "mljar-supervised[realmlp]==1.4.0rc2"`.
+the `[realmlp]` or `[all]` extra with version `1.4.0rc3`, for example
+`python -m pip install "mljar-supervised[realmlp]==1.4.0rc3"`.
 Choose [CPU](../install.md#realmlp-on-cpu) or
 [NVIDIA GPU](../install.md#realmlp-on-nvidia-gpu) installation and follow the
 [verification steps](../install.md#verify-the-installation). It trains from scratch

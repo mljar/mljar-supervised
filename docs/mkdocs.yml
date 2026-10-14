@@ -79,6 +79,7 @@ nav:
     - Steps of AutoML: features/automl.md
     - AutoML modes: features/modes.md
     - Golden Features: features/golden_features.md
+    - Feature Discovery: features/feature_discovery.md
     - Features Selection: features/features_selection.md
     - Algorithms: features/algorithms.md
     - RealMLP: features/realmlp.md

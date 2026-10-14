@@ -88,6 +88,7 @@ class AutoML(BaseAutoML):
         verbose: int = 1,
         random_state: int = 1234,
         custom_params: Optional[dict] = None,
+        feature_discovery: Union[Literal["auto"], bool] = "auto",
     ):
         """
         Initialize `AutoML` object.
@@ -219,6 +220,13 @@ class AutoML(BaseAutoML):
                 It is set to min(100, max(10, 0.1*number_of_input_features)).
 
                 If `int` value is set, the number of Golden Features is set to this value.
+
+            feature_discovery (boolean or "auto"): Generate up to three reusable feature
+                sets with the optional features-goldmine package and try them on the
+                best current models. Runs after golden_features and shares its time
+                allocation. "auto" enables this in Compete when Python 3.10+, the
+                dependency, and shuffled split/K-fold validation are available.
+                Explicit True reports unsupported configurations as errors.
 
             features_selection (boolean): Whether to do features_selection
                 If left `auto` AutoML will do feature selection based on the selected `mode`:
@@ -417,6 +425,7 @@ class AutoML(BaseAutoML):
         self.verbose = verbose
         self.explain_level = explain_level
         self.golden_features = golden_features
+        self.feature_discovery = feature_discovery
         self.features_selection = features_selection
         self.start_random_models = start_random_models
         self.hill_climbing_steps = hill_climbing_steps

@@ -8,6 +8,7 @@ from sklearn.datasets import make_classification, make_regression
 from threadpoolctl import threadpool_limits
 
 from supervised import AutoML
+from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.ensemble import Ensemble
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
@@ -31,7 +32,7 @@ def legacy_path(path, style):
     ],
 )
 def test_relocated_legacy_artifacts_keep_predictions(
-    tmp_path, task, classes, algorithm
+    tmp_path, task, classes, algorithm, monkeypatch
 ):
     if classes:
         X, y = make_classification(
@@ -95,7 +96,13 @@ def test_relocated_legacy_artifacts_keep_predictions(
             data["predictions_fname"] = legacy_path(data["predictions_fname"], style)
             file.write_text(json.dumps(data))
         # The original root is absent for every path style.
-        loaded = AutoML(results_path=str(moved))
+        with monkeypatch.context() as patch:
+            patch.setattr(
+                BaseAlgorithm, "reload",
+                lambda self: pytest.fail("AutoML.load must not load learners"),
+            )
+            loaded = AutoML(results_path=str(moved))
+            loaded.load(str(moved))
         pd.testing.assert_frame_equal(loaded.predict_all(X), expected)
         for lazy in [True, False]:
             models = {}

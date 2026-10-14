@@ -14,6 +14,7 @@ from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTa
 from supervised.preprocessing.goldenfeatures_transformer import (
     GoldenFeaturesTransformer,
 )
+from supervised.preprocessing.feature_discovery_transformer import FeatureDiscoveryTransformer
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
@@ -35,6 +36,7 @@ class Preprocessing(object):
         model_name=None,
         k_fold=None,
         repeat=None,
+        results_path=None,
     ):
         self._params = preprocessing_params
 
@@ -55,6 +57,8 @@ class Preprocessing(object):
         self._ip_transforms = []
         self._timedelta_columns = []
         self._golden_features = None
+        self._feature_discovery = None
+        self._results_path = results_path
         self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
         self._drop_features = self._params.get("drop_features", [])
@@ -98,6 +102,10 @@ class Preprocessing(object):
                 X_train, y_train, sample_weight
             )
 
+            if "feature_discovery" in self._params:
+                discovery_X = X_train.copy(deep=False)
+                discovery_y = y_train.copy(deep=False)
+
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
                 self._categorical_y = LabelEncoder(try_to_fit_numeric=True)
@@ -131,6 +139,17 @@ class Preprocessing(object):
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
                 y_train = y_train["target"]
+
+        discovery_columns = []
+        discovery_values = None
+        if "feature_discovery" in self._params:
+            config = self._params["feature_discovery"]
+            info = config["folds"][f"{self._repeat or 0}:{self._k_fold or 0}"]
+            self._feature_discovery = FeatureDiscoveryTransformer(
+                info, config["feature_set"], self._results_path
+            )
+            discovery_values = self._feature_discovery.fit_transform(discovery_X, discovery_y)
+            discovery_columns = self._feature_discovery._new_columns
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
@@ -210,6 +229,11 @@ class Preprocessing(object):
             self._golden_features.fit(X_train[numeric_cols], y_train)
             X_train = self._golden_features.transform(X_train)
             golden_columns = self._golden_features._new_columns
+
+        if discovery_values is not None:
+            if set(discovery_columns) & set(X_train.columns):
+                raise AutoMLException("Feature discovery output column collision.")
+            X_train = pd.concat([X_train, discovery_values], axis=1)
 
         kmeans_columns = []
         if "kmeans_features" in self._params:
@@ -300,6 +324,9 @@ class Preprocessing(object):
             ):
                 cols_to_process += kmeans_columns
 
+            if scale_method == Scale.SCALE_NORMAL and self._params.get("feature_discovery", {}).get("scale", False):
+                cols_to_process += discovery_columns
+
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
                 scale.fit(X_train)
@@ -384,6 +411,11 @@ class Preprocessing(object):
                     y_validation = self._scale_y.transform(y_validation)
                     y_validation = y_validation["target"]
 
+        discovery_values = (
+            self._feature_discovery.transform(X_validation)
+            if self._feature_discovery is not None and X_validation is not None else None
+        )
+
         # columns preprocessing
         if len(self._remove_columns) and X_validation is not None:
             cols_to_remove = [
@@ -430,6 +462,9 @@ class Preprocessing(object):
         # golden features
         if self._golden_features is not None:
             X_validation = self._golden_features.transform(X_validation)
+
+        if discovery_values is not None:
+            X_validation = pd.concat([X_validation, discovery_values], axis=1)
 
         if self._kmeans is not None:
             X_validation = self._kmeans.transform(X_validation)
@@ -609,6 +644,9 @@ class Preprocessing(object):
         if self._golden_features is not None:
             preprocessing_params["golden_features"] = self._golden_features.to_json()
 
+        if self._feature_discovery is not None:
+            preprocessing_params["feature_discovery"] = self._feature_discovery.to_json()
+
         if self._kmeans is not None:
             preprocessing_params["kmeans"] = self._kmeans.to_json()
 
@@ -677,6 +715,9 @@ class Preprocessing(object):
         if "golden_features" in data_json:
             self._golden_features = GoldenFeaturesTransformer()
             self._golden_features.from_json(data_json["golden_features"], results_path)
+
+        if "feature_discovery" in data_json:
+            self._feature_discovery = FeatureDiscoveryTransformer.from_json(data_json["feature_discovery"], results_path)
 
         if "kmeans" in data_json:
             self._kmeans = KMeansTransformer()

@@ -191,7 +191,8 @@ class ModelFramework:
                 # the proprocessing is done at every validation step
                 self.preprocessings += [
                     Preprocessing(
-                        self.preprocessing_params, self.get_name(), k_fold, repeat
+                        self.preprocessing_params, self.get_name(), k_fold, repeat,
+                        results_path=results_path,
                     )
                 ]
 
@@ -350,9 +351,7 @@ class ModelFramework:
 
     def release_learners(self):
         for learner in self.learners:
-            if learner.model is not None:
-                del learner.model
-                learner.model = None
+            learner.unload()
 
     def get_metric_name(self):
         if self.metric_name is not None:
@@ -455,10 +454,16 @@ class ModelFramework:
         # run predict on all learners and return the average
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
-            # preprocessing goes here
-            X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
-            y_p = learner.predict(X_data)
-            y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+            try:
+                X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
+                y_p = learner.predict(X_data)
+                y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+            finally:
+                # Fold predictions are CPU arrays. Keep only one saved learner
+                # resident, including when preprocessing/loading/prediction fails.
+                # An unsaved learner has no recovery path and must stay loaded.
+                if learner.model_file_path is not None:
+                    learner.unload()
 
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
 
@@ -705,6 +710,14 @@ class ModelFramework:
         )
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
+        discovery = self.preprocessing_params.get("feature_discovery")
+        if discovery:
+            desc += "\n## Feature discovery\n\n"
+            desc += f"Parent model: {discovery['parent_model']}.\n\n"
+            for i, preprocessing in enumerate(self.preprocessings):
+                if preprocessing._feature_discovery is not None:
+                    desc += f"\n### Learner {i + 1}\n\n"
+                    desc += preprocessing._feature_discovery.markdown()
         if short_name in ["RealMLP", "TabM"]:
             desc += f"\n## {short_name} training details\n\n"
             desc += "Permutation importance uses logloss for classification and MSE for regression. SHAP is not enabled.\n\n"

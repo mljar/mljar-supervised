@@ -43,16 +43,19 @@ def test_cpu_partitions_never_share_physical_cores():
     assert cpu_affinity("1.4.0rc2", 1) == second
 
 
-def test_rc2_defaults_use_new_outputs_and_preserve_rc1_paths():
+def test_rc3_defaults_preserve_older_candidate_paths():
     stable = parse_args(["--version", "1.3.2"])
     rc2 = parse_args(["--version", "1.4.0rc2"])
     rc1 = parse_args(["--version", "1.4.0rc1"])
     legacy_stable = parse_args(["--version", "1.3.2", "--candidate-version", "1.4.0rc1"])
-    assert stable.run == rc2.run
+    rc3 = parse_args(["--version", "1.4.0rc3"])
+    assert stable.run == rc3.run
+    assert rc3.run != rc2.run
+    assert "vs-1.4.0rc3-small-3600s-15threads" in rc3.run.name
     assert "vs-1.4.0rc2-small-3600s-15threads" in rc2.run.name
     assert legacy_stable.run == rc1.run != rc2.run
     assert stable.device == "cpu"
-    assert rc1.device == rc2.device == "cuda"
+    assert rc1.device == rc2.device == rc3.device == "cuda"
     assert parse_args(["--version", "1.4.0rc2", "--device", "cpu"]).device == "cpu"
     with pytest.raises(SystemExit):
         parse_args(["--version", "1.4.0rc2", "--candidate-version", "1.4.0rc1"])
@@ -98,10 +101,10 @@ def test_run_rejects_changed_budget(tmp_path):
         freeze_run(tmp_path, {"seconds": 3600})
 
 
-@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2"])
+@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3"])
 def test_report_compares_only_matching_successful_splits(tmp_path, candidate):
     config = {"datasets": ["credit-g"]}
-    if candidate == "1.4.0rc2":
+    if candidate != "1.4.0rc1":
         config["comparison_versions"] = ["1.3.2", candidate]
     write_json(tmp_path / "manifest.json", {"config": config})
     for version, score in [("1.3.2", .7), (candidate, .8)]:

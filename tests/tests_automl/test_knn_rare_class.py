@@ -41,8 +41,14 @@ def test_custom_fold_singleton_class_fits_and_reloads(tmp_path):
     expected = model.predict_proba(X.iloc[validation])
     assert expected.shape == (len(validation), 2)
     np.testing.assert_allclose(expected.sum(axis=1), 1)
-    assert member.learners[0].model.n_samples_fit_ == 1000
-    np.testing.assert_array_equal(member.learners[0].model.classes_, [0, 1])
+    # Saved folds release runtime estimators after prediction. Inspect the saved
+    # fitted state explicitly, then restore the normal unloaded lifecycle.
+    learner = member.learners[0]
+    assert learner.model is None
+    learner.reload()
+    assert learner.model.n_samples_fit_ == 1000
+    np.testing.assert_array_equal(learner.model.classes_, [0, 1])
+    learner.unload()
     loaded = AutoML(results_path=str(directory))
     np.testing.assert_array_equal(loaded.predict_proba(X.iloc[validation]), expected)
     pd.testing.assert_frame_equal(X, original)

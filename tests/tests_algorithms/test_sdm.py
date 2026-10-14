@@ -1,7 +1,9 @@
 """Unit checks run without SDM; real checkpoint tests require MLJAR_TEST_SDM=1."""
 
+import importlib.util
 import os
 import shutil
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -24,6 +26,130 @@ real_models = pytest.mark.skipif(
     os.environ.get("MLJAR_TEST_SDM") != "1",
     reason="opt-in pretrained checkpoint integration",
 )
+
+sdm_installed = pytest.mark.skipif(
+    importlib.util.find_spec("sdm") is None, reason="optional SDM backend"
+)
+
+
+@pytest.fixture
+def torch_warn_always():
+    import torch
+
+    # The reference call must not consume TORCH_WARN_ONCE and accidentally
+    # prevent the adapted call from failing when warnings are errors.
+    previous = torch.is_warn_always_enabled()
+    torch.set_warn_always(True)
+    try:
+        yield
+    finally:
+        torch.set_warn_always(previous)
+
+
+@sdm_installed
+@pytest.mark.parametrize("width", [128, 512, 1024])
+@pytest.mark.parametrize("dtype", ["float16", "bfloat16", "float32"])
+@pytest.mark.parametrize("eps", [None, 1e-6])
+@pytest.mark.parametrize("layout", ["contiguous", "strided", "zeros", "empty"])
+def test_kumo_norm_matches_torch_without_dtype_warning(
+    width, dtype, eps, layout, torch_warn_always
+):
+    import torch
+    from sdm.nn import RMSNorm
+
+    from supervised.algorithms._sdm_backend import _prepare_kumo_norms
+
+    generator = torch.Generator().manual_seed(42)
+    norm = RMSNorm(width, eps=eps).eval().requires_grad_(False)
+    norm.weight.copy_(torch.randn(width, generator=generator))
+    x = torch.randn(4, 2 * width, generator=generator).to(getattr(torch, dtype))
+    x = x[:, ::2] if layout == "strided" else x[:, :width].contiguous()
+    if layout == "zeros":
+        x.zero_()
+    elif layout == "empty":
+        x = x[:0]
+    with torch.inference_mode(), warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        expected = norm(x)
+    model = torch.nn.Sequential(norm)
+    _prepare_kumo_norms(model)
+    with torch.inference_mode(), warnings.catch_warnings():
+        warnings.simplefilter("error")
+        actual = model(x)
+    assert actual.dtype == expected.dtype
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    assert model[0].weight is norm.weight
+
+
+@sdm_installed
+@pytest.mark.parametrize("size", ["small", "medium", "large"])
+def test_kumo_norm_adaptation_preserves_checkpoint_and_fast_modules(size):
+    import sdm
+
+    from supervised.algorithms._sdm_backend import _KumoRMSNorm, _prepare_kumo_norms
+
+    model = (
+        sdm.models.KumoTabular(
+            task="classification", size=size, pretrained=False, device="meta"
+        )
+        .eval()
+        .requires_grad_(False)
+    )
+    weights = dict(model.named_parameters())
+    keys = set(model.state_dict())
+    norms = {
+        name: module
+        for name, module in model.named_modules()
+        if type(module) is sdm.nn.RMSNorm
+    }
+    _prepare_kumo_norms(model)
+    changed = 0
+    for name, original in norms.items():
+        current = model.get_submodule(name)
+        if original.weight is not None:
+            assert isinstance(current, _KumoRMSNorm)
+            assert current.weight is original.weight
+            assert current.eps == original.eps
+            assert not current.training
+            changed += 1
+        else:
+            assert current is original
+    assert changed > 0
+    assert set(model.state_dict()) == keys
+    assert all(param is weights[name] for name, param in model.named_parameters())
+    model.load_state_dict(model.state_dict(), strict=True)
+    _prepare_kumo_norms(model)  # Loading/preparing twice must be harmless.
+
+
+@sdm_installed
+@pytest.mark.skipif(
+    os.environ.get("MLJAR_TEST_SDM_DEVICE") != "cuda",
+    reason="opt-in CUDA normalization check",
+)
+@pytest.mark.parametrize("dtype", ["float16", "bfloat16"])
+@pytest.mark.parametrize("width", [128, 512, 1024])
+@pytest.mark.parametrize("empty", [False, True])
+def test_kumo_norm_cuda_matches_fallback(dtype, width, empty, torch_warn_always):
+    import torch
+    from sdm.nn import RMSNorm
+
+    from supervised.algorithms._sdm_backend import _prepare_kumo_norms
+
+    norm = RMSNorm(width).cuda().eval().requires_grad_(False)
+    x = torch.randn(3, 5, width, device="cuda").to(getattr(torch, dtype))
+    if empty:
+        x = x[:0]
+    model = torch.nn.Sequential(norm)
+    with torch.inference_mode(), torch.autocast("cuda", dtype=getattr(torch, dtype)):
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            expected = norm(x)
+        _prepare_kumo_norms(model)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            actual = model(x)
+    assert actual.dtype == expected.dtype
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
 
 
 @pytest.mark.parametrize("cls", CLASSES)

@@ -12,7 +12,7 @@ Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
 [Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install the release candidate and pinned backend:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc2"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc3"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -21,7 +21,7 @@ python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@
 these extras do not install SDM's placeholder PyPI release. SDM is an evolving
 backend; this integration checks the tested version instead of accepting an
 untested Git revision. Standard MLJAR installation does not install these models.
-These integrations are included in `1.4.0rc2`; the stable `1.3.2` package does
+These integrations are included in `1.4.0rc3`; the stable `1.3.2` package does
 not provide them.
 
 ## Usage
@@ -116,6 +116,18 @@ memory after the learner is saved and unloaded. Admission checks collect
 unreachable tensors and clear unused CUDA cache before measuring free VRAM.
 Rejection messages include the estimate, budget and free memory; genuine
 shortages still reject a candidate without changing its configuration.
+
+Version `1.4.0rc3` also loads saved fold networks lazily
+and releases them after each fold prediction. Stacking and ensembles reuse
+shared model predictions within each request, avoiding repeated SDM inference.
+See [prediction memory and reuse](save-and-load-models.md#prediction-memory-and-reuse).
+
+Version `1.4.0rc3` handles Kumo's mixed-precision RMS
+normalization fallback explicitly in FP32, retaining the checkpoint weights,
+epsilon, and output dtype. SDM's eligible optimized kernels are preserved.
+This avoids PyTorch's `Mismatch dtype between input and weight` warning without
+filtering warnings. In published RC2, that warning indicates a fallback to the
+standard calculation; it does not indicate a failed candidate.
 
 Classification returns probabilities in MLJAR class order. Regression returns
 the mean of the predicted quantiles, following NVIDIA's benchmark adapter.
