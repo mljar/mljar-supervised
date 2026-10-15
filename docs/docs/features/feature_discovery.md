@@ -93,5 +93,12 @@ selected profile. Copy the **complete AutoML results directory** for deployment;
 shared discovery artifacts use relative paths. Reload does not rerun discovery.
 Use matching dependencies and only load trusted joblib artifacts.
 
+New training-cache fingerprints compare column values, types, categorical
+metadata, row indices and targets, independently of pandas' internal storage
+layout. Selecting or copying equivalent columns does not invalidate the cache;
+changed training values, targets or row order do. Manifests record the fingerprint
+version. Inference from existing artifacts continues to use the frozen generator
+and does not require a training-cache fingerprint.
+
 Feature discovery is an additional search strategy, not a guarantee of better
 accuracy. Keep original-feature candidates and select using validation results.

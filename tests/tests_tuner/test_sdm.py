@@ -126,3 +126,70 @@ def test_kumo_sizes_search_and_fixed_override():
     assert all(
         p["learner"]["size"] == "large" for p in t.get_not_so_random_params(1, [])
     )
+
+
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+@pytest.mark.parametrize("precision", [None, "fp16", "fp32"])
+def test_initial_precision_and_fixed_overrides(algorithm, precision):
+    custom = {algorithm: {"precision": precision}} if precision else {}
+    t = tuner(algorithms=[algorithm], custom_params=custom)
+    assert t.default_params(0)[0]["learner"]["precision"] == (precision or "fp16")
+    for seed in range(5):
+        assert t._get_model_params(algorithm, seed)["learner"]["precision"] == (
+            precision or "fp16"
+        )
+
+
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+@pytest.mark.parametrize("precision", [None, "fp16", "fp32"])
+@pytest.mark.parametrize("available", [True, False])
+def test_precision_hill_climbing_admission_and_deduplication(
+    algorithm, precision, available
+):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    custom = {algorithm: {"precision": precision}} if precision else {}
+    t = tuner(algorithms=[algorithm], custom_params=custom)
+    params = t.default_params(0)[0]
+    original = copy.deepcopy(params)
+    fold = SimpleNamespace(can_try_fp32=Mock(return_value=available))
+    model = SimpleNamespace(params=params, get_name=lambda: "1_Model", learners=[fold])
+    frame = pd.DataFrame({"model_type": [algorithm], "model": [model]})
+    t._unique_params_keys.append(t.get_params_key(params))
+    # Generic hill climbing may also propose FP32; schedule only one copy.
+    proposal = dict(params["learner"], precision="fp32")
+    with patch.object(
+        t, "df_models_algorithms", return_value=(frame, [algorithm])
+    ), patch("supervised.tuner.mljar_tuner.HillClimbing.get", return_value=[proposal]):
+        candidates = t.get_hill_climbing_params([model])
+        if available and precision is None:
+            assert len(candidates) == 1
+            assert candidates[0]["learner"] == dict(params["learner"], precision="fp32")
+            t._unique_params_keys.append(t.get_params_key(candidates[0]))
+            assert not t.get_hill_climbing_params([model])
+        else:
+            assert candidates == []
+    assert params == original
+
+
+def test_precision_trial_checks_every_fold_and_skips_missing_metadata():
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    t = tuner()
+    params = t.default_params(0)[0]
+    model = SimpleNamespace(params=params, get_name=lambda: "1_Kumo")
+    frame = pd.DataFrame({"model_type": ["Kumo"], "model": [model]})
+    with patch.object(t, "df_models_algorithms", return_value=(frame, ["Kumo"])), patch(
+        "supervised.tuner.mljar_tuner.HillClimbing.get",
+        side_effect=lambda *a: [None, None],
+    ):
+        assert t.get_hill_climbing_params([model]) == []
+        model.learners = [
+            SimpleNamespace(can_try_fp32=Mock(return_value=True)),
+            SimpleNamespace(can_try_fp32=Mock(return_value=False)),
+        ]
+        assert t.get_hill_climbing_params([model]) == []
+        for fold in model.learners:
+            fold.can_try_fp32.assert_called_once()

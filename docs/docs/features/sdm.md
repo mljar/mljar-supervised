@@ -62,6 +62,19 @@ temperature are not separate tuning parameters in this integration.
 | `num_estimators` | `[4, 8, 16]` | `8` |
 | `max_context_size` | `[1024, 4096, 8192]` | `4096` |
 | `size` (Kumo only) | `["small", "medium", "large"]` | `"small"` |
+| `precision` | `["fp16", "fp32"]` (hill climbing) | `"fp16"` on CUDA |
+
+Precision tuning is available in the development version after `1.4.0rc3`.
+
+Initial default and random candidates use FP16 mixed precision on CUDA. During
+hill climbing, the best eligible configurations can also be evaluated in FP32,
+using the same context, seed, and other settings. This is a separate candidate:
+validation scores determine whether it improves the model. FP32 does not
+necessarily improve accuracy and usually costs more memory and inference time.
+Trials require GPU fold metadata and must pass a conservative RAM/VRAM check;
+the normal tuning time limits still apply. CPU inference always uses FP32 and
+does not generate a second candidate solely to change precision. Optuna does
+not currently support these algorithms.
 
 Parameters supplied in `custom_params` are fixed values and are removed from
 search variation. For example:
@@ -77,6 +90,22 @@ Here context size can still vary. To use all registered search values, omit thos
 fixed overrides. Resource settings (`device`, prediction batch size, and memory
 budgets) are controls, not accuracy-tuning parameters.
 
+To fix precision for all candidates, use:
+
+```python
+custom_params = {
+    "kumo": {"precision": "fp16"},
+    "tabiclv2": {"precision": "fp32"},
+}
+```
+
+Omit `precision` to start with FP16 and allow FP32 trials during hill climbing.
+The chosen setting is saved with each learner and reused for prediction and
+reload. Training logs record both the requested and effective precision, and
+the model report shows effective precision. A CPU fallback uses FP32 even if
+the saved request is FP16. A resource shortage never silently changes a GPU
+candidate's selected precision.
+
 ## Input and resource limits
 
 Kumo tuning can try all three sizes. Fix `custom_params={"kumo": {"size": "large"}}`
@@ -86,7 +115,7 @@ Candidates that exceed the budget fail without silently changing size.
 
 Fixed overrides may use any positive integer context/ensemble size, subject to
 memory admission. `predict_batch_size` defaults to 128. Estimators execute
-sequentially and use uncached context inference to bound memory. There are no
+sequentially, with request-local context caching when memory permits. There are no
 learning-rate, depth, epoch, or ordinary early-stopping settings.
 
 Only a reproducible sample of training-fold rows becomes labeled context; each
@@ -121,6 +150,29 @@ Version `1.4.0rc3` also loads saved fold networks lazily
 and releases them after each fold prediction. Stacking and ensembles reuse
 shared model predictions within each request, avoiding repeated SDM inference.
 See [prediction memory and reuse](save-and-load-models.md#prediction-memory-and-reuse).
+
+SDM predictions prepare a fold's context once and reuse it across query batches.
+Ensemble members execute sequentially; SDM offloads their caches to host memory.
+The cache lives only for that prediction request and is cleared on success,
+deadline expiry or failure. Requests sharing a frozen network serialize access
+to its context. If the conservative cache RAM estimate exceeds the configured
+memory allowance, prediction uses uncached inference with the same context,
+seed, estimator count and checkpoint. Resource estimates are not hard RSS limits.
+
+Short query batches are padded internally to `predict_batch_size` and the extra
+outputs are discarded. This keeps kernel shapes consistent for full-batch and
+subset requests at the same configured batch size. Both algorithms default to
+FP16 mixed precision on CUDA, keeping the pretrained weights in their original
+dtype. FP32 CUDA calls disable TF32 temporarily and restore the previous setting
+afterward. Changing precision or the configured batch size can change numerical
+rounding and probabilities; it is not a bitwise-equivalent optimization.
+Same-configuration subset/reload checks remain strict. Cached and uncached
+calculations are also compared in FP32 tests.
+
+Model weights and feature mappings are unchanged by context reuse. Floating-point
+rounding can differ from older releases, especially for TabICLv2's previous FP16
+CUDA path. Full precision can be slower for small TabICLv2 query sets; context
+reuse saves repeated work as the number of query batches grows.
 
 Version `1.4.0rc3` handles Kumo's mixed-precision RMS
 normalization fallback explicitly in FP32, retaining the checkpoint weights,

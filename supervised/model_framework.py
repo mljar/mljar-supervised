@@ -732,7 +732,10 @@ class ModelFramework:
             desc += "Saved artifacts retain labeled training context. SHAP is not enabled.\n\n"
             for learner in self.learners:
                 info = getattr(learner, "training_info", {})
-                desc += f"- {learner.name}: {info.get('context_rows')} context rows from {info.get('training_rows')} training rows, {info.get('num_estimators')} estimators, {info.get('device')}. "
+                precision = info.get(
+                    "precision", "fp16" if info.get("device", "").startswith("cuda") else "fp32"
+                )
+                desc += f"- {learner.name}: {info.get('context_rows')} context rows from {info.get('training_rows')} training rows, {info.get('num_estimators')} estimators, {info.get('device')}, {precision}. "
                 desc += f"[Checkpoint and resource details]({learner.name}_training.log.json)\n"
         return desc
 

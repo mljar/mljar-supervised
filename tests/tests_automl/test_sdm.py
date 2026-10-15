@@ -150,6 +150,73 @@ def test_compete_both_algorithms_and_reload(tmp_path):
 @pytest.mark.skipif(
     os.environ.get("MLJAR_TEST_SDM") != "1", reason="checkpoint integration"
 )
+def test_compete_precision_trials_and_saved_reports(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setattr(
+        "supervised.tuner.mljar_tuner.HillClimbing.get", lambda *args: [None, None]
+    )
+    X, y = make_classification(n_samples=120, n_features=5, random_state=42)
+    device = os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu")
+    model = AutoML(
+        results_path=str(tmp_path / "automl"),
+        mode="Compete",
+        algorithms=["Kumo", "TabICLv2"],
+        model_time_limit=60,
+        train_ensemble=False,
+        stack_models=False,
+        golden_features=False,
+        feature_discovery=False,
+        features_selection=False,
+        boost_on_errors=False,
+        kmeans_features=False,
+        mix_encoding=False,
+        explain_level=0,
+        start_random_models=1,
+        hill_climbing_steps=1,
+        top_models_to_improve=1,
+        n_jobs=2,
+        validation_strategy={
+            "validation_type": "split",
+            "train_ratio": 0.8,
+            "shuffle": True,
+            "stratify": True,
+        },
+        custom_params={
+            name: {
+                "device": device,
+                "max_context_size": 64,
+                "num_estimators": 1,
+                "local_files_only": True,
+            }
+            for name in ["kumo", "tabiclv2"]
+        },
+    )
+    model.fit(X, y)
+    precisions = ["fp16", "fp32"] if device.startswith("cuda") else ["fp16"]
+    assert {
+        (m.get_type(), m.params["learner"]["precision"]) for m in model._models
+    } == {(name, p) for name in ["Kumo", "TabICLv2"] for p in precisions}
+    for m in model._models:
+        requested = m.params["learner"]["precision"]
+        effective = requested if device.startswith("cuda") else "fp32"
+        for learner in m.learners:
+            assert learner.training_info["precision"] == effective
+        path = tmp_path / "automl" / m.get_name()
+        assert effective in (path / "README.md").read_text()
+        for log in path.glob("*_training.log.json"):
+            info = json.loads(log.read_text())
+            assert info["requested_precision"] == requested
+            assert info["precision"] == effective
+        assert all(l.model is None for l in m.learners)
+    p = model.predict_proba(X[:17])
+    loaded = AutoML(results_path=str(tmp_path / "automl"))
+    np.testing.assert_allclose(p, loaded.predict_proba(X[:17]), atol=1e-6)
+
+
+@pytest.mark.skipif(
+    os.environ.get("MLJAR_TEST_SDM") != "1", reason="checkpoint integration"
+)
 def test_automatic_weights_skip_both(tmp_path, monkeypatch):
     X, y = make_classification(n_samples=100, n_features=5, random_state=42)
     m = AutoML(

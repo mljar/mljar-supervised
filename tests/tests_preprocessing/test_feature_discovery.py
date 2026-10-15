@@ -14,11 +14,90 @@ from supervised.preprocessing.feature_discovery_transformer import (
     FeatureDiscovery,
     FeatureDiscoveryTransformer,
     check_dependencies,
+    discovery_input,
+    fingerprint,
 )
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.preprocessing.scale import Scale
 from supervised.utils.utils import Store, dump_data
 from supervised.validation.validation_step import ValidationStep
+
+
+def mixed_frame():
+    return pd.DataFrame(
+        {
+            "number": np.arange(6, dtype=np.int64),
+            "category": pd.Categorical(["a", "b", "c", "a", "b", "c"]),
+            "small": np.arange(6, dtype=np.uint8),
+            "value": np.arange(6, dtype=float),
+            "flag": pd.Categorical(["yes", "no"] * 3),
+        },
+        index=[11, 13, 17, 19, 23, 29],
+    )
+
+
+def test_fingerprint_ignores_dataframe_storage_layout(tmp_path):
+    X = mixed_frame()
+    y = pd.Series([0, 1] * 3, index=X.index, name="target")
+    selected = X[list(X.columns)]
+    assert_frame_equal(X, selected)
+    expected = fingerprint(X, y)
+    assert fingerprint(selected, y.copy(deep=False)) == expected
+    assert fingerprint(pd.concat([X[[c]] for c in X], axis=1), y) == expected
+    path = tmp_path / "data.joblib"
+    joblib.dump((selected, y), path)
+    assert fingerprint(*joblib.load(path)) == expected
+
+
+@pytest.mark.parametrize(
+    "change", ["value", "target", "rows", "index", "dtype", "categories", "columns"]
+)
+def test_fingerprint_rejects_changed_data_and_schema(change):
+    X = mixed_frame()
+    y = pd.Series([0, 1] * 3, index=X.index, name="target")
+    expected = fingerprint(X, y)
+    if change == "value":
+        X.iloc[0, 0] += 1
+    elif change == "target":
+        y.iloc[0] = 1
+    elif change == "rows":
+        X, y = X.iloc[::-1], y.iloc[::-1]
+    elif change == "index":
+        X.index = range(len(X))
+    elif change == "dtype":
+        X["small"] = X.small.astype(np.int64)
+    elif change == "categories":
+        X["category"] = X.category.cat.reorder_categories(["c", "b", "a"])
+    else:
+        X = X[list(reversed(X.columns))]
+    assert fingerprint(X, y) != expected
+
+
+def test_cached_training_features_accept_equivalent_mixed_frame(tmp_path):
+    X = mixed_frame()
+    y = pd.Series([0, 1] * 3, index=X.index, name="target")
+    values = pd.DataFrame({"encoded": np.arange(len(X))}, index=X.index)
+    joblib.dump(values, tmp_path / "training.joblib")
+    info = dict(
+        fingerprint=fingerprint(X, y),
+        fingerprint_version=2,
+        input_columns=list(X),
+        directory=".",
+        sets={"default": ["encoded"]},
+        rename={"encoded": "new_feature"},
+    )
+    adapter = FeatureDiscoveryTransformer(info, "default", tmp_path)
+    actual = adapter.fit_transform(X[list(X)], y.copy(deep=False))
+    assert_frame_equal(actual, values.rename(columns=info["rename"]))
+    with pytest.raises(AutoMLException, match="changed"):
+        adapter.fit_transform(X, y + 1)
+    # RC3 manifests omit the version. Keep their original hash interpretation.
+    legacy = {**info, "fingerprint": fingerprint(discovery_input(X), y, version=1)}
+    legacy.pop("fingerprint_version")
+    assert_frame_equal(
+        actual,
+        FeatureDiscoveryTransformer(legacy, "default", tmp_path).fit_transform(X, y),
+    )
 
 
 def discovery_data(tmp_path):
@@ -168,7 +247,10 @@ def test_unavailable_profiles_and_expired_budget(tmp_path, monkeypatch):
         "supervised.preprocessing.feature_discovery_transformer.check_dependencies",
         lambda: FakeGoldmine,
     )
-    monkeypatch.setattr("supervised.preprocessing.feature_discovery_transformer.importlib.metadata.version", lambda name: "1.1.0")
+    monkeypatch.setattr(
+        "supervised.preprocessing.feature_discovery_transformer.importlib.metadata.version",
+        lambda name: "1.1.0",
+    )
     discovery = FeatureDiscovery(tmp_path, "regression", 42, 1, store)
     assert discovery.prepare(params, 0) is None
     assert FakeGoldmine.calls == 0

@@ -63,7 +63,11 @@ class PreprocessingCategorical(object):
                 # convert to integer
                 lbl = LabelEncoder()
                 lbl.from_json(lbl_params)
-                transformed_values = lbl.transform(X.loc[:, column])
+                # All unseen feature values share a fixed code after the fitted
+                # classes. Their encoding cannot depend on batch size or order.
+                transformed_values = lbl.transform(
+                    X.loc[:, column], unknown_value=len(lbl_params)
+                )
                 # Replace the column so boolean/string/category extension dtypes
                 # cannot reject encoded integer values (#333).
                 X[column] = transformed_values

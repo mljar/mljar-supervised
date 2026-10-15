@@ -971,6 +971,7 @@ class MljarTuner:
         df_models, algorithms = self.df_models_algorithms(current_models)
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
+        seen_keys = set(self._unique_params_keys)
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
@@ -980,9 +981,23 @@ class MljarTuner:
 
             m = df_models["model"].iloc[i]
 
-            for p in HillClimbing.get(
-                m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+            candidates = list(
+                HillClimbing.get(
+                    m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+                )
+            )
+            is_sdm = model_type in ["Kumo", "TabICLv2"]
+            overrides = self._custom_params.get(algorithm_key(model_type), {})
+            if (
+                is_sdm
+                and "precision" not in overrides
+                and m.params["learner"].get("precision", "fp16") == "fp16"
             ):
+                # Compare precision on the same promising configuration. Initial
+                # search stays in FP16; this trial uses the usual tuning budget.
+                candidates.append(dict(m.params["learner"], precision="fp32"))
+
+            for p in candidates:
                 model_indices = [
                     int(m.get_name().split("_")[0]) for m in current_models
                 ]
@@ -992,7 +1007,25 @@ class MljarTuner:
                     "Hill climbing step, for model #{0}".format(model_max_index + 1)
                 )
                 if p is not None:
-                    p.update(self._custom_params.get(algorithm_key(model_type), {}))
+                    p.update(overrides)
+                    unique_params_key = MljarTuner.get_params_key(
+                        dict(m.params, learner=p)
+                    )
+                    if unique_params_key in seen_keys:
+                        continue
+                    seen_keys.add(unique_params_key)
+                    if (
+                        is_sdm
+                        and p.get("precision", "fp16") == "fp32"
+                        and m.params["learner"].get("precision", "fp16") != "fp32"
+                    ):
+                        learners = getattr(m, "learners", [])
+                        if not learners or not all(l.can_try_fp32(p) for l in learners):
+                            logger.info(
+                                f"Skip FP32 trial for {m.get_name()}: "
+                                "no eligible GPU context within the memory budget."
+                            )
+                            continue
                     all_params = copy.deepcopy(m.params)
                     all_params["learner"] = p
 
@@ -1019,10 +1052,7 @@ class MljarTuner:
                     all_params["status"] = "initialized"
                     all_params["final_loss"] = None
                     all_params["train_time"] = None
-                    unique_params_key = MljarTuner.get_params_key(all_params)
-
-                    if unique_params_key not in self._unique_params_keys:
-                        generated_params += [all_params]
+                    generated_params += [all_params]
 
         return generated_params
 
@@ -1476,7 +1506,10 @@ class MljarTuner:
             model_params["seed"] = seed
 
         else:
-            model_params = RandomParameters.get(model_info["params"], seed + self._seed)
+            search_params = model_info["params"]
+            if model_type in ["Kumo", "TabICLv2"]:
+                search_params = dict(search_params, precision=["fp16"])
+            model_params = RandomParameters.get(search_params, seed + self._seed)
         if model_params is None:
             return None
 

@@ -1,11 +1,150 @@
 """Lazy SDM/PyTorch adapter. Frozen weights are loaded from pinned local files."""
 
+from contextlib import contextmanager
+import threading
+import weakref
+
 import numpy as np
 import pandas as pd
 import torch
 import sdm
 from sdm._kernels.rmsnorm_cast import _triton_rmsnorm_cast
 from sdm.models.callback import Callback
+
+
+_network_locks = weakref.WeakKeyDictionary()
+_network_locks_guard = threading.Lock()
+
+
+def _network_lock(model):
+    # Early-stopping copies share frozen weights, but a fitted SDM context is
+    # mutable. Serialize requests sharing that network, without retaining it.
+    with _network_locks_guard:
+        if model not in _network_locks:
+            _network_locks[model] = threading.RLock()
+        return _network_locks[model]
+
+
+def _cache_fits_memory(learner):
+    from supervised.algorithms.realmlp_resources import available_memory
+    from supervised.algorithms.sdm import working_memory_bytes
+
+    rows = len(learner.context)
+    cols = learner.training_info.get("effective_columns", learner.context.shape[1])
+    # SDM offloads ensemble caches to host memory. Allow a conservative working
+    # allocation per member, in addition to model and inference workspaces.
+    working = working_memory_bytes(
+        learner.params, learner.algorithm_short_name, rows, cols, learner.device
+    )
+    weights = sum(p.numel() * p.element_size() for p in learner.model.parameters())
+    estimate = (
+        512 * 1024**2
+        + 3 * weights
+        + working * (1 + learner.params.get("num_estimators", 8))
+    )
+    budget = available_memory() * learner.params.get("memory_fraction", 0.6)
+    if learner.params.get("memory_limit_gb") is not None:
+        budget = min(budget, learner.params["memory_limit_gb"] * 1024**3)
+    return estimate <= budget
+
+
+def _pad_query(frame, batch_size):
+    # In FP16, changing GEMM shapes changes rounding even for identical rows.
+    # Queries attend only to context, so duplicate padding rows do not affect
+    # real queries. Keep the configured shape even for a one-row request.
+    if 0 < len(frame) < batch_size:
+        return pd.concat(
+            [frame, frame.iloc[[-1] * (batch_size - len(frame))]], ignore_index=True
+        )
+    return frame
+
+
+def _prediction_values(learner, out):
+    if learner.ml_task == "regression":
+        return out.numerical.float().mean(dim=-1).cpu().numpy()
+    columns = out.columns[sdm.Stype.numerical]
+    indices = [columns.index(str(i)) for i in range(len(learner.classes_))]
+    probabilities = out.numerical[..., indices].float().cpu().numpy()
+    probabilities = np.clip(probabilities, 0, 1)
+    return probabilities / probabilities.sum(axis=-1, keepdims=True)
+
+
+@contextmanager
+def _autocast(learner):
+    # Precision is part of each candidate's saved configuration. CPU stays in
+    # FP32; explicit FP32 CUDA trials also disable TF32 for this call.
+    full_precision = learner.effective_precision == "fp32"
+    disable_tf32 = full_precision and learner.device.startswith("cuda")
+    old_tf32 = torch.backends.cuda.matmul.allow_tf32
+    try:
+        if disable_tf32:
+            torch.backends.cuda.matmul.allow_tf32 = False
+        with torch.amp.autocast(
+            torch.device(learner.device).type,
+            dtype=torch.float16,
+            enabled=learner.device.startswith("cuda") and not full_precision,
+        ):
+            yield
+    finally:
+        if disable_tf32:
+            torch.backends.cuda.matmul.allow_tf32 = old_tf32
+
+
+@contextmanager
+def prediction_session(learner):
+    """Reuse a fold's context across query batches, clearing it on every exit."""
+    model = learner.model
+    with _network_lock(model), torch.inference_mode(), _autocast(learner):
+        try:
+            learner._check_time()
+            use_cache = _cache_fits_memory(learner)
+            types = {
+                c: "categorical" if isinstance(t, pd.CategoricalDtype) else "numerical"
+                for c, t in learner.context.dtypes.items()
+            }
+            if use_cache:
+                context = sdm.TableTensor.from_pandas(
+                    learner.context, stypes=types, device=learner.device
+                )
+                regression = learner.ml_task == "regression"
+                target = sdm.TableTensor.from_pandas(
+                    pd.DataFrame({"target": learner.context_y}),
+                    stypes={"target": "numerical" if regression else "categorical"},
+                    device=learner.device,
+                )
+                # SDM.fit does not call on_model_forward_end. A temporary hook
+                # keeps deadline checks between context-encoding estimators.
+                network = model.models["regression" if regression else "classification"]
+                with network.register_forward_hook(lambda *_: learner._check_time()):
+                    model.fit(
+                        context,
+                        target,
+                        num_estimators=learner.params.get("num_estimators", 8),
+                        estimator_batch_size=1,
+                        generator=torch.Generator(learner.device).manual_seed(
+                            learner.params.get("seed", 1234)
+                        ),
+                        callbacks=[DeadlineCallback(learner._check_time)],
+                    )
+                learner._check_time()
+                del context, target
+
+            def predict(frame):
+                count = len(frame)
+                frame = _pad_query(frame, learner.params.get("predict_batch_size", 128))
+                if not use_cache:
+                    return predict_batch(learner, frame)[:count]
+                query = sdm.TableTensor.from_pandas(
+                    frame, stypes=types, device=learner.device
+                )
+                out = model.predict(
+                    query, callbacks=[DeadlineCallback(learner._check_time)]
+                )
+                return _prediction_values(learner, out)[:count]
+
+            yield predict
+        finally:
+            model.clear()
 
 
 class _KumoRMSNorm(sdm.nn.RMSNorm):
@@ -109,11 +248,7 @@ def predict_batch(learner, frame):
         stypes={"target": "numerical" if regression else "categorical"},
         device=learner.device,
     )
-    with torch.inference_mode(), torch.amp.autocast(
-        torch.device(learner.device).type,
-        dtype=torch.float16,
-        enabled=learner.device.startswith("cuda"),
-    ):
+    with torch.inference_mode(), _autocast(learner):
         out = learner.model(
             x_context=context,
             y_context=y,
@@ -125,10 +260,4 @@ def predict_batch(learner, frame):
             ),
             callbacks=[DeadlineCallback(learner._check_time)],
         )
-    if regression:
-        return out.numerical.float().mean(dim=-1).cpu().numpy()
-    columns = out.columns[sdm.Stype.numerical]
-    indices = [columns.index(str(i)) for i in range(len(learner.classes_))]
-    probabilities = out.numerical[..., indices].float().cpu().numpy()
-    probabilities = np.clip(probabilities, 0, 1)
-    return probabilities / probabilities.sum(axis=-1, keepdims=True)
+    return _prediction_values(learner, out)

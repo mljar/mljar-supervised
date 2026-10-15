@@ -43,8 +43,12 @@ CHECKPOINTS = {
     "Kumo": ("nvidia/Kumo-Tabular", "3c3e10bbdb590ace29e7026847f92db3c603096d"),
     "TabICLv2": ("jingang/TabICL", "4dcd344ece2c00be9e831fdd35bed57b5ad83e19"),
 }
-SEARCH_PARAMS = {"num_estimators": [4, 8, 16], "max_context_size": [1024, 4096, 8192]}
-DEFAULT_PARAMS = {"num_estimators": 8, "max_context_size": 4096}
+SEARCH_PARAMS = {
+    "num_estimators": [4, 8, 16],
+    "max_context_size": [1024, 4096, 8192],
+    "precision": ["fp16", "fp32"],
+}
+DEFAULT_PARAMS = {"num_estimators": 8, "max_context_size": 4096, "precision": "fp16"}
 OPTIONS = set(DEFAULT_PARAMS) | {
     "device",
     "predict_batch_size",
@@ -67,6 +71,8 @@ def validate_options(options, algorithm):
             raise ValueError(f"{algorithm} {key} must be a positive integer")
     if options.get("size", "small") not in ["small", "medium", "large"]:
         raise ValueError("Kumo size must be small, medium or large")
+    if options.get("precision", "fp16") not in ["fp16", "fp32"]:
+        raise ValueError(f"{algorithm} precision must be fp16 or fp32")
     device = options.get("device", "auto")
     if not isinstance(device, str) or not (
         device in ["auto", "cpu", "cuda"]
@@ -112,6 +118,30 @@ def automatic_available():
         return False
 
 
+def working_memory_bytes(params, algorithm, rows, cols, device):
+    size_factor = (
+        {"small": 1, "medium": 3, "large": 6}[params.get("size", "small")]
+        if algorithm == "Kumo"
+        else 1
+    )
+    # Retain the conservative mixed-precision allowance; FP32 CUDA workspaces
+    # need additional room. CPU already uses full-precision buffers.
+    precision_factor = (
+        2
+        if device.startswith("cuda") and params.get("precision", "fp16") == "fp32"
+        else 1
+    )
+    return (
+        (rows + params.get("predict_batch_size", 128))
+        * max(cols, 1)
+        * 128
+        * 4
+        * 8
+        * size_factor
+        * precision_factor
+    )
+
+
 class SDMAlgorithm(RealMLPAlgorithm):
     """Pretrained inference with bounded, fold-local context and no fine-tuning."""
 
@@ -135,6 +165,37 @@ class SDMAlgorithm(RealMLPAlgorithm):
 
     def is_fitted(self):
         return self.model is not None and hasattr(self, "context")
+
+    @property
+    def effective_precision(self):
+        return (
+            self.params.get("precision", "fp16")
+            if self.device.startswith("cuda")
+            else "fp32"
+        )
+
+    def can_try_fp32(self, params):
+        """Check a fitted fold's FP32 variant without loading its network."""
+        info = self.training_info
+        try:
+            if not info and self.model_file_path:
+                log = Path(self.model_file_path).with_name(
+                    Path(self.model_file_path).stem + "_training.log.json"
+                )
+                info = json.loads(log.read_text())
+            if not info.get("device", "cpu").startswith("cuda"):
+                return False  # CPU already computes in FP32.
+            checkpoint_bytes = info.get("checkpoint_bytes")
+            if checkpoint_bytes is None:
+                checkpoint_bytes = Path(self.checkpoint_path).stat().st_size
+            candidate = type(self)(dict(params, precision="fp32"))
+            candidate.device = info["device"]
+            candidate._check_resources(
+                info["context_rows"], info["effective_columns"], checkpoint_bytes
+            )
+        except (AutoMLException, OSError, KeyError, AttributeError):
+            return False
+        return True
 
     def _check_time(self):
         if self._deadline is not None and time.monotonic() >= self._deadline:
@@ -161,16 +222,12 @@ class SDMAlgorithm(RealMLPAlgorithm):
 
     def _check_resources(self, rows, cols, checkpoint_bytes=0):
         """Conservative admission estimate, not a hardware-independent size guarantee."""
-        batch = self.params.get("predict_batch_size", 128)
         members = self.params.get("num_estimators", 8)
         # Cell embeddings, attention workspaces, model/loading copies, and host frames.
         # Larger Kumo checkpoints also widen/deepen attention and embeddings.
-        size_factor = (
-            {"small": 1, "medium": 3, "large": 6}[self.params.get("size", "small")]
-            if self.algorithm_short_name == "Kumo"
-            else 1
+        working = working_memory_bytes(
+            self.params, self.algorithm_short_name, rows, cols, self.device
         )
-        working = (rows + batch) * max(cols, 1) * 128 * 4 * 8 * size_factor
         host = (
             512 * 1024**2 + 3 * checkpoint_bytes + working + members * rows * cols * 16
         )
@@ -379,6 +436,9 @@ class SDMAlgorithm(RealMLPAlgorithm):
                 else None
             ),
             device=self.device,
+            precision=self.effective_precision,
+            requested_precision=self.params.get("precision", "fp16"),
+            checkpoint_bytes=Path(self.checkpoint_path).stat().st_size,
             checkpoint=self.checkpoint_info,
             resources=resources,
             validation_score=score,
@@ -416,22 +476,24 @@ class SDMAlgorithm(RealMLPAlgorithm):
         if not self.is_fitted():
             raise AutoMLException("SDM model is not fitted")
         import torch
-        from supervised.algorithms._sdm_backend import predict_batch
+        from supervised.algorithms._sdm_backend import prediction_session
 
         outputs = []
         batch_size = self.params.get("predict_batch_size", 128)
         old_threads = torch.get_num_threads()
         try:
             torch.set_num_threads(thread_count(self.params.get("n_jobs", -1)))
-            for start in range(0, len(X), batch_size):
-                self._check_time()
-                batch = (
-                    X.iloc[start : start + batch_size]
-                    if isinstance(X, pd.DataFrame)
-                    else X[start : start + batch_size]
-                )
-                outputs.append(predict_batch(self, self._preprocess(batch)))
-                self._check_time()
+            if len(X):
+                with prediction_session(self) as predict_batch:
+                    for start in range(0, len(X), batch_size):
+                        self._check_time()
+                        batch = (
+                            X.iloc[start : start + batch_size]
+                            if isinstance(X, pd.DataFrame)
+                            else X[start : start + batch_size]
+                        )
+                        outputs.append(predict_batch(self._preprocess(batch)))
+                        self._check_time()
         except torch.cuda.OutOfMemoryError as exc:
             torch.cuda.empty_cache()
             raise AutoMLException(

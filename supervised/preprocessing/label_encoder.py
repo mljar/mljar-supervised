@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal
 
 import numpy as np
+import pandas as pd
 from sklearn import preprocessing as sk_preproc
 
 from supervised.utils.config import LOG_LEVEL
@@ -34,7 +35,7 @@ class LabelEncoder(object):
             except Exception as e:
                 pass
 
-    def _normalize_booleans(self, x):
+    def _normalize_booleans(self, x, allow_unknown=False):
         values = np.asarray(x)
         classes = getattr(self.lbl, "classes_", None)
         if classes is None:
@@ -42,7 +43,7 @@ class LabelEncoder(object):
         if classes.size and all(
             isinstance(value, (bool, np.bool_)) for value in classes
         ):
-            if any(
+            if not allow_unknown and any(
                 isinstance(value, str) and value not in ("False", "True")
                 for value in values.flat
             ):
@@ -62,6 +63,8 @@ class LabelEncoder(object):
                     normalized.append(value == "True")
                 elif isinstance(value, (int, float, np.number)) and value in (0, 1):
                     normalized.append(bool(value))
+                elif allow_unknown:
+                    normalized.append(value)
                 else:
                     raise ValueError(f"Invalid boolean label: {value!r}")
             # Object lookup preserves codes when an unseen boolean is appended
@@ -88,8 +91,18 @@ class LabelEncoder(object):
                 return np.array(normalized, dtype=object).reshape(values.shape)
         return x
 
-    def transform(self, x):
-        x = self._normalize_booleans(x)
+    def transform(self, x, *, unknown_value=None):
+        x = self._normalize_booleans(x, allow_unknown=unknown_value is not None)
+        if unknown_value is not None:
+            # Feature encodings must not learn new codes from prediction batches.
+            # JSON mappings have string keys, including numeric categories. Avoid
+            # casting to classes_.dtype, which can truncate longer unseen strings.
+            values = np.asarray(x)
+            if self.lbl.classes_.dtype.kind == "U":
+                values = values.astype(str)
+            encoded = pd.Index(self.lbl.classes_).get_indexer(values)
+            encoded[encoded < 0] = unknown_value
+            return encoded
         try:
             return self.lbl.transform(x)  # list(x.values))
         except ValueError as ve:

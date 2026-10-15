@@ -62,6 +62,14 @@ Categorical columns are detected automatically.
 
 You do not need to run `pd.get_dummies()` before training.
 
+Integer feature encoders keep the mappings learned during fitting. Every unseen
+category receives the same reserved code, equal to the number of fitted
+categories. The code does not depend on other rows in the prediction batch or
+on earlier prediction requests. Known-category codes remain unchanged after
+save/reload. This policy also applies to loaded older models, so predictions
+containing unseen categories can differ from earlier releases that assigned
+new codes separately in each batch. Target-label encoding is unchanged.
+
 With `mix_encoding=True`, the tuner can also try mixed categorical encoding for
 `Neural Network`: low-cardinality columns use one-hot encoding, while columns
 with many categories keep integer encoding. When switching strategies, AutoML

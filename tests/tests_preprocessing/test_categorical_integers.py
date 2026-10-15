@@ -152,11 +152,11 @@ class CategoricalIntegersTest(unittest.TestCase):
         for col in ["col1", "col2", "col3", "col4"]:
             self.assertTrue(col in df.columns)
         self.assertEqual(df["col2"][0], 0)
-        self.assertEqual(df["col2"][1], 2)  # new values get higher indexes
-        self.assertEqual(df["col2"][2], 3)  # new values get higher indexes
-        self.assertEqual(df["col4"][0], 3)  # new values get higher indexes
+        self.assertEqual(df["col2"][1], 2)  # unseen values share one fixed code
+        self.assertEqual(df["col2"][2], 2)
+        self.assertEqual(df["col4"][0], 3)
         self.assertEqual(df["col4"][1], 1)
-        self.assertEqual(df["col4"][2], 4)  # new values get higher indexes
+        self.assertEqual(df["col4"][2], 3)
 
     def test_to_and_from_json_convert_integers(self):
         # training data

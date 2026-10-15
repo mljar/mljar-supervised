@@ -336,6 +336,9 @@ class AutoML(BaseAutoML):
                 name, for example `{"realmlp": {"device": "auto", "hidden_width": 64}}`.
                 Names are case-insensitive; spaces, underscores and hyphens are ignored.
                 Overrides remain fixed during random search and hill climbing.
+                Kumo and TabICLv2 accept `precision="fp16"` or `"fp32"`.
+                Without a precision override, CUDA candidates start in FP16 and
+                hill climbing may try FP32 when memory permits. CPU uses FP32.
                 Custom overrides are currently unsupported in Optuna mode.
                 Compete automatically includes RealMLP and TabM mini when their optional dependencies are installed.
                 Providing overrides alone does not select an algorithm.

@@ -185,6 +185,9 @@ def test_context_sampling_preserves_rare_classes(cls):
         {"size": "extra-large"},
         {"lr": 0.1},
         {"memory_fraction": 2},
+        {"precision": "bf16"},
+        {"precision": 16},
+        {"precision": None},
     ],
 )
 def test_invalid_options(options):
@@ -215,7 +218,61 @@ def test_resource_and_deadline_rejection(cls):
         m._check_time()
 
 
+@pytest.mark.parametrize("cls", CLASSES)
+def test_precision_resources_and_cpu_behavior(cls, monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "supervised.algorithms.sdm.available_memory", lambda: 100 * 1024**3
+    )
+    monkeypatch.setattr(
+        "supervised.algorithms.realmlp_resources.available_gpu_memory",
+        lambda _: (100 * 1024**3, 100 * 1024**3),
+    )
+    m = cls({"ml_task": "binary_classification", "precision": "fp16"})
+    assert m.effective_precision == "fp32"
+    cpu = m._check_resources(1024, 10, 100_000_000)
+    m.params["precision"] = "fp32"
+    assert m._check_resources(1024, 10, 100_000_000) == cpu
+    m.device = "cuda:0"
+    fp32 = m._check_resources(1024, 10, 100_000_000)
+    m.params["precision"] = "fp16"
+    fp16 = m._check_resources(1024, 10, 100_000_000)
+    assert m.effective_precision == "fp16"
+    assert fp32["estimated_vram_bytes"] > fp16["estimated_vram_bytes"]
+    assert fp32["estimated_ram_bytes"] > fp16["estimated_ram_bytes"]
+    m.training_info = dict(
+        device=m.device,
+        context_rows=1024,
+        effective_columns=10,
+        checkpoint_bytes=100_000_000,
+    )
+    assert m.can_try_fp32(m.params)
+    budget = (fp16["estimated_vram_bytes"] + fp32["estimated_vram_bytes"]) / 2 / 1024**3
+    m.params["gpu_memory_limit_gb"] = budget
+    m._check_resources(1024, 10, 100_000_000)  # FP16 still fits.
+    assert not m.can_try_fp32(m.params)
+    assert m.params["precision"] == "fp16"  # No silent candidate mutation.
+    m.params.pop("gpu_memory_limit_gb")
+    assert not m.can_try_fp32(dict(m.params, memory_limit_gb=0.001))
+    # A resumed lazy fold reads lightweight metadata without loading weights.
+    import json
+
+    m.model_file_path = str(tmp_path / "learner_fold_0.kumo")
+    (tmp_path / "learner_fold_0_training.log.json").write_text(
+        json.dumps(m.training_info)
+    )
+    m.training_info = {}
+    monkeypatch.setattr(
+        m, "_load_network", lambda: pytest.fail("Preflight must not load a network")
+    )
+    assert m.can_try_fp32(m.params)
+    (tmp_path / "learner_fold_0_training.log.json").unlink()
+    assert not m.can_try_fp32(m.params)
+    m.training_info = dict(device="cpu")
+    assert not m.can_try_fp32(m.params)
+
+
 @real_models
+@pytest.mark.parametrize("precision", ["fp16", "fp32"])
 @pytest.mark.parametrize(
     "classification,regression",
     [
@@ -228,7 +285,7 @@ def test_resource_and_deadline_rejection(cls):
     [("binary_classification", 2), ("multiclass_classification", 3), ("regression", 0)],
 )
 def test_checkpoint_predictions_and_portable_offline_reload(
-    classification, regression, task, n_classes, tmp_path, monkeypatch
+    classification, regression, task, n_classes, precision, tmp_path, monkeypatch
 ):
     X, y = (
         make_classification(
@@ -258,11 +315,38 @@ def test_checkpoint_predictions_and_portable_offline_reload(
             "predict_batch_size": 128,
             "local_files_only": True,
             "n_jobs": 4,
+            "precision": precision,
         }
     )
     m.fit(train, yt, X_validation=valid, y_validation=yv, max_time=120)
+    assert m.training_info["requested_precision"] == precision
+    assert m.training_info["precision"] == (
+        precision if m.device.startswith("cuda") else "fp32"
+    )
     p = m.predict(valid)
     assert np.isfinite(p).all()
+    assert m.model._cache is None
+    np.testing.assert_allclose(p[:13], m.predict(valid.iloc[:13]), atol=1e-6, rtol=1e-5)
+    # Check mathematical equivalence in FP32. Splitting TabICLv2's context and
+    # query GEMMs changes FP16 rounding (also present in uncached inference).
+    # Request/reload consistency and query-shape tolerances are checked in the
+    # actual production precision separately below.
+    from unittest.mock import patch
+    import torch
+
+    scale = float(np.std(yt)) if not n_classes else 1.0
+    with patch(
+        "supervised.algorithms._sdm_backend._autocast",
+        lambda _: torch.autocast(m.device.split(":")[0], enabled=False),
+    ):
+        cached_fp32 = m.predict(valid)
+        with patch(
+            "supervised.algorithms._sdm_backend._cache_fits_memory", return_value=False
+        ):
+            np.testing.assert_allclose(
+                cached_fp32, m.predict(valid), atol=1e-5 * scale, rtol=1e-5
+            )
+    assert m.model._cache is None
     assert m.training_info["context_rows"] == 256
     if n_classes:
         np.testing.assert_allclose(m.predict_proba(valid).sum(1), 1, atol=1e-6)
@@ -270,11 +354,15 @@ def test_checkpoint_predictions_and_portable_offline_reload(
             assert roc_auc_score(yv, p) > 0.7
     else:
         assert r2_score(yv, p) > 0.8
-    # Query batch boundaries should not change predictions.
+    # A different configured batch shape changes FP16 GEMM rounding. Keep strict
+    # same-configuration subset/reload checks above and below, while allowing a
+    # bounded numerical difference between these different kernel shapes.
     m.params["predict_batch_size"] = 37
-    # FP16 attention kernels may vary slightly with the query shape.
     scale = float(np.std(yt)) if not n_classes else 1.0
-    np.testing.assert_allclose(p, m.predict(valid), atol=1e-3 * scale, rtol=1e-3)
+    tolerance = 5e-3 if m.effective_precision == "fp16" else 1e-5
+    np.testing.assert_allclose(
+        p, m.predict(valid), atol=tolerance * scale, rtol=tolerance
+    )
     artifact = tmp_path / "original"
     artifact.mkdir()
     m.save(str(artifact / "fold0.model"))
@@ -296,6 +384,7 @@ def test_checkpoint_predictions_and_portable_offline_reload(
     )
     reloaded = cls({"ml_task": task})
     reloaded.load(str(moved / "fold0.model"))
+    assert reloaded.params["precision"] == precision
     np.testing.assert_allclose(m.predict(valid), reloaded.predict(valid), atol=1e-6)
 
 

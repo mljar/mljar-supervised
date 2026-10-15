@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from packaging.version import Version
 
@@ -47,9 +48,33 @@ def discovery_input(X):
     return X.select_dtypes(include=["number", "bool", "object", "string", "category"])
 
 
-def fingerprint(X, y):
-    # Includes values, dtypes, column order and row index, not just row count.
-    return joblib.hash((X, y))
+def _values_signature(values):
+    dtype = values.dtype
+    schema = str(dtype)
+    if isinstance(dtype, pd.CategoricalDtype):
+        schema = (schema, dtype.ordered, _values_signature(dtype.categories))
+    # Hash owned, contiguous arrays instead of pandas' block managers and caches.
+    # Selecting identical columns can otherwise change a DataFrame's hash.
+    return schema, joblib.hash(np.array(values, copy=True, order="C"))
+
+
+def fingerprint(X, y, version=2):
+    if version == 1:
+        return joblib.hash((X, y))
+    if version != 2:
+        raise AutoMLException(
+            f"Unsupported feature discovery fingerprint version: {version}"
+        )
+    return joblib.hash(
+        (
+            version,
+            _values_signature(X.columns),
+            _values_signature(X.index),
+            [_values_signature(X.iloc[:, i]) for i in range(X.shape[1])],
+            _values_signature(y.index),
+            _values_signature(y),
+        )
+    )
 
 
 def write_json(path, value):
@@ -139,6 +164,7 @@ class FeatureDiscovery:
                     info = {
                         "features_goldmine_version": package_version,
                         "fingerprint": digest,
+                        "fingerprint_version": 2,
                         "input_columns": list(X.columns),
                         "sets": {
                             name: list(frame.columns)
@@ -191,11 +217,18 @@ class FeatureDiscoveryTransformer:
             raise AutoMLException(
                 f"Missing feature discovery inputs: {sorted(missing)}"
             )
-        return discovery_input(X[self.info["input_columns"]])
+        # Avoid changing the pandas representation of legacy (version 1) inputs
+        # when all columns already match. Version 2 hashes values independently.
+        if list(X.columns) != self.info["input_columns"]:
+            X = X[self.info["input_columns"]]
+        return discovery_input(X)
 
     def fit_transform(self, X, y):
         X = self._input(X)
-        if fingerprint(X, y) != self.info["fingerprint"]:
+        if (
+            fingerprint(X, y, self.info.get("fingerprint_version", 1))
+            != self.info["fingerprint"]
+        ):
             raise AutoMLException(
                 "Feature discovery training rows or targets changed; refusing to reuse encodings."
             )
