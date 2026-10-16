@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 import os
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -1584,8 +1583,8 @@ class MljarTuner:
 
     def _supports_weights(self, model_type):
         supported = AlgorithmsRegistry.supports_sample_weight(self._ml_task, model_type)
-        if not supported and model_type not in self._weight_skip_reported:
-            warnings.warn(f'{model_type} skipped for sample-weighted training; compatible algorithms will continue.')
+        if not supported:
+            # Expected scheduling decision; retain it for the Markdown report.
             self._weight_skip_reported.add(model_type)
         return supported
 

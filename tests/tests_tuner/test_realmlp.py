@@ -64,14 +64,14 @@ def test_default_and_random_scheduling():
     assert "scale" not in str(default[0]["preprocessing"])
 
 
-def test_weighted_candidates_are_not_scheduled_and_warn_once():
+def test_weighted_candidates_are_skipped_silently_and_recorded():
     t = tuner(data_info={"is_sample_weighted": True})
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
         assert t._get_model_params("RealMLP", 1) is None
         assert t._get_model_params("RealMLP", 2) is None
-    assert len(captured) == 1
-    assert "sample-weighted" in str(captured[0].message)
+    assert not captured
+    assert t._weight_skip_reported == {"RealMLP"}
 
 
 def test_boost_on_errors_excludes_realmlp():
@@ -80,8 +80,11 @@ def test_boost_on_errors_excludes_realmlp():
         t,
         "df_models_algorithms",
         return_value=(pd.DataFrame({"model_type": ["RealMLP"]}), ["RealMLP"]),
-    ):
+    ), warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
         assert t.boost_params([], "/unused", 60) == []
+    assert not captured
+    assert t._weight_skip_reported == {"RealMLP"}
 
 
 @pytest.mark.parametrize(
@@ -105,5 +108,7 @@ def test_fairness_never_reweights_realmlp(method):
         "supervised.tuner.mljar_tuner.load_data",
         side_effect=[pd.DataFrame({"group": [0, 1]}), pd.DataFrame({"target": [0, 1]})],
     ):
-        with pytest.warns(UserWarning, match="sample-weighted"):
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always")
             assert getattr(t, method)([], "/unused") == []
+        assert not captured

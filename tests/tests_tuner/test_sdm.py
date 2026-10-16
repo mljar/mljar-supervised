@@ -60,24 +60,29 @@ def test_default_and_random_scheduling():
     assert "scale" not in str(default[0]["preprocessing"])
 
 
-def test_weighted_candidates_are_not_scheduled_and_warn_once():
-    t = tuner(data_info={"is_sample_weighted": True})
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+def test_weighted_candidates_are_skipped_silently_and_recorded(algorithm):
+    t = tuner(algorithms=[algorithm], data_info={"is_sample_weighted": True})
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
-        assert t._get_model_params("Kumo", 1) is None
-        assert t._get_model_params("Kumo", 2) is None
-    assert len(captured) == 1
-    assert "sample-weighted" in str(captured[0].message)
+        assert t._get_model_params(algorithm, 1) is None
+        assert t._get_model_params(algorithm, 2) is None
+    assert not captured
+    assert t._weight_skip_reported == {algorithm}
 
 
-def test_boost_on_errors_excludes_kumo():
-    t = tuner()
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+def test_boost_on_errors_silently_excludes_sdm(algorithm):
+    t = tuner(algorithms=[algorithm])
     with patch.object(
         t,
         "df_models_algorithms",
-        return_value=(pd.DataFrame({"model_type": ["Kumo"]}), ["Kumo"]),
-    ):
+        return_value=(pd.DataFrame({"model_type": [algorithm]}), [algorithm]),
+    ), warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
         assert t.boost_params([], "/unused", 60) == []
+    assert not captured
+    assert t._weight_skip_reported == {algorithm}
 
 
 @pytest.mark.parametrize(
@@ -99,8 +104,10 @@ def test_fairness_never_reweights_kumo(method):
         "supervised.tuner.mljar_tuner.load_data",
         side_effect=[pd.DataFrame({"group": [0, 1]}), pd.DataFrame({"target": [0, 1]})],
     ):
-        with pytest.warns(UserWarning, match="sample-weighted"):
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always")
             assert getattr(t, method)([], "/unused") == []
+        assert not captured
 
 
 def test_tabiclv2_scheduling_and_weights():
@@ -113,8 +120,10 @@ def test_tabiclv2_scheduling_and_weights():
     assert params[0]["learner"]["max_context_size"] == 128
     assert len(t.get_not_so_random_params(1, [])) == 2
     t = tuner(algorithms=["TabICLv2"], data_info={"is_sample_weighted": True})
-    with pytest.warns(UserWarning, match="sample-weighted"):
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
         assert t._get_model_params("TabICLv2", 1) is None
+    assert not captured
 
 
 def test_kumo_sizes_search_and_fixed_override():
