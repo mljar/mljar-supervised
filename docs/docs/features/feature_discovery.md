@@ -7,7 +7,7 @@ golden features, before KMeans features and subsequent tuning.
 Install on Python 3.10 or newer:
 
 ```bash
-pip install "mljar-supervised[feature-discovery]==1.4.0rc3"
+pip install "mljar-supervised[feature-discovery]==1.4.0rc4"
 ```
 
 ```python
@@ -29,20 +29,40 @@ explicit `True` raises an actionable error. Base MLJAR still supports Python 3.9
 
 ## Search and time allocation
 
-When both steps run, the existing golden-features scheduling weight of 0.05 is
-split into 0.025 for each step. When only one runs, it receives 0.05. Weights are
-normalized against other enabled steps, not literal percentages of total runtime.
+When golden features and feature discovery both run, the golden-features
+scheduling weight of 0.05 is split into 0.025 for each step. When only one runs,
+it receives 0.05. If both mixed encoding and feature discovery are enabled steps,
+another 0.025 is transferred from mixed encoding to discovery. Mixed encoding
+then receives 0.025, while discovery receives 0.05 with golden features or 0.075
+without golden features. This transfer preserves other stages' allocations and
+only applies when both participating steps are present.
+
+Weights are normalized against other enabled steps, not literal percentages of
+total runtime. With all Compete steps enabled, mixed encoding and golden features
+each receive about 1.85%, and feature discovery receives about 3.70%. For a
+one-hour run, these are approximately 67, 67 and 133 seconds respectively.
+
 Discovery receives up to one quarter of its step allocation across all folds;
 the rest is available for training. Unused time from earlier steps remains
 available through the cumulative scheduler. Without a total budget, discovery
 uses one quarter of `model_time_limit`, or 15 seconds if neither limit is set.
-Deadlines are cooperative; noninterruptible work can overrun.
+For tuning candidates with measured training costs, admission checks the time
+remaining in the current step, including elapsed work outside model training.
+This helps preserve later steps' allocations. Training costs are estimates;
+slower fits and noninterruptible work can still overrun.
 
 The step snapshots up to three best eligible individual models, respecting a
 smaller positive `top_models_to_improve` setting. It retains each parent's chosen
-hyperparameters and preprocessing, including existing golden features. Discovery
-uses the original numeric/categorical inputs; generated columns are added before
-the learner's categorical encoding and scaling. Each profile is tried across
+hyperparameters and preprocessing, including existing golden features. Before
+generating features, it reserves the discovery allowance and filters out parents
+whose measured training time exceeds the remaining training allowance. Faster
+models further down the leaderboard can then be selected. If no eligible parent
+fits, generation is skipped with a console explanation. Each candidate is checked
+again before training, using its parent's cost rather than the algorithm-wide
+average.
+
+Discovery uses the original numeric/categorical inputs; generated columns are
+added before the learner's categorical encoding and scaling. Each profile is tried across
 parents in rank order before trying the next profile. Nine models is a maximum,
 not a guarantee: unavailable/empty/duplicate sets and insufficient time reduce it.
 Original models remain available for validation comparison and ensembling.

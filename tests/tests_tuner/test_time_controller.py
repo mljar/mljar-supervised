@@ -1,9 +1,73 @@
 import time
 import unittest
 
+import pytest
 from numpy.testing import assert_almost_equal
 
 from supervised.tuner.time_controller import TimeController
+
+
+def test_known_training_cost_cannot_consume_next_steps_budget(monkeypatch):
+    tc = TimeController(
+        0,
+        700,
+        None,
+        ["default_algorithms", "not_so_random", "feature_discovery"],
+        ["LightGBM"],
+    )
+    tc.log_time("1_LightGBM", "LightGBM", "default_algorithms", 20)
+    # Five seconds remain in tuning, but 55 remain in the overall run.
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 645)
+    assert tc.remaining_step_time("not_so_random") == pytest.approx(5)
+    assert not tc.enough_time("LightGBM", "not_so_random")
+    assert tc.enough_time("LightGBM", "feature_discovery")
+
+
+def test_model_admission_counts_unlogged_wall_time(monkeypatch):
+    tc = TimeController(0, 100, None, ["default_algorithms"], ["LightGBM"])
+    tc.log_time("1_LightGBM", "LightGBM", "default_algorithms", 20)
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 95)
+    assert not tc.enough_time("LightGBM", "default_algorithms")
+
+
+def test_discovery_uses_parent_cost_instead_of_algorithm_average(monkeypatch):
+    tc = TimeController(
+        0, 350, None, ["default_algorithms", "feature_discovery"], ["LightGBM"]
+    )
+    tc.log_time("1_LightGBM", "LightGBM", "default_algorithms", 200)
+    tc.log_time("2_LightGBM", "LightGBM", "default_algorithms", 10)
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 330)
+    assert not tc.enough_time("LightGBM", "feature_discovery")
+    assert tc.enough_time("LightGBM", "feature_discovery", expected_time=10)
+    assert not tc.enough_time("LightGBM", "feature_discovery", expected_time=21)
+    # Recheck as other candidates consume the remaining time.
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 345)
+    assert not tc.enough_time("LightGBM", "feature_discovery", expected_time=10)
+
+
+def test_unused_time_is_available_to_later_steps(monkeypatch):
+    tc = TimeController(
+        0, 350, None, ["default_algorithms", "feature_discovery"], ["LightGBM"]
+    )
+    tc.log_time("1_LightGBM", "LightGBM", "default_algorithms", 80)
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 100)
+    assert tc.time_should_use("feature_discovery") == pytest.approx(50)
+    assert tc.remaining_step_time("feature_discovery") == pytest.approx(250)
+    assert tc.enough_time("LightGBM", "feature_discovery")
+
+
+@pytest.mark.parametrize("limits", [(None, None), (100, 10)])
+def test_model_or_unlimited_budget_still_admits_candidates(monkeypatch, limits):
+    tc = TimeController(0, *limits, ["default_algorithms"], ["LightGBM"])
+    tc.log_time("1_LightGBM", "LightGBM", "default_algorithms", 20)
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 150)
+    assert tc.enough_time("LightGBM", "default_algorithms")
+
+
+def test_unknown_algorithm_can_still_get_its_first_trial(monkeypatch):
+    tc = TimeController(0, 100, None, ["default_algorithms"], ["LightGBM"])
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: 95)
+    assert tc.enough_time("LightGBM", "default_algorithms")
 
 
 class TimeControllerTest(unittest.TestCase):

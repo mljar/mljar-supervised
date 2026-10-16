@@ -41,21 +41,27 @@ def test_cpu_partitions_never_share_physical_cores():
     first, second = cpu_affinity("1.3.2", 1), cpu_affinity("1.4.0rc1", 1)
     assert not physical(first) & physical(second)
     assert cpu_affinity("1.4.0rc2", 1) == second
+    assert cpu_affinity("1.4.0rc3", 1) == second
+    assert cpu_affinity("1.4.0rc4", 1) == second
 
 
-def test_rc3_defaults_preserve_older_candidate_paths():
+def test_rc4_defaults_preserve_older_candidate_paths():
     stable = parse_args(["--version", "1.3.2"])
     rc2 = parse_args(["--version", "1.4.0rc2"])
     rc1 = parse_args(["--version", "1.4.0rc1"])
     legacy_stable = parse_args(["--version", "1.3.2", "--candidate-version", "1.4.0rc1"])
     rc3 = parse_args(["--version", "1.4.0rc3"])
-    assert stable.run == rc3.run
+    rc4 = parse_args(["--version", "1.4.0rc4"])
+    assert stable.run == rc4.run != rc3.run
+    assert "vs-1.4.0rc4-small-3600s-15threads" in rc4.run.name
+    assert not rc4.evaluate_all_models
+    assert parse_args(["--version", "1.4.0rc4", "--evaluate-all-models"]).evaluate_all_models
     assert rc3.run != rc2.run
     assert "vs-1.4.0rc3-small-3600s-15threads" in rc3.run.name
     assert "vs-1.4.0rc2-small-3600s-15threads" in rc2.run.name
     assert legacy_stable.run == rc1.run != rc2.run
     assert stable.device == "cpu"
-    assert rc1.device == rc2.device == rc3.device == "cuda"
+    assert rc1.device == rc2.device == rc3.device == rc4.device == "cuda"
     assert parse_args(["--version", "1.4.0rc2", "--device", "cpu"]).device == "cpu"
     with pytest.raises(SystemExit):
         parse_args(["--version", "1.4.0rc2", "--candidate-version", "1.4.0rc1"])
@@ -101,7 +107,7 @@ def test_run_rejects_changed_budget(tmp_path):
         freeze_run(tmp_path, {"seconds": 3600})
 
 
-@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3"])
+@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4"])
 def test_report_compares_only_matching_successful_splits(tmp_path, candidate):
     config = {"datasets": ["credit-g"]}
     if candidate != "1.4.0rc1":
@@ -144,3 +150,33 @@ def test_report_can_read_old_baseline_without_changing_it(tmp_path):
     write_json(new / "manifest.json", {"config": dict(config, algorithms=["Linear"])})
     with pytest.raises(ValueError, match="algorithms"):
         build_report(new, baseline_run=old)
+
+
+def test_report_retains_multiple_versions_and_excludes_incomplete_scores(tmp_path):
+    config = dict(datasets=["credit-g"], seconds=3600, n_jobs=15, seed=1234)
+    roots = {v: tmp_path / v for v in ["1.3.2", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4"]}
+    for version, root in roots.items():
+        write_json(root / "manifest.json", {"config": dict(config, comparison_versions=["1.3.2", version if version != "1.3.2" else "1.4.0rc1"])})
+        case = root / version / "credit-g/r0f0"
+        attempt = case / "attempt-001"
+        write_json(case / "status.json", dict(dataset="credit-g", version=version,
+                   status="timeout" if version == "1.4.0rc3" else "success", attempt=str(attempt)))
+        write_json(attempt / "metrics.json", dict(dataset_sha256="same", metric="roc_auc", split="r0f0",
+                   seed=1234, seconds=3600, n_jobs=15, test_score=.8, metric_error=.2))
+    current = roots["1.4.0rc4"]
+    manifest = read_json(current / "manifest.json")
+    manifest["config"].update(baseline_run=str(roots["1.3.2"]), reference_runs=[str(roots[v]) for v in ["1.4.0rc2", "1.4.0rc3"]])
+    write_json(current / "manifest.json", manifest)
+    previous = {str(p): p.read_bytes() for v, root in roots.items() if v != "1.4.0rc4" for p in root.rglob("*") if p.is_file()}
+    build_report(current)
+    with (current / "comparison/datasets.csv").open() as stream:
+        assert {r["version"] for r in csv.DictReader(stream)} == set(roots)
+    with (current / "comparison/paired.csv").open() as stream:
+        assert {r["candidate_version"] for r in csv.DictReader(stream)} == {"1.4.0rc2", "1.4.0rc4"}
+    assert all(Path(p).read_bytes() == content for p, content in previous.items())
+    old_manifest = roots["1.4.0rc3"] / "manifest.json"
+    changed = read_json(old_manifest)
+    changed["config"]["seconds"] = 60
+    write_json(old_manifest, changed)
+    with pytest.raises(ValueError, match="seconds"):
+        build_report(current)

@@ -36,6 +36,7 @@ def test_automl_training_explanations_and_reload(tmp_path):
         train_ensemble=False,
         stack_models=False,
         golden_features=False,
+        feature_discovery=False,
         boost_on_errors=False,
         kmeans_features=False,
         mix_encoding=False,

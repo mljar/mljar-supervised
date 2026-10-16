@@ -24,7 +24,7 @@ class AutoMLTimeConstraintsTest(unittest.TestCase):
 
         time_spend = 0
         for i in range(12):
-            automl._start_time -= 10
+            automl._time_ctrl._start_time -= 10
             automl._time_ctrl.log_time(f"Xgboost_{i}", model_type, "not_so_random", 10)
             if automl._time_ctrl.enough_time(model_type, "not_so_random"):
                 time_spend += 10

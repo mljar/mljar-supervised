@@ -1,3 +1,24 @@
+## mljar-supervised 1.4.0rc4
+
+Fourth release candidate for 1.4.0, fixing prediction consistency and
+feature-discovery scheduling and improving SDM inference.
+
+```bash
+python -m pip install "mljar-supervised[feature-discovery]==1.4.0rc4"
+```
+
+- Fix feature-discovery fingerprints so saved transformations can be replayed with equivalent data representations.
+- Keep unseen-category encoding independent of prediction batch contents, including boolean categories, and preserve mappings after reload.
+- Reuse Kumo/TabICLv2 training-context computation across prediction batches within a fold, subject to memory checks. Release temporary caches after each prediction session, including failures.
+- Keep FP16 as the default SDM precision on CUDA and FP32 on CPU. Allow resource-checked FP32 candidates during hill climbing, persist the selected precision, and stabilize FP16 query batch shapes for consistent predictions.
+- Check candidate training costs against the remaining stage wall-clock budget. Feature discovery selects affordable parents before generating features and reserves time for model training.
+- When both mixed encoding and feature discovery run, transfer half of the mixed-encoding scheduling weight to discovery. Other stages retain their allocations; with all Compete stages enabled, discovery receives approximately 3.70% of the total budget.
+- Correct the RealMLP/TabM smoke-test configuration so automatic feature discovery does not change the expected model count.
+- Update the benchmark launcher for RC4, retaining earlier environments and artifacts and supporting comparisons against multiple saved releases. Selected-model evaluation is the default; all-model predictions remain optional.
+
+Native categorical changes for LightGBM and XGBoost, and the related categorical
+preprocessing experiment, are deferred until after the stable release.
+
 ## mljar-supervised 1.4.0rc3
 
 Third release candidate for 1.4.0, adding feature discovery and improving saved

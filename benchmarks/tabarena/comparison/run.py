@@ -157,7 +157,7 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, choices=VERSIONS)
     parser.add_argument("--candidate-version", choices=CANDIDATE_VERSIONS,
-                        help="Comparison partner for 1.3.2 (default: 1.4.0rc3)")
+                        help=f"Comparison partner for 1.3.2 (default: {DEFAULT_CANDIDATE})")
     parser.add_argument("--suite", choices=["small", "smoke"], default="small")
     parser.add_argument("--datasets", nargs="+", choices=SMALL, help="Explicit subset; changes the saved run configuration")
     parser.add_argument("--seconds", type=int, default=3600)
@@ -171,6 +171,12 @@ def parse_args(argv=None):
     parser.add_argument("--grace-seconds", type=int, default=900)
     parser.add_argument("--evaluation-seconds", type=int, default=1800)
     parser.add_argument("--memory-gib", type=float, default=96)
+    parser.add_argument("--evaluate-all-models", action="store_true",
+                        help="Also predict every candidate; by default evaluate the selected model and retain all artifacts")
+    parser.add_argument("--baseline-run", type=Path,
+                        help="Read existing 1.3.2 results for the live comparison")
+    parser.add_argument("--reference-run", type=Path, action="append", default=[],
+                        help="Read an earlier candidate run for the live comparison; repeat for multiple versions")
     args = parser.parse_args(argv)
     if min(args.seconds, args.n_jobs, args.evaluation_seconds, args.memory_gib) <= 0 or args.grace_seconds < 0:
         parser.error("Budgets and n-jobs must be positive; grace-seconds must be nonnegative")
@@ -215,8 +221,14 @@ def main():
             config = dict(datasets=datasets, seconds=args.seconds, n_jobs=args.n_jobs, seed=args.seed,
                           comparison_versions=[STABLE_VERSION, args.candidate_version],
                           algorithms=args.algorithms, grace_seconds=args.grace_seconds,
-                          evaluation_seconds=args.evaluation_seconds, memory_gib=args.memory_gib)
+                          evaluation_seconds=args.evaluation_seconds, memory_gib=args.memory_gib,
+                          evaluate_all_models=args.evaluate_all_models,
+                          baseline_run=str(args.baseline_run.resolve()) if args.baseline_run else None,
+                          reference_runs=[str(p.resolve()) for p in args.reference_run])
             freeze_run(run, config)
+            from report import build_report
+            # Validate comparison sources before spending time training.
+            build_report(run)
             version_root = run / args.version
             version_root.mkdir(exist_ok=True)
             env_spec = dict(device=device, affinity=affinity, python=str(python),

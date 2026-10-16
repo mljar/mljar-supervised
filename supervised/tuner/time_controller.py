@@ -77,6 +77,9 @@ class TimeController:
             ratios["feature_discovery"] = 0.025 if "golden_features" in self._steps else 0.05
             if "golden_features" in self._steps:
                 ratios["golden_features"] = 0.025
+            if "mix_encoding" in self._steps:
+                ratios["mix_encoding"] = 0.025
+                ratios["feature_discovery"] += 0.025
 
         if (
             fit_level
@@ -158,16 +161,19 @@ class TimeController:
 
         return True
 
-    def enough_time_for_model(self, model_type):
+    def enough_time_for_model(self, model_type, step=None, expected_time=None):
         if self._total_time_limit is None:
             return True
 
-        time_left = self._total_time_limit - self.already_spend()
-        spend = [s["train_time"] for s in self._spend if s["model_type"] == model_type]
-        model_mean_spend = np.mean(spend)
-        return model_mean_spend <= time_left
+        time_left = self._total_time_limit - (time.time() - self._start_time)
+        if step is not None:
+            time_left = min(time_left, self.remaining_step_time(step))
+        if expected_time is None:
+            spend = [s["train_time"] for s in self._spend if s["model_type"] == model_type]
+            expected_time = np.mean(spend)
+        return expected_time <= time_left
 
-    def enough_time(self, model_type, step):
+    def enough_time(self, model_type, step, expected_time=None):
         """
         Check if there is enough time to train the next model.
 
@@ -179,6 +185,9 @@ class TimeController:
         step: str
             String with name of the step in the process of AutoML training.
 
+        expected_time: float or None
+            Candidate-specific training estimate in seconds. Otherwise use the
+            mean training time of earlier models of this algorithm.
 
         Returns
         -------
@@ -198,7 +207,7 @@ class TimeController:
         total_time_spend = time.time() - self._start_time
         time_left = self._total_time_limit - total_time_spend
         # no time left, do not train any more models, sorry ...
-        if time_left < 0:
+        if time_left <= 0:
             # print("No time left", time_left)
             return False
 
@@ -210,7 +219,7 @@ class TimeController:
 
         # there is still time and model_type was not tested yet
         # we should try it
-        if time_left > 0 and self.model_spend(model_type) == 0:
+        if expected_time is None and self.model_spend(model_type) == 0:
             return True
 
         # stacked models converge faster
@@ -218,7 +227,7 @@ class TimeController:
         if step == "stack":
             return True
         # check if there is enough time for model to train
-        return self.enough_time_for_model(model_type)
+        return self.enough_time_for_model(model_type, step, expected_time)
 
     def learner_time_limit(self, model_type, fit_level, k_folds):
         if self._total_time_limit is None:

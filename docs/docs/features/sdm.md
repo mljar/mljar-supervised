@@ -12,7 +12,7 @@ Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
 [Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install the release candidate and pinned backend:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc3"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc4"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -64,7 +64,7 @@ temperature are not separate tuning parameters in this integration.
 | `size` (Kumo only) | `["small", "medium", "large"]` | `"small"` |
 | `precision` | `["fp16", "fp32"]` (hill climbing) | `"fp16"` on CUDA |
 
-Precision tuning is available in the development version after `1.4.0rc3`.
+Precision tuning is available starting with `1.4.0rc4`.
 
 Initial default and random candidates use FP16 mixed precision on CUDA. During
 hill climbing, the best eligible configurations can also be evaluated in FP32,

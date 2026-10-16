@@ -43,7 +43,64 @@ def test_budget_is_shared_without_changing_other_steps():
     )
 
 
-def parent(name, score, golden=False):
+@pytest.mark.parametrize("golden", [False, True])
+@pytest.mark.parametrize("discovery", [False, True])
+@pytest.mark.parametrize("mix", [False, True])
+def test_mix_budget_transfer_preserves_total_and_other_steps(golden, discovery, mix):
+    weights = {"default_algorithms": 0.3, "stack": 0.2}
+    if golden:
+        weights["golden_features"] = 0.025 if discovery else 0.05
+    if discovery:
+        weights["feature_discovery"] = 0.025 if golden else 0.05
+    if mix:
+        weights["mix_encoding"] = 0.05
+    original_weights = weights.copy()
+    if mix and discovery:
+        weights["mix_encoding"] -= 0.025
+        weights["feature_discovery"] += 0.025
+    total_weight = sum(original_weights.values())
+    controller = TimeController(0, 3600, None, list(weights), ["LightGBM"])
+    restored = TimeController.from_json(controller.to_json())
+    for step, weight in weights.items():
+        expected = 3600 * weight / total_weight
+        assert controller.time_should_use(step) == pytest.approx(expected)
+        assert restored.time_should_use(step) == pytest.approx(expected)
+        if step not in ["mix_encoding", "feature_discovery"]:
+            assert controller.time_should_use(step) == pytest.approx(
+                3600 * original_weights[step] / total_weight
+            )
+    assert sum(controller.time_should_use(s) for s in weights) == pytest.approx(3600)
+
+
+def test_compete_discovery_budget_with_all_stages():
+    steps = [
+        "adjust_validation",
+        "simple_algorithms",
+        "default_algorithms",
+        "not_so_random",
+        "mix_encoding",
+        "golden_features",
+        "feature_discovery",
+        "kmeans_features",
+        "insert_random_feature",
+        "features_selection",
+        "hill_climbing_1",
+        "hill_climbing_2",
+        "boost_on_errors",
+        "ensemble",
+        "stack",
+        "ensemble_stacked",
+    ]
+    controller = TimeController(0, 3600, None, steps, ["LightGBM", "Xgboost"])
+    assert controller.time_should_use("mix_encoding") == pytest.approx(3600 / 54)
+    assert controller.time_should_use("golden_features") == pytest.approx(3600 / 54)
+    assert controller.time_should_use("feature_discovery") == pytest.approx(3600 / 27)
+    assert sum(controller.time_should_use(step) for step in steps) == pytest.approx(
+        3600
+    )
+
+
+def parent(name, score, golden=False, train_time=2):
     params = {
         "name": name,
         "learner": {
@@ -58,12 +115,70 @@ def parent(name, score, golden=False):
     }
     return SimpleNamespace(
         params=params,
+        validation_params=params["validation_strategy"],
         _is_stacked=False,
         get_name=lambda: name,
         get_type=lambda: "LightGBM",
         get_final_loss=lambda: score,
-        get_train_time=lambda: 2,
+        get_train_time=lambda: train_time,
     )
+
+
+@pytest.mark.parametrize("elapsed, train_time", [(650, 60), (650, 40), (700, 2)])
+def test_discovery_is_not_started_without_time_to_train(
+    monkeypatch, elapsed, train_time
+):
+    model = AutoML(verbose=0)
+    model._verbose = 0
+    model._total_time_limit = 700
+    model._model_time_limit = None
+    model._models = [parent("1_LightGBM", 1, train_time=train_time)]
+    model.tuner = object.__new__(MljarTuner)
+    model.tuner._fairness_metric = None
+    model.tuner._top_models_to_improve = 3
+    model._time_ctrl = TimeController(
+        0,
+        700,
+        None,
+        ["default_algorithms", "not_so_random", "feature_discovery"],
+        ["LightGBM"],
+    )
+    # At 650s, discovery has 50s left, including 12.5s for generation.
+    monkeypatch.setattr("supervised.tuner.time_controller.time.time", lambda: elapsed)
+    generator = Mock(side_effect=AssertionError("No affordable discovery parent"))
+    monkeypatch.setattr("supervised.base_automl.FeatureDiscovery", generator)
+    assert model._prepare_feature_discovery() == []
+    generator.assert_not_called()
+
+
+def test_discovery_selects_affordable_runners_up_before_top_model_limit():
+    tuner = object.__new__(MljarTuner)
+    tuner._fairness_metric = None
+    tuner._top_models_to_improve = 1
+    models = [
+        parent("1_LightGBM", 1, train_time=200),
+        parent("2_LightGBM", 2, train_time=100),
+        parent("3_LightGBM", 3, train_time=60),
+        parent("4_LightGBM_GoldenFeatures", 4, True, train_time=10),
+        parent("5_LightGBM", 5, train_time=5),
+    ]
+    chosen = tuner.feature_discovery_parents(models, max_train_time=10)
+    assert [m.get_name() for m in chosen] == ["4_LightGBM_GoldenFeatures"]
+    assert "golden_features" in chosen[0].params["preprocessing"]
+    tuner._top_models_to_improve = 3
+    assert [m.get_name() for m in tuner.feature_discovery_parents(models, 10)] == [
+        "4_LightGBM_GoldenFeatures",
+        "5_LightGBM",
+    ]
+
+
+@pytest.mark.parametrize("train_time", [None, float("nan"), float("inf"), -1])
+def test_discovery_ignores_invalid_parent_training_time(train_time):
+    tuner = object.__new__(MljarTuner)
+    tuner._fairness_metric = None
+    tuner._top_models_to_improve = 3
+    models = [parent("1_LightGBM", 1, train_time=train_time)]
+    assert tuner.feature_discovery_parents(models, max_train_time=10) == []
 
 
 def test_best_parents_profile_order_and_names():

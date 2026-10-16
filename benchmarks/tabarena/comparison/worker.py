@@ -182,8 +182,12 @@ def main(spec):
     write_json(output / "metrics.json", metrics)
     print(f"\nHELD-OUT TEST: {info['metric']}={score:.8g}; selected by validation: {best_name}", flush=True)
     by_name = {model.get_name(): model for model in automl._models}
+    evaluate_all = spec.get("evaluate_all_models", True)  # Legacy frozen specs evaluated all candidates.
     for index, record in enumerate(inventory, 1):
         name = record["name"]
+        if not evaluate_all and name != best_name:
+            record["test_status"] = "not_requested"
+            continue
         tick = time.monotonic()
         print(f"Test predictions {index}/{len(inventory)}: {name}", flush=True)
         try:
@@ -199,12 +203,14 @@ def main(spec):
             traceback.print_exc()
         record["test_prediction_seconds"] = time.monotonic() - tick
         save_table(output / "model_inventory.csv", inventory)
+    save_table(output / "model_inventory.csv", inventory)
     print("Verifying that the selected saved model reloads...", flush=True)
     reloaded = AutoML(results_path=str(output / "automl"))
     actual = reloaded.predict_all(X_test.iloc[:20])
     pd.testing.assert_frame_equal(actual.reset_index(drop=True), best_predictions.iloc[:20].reset_index(drop=True),
                                   check_exact=False, rtol=1e-5, atol=1e-7)
     metrics.update(evaluation_seconds=time.monotonic() - evaluation_started, reload_verified=True,
+                   evaluation_mode="all" if evaluate_all else "selected",
                    per_model_prediction_failures=sum(r["test_status"] == "error" for r in inventory))
     write_json(output / "metrics.json", metrics)
     print(f"Saved all models and logs: {output}\nReport: {output / 'automl/README.md'}", flush=True)

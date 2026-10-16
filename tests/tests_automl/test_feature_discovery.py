@@ -11,8 +11,13 @@ from supervised.model_framework import ModelFramework
 from supervised.tuner.time_controller import TimeController
 
 
-@pytest.mark.parametrize("task", ["binary", "multiclass", "regression"])
-def test_discovery_training_reports_and_reload(tmp_path, monkeypatch, task):
+@pytest.mark.parametrize(
+    "task, default_budget",
+    [("binary", False), ("multiclass", False), ("regression", False), ("regression", True)],
+)
+def test_discovery_training_reports_and_reload(
+    tmp_path, monkeypatch, task, default_budget
+):
     pytest.importorskip("features_goldmine")
     if task == "regression":
         X, y = make_friedman1(n_samples=600, n_features=6, random_state=42)
@@ -27,17 +32,19 @@ def test_discovery_training_reports_and_reload(tmp_path, monkeypatch, task):
         y = np.array([f"class_{v}" for v in y])
     X = pd.DataFrame(X, columns=list("abcdef"))
     X["category"] = pd.cut(X.a, 4).astype(str)
-    # Give this integration check enough discovery time independent of CI speed.
-    original = TimeController.time_should_use
-    monkeypatch.setattr(
-        TimeController,
-        "time_should_use",
-        lambda self, step: 60 if step == "feature_discovery" else original(self, step),
-    )
+    # Also exercise the real allocation without extending the discovery step.
+    # Small datasets finish well before these generous total budgets.
+    if not default_budget:
+        original = TimeController.time_should_use
+        monkeypatch.setattr(
+            TimeController,
+            "time_should_use",
+            lambda self, step: 60 if step == "feature_discovery" else original(self, step),
+        )
     root = tmp_path / "automl"
     model = AutoML(
         results_path=str(root),
-        total_time_limit=120,
+        total_time_limit=600 if default_budget else 120,
         mode="Compete",
         algorithms=["Decision Tree", "Linear"],
         n_jobs=1,

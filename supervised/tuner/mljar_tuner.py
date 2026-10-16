@@ -1195,7 +1195,7 @@ class MljarTuner:
 
         return df_models, algorithms
 
-    def feature_discovery_parents(self, models):
+    def feature_discovery_parents(self, models, max_train_time=None):
         eligible = [
             m
             for m in models
@@ -1209,6 +1209,13 @@ class MljarTuner:
         if not eligible:
             return []
         ranked, _ = self.df_models_algorithms(eligible)
+        if max_train_time is not None:
+            train_times = pd.to_numeric(ranked["train_time"], errors="coerce")
+            ranked = ranked[
+                np.isfinite(train_times)
+                & (train_times >= 0)
+                & (train_times <= max_train_time)
+            ]
         limit = min(3, self._top_models_to_improve or 3)
         return list(ranked["model"].iloc[:limit])
 

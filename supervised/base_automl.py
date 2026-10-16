@@ -364,18 +364,18 @@ class BaseAutoML(BaseEstimator, ABC):
         return 1
 
     def train_model(self, params):
+        expected_time = None
         if self._fit_level == "feature_discovery":
-            expected = params.get("feature_discovery_expected_time", 0) or 0
-            if self._time_ctrl.remaining_step_time(self._fit_level) < expected:
-                self.verbose_print(
-                    f"Skip {params['name']}: insufficient time for the estimated training cost."
-                )
-                return False
+            expected_time = params.get("feature_discovery_expected_time")
         # do we have enough time to train?
         # if not, skip
         if not self._time_ctrl.enough_time(
-            params["learner"]["model_type"], self._fit_level
+            params["learner"]["model_type"], self._fit_level, expected_time=expected_time
         ):
+            if self._fit_level == "feature_discovery":
+                self.verbose_print(
+                    f"Skip {params['name']}: insufficient time for the estimated training cost."
+                )
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
         # let's create directory to log all training artifacts
@@ -2013,15 +2013,23 @@ class BaseAutoML(BaseEstimator, ABC):
         return True
 
     def _prepare_feature_discovery(self):
-        parents = self.tuner.feature_discovery_parents(self._models)
-        if not parents:
-            return []
         remaining = self._time_ctrl.remaining_step_time("feature_discovery")
         allocation = self._time_ctrl.time_should_use("feature_discovery")
         if self._total_time_limit is None or self._model_time_limit is not None:
             allocation = self._model_time_limit or 60
         budget = min(allocation, remaining) * 0.25
         if budget <= 0:
+            self.verbose_print("Skip feature_discovery: no time remaining in this step.")
+            return []
+        # Reserve generation time before selecting parents. Filter before taking
+        # the top models so faster runners-up can be tried when leaders cannot.
+        parents = self.tuner.feature_discovery_parents(
+            self._models, max_train_time=remaining - budget
+        )
+        if not parents:
+            self.verbose_print(
+                "Skip feature_discovery: no eligible parent fits the remaining training time."
+            )
             return []
         self.verbose_print(
             f"* Step feature_discovery: up to 3 feature sets for {len(parents)} parents; discovery budget {budget:.1f}s."

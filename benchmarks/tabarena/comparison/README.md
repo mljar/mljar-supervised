@@ -4,7 +4,7 @@ From the repository root, run one command in each terminal:
 
 ```bash
 ./benchmarks/run.sh 1.3.2
-./benchmarks/run.sh 1.4.0rc3
+./benchmarks/run.sh 1.4.0rc4
 ```
 
 No environment activation is necessary. The launcher uses Python 3 and `uv`
@@ -32,10 +32,10 @@ current 18-core / 36-thread workstation. Lower `--n-jobs` on smaller machines.
 Version locks prevent duplicate runs; release candidates also share a CPU-slot lock.
 All release candidates use the same CPU partition and must run sequentially.
 
-RC3 installs CUDA 12.8 PyTorch, pytabkit, the pinned NVIDIA SDM revision, and
+RC4 installs CUDA 12.8 PyTorch, pytabkit, the pinned NVIDIA SDM revision, and
 features-goldmine 1.1.0. Its automatic feature-discovery step is enabled in Compete.
 The GPU is checked and all Kumo sizes / TabICLv2 classification and regression
-weights are cached before training. Only RC3 uses the GPU. A GPU lock prevents
+weights are cached before training. Only the candidate uses the GPU. A GPU lock prevents
 another instance of this harness using it concurrently; it cannot reserve the
 GPU against unrelated applications. To explicitly use CPU for all new models,
 pass `--device cpu` with a separate `--run` directory. Missing CUDA fails early
@@ -47,7 +47,7 @@ without starting training:
 
 ```bash
 ./benchmarks/run.sh 1.3.2 --prepare-only
-./benchmarks/run.sh 1.4.0rc3 --prepare-only
+./benchmarks/run.sh 1.4.0rc4 --prepare-only
 ```
 
 The TabArena data environment/checkout at `performance-results/tabarena/venv`
@@ -60,10 +60,10 @@ TabArena's `OpenMLTaskWrapper.get_train_test_split(fold=0, repeat=0, sample=0)`.
 
 ```bash
 ./benchmarks/run.sh 1.3.2 --suite smoke --seconds 60
-./benchmarks/run.sh 1.4.0rc3 --suite smoke --seconds 60
+./benchmarks/run.sh 1.4.0rc4 --suite smoke --seconds 60
 
-./benchmarks/run.sh 1.4.0rc3 --datasets credit-g --seconds 120 \
-    --run performance-results/tabarena/rc2-credit-check
+./benchmarks/run.sh 1.4.0rc4 --datasets credit-g --seconds 120 \
+    --run performance-results/tabarena/rc4-credit-check
 ```
 
 The smoke suite covers binary, multiclass and regression. A short budget may
@@ -74,16 +74,18 @@ must not be mixed with automatic-selection benchmark results.
 ## Outputs, timing and resume
 
 The default shared result root is
-`performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc3-small-3600s-15threads/`.
-RC1 and RC2 environments and outputs remain in their original locations. The default
-for a new 1.3.2 run now pairs it with RC3. An already-running 1.3.2 job continues
+`performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads/`.
+RC1, RC2 and RC3 environments and outputs remain in their original locations. The default
+for a new 1.3.2 run now pairs it with RC4. An already-running 1.3.2 job continues
 in its original output directory.
 
 It contains frozen harness code, a manifest, and separate version/dataset/split
 directories. Each attempt retains the complete `automl/` directory, its reports,
 all trained models and checkpoints, console output, sampled process-tree RSS,
 dataset description, requested/resolved parameters, model inventory, algorithm
-coverage, and held-out predictions for each model that can be evaluated.
+coverage, and held-out predictions for the selected model. Pass `--evaluate-all-models`
+to additionally score every candidate; this can greatly increase evaluation time.
+All trained models remain saved regardless of evaluation mode.
 `classes.json` maps encoded class indices to original labels; prediction rows
 follow the original test split order saved in `test_row_indices.json`.
 
@@ -119,22 +121,43 @@ python3 benchmarks/tabarena/comparison/report.py --run PATH_TO_RUN
 
 ### Reuse the existing 1.3.2 baseline
 
-Run RC3 normally while the existing 1.3.2 process continues. Afterward, compare
+Run RC4 normally while the existing 1.3.2 process continues. Afterward, compare
 their results without copying models or repeating baseline training:
 
 ```bash
 python3 benchmarks/tabarena/comparison/report.py \
-    --run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc3-small-3600s-15threads \
+    --run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads \
     --baseline-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads
 ```
 
 This reads the old baseline without changing its files and writes the comparison
-under the RC3 run. Only successful cases with matching data hashes, metrics,
+under the RC4 run. Only successful cases with matching data hashes, metrics,
 splits, seeds and budgets are paired. The manifests must also agree on the
 TabArena revision, protocol, algorithm selection and resource limits. Source
 paths are listed in the report. If either job is still running, repeat the report
 command after it finishes; the automatic per-dataset report uses its own run's
 results.
+
+### Compare RC4 with all saved releases
+
+Reuse the existing baseline and earlier candidate runs in the live report:
+
+```bash
+./benchmarks/run.sh 1.4.0rc4 \
+  --baseline-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads \
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads \
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc2-small-3600s-15threads \
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc3-small-3600s-15threads
+```
+
+These options only read older runs. Their paths are saved with the new run so
+`report.py --run PATH` and automatic updates retain the comparison. The report
+lists each version's status and selected-model score; incomplete evaluations
+are provisional and excluded from paired win counts. Training budgets, data
+hashes, splits, metrics, and resource settings must match. Selected-model-only
+and all-model evaluation use the same validation-selected test score, but total
+evaluation times differ. RC4 defaults to selected-model evaluation to avoid
+all-candidate diagnostics preventing a completed score and reload check.
 
 ### Older runs
 
