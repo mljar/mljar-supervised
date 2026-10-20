@@ -7,7 +7,7 @@ golden features, before KMeans features and subsequent tuning.
 Install on Python 3.10 or newer:
 
 ```bash
-pip install "mljar-supervised[feature-discovery]==1.4.0rc4"
+pip install "mljar-supervised[feature-discovery]==1.4.0rc5"
 ```
 
 ```python

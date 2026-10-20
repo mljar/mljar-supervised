@@ -202,3 +202,54 @@ def test_precision_trial_checks_every_fold_and_skips_missing_metadata():
         assert t.get_hill_climbing_params([model]) == []
         for fold in model.learners:
             fold.can_try_fp32.assert_called_once()
+
+
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+@pytest.mark.parametrize("rows,fold_rows,skipped", [
+    (666, [], True), (1200, [1000, 999], True),
+    (1200, [1000, 1100], False), (1200, [None, 1000], False),
+    (1200, [], False), (None, [], False), (666, [1200, 1200], False),
+])
+def test_context_only_hill_climbing_skips_equivalent_caps(algorithm, rows, fold_rows, skipped):
+    from types import SimpleNamespace
+
+    t = tuner(algorithms=[algorithm], custom_params={algorithm: {"precision": "fp16"}})
+    params = t.default_params(0)[0]
+    t._data_info["rows"] = rows
+    params["learner"]["max_context_size"] = 1024
+    model = SimpleNamespace(
+        params=params, get_name=lambda: "1_Model",
+        learners=[SimpleNamespace(training_info={"training_rows": n, "context_rows": 500}) for n in fold_rows],
+    )
+    original = copy.deepcopy(params)
+    proposal = dict(params["learner"], max_context_size=4096)
+    frame = pd.DataFrame({"model_type": [algorithm], "model": [model]})
+    with patch.object(t, "df_models_algorithms", return_value=(frame, [algorithm])), patch(
+        "supervised.tuner.mljar_tuner.HillClimbing.get", return_value=[proposal]
+    ):
+        assert bool(t.get_hill_climbing_params([model])) is not skipped
+    assert params == original
+
+
+@pytest.mark.parametrize("change", [
+    {"precision": "fp32"}, {"seed": 999}, {"num_estimators": 16}, {"size": "large"},
+])
+def test_context_filter_preserves_other_changes(change):
+    from types import SimpleNamespace
+
+    t = tuner()
+    params = t.default_params(0)[0]
+    model = SimpleNamespace(params=params)
+    candidate = dict(params["learner"], max_context_size=8192, **change)
+    assert not t._sdm_context_change_is_noop(model, candidate)
+
+
+def test_custom_validation_needs_actual_fold_sizes():
+    from types import SimpleNamespace
+
+    t = tuner()
+    params = t.default_params(0)[0]
+    params["validation_strategy"]["validation_type"] = "custom"
+    model = SimpleNamespace(params=params)
+    candidate = dict(params["learner"], max_context_size=8192)
+    assert not t._sdm_context_change_is_noop(model, candidate)

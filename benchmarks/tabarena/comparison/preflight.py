@@ -21,7 +21,7 @@ def check(version, device, output, download=True):
                 executable=sys.executable, requested_device=device, cuda_available=False,
                 packages={dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()})
     if version in CANDIDATE_VERSIONS:
-        if version in ("1.4.0rc3", "1.4.0rc4"):
+        if version in ("1.4.0rc3", "1.4.0rc4", "1.4.0rc5"):
             from supervised.preprocessing.feature_discovery_transformer import check_dependencies as check_discovery
             check_discovery()
             info["features_goldmine_version"] = importlib.metadata.version("features-goldmine")

@@ -12,7 +12,7 @@ Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
 [Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install the release candidate and pinned backend:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc4"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc5"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -127,7 +127,8 @@ Numerical, categorical, missing, and unseen categorical values are supported.
 Numerical missing values use context means with missing indicators; constant
 columns are handled by SDM; entirely constant contexts are rejected. Sparse
 inputs and sample weights are rejected.
-Weighted fairness/boost-on-errors candidates skip these algorithms with a warning.
+Weighted fairness/boost-on-errors candidates skip these algorithms; skips are
+recorded in the report.
 Kumo rejects more than 500 effective columns, including generated indicators and
 category-count features, rather than silently truncating them.
 
@@ -150,6 +151,38 @@ Version `1.4.0rc3` also loads saved fold networks lazily
 and releases them after each fold prediction. Stacking and ensembles reuse
 shared model predictions within each request, avoiding repeated SDM inference.
 See [prediction memory and reuse](save-and-load-models.md#prediction-memory-and-reuse).
+
+### Saved-model reuse (starting with 1.4.0rc5)
+
+Saved Kumo and TabICLv2 folds can share frozen checkpoint weights during one
+AutoML prediction request. At most one checkpoint is retained; switching
+checkpoints or predicting another algorithm releases it. Each fold builds and
+clears its own encoded context. Admission still checks each fold's memory
+requirements; retained weights are evicted and admission retried under pressure.
+The request releases its retained weights on completion or failure.
+
+SDM admission first checks driver-reported free GPU memory without garbage
+collection or clearing the CUDA allocator cache. If the fold does not fit,
+it performs cleanup, measures free memory again, and reapplies the same limits.
+Every fold is checked independently; the default 70% allowance, explicit memory
+limits, and retained-weight eviction/retry still apply. CPU checks and the
+RealMLP/TabM cleanup behavior are unchanged. No user setting or retraining is
+needed to use this optimization with saved models.
+
+Equivalent saved folds can also reuse CPU predictions. Equivalence requires the
+same checkpoint, fitted preprocessing, ordered context and targets, class mapping,
+seed, precision, execution settings, and transformed query data. The sampling cap
+can differ when the actual retained context is identical. Matching validation
+predictions alone does not establish equivalence. All original stacking columns
+and ensemble weights are preserved, including columns from equivalent models.
+The additional prediction cache is capped at 32 MiB and 1% of available RAM
+(and 1% of an explicit RAM limit, when supplied); nothing is reused across calls.
+
+Hill climbing skips changes to `max_context_size` alone when both caps already
+cover every training fold. Changes to seeds, precision, estimator counts, and
+model size remain eligible. Missing fold metadata never justifies assuming that
+a sampled context contains all training rows. These changes work with existing
+saved RC4 models; changing future tuning candidates requires a new fit.
 
 SDM predictions prepare a fold's context once and reuse it across query batches.
 Ensemble members execute sequentially; SDM offloads their caches to host memory.

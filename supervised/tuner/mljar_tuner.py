@@ -1007,6 +1007,8 @@ class MljarTuner:
                 )
                 if p is not None:
                     p.update(overrides)
+                    if is_sdm and self._sdm_context_change_is_noop(m, p):
+                        continue
                     unique_params_key = MljarTuner.get_params_key(
                         dict(m.params, learner=p)
                     )
@@ -1580,6 +1582,33 @@ class MljarTuner:
             model_params["underprivileged_groups"] = self._underprivileged_groups
 
         return model_params
+
+    def _sdm_context_change_is_noop(self, model, candidate):
+        original = model.params["learner"]
+        if {k: v for k, v in original.items() if k != "max_context_size"} != {
+            k: v for k, v in candidate.items() if k != "max_context_size"
+        }:
+            return False
+        cap = min(
+            original.get("max_context_size", 4096),
+            candidate.get("max_context_size", 4096),
+        )
+        # Context rows alone cannot establish this: an already-sampled context
+        # hides discarded rows. Prefer actual training sizes, including custom
+        # validation that may repeat indices and exceed the original row count.
+        learners = getattr(model, "learners", [])
+        sizes = [
+            getattr(learner, "training_info", {}).get("training_rows")
+            for learner in learners
+        ]
+        if any(n is not None and n > cap for n in sizes):
+            return False
+        if sizes and all(n is not None for n in sizes):
+            return True
+        if model.params["validation_strategy"].get("validation_type") == "custom":
+            return False
+        rows = (self._data_info or {}).get("rows")
+        return rows is not None and rows <= cap
 
     def _supports_weights(self, model_type):
         supported = AlgorithmsRegistry.supports_sample_weight(self._ml_task, model_type)

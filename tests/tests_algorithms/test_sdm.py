@@ -225,7 +225,7 @@ def test_precision_resources_and_cpu_behavior(cls, monkeypatch, tmp_path):
     )
     monkeypatch.setattr(
         "supervised.algorithms.realmlp_resources.available_gpu_memory",
-        lambda _: (100 * 1024**3, 100 * 1024**3),
+        lambda _, **kwargs: (100 * 1024**3, 100 * 1024**3),
     )
     m = cls({"ml_task": "binary_classification", "precision": "fp16"})
     assert m.effective_precision == "fp32"

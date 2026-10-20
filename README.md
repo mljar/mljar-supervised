@@ -566,7 +566,7 @@ When `model_name` is provided, the markdown includes detailed metrics, fairness 
 # Installation  
 
 For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
-[installation guide](docs/docs/install.md). Version `1.4.0rc4` is a release
+[installation guide](docs/docs/install.md). Version `1.4.0rc5` is a release
 candidate that adds optional RealMLP, TabM mini, Kumo and TabICLv2 support.
 
 Compatibility:
@@ -582,7 +582,7 @@ pip install mljar-supervised
 To test the release candidate, select its exact version:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0rc4"
+python -m pip install "mljar-supervised==1.4.0rc5"
 ```
 
 See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)

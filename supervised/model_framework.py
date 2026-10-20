@@ -18,6 +18,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.callbacks.callback_list import CallbackList
 from supervised.exceptions import AutoMLException
+from supervised.prediction import current_prediction_context, prediction_scope
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
 from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
@@ -446,8 +447,12 @@ class ModelFramework:
 
         return self._single_prediction_time < max_single_prediction_time
 
+    @prediction_scope
     def predict(self, X):
         logger.debug("ModelFramework.predict")
+
+        if self.get_type() not in ["Kumo", "TabICLv2"]:
+            current_prediction_context().release_network()
 
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")

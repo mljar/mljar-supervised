@@ -1,3 +1,24 @@
+## mljar-supervised 1.4.0rc5
+
+Fifth release candidate for 1.4.0, improving saved-model inference and avoiding
+redundant SDM tuning candidates.
+
+```bash
+python -m pip install "mljar-supervised[feature-discovery]==1.4.0rc5"
+```
+
+- Reuse one frozen Kumo/TabICLv2 checkpoint across compatible saved folds within a prediction request. Keep fold-specific contexts isolated, check each fold's resource requirements, and evict retained weights when memory is needed.
+- Reuse CPU predictions for equivalent saved SDM folds using their fitted preprocessing, ordered context and targets, classes, checkpoint, execution settings, and transformed inputs. Bound this cache to 32 MiB and 1% of available RAM; preserve all stacking columns and ensemble weights.
+- Check free GPU memory before invoking garbage collection and CUDA cache cleanup for SDM. Clean up and remeasure only when the initial check fails; keep existing memory limits. RealMLP and TabM retain their cleanup behavior.
+- Skip hill-climbing changes to the SDM context-size cap when both caps already cover every training fold. Continue exploring changes to precision, seeds, estimator counts and model size.
+- Record expected sample-weight incompatibility skips in reports without repeating warnings in the console.
+- Add saved-fold reuse, memory-pressure, reload-parity and real-checkpoint tests, plus a profiler for existing saved models.
+- Update benchmark setup and preflight for RC5, retaining RC1–RC4 environments and results and comparing against the saved 1.3.2 baseline.
+
+Inference improvements apply to existing saved models without retraining or new
+arguments. The tuning change affects new training runs. Native categorical
+changes for LightGBM and XGBoost remain deferred.
+
 ## mljar-supervised 1.4.0rc4
 
 Fourth release candidate for 1.4.0, fixing prediction consistency and

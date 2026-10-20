@@ -51,14 +51,15 @@ def thread_count(n_jobs):
     return min(available, n_jobs) if n_jobs > 0 else max(1, available + 1 + n_jobs)
 
 
-def available_gpu_memory(device):
-    """Measure driver memory after releasing unreachable tensors and cached blocks."""
+def available_gpu_memory(device, *, cleanup=True):
+    """Measure driver memory, optionally releasing unreachable/cached allocations."""
     import torch
 
-    gc.collect()
-    if torch.cuda.is_initialized():
-        with torch.cuda.device(device):
-            torch.cuda.empty_cache()
+    if cleanup:
+        gc.collect()
+        if torch.cuda.is_initialized():
+            with torch.cuda.device(device):
+                torch.cuda.empty_cache()
     return torch.cuda.mem_get_info(device)
 
 

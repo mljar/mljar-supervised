@@ -9,7 +9,12 @@ on:
   pull_request:
     paths:
       - 'supervised/algorithms/*sdm*'
-      - 'tests/**/test_sdm.py'
+      - 'supervised/algorithms/realmlp_resources.py'
+      - 'supervised/prediction.py'
+      - 'supervised/model_framework.py'
+      - 'tests/**/test_sdm*.py'
+      - 'tests/**/test_gpu_admission_cleanup.py'
+      - 'tests/**/test_prediction_lifecycle.py'
       - '.github/workflows/sdm.yml'
 jobs:
   cpu:
@@ -43,7 +48,7 @@ jobs:
                       cls(params)._download()
           PY
       - run: python -m pip check
-      - run: python -m pytest tests/tests_algorithms/test_sdm.py tests/tests_automl/test_sdm.py tests/tests_tuner/test_sdm.py -q
+      - run: python -m pytest tests/tests_algorithms/test_sdm.py tests/tests_algorithms/test_sdm_context.py tests/tests_algorithms/test_sdm_reuse.py tests/tests_algorithms/test_gpu_admission_cleanup.py tests/tests_automl/test_sdm.py tests/tests_automl/test_prediction_lifecycle.py tests/tests_tuner/test_sdm.py -q
         env:
           MLJAR_TEST_SDM: '1'
           MLJAR_TEST_SDM_DEVICE: cpu

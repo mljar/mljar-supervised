@@ -4,8 +4,8 @@ TabM is an optional neural model for binary classification, multiclass
 classification and single-target regression. MLJAR uses **only `tabm-mini`**,
 through pytabkit. The model trains from scratch and downloads no model weights.
 
-Install the `[tabm]` or `[all]` extra with version `1.4.0rc4`, for example
-`python -m pip install "mljar-supervised[tabm]==1.4.0rc4"`.
+Install the `[tabm]` or `[all]` extra with version `1.4.0rc5`, for example
+`python -m pip install "mljar-supervised[tabm]==1.4.0rc5"`.
 See [installation](../install.md) for CPU and NVIDIA GPU
 commands. `[realmlp]`, `[tabm]` and `[all]` currently share the same dependencies;
 installing any of them makes both neural models available.

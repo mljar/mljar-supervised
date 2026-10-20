@@ -4,7 +4,7 @@ From the repository root, run one command in each terminal:
 
 ```bash
 ./benchmarks/run.sh 1.3.2
-./benchmarks/run.sh 1.4.0rc4
+./benchmarks/run.sh 1.4.0rc5
 ```
 
 No environment activation is necessary. The launcher uses Python 3 and `uv`
@@ -32,7 +32,7 @@ current 18-core / 36-thread workstation. Lower `--n-jobs` on smaller machines.
 Version locks prevent duplicate runs; release candidates also share a CPU-slot lock.
 All release candidates use the same CPU partition and must run sequentially.
 
-RC4 installs CUDA 12.8 PyTorch, pytabkit, the pinned NVIDIA SDM revision, and
+RC5 installs CUDA 12.8 PyTorch, pytabkit, the pinned NVIDIA SDM revision, and
 features-goldmine 1.1.0. Its automatic feature-discovery step is enabled in Compete.
 The GPU is checked and all Kumo sizes / TabICLv2 classification and regression
 weights are cached before training. Only the candidate uses the GPU. A GPU lock prevents
@@ -47,7 +47,7 @@ without starting training:
 
 ```bash
 ./benchmarks/run.sh 1.3.2 --prepare-only
-./benchmarks/run.sh 1.4.0rc4 --prepare-only
+./benchmarks/run.sh 1.4.0rc5 --prepare-only
 ```
 
 The TabArena data environment/checkout at `performance-results/tabarena/venv`
@@ -60,10 +60,10 @@ TabArena's `OpenMLTaskWrapper.get_train_test_split(fold=0, repeat=0, sample=0)`.
 
 ```bash
 ./benchmarks/run.sh 1.3.2 --suite smoke --seconds 60
-./benchmarks/run.sh 1.4.0rc4 --suite smoke --seconds 60
+./benchmarks/run.sh 1.4.0rc5 --suite smoke --seconds 60
 
-./benchmarks/run.sh 1.4.0rc4 --datasets credit-g --seconds 120 \
-    --run performance-results/tabarena/rc4-credit-check
+./benchmarks/run.sh 1.4.0rc5 --datasets credit-g --seconds 120 \
+    --run performance-results/tabarena/rc5-credit-check
 ```
 
 The smoke suite covers binary, multiclass and regression. A short budget may
@@ -74,9 +74,9 @@ must not be mixed with automatic-selection benchmark results.
 ## Outputs, timing and resume
 
 The default shared result root is
-`performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads/`.
-RC1, RC2 and RC3 environments and outputs remain in their original locations. The default
-for a new 1.3.2 run now pairs it with RC4. An already-running 1.3.2 job continues
+`performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc5-small-3600s-15threads/`.
+RC1, RC2, RC3 and RC4 environments and outputs remain in their original locations. The default
+for a new 1.3.2 run now pairs it with RC5. An already-running 1.3.2 job continues
 in its original output directory.
 
 It contains frozen harness code, a manifest, and separate version/dataset/split
@@ -121,33 +121,34 @@ python3 benchmarks/tabarena/comparison/report.py --run PATH_TO_RUN
 
 ### Reuse the existing 1.3.2 baseline
 
-Run RC4 normally while the existing 1.3.2 process continues. Afterward, compare
-their results without copying models or repeating baseline training:
+Run RC5 normally and reuse the existing 1.3.2 results. Compare their results
+without copying models or repeating baseline training:
 
 ```bash
 python3 benchmarks/tabarena/comparison/report.py \
-    --run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads \
+    --run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc5-small-3600s-15threads \
     --baseline-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads
 ```
 
 This reads the old baseline without changing its files and writes the comparison
-under the RC4 run. Only successful cases with matching data hashes, metrics,
+under the RC5 run. Only successful cases with matching data hashes, metrics,
 splits, seeds and budgets are paired. The manifests must also agree on the
 TabArena revision, protocol, algorithm selection and resource limits. Source
 paths are listed in the report. If either job is still running, repeat the report
 command after it finishes; the automatic per-dataset report uses its own run's
 results.
 
-### Compare RC4 with all saved releases
+### Compare RC5 with all saved releases
 
 Reuse the existing baseline and earlier candidate runs in the live report:
 
 ```bash
-./benchmarks/run.sh 1.4.0rc4 \
+./benchmarks/run.sh 1.4.0rc5 \
   --baseline-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads \
   --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads \
   --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc2-small-3600s-15threads \
-  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc3-small-3600s-15threads
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc3-small-3600s-15threads \
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads
 ```
 
 These options only read older runs. Their paths are saved with the new run so
@@ -156,7 +157,7 @@ lists each version's status and selected-model score; incomplete evaluations
 are provisional and excluded from paired win counts. Training budgets, data
 hashes, splits, metrics, and resource settings must match. Selected-model-only
 and all-model evaluation use the same validation-selected test score, but total
-evaluation times differ. RC4 defaults to selected-model evaluation to avoid
+evaluation times differ. RC5 defaults to selected-model evaluation to avoid
 all-candidate diagnostics preventing a completed score and reload check.
 
 ### Older runs
@@ -247,3 +248,44 @@ performance-results/tabarena/comparison-environments/1.3.2-*/bin/python -m pytes
     benchmarks/tabarena/comparison/test_comparison.py \
     benchmarks/tabarena/comparison/test_reevaluate.py -q
 ```
+
+## Profile inference on saved models
+
+`profile_predictions.py` measures the selected model and all required ensemble
+and stacking dependencies without fitting new models. It records checkpoint
+loading, preprocessing, SDM context encoding and queries, admission/cleanup,
+equivalence checks and cache hits. Timings are inclusive and nested: do not sum
+all phases. GPU synchronization and tracing add overhead, so compare runs made
+with this same profiler separately from the published benchmark timings.
+
+Use the original dependency environment. Omit `--source-root` to measure its
+installed release; pass a checkout or frozen snapshot to measure local fixes.
+Keep the output outside the original attempt and use a new directory each time:
+
+```bash
+profile_python=performance-results/tabarena/comparison-environments/1.4.0rc4-0fb60923146b/bin/python
+profile_attempt=performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc4-small-3600s-15threads/1.4.0rc4/credit-g/r0f0/attempt-001
+"$profile_python" benchmarks/tabarena/comparison/profile_predictions.py \
+  --attempt "$profile_attempt" --output performance-results/inference-profile/rc4
+"$profile_python" benchmarks/tabarena/comparison/profile_predictions.py \
+  --attempt "$profile_attempt" --output performance-results/inference-profile/patched \
+  --source-root "$PWD" --reference performance-results/inference-profile/rc4
+```
+
+The CUDA run waits for the benchmark GPU lock. It does not interrupt training.
+Other applications outside this harness can still contend for GPU resources.
+For reproducibility, freeze the source before queueing a long run and use the
+same CPU affinity and thread settings for both measurements. The defaults are
+15 threads, batches of 1/20/128/334 rows, and two calls per batch size. Calls
+share an AutoML instance but request caches are released each time. First-call
+timing is not a guarantee of a cold OS disk cache. A separate 20-row reload check
+verifies predictions after constructing a new AutoML instance.
+
+Outputs include predictions, JSON traces and timings, process peak RSS (cumulative
+for the process), CUDA allocated/reserved peaks, package versions, and source and
+artifact hashes. Original artifacts and source are checked for changes. A
+`--reference` run must have matching dataset, artifact hashes, dependency versions,
+device, threads and batch/repeat settings; its predictions are checked at
+`rtol=1e-5, atol=1e-7`. This diagnostic uses no test labels for model selection.
+For a CPU diagnostic, use `CUDA_VISIBLE_DEVICES='' ... --device cpu --n-jobs 2`;
+those timings are not comparable with the CUDA benchmark.

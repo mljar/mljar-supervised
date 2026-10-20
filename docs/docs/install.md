@@ -24,7 +24,7 @@ the available devices for RealMLP, TabM, Kumo, and TabICLv2. Other algorithms
 use their own device settings.
 
 !!! note "Release candidate"
-    Version `1.4.0rc4` includes RealMLP, TabM mini, Kumo and TabICLv2 support,
+    Version `1.4.0rc5` includes RealMLP, TabM mini, Kumo and TabICLv2 support,
     plus optional [feature discovery](features/feature_discovery.md) powered by
     features-goldmine. Install `[feature-discovery]` or `[all]` on Python 3.10+
     to enable it automatically in Compete.
@@ -64,7 +64,7 @@ python -m pip install mljar-supervised
 To test the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0rc4"
+python -m pip install "mljar-supervised==1.4.0rc5"
 ```
 
 The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
@@ -99,7 +99,7 @@ Install your PyTorch build first:
 Then run **both** commands:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc4"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc5"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -177,9 +177,9 @@ CUDA device, not multi-GPU training.
 After installing your chosen PyTorch build, install the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised[realmlp]==1.4.0rc4"
+python -m pip install "mljar-supervised[realmlp]==1.4.0rc5"
 # Or all optional model dependencies:
-python -m pip install "mljar-supervised[all]==1.4.0rc4"
+python -m pip install "mljar-supervised[all]==1.4.0rc5"
 ```
 
 `[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds

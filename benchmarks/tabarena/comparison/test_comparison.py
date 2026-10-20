@@ -43,25 +43,28 @@ def test_cpu_partitions_never_share_physical_cores():
     assert cpu_affinity("1.4.0rc2", 1) == second
     assert cpu_affinity("1.4.0rc3", 1) == second
     assert cpu_affinity("1.4.0rc4", 1) == second
+    assert cpu_affinity("1.4.0rc5", 1) == second
 
 
-def test_rc4_defaults_preserve_older_candidate_paths():
+def test_rc5_defaults_preserve_older_candidate_paths():
     stable = parse_args(["--version", "1.3.2"])
     rc2 = parse_args(["--version", "1.4.0rc2"])
     rc1 = parse_args(["--version", "1.4.0rc1"])
     legacy_stable = parse_args(["--version", "1.3.2", "--candidate-version", "1.4.0rc1"])
     rc3 = parse_args(["--version", "1.4.0rc3"])
     rc4 = parse_args(["--version", "1.4.0rc4"])
-    assert stable.run == rc4.run != rc3.run
+    rc5 = parse_args(["--version", "1.4.0rc5"])
+    assert stable.run == rc5.run != rc4.run != rc3.run
+    assert "vs-1.4.0rc5-small-3600s-15threads" in rc5.run.name
     assert "vs-1.4.0rc4-small-3600s-15threads" in rc4.run.name
-    assert not rc4.evaluate_all_models
-    assert parse_args(["--version", "1.4.0rc4", "--evaluate-all-models"]).evaluate_all_models
+    assert not rc5.evaluate_all_models
+    assert parse_args(["--version", "1.4.0rc5", "--evaluate-all-models"]).evaluate_all_models
     assert rc3.run != rc2.run
     assert "vs-1.4.0rc3-small-3600s-15threads" in rc3.run.name
     assert "vs-1.4.0rc2-small-3600s-15threads" in rc2.run.name
     assert legacy_stable.run == rc1.run != rc2.run
     assert stable.device == "cpu"
-    assert rc1.device == rc2.device == rc3.device == rc4.device == "cuda"
+    assert rc1.device == rc2.device == rc3.device == rc4.device == rc5.device == "cuda"
     assert parse_args(["--version", "1.4.0rc2", "--device", "cpu"]).device == "cpu"
     with pytest.raises(SystemExit):
         parse_args(["--version", "1.4.0rc2", "--candidate-version", "1.4.0rc1"])
@@ -107,7 +110,7 @@ def test_run_rejects_changed_budget(tmp_path):
         freeze_run(tmp_path, {"seconds": 3600})
 
 
-@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4"])
+@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4", "1.4.0rc5"])
 def test_report_compares_only_matching_successful_splits(tmp_path, candidate):
     config = {"datasets": ["credit-g"]}
     if candidate != "1.4.0rc1":

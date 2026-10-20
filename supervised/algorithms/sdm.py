@@ -30,6 +30,7 @@ from supervised.algorithms.registry import (
     REGRESSION,
 )
 from supervised.exceptions import AutoMLException
+from supervised.prediction import current_prediction_context
 
 SDM_REVISION = "b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 SDM_VERSION = "0.2.0rc2.dev18+gb97cb914e"
@@ -242,14 +243,20 @@ class SDMAlgorithm(RealMLPAlgorithm):
         if self.device.startswith("cuda"):
             from supervised.algorithms.realmlp_resources import available_gpu_memory
 
-            free, _ = available_gpu_memory(self.device)
             gpu = 512 * 1024**2 + checkpoint_bytes + working
-            gpu_budget = free * self.params.get("gpu_memory_fraction", 0.7)
-            if self.params.get("gpu_memory_limit_gb") is not None:
-                gpu_budget = min(
-                    gpu_budget, self.params["gpu_memory_limit_gb"] * 1024**3
-                )
-            if gpu > gpu_budget:
+            # Driver-free memory is a conservative fast check: do not count
+            # allocator cache as available. Reclaim unused allocations only if
+            # needed, then remeasure using the same estimate and budget limits.
+            for cleanup in (False, True):
+                free, _ = available_gpu_memory(self.device, cleanup=cleanup)
+                gpu_budget = free * self.params.get("gpu_memory_fraction", 0.7)
+                if self.params.get("gpu_memory_limit_gb") is not None:
+                    gpu_budget = min(
+                        gpu_budget, self.params["gpu_memory_limit_gb"] * 1024**3
+                    )
+                if gpu <= gpu_budget:
+                    break
+            else:
                 raise AutoMLException(
                     f"{self.algorithm_short_name} estimated VRAM exceeds budget: "
                     f"{gpu / 1024**3:.2f} GiB needed, {gpu_budget / 1024**3:.2f} GiB "
@@ -472,7 +479,21 @@ class SDMAlgorithm(RealMLPAlgorithm):
             self.__dict__.pop("_evaluation_deadline", None)
 
     def predict(self, X):
-        self.reload()
+        request = current_prediction_context()
+        saved = self.model is None and self.model_file_path is not None
+        if saved:
+            # Restore fold metadata first. An equivalent saved fold can reuse
+            # CPU predictions without loading weights or constructing a context.
+            self._load_state(self.model_file_path)
+        key = None
+        if request is not None and saved:
+            key = self._prediction_key(X)
+            prediction = request.sdm_prediction(key)
+            if prediction is not None:
+                self._check_time()
+                return prediction
+        if saved:
+            self._restore_network(request)
         if not self.is_fitted():
             raise AutoMLException("SDM model is not fitted")
         import torch
@@ -510,7 +531,50 @@ class SDMAlgorithm(RealMLPAlgorithm):
         result = np.concatenate(outputs)
         if not np.isfinite(result).all():
             raise AutoMLException("SDM returned nonfinite predictions")
-        return result[:, 1] if self.ml_task == BINARY_CLASSIFICATION else result
+        result = result[:, 1] if self.ml_task == BINARY_CLASSIFICATION else result
+        if key is not None:
+            budget = available_memory() * 0.01
+            if self.params.get("memory_limit_gb") is not None:
+                budget = min(budget, self.params["memory_limit_gb"] * 1024**3 * 0.01)
+            request.keep_sdm_prediction(key, result, budget)
+        return result
+
+    def _network_key(self):
+        path = Path(self.checkpoint_path).resolve()
+        stat = path.stat()
+        return (
+            self.algorithm_short_name,
+            self.ml_task,
+            self.device,
+            self.params.get("size", "small"),
+            str(path),
+            stat.st_size,
+            stat.st_mtime_ns,
+            stat.st_ctime_ns,
+            stat.st_ino,
+        )
+
+    def _prediction_key(self, X):
+        # The outer preprocessing has already run on X. Include the entire
+        # remaining fitted transform, ordered context/targets, class mapping,
+        # checkpoint identity and execution options. OOF equality is insufficient.
+        # max_context_size is only a sampling cap; the actual context is hashed.
+        return joblib.hash(
+            (
+                self._network_key(),
+                type(self),
+                {k: v for k, v in self.params.items() if k != "max_context_size"},
+                self.context,
+                self.context_y,
+                getattr(self, "classes_", None),
+                self.columns,
+                self.category_maps,
+                self.numeric_means,
+                self.indicators,
+                X,
+            ),
+            hash_name="sha1",
+        )
 
     def copy(self):
         # Frozen network can be shared; all fold-specific state is copied independently.
@@ -573,7 +637,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
         joblib.dump(payload, model_file_path, compress=3)
         self.model_file_path = model_file_path
 
-    def load(self, model_file_path):
+    def _load_state(self, model_file_path):
         check_dependencies()
         payload = joblib.load(model_file_path)
         parent = Path(model_file_path).resolve().parent
@@ -587,13 +651,38 @@ class SDMAlgorithm(RealMLPAlgorithm):
             or int(self.device.split(":")[1]) >= torch.cuda.device_count()
         ):
             self.device = "cpu"
-        self._check_resources(
+        self.model_file_path = model_file_path
+
+    def _restore_network(self, request=None):
+        key = self._network_key()
+        network = request.network_for(key) if request is not None else None
+        # Keep admission conservative even when weights are already resident.
+        # A larger next fold must still satisfy its own resource limits.
+        resources = (
             len(self.context),
             self.training_info.get("effective_columns", self.context.shape[1]),
             Path(self.checkpoint_path).stat().st_size,
         )
-        self._load_network()  # Always local: never downloads when reloading an artifact.
-        self.model_file_path = model_file_path
+        try:
+            self._check_resources(*resources)
+        except AutoMLException:
+            if network is None:
+                raise
+            # Retention must not turn a formerly admissible fold into a failure.
+            # Evict and retry the original admission/loading path under pressure.
+            network = None
+            request.release_network()
+            self._check_resources(*resources)
+        if network is None:
+            self._load_network()  # Always local; never downloads during reload.
+            if request is not None:
+                request.keep_network(key, self.model)
+        else:
+            self.model = network
+
+    def load(self, model_file_path):
+        self._load_state(model_file_path)
+        self._restore_network()
 
 
 class KumoClassificationAlgorithm(ClassifierMixin, SDMAlgorithm):

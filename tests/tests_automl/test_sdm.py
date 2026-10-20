@@ -56,14 +56,16 @@ def test_saved_sdm_folds_release_networks_after_prediction(
         networks.append(weakref.ref(self.model))
 
     monkeypatch.setattr(SDMAlgorithm, "_load_network", tracked_load)
-    for _ in range(2):
+    for request_number in range(1, 3):
         prediction = framework.predict(X[80:84])
         np.testing.assert_allclose(
             prediction.prediction_1, expected, rtol=1e-5, atol=1e-7
         )
         assert all(fold.model is None for fold in framework.learners)
         assert not any(network() is not None for network in networks)
-    assert len(networks) == 20
+        # Ten equivalent saved folds share one checkpoint within a request.
+        # Separate requests reload it, and no network survives the call.
+        assert len(networks) == request_number
 
 
 @pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
