@@ -62,6 +62,23 @@ Categorical columns are detected automatically.
 
 You do not need to run `pd.get_dummies()` before training.
 
+One-hot columns are constructed together to avoid pandas frame fragmentation on
+wide categorical datasets. Their values, names and ordering are preserved when
+loading existing models.
+
+## KMeans features with missing values
+
+New KMeans feature transformers learn numeric medians from their training fold
+before scaling and clustering. Missing values in an entirely empty input column
+use zero. The medians, scaler and cluster centers are saved together and reused
+for validation and prediction, including missing values first seen at prediction
+time. KMeans features do not depend on the other rows in a prediction batch.
+The transformer fills its own numeric input copy; it does not replace the
+original feature values. Existing artifacts without saved imputation statistics
+retain their previous behavior. New fits use a fixed clustering seed.
+
+## Frozen categorical mappings
+
 Integer feature encoders keep the mappings learned during fitting. Every unseen
 category receives the same reserved code, equal to the number of fitted
 categories. The code does not depend on other rows in the prediction batch or

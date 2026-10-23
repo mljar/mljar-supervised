@@ -6,10 +6,14 @@ from pathlib import Path
 
 from joblib import cpu_count
 
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import AutoMLException, ResourceAdmissionError
 
 
 class RealMLPResourceError(AutoMLException):
+    pass
+
+
+class RealMLPAdmissionError(RealMLPResourceError, ResourceAdmissionError):
     pass
 
 
@@ -63,6 +67,17 @@ def available_gpu_memory(device, *, cleanup=True):
     return torch.cuda.mem_get_info(device)
 
 
+def gpu_allocation_stats(device):
+    """Read process allocator usage when diagnosing a rejected GPU budget."""
+    import sys
+
+    torch = sys.modules.get("torch")
+    if torch is None or not torch.cuda.is_initialized():
+        return {}
+    return dict(torch_allocated_bytes=torch.cuda.memory_allocated(device),
+                torch_reserved_bytes=torch.cuda.memory_reserved(device))
+
+
 def check_resources(model, X, X_validation, n_classes, device, params):
     """Use pytabkit's architecture-aware estimate without allocating data tensors."""
     import torch
@@ -109,10 +124,11 @@ def check_resources(model, X, X_validation, n_classes, device, params):
         ram_budget_bytes=int(host_budget),
     )
     if host_need > host_budget:
-        raise RealMLPResourceError(
+        raise RealMLPAdmissionError(
             f"RealMLP estimated RAM {host_need / 1024**3:.2f} GiB exceeds "
             f"budget {host_budget / 1024**3:.2f} GiB. Use fewer features/rows or "
-            "a smaller network, or explicitly adjust the memory budget."
+            "a smaller network, or explicitly adjust the memory budget.",
+            resources=info,
         )
     if device.startswith("cuda"):
         free, total = available_gpu_memory(torch.device(device))
@@ -127,10 +143,12 @@ def check_resources(model, X, X_validation, n_classes, device, params):
             vram_budget_bytes=int(budget),
         )
         if need > budget:
-            raise RealMLPResourceError(
+            info.update(gpu_allocation_stats(device))
+            raise RealMLPAdmissionError(
                 f"RealMLP estimated GPU memory {need / 1024**3:.2f} GiB exceeds "
                 f"budget {budget / 1024**3:.2f} GiB on {device}. "
-                "Use a smaller configuration or explicitly select CPU."
+                "Use a smaller configuration or explicitly select CPU.",
+                resources=info,
             )
     return info
 

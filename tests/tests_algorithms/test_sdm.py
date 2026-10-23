@@ -210,11 +210,12 @@ def test_fold_local_preprocessing(cls):
 
 @pytest.mark.parametrize("cls", CLASSES)
 def test_resource_and_deadline_rejection(cls):
+    from supervised.exceptions import BudgetExceededError
     m = cls({"ml_task": "binary_classification", "memory_limit_gb": 0.001})
     with pytest.raises(Exception, match="RAM exceeds"):
         m._check_resources(100, 10)
     m._deadline = 0
-    with pytest.raises(Exception, match="time budget"):
+    with pytest.raises(BudgetExceededError, match="time budget"):
         m._check_time()
 
 

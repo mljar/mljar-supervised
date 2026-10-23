@@ -12,7 +12,8 @@ def test_profiler_records_failures_and_restores_methods():
             raise ValueError("prediction failed")
 
     original = Model.predict
-    profiler = PredictionProfiler()
+    snapshots = iter([{"allocated_bytes": 100}, {"allocated_bytes": 0}])
+    profiler = PredictionProfiler(memory_snapshot=lambda: next(snapshots))
     try:
         profiler.instrument(Model, "predict", "query")
         with pytest.raises(ValueError, match="prediction failed"):
@@ -20,6 +21,8 @@ def test_profiler_records_failures_and_restores_methods():
         assert len(profiler.events) == 1
         assert profiler.events[0]["success"] is False
         assert profiler.events[0]["seconds"] >= 0
+        assert profiler.events[0]["memory_before"]["allocated_bytes"] == 100
+        assert profiler.events[0]["memory_after"]["allocated_bytes"] == 0
     finally:
         profiler.stack.close()
     assert Model.predict is original

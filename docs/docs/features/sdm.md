@@ -152,6 +152,26 @@ and releases them after each fold prediction. Stacking and ensembles reuse
 shared model predictions within each request, avoiding repeated SDM inference.
 See [prediction memory and reuse](save-and-load-models.md#prediction-memory-and-reuse).
 
+### Resource skips and diagnostics
+
+During AutoML training, an estimated RAM or GPU budget rejection is recorded as
+a skipped candidate in `progress.json` and `resource_skips.json`. The latter
+contains the candidate configuration, required memory and measured budget, and is
+linked from the Markdown leaderboard report. Training prints one summary of
+these skips. Actual allocation failures and unexpected exceptions remain errors.
+This reporting also covers RealMLP and TabM admission checks.
+
+A previously rejected identical configuration is rechecked against current free
+memory before repeating preprocessing. Other configurations and algorithms remain
+eligible; a temporary memory shortage does not disable an algorithm.
+
+During prediction, insufficient memory still raises an exception. The trained
+precision, context, model and device are not changed to bypass a budget. Rejected
+GPU checks include process PyTorch allocation/reservation diagnostics when CUDA
+is initialized. A fresh-process prediction can succeed when prediction directly
+after training had insufficient free memory; the benchmark records memory at
+these boundaries to distinguish the cases.
+
 ### Saved-model reuse (starting with 1.4.0rc5)
 
 Saved Kumo and TabICLv2 folds can share frozen checkpoint weights during one

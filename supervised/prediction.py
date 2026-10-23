@@ -2,6 +2,7 @@
 
 from collections import OrderedDict
 from contextvars import ContextVar
+import time
 from functools import wraps
 
 _current = ContextVar("mljar_prediction_context", default=None)
@@ -35,6 +36,7 @@ class PredictionContext:
 
     def __init__(self):
         self._predictions = {}
+        self.model_prediction_times = {}
         self._sdm_predictions = OrderedDict()
         self._sdm_prediction_bytes = 0
         self._network_key = None
@@ -91,9 +93,33 @@ class PredictionContext:
     def predict(self, model, X, X_stacked=None):
         key = (id(model), id(X), id(X_stacked))
         if key not in self._predictions:
+            started = time.perf_counter()
             if model.get_type() == "Ensemble":
                 prediction = model.predict(X, X_stacked, prediction_context=self)
             else:
                 prediction = model.predict(X)
+                self.model_prediction_times[model.get_name()] = time.perf_counter() - started
             self._predictions[key] = (model, X, X_stacked, prediction)
         return self._predictions[key][-1]
+
+
+def prediction_dependencies(model, stacked_models=()):
+    """Unique framework models executed by a prediction, including stack inputs."""
+    dependencies, visited = {}, set()
+
+    def visit(current):
+        name = current.get_name()
+        if name in visited:
+            return
+        visited.add(name)
+        if current._is_stacked:
+            for base in stacked_models or ():
+                visit(base)
+        if current.get_type() == "Ensemble":
+            for member in current.selected_models or ():
+                visit(member["model"])
+        else:
+            dependencies[name] = current
+
+    visit(model)
+    return dependencies

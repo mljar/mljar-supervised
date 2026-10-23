@@ -102,6 +102,30 @@ def test_discovery_training_reports_and_reload(
 
 def test_discovery_survives_hill_climbing_and_stacking(tmp_path, monkeypatch):
     pytest.importorskip("features_goldmine")
+    from supervised.tuner import stacking
+    from supervised.algorithms.lightgbm import additional
+
+    # Other legacy test modules modify this dictionary at collection time.
+    monkeypatch.setitem(additional, "max_rounds", 8)
+
+    select = stacking.select_stacking_models
+
+    def include_discovery_parent(models, **kwargs):
+        selected = select(models, **kwargs)
+        # Exercise discovery's stacked preprocessing/reload independently of
+        # whether this small fixture ranks a discovery LightGBM in its top two.
+        parent = min(
+            (m for m in models if m.get_type() == "LightGBM"
+             and not m._is_stacked and "FeatureDiscovery" in m.get_name()),
+            key=lambda m: m.get_final_loss(),
+        )
+        if parent not in selected:
+            siblings = [m for m in selected if m.get_type() == "LightGBM"]
+            selected.remove(max(siblings, key=lambda m: m.get_final_loss()))
+            selected.append(parent)
+        return sorted(selected, key=lambda m: m.get_final_loss())
+
+    monkeypatch.setattr(stacking, "select_stacking_models", include_discovery_parent)
     X, y = make_friedman1(n_samples=600, n_features=6, random_state=42)
     X = pd.DataFrame(X)
     original = TimeController.time_should_use
@@ -113,7 +137,7 @@ def test_discovery_survives_hill_climbing_and_stacking(tmp_path, monkeypatch):
         validation_strategy={"validation_type": "kfold", "k_folds": 2, "shuffle": True},
         golden_features=False, feature_discovery=True, kmeans_features=False,
         features_selection=False, start_random_models=1, hill_climbing_steps=1,
-        top_models_to_improve=1, boost_on_errors=False, mix_encoding=False,
+        top_models_to_improve=2, boost_on_errors=False, mix_encoding=False,
         train_ensemble=True, stack_models=True,
     )
     model.fit(X, y)
@@ -130,7 +154,7 @@ def test_discovery_failure_preserves_trained_models(tmp_path, monkeypatch):
 
     monkeypatch.setattr("supervised.base_automl.check_discovery_dependencies", lambda: None)
 
-    def fail(*args):
+    def fail(*args, **kwargs):
         raise RuntimeError("Discovery failure diagnostic")
 
     monkeypatch.setattr(FeatureDiscovery, "prepare", fail)

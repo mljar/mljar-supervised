@@ -203,11 +203,11 @@ def test_degenerate_columns_and_unknown_categories(kind):
 
 @backend
 def test_exhausted_time_budget_has_no_model():
-    from supervised.exceptions import AutoMLException
+    from supervised.exceptions import BudgetExceededError
 
     X, y = make_classification(n_samples=100, n_features=6, random_state=42)
     m = learner()
-    with pytest.raises(AutoMLException, match="time budget"):
+    with pytest.raises(BudgetExceededError, match="time budget"):
         m.fit(X[:80], y[:80], X_validation=X[80:], y_validation=y[80:], max_time=0)
     assert not m.is_fitted()
 

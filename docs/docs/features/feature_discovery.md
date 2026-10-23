@@ -29,18 +29,13 @@ explicit `True` raises an actionable error. Base MLJAR still supports Python 3.9
 
 ## Search and time allocation
 
-When golden features and feature discovery both run, the golden-features
-scheduling weight of 0.05 is split into 0.025 for each step. When only one runs,
-it receives 0.05. If both mixed encoding and feature discovery are enabled steps,
-another 0.025 is transferred from mixed encoding to discovery. Mixed encoding
-then receives 0.025, while discovery receives 0.05 with golden features or 0.075
-without golden features. This transfer preserves other stages' allocations and
-only applies when both participating steps are present.
-
-Weights are normalized against other enabled steps, not literal percentages of
-total runtime. With all Compete steps enabled, mixed encoding and golden features
-each receive about 1.85%, and feature discovery receives about 3.70%. For a
-one-hour run, these are approximately 67, 67 and 133 seconds respectively.
+The feature-engineering scheduling pool is shared in 30/50/20 proportions between
+golden features, feature discovery and KMeans. With all three enabled, their
+weights are 0.0375, 0.0625 and 0.025 respectively; mixed encoding retains 0.025.
+Disabling a component removes its previous budget contribution, and the remaining
+feature-engineering proportions are renormalized. See [Modes](modes.md) for the
+complete stage allocation. Weights are normalized against other enabled steps,
+not literal percentages of total runtime.
 
 Discovery receives up to one quarter of its step allocation across all folds;
 the rest is available for training. Unused time from earlier steps remains
@@ -99,6 +94,12 @@ respect AutoML's `n_jobs`. These controls do not bound total process RSS or the
 size of returned training matrices.
 
 ## Saved artifacts and reports
+
+With `verbose=1` (the default), training prints fold progress, feature counts per
+profile, newly listed feature names, and the path to each transformations report.
+Shared features are listed once per discovery run, and cached folds are marked as
+reused. Large feature lists show the first 20 new names per profile; the report
+contains the complete definitions. `verbose=0` disables these console messages.
 
 Artifacts live under `feature_discovery/<identity>/` in the AutoML results folder:
 

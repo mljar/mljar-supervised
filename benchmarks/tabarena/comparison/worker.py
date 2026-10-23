@@ -55,6 +55,28 @@ def save_table(path, rows):
     temporary.replace(path)
 
 
+def record_memory(output, phase):
+    """Retain boundary diagnostics, including when training/prediction fails."""
+    import psutil
+
+    snapshot = dict(phase=phase, monotonic=time.monotonic(),
+                    rss_bytes=psutil.Process().memory_info().rss)
+    torch = sys.modules.get("torch")
+    if torch is not None and torch.cuda.is_initialized():
+        # Read only: do not change allocator state to make a benchmark pass.
+        snapshot["cuda"] = []
+        for device in range(torch.cuda.device_count()):
+            free, total = torch.cuda.mem_get_info(device)
+            snapshot["cuda"].append(dict(
+                device=device, free_bytes=free, total_bytes=total,
+                allocated_bytes=torch.cuda.memory_allocated(device),
+                reserved_bytes=torch.cuda.memory_reserved(device),
+                peak_allocated_bytes=torch.cuda.max_memory_allocated(device),
+            ))
+    with (Path(output) / "memory.jsonl").open("a") as file:
+        file.write(json.dumps(snapshot) + "\n")
+
+
 def model_inventory(automl, root, leaderboard):
     records = []
     lookup = {row["name"]: row for row in leaderboard.to_dict("records")}
@@ -93,16 +115,65 @@ def coverage(root, inventory):
     return results
 
 
+def prediction_graph(automl):
+    """Count actual framework/fold dependencies, sharing repeated members once."""
+    selected = automl._best_model
+    inputs = automl._stacked_models or []
+    visited, dependencies = set(), []
+
+    def visit(model):
+        name = model.get_name()
+        if name in visited:
+            return
+        visited.add(name)
+        if model._is_stacked:
+            for base in inputs:
+                visit(base)
+        if model.get_type() == "Ensemble":
+            for member in model.selected_models:
+                visit(member["model"])
+        else:
+            dependencies.append(dict(name=name, algorithm=model.get_type(),
+                                     is_stacked=bool(model._is_stacked),
+                                     fold_learners=len(model.learners)))
+
+    visit(selected)
+    return dict(best_model=selected.get_name(), dependencies=dependencies,
+                n_prediction_models=len(dependencies),
+                n_prediction_learners=sum(m["fold_learners"] for m in dependencies),
+                n_stacking_inputs=len(inputs) if selected._is_stacked else 0,
+                n_ensemble_members=len(selected.selected_models) if selected.get_type() == "Ensemble" else 0)
+
+
 def main(spec):
+    if spec.get("source_snapshot"):
+        snapshot = Path(spec["source_snapshot"]).resolve()
+        from reevaluate import verify_hashes
+        verify_hashes(snapshot / "supervised", spec["source_sha256"])
+        sys.path.insert(0, str(snapshot))
     import supervised
     from supervised import AutoML
 
     version = importlib.metadata.version("mljar-supervised")
     if version != spec["version"] or supervised.__version__ != version:
         raise RuntimeError(f"Wrong version: {version} / {supervised.__version__}")
-    if not Path(supervised.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()):
+    if spec.get("source_snapshot"):
+        if Path(supervised.__file__).resolve().parent != snapshot / "supervised":
+            raise RuntimeError("Wrong experimental source snapshot")
+    elif not Path(supervised.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()):
         raise RuntimeError(f"Workspace shadowed the installed package: {supervised.__file__}")
+    if spec.get("stacking_limit") is not None:
+        # Diagnostic override only; keep the published AutoML API unchanged.
+        from supervised.tuner import stacking
+        stacking._MAX_MODELS_PER_TYPE = spec["stacking_limit"]
     data, output = Path(spec["data"]), Path(spec["attempt"])
+    if spec.get("source_snapshot"):
+        write_json(output / "experimental_source.json", dict(
+            label=spec.get("experiment"), package_version=version,
+            source=str(snapshot), source_sha256=spec["source_sha256"],
+            stacking_limit=spec.get("stacking_limit"),
+        ))
+        print(f"EXPERIMENT: {spec.get('experiment')}\nFrozen local source: {snapshot}", flush=True)
     if sha256(data / "dataset.json") != spec["dataset_sha256"]:
         raise RuntimeError("Dataset manifest changed after preparation")
     info = read_json(data / "dataset.json")
@@ -144,12 +215,24 @@ def main(spec):
     automl = AutoML(**settings)
     started = time.monotonic()
     write_json(output / "phase.json", dict(phase="training", started_monotonic=started))
-    automl.fit(X, y)
+    record_memory(output, "before_fit")
+    try:
+        automl.fit(X, y)
+    finally:
+        record_memory(output, "after_fit")
     fit_seconds = time.monotonic() - started
     evaluation_started = time.monotonic()
     write_json(output / "phase.json", dict(phase="evaluation", started_monotonic=evaluation_started))
     params = read_json(output / "automl/params.json")
     write_json(output / "resolved_settings.json", params)
+    graph = prediction_graph(automl)
+    write_json(output / "prediction_graph.json", graph)
+    skips_file = output / "automl/resource_skips.json"
+    resource_skips = len(read_json(skips_file)) if skips_file.exists() else 0
+    progress = read_json(output / "automl/progress.json")
+    stopping = progress.get("algorithm_early_stopping") or {}
+    training_errors = sum(p.get("status") == "error" for group in progress.get("all_params", {}).values() for p in group)
+    budget_skips = sum("budget_skip" in p for group in progress.get("all_params", {}).values() for p in group)
     leaderboard = pd.read_csv(output / "automl/leaderboard.csv")
     print("\nMLJAR leaderboard (internal validation):\n" + leaderboard.to_string(index=False), flush=True)
     inventory = model_inventory(automl, output / "automl", leaderboard)
@@ -168,17 +251,29 @@ def main(spec):
     predictions_dir.mkdir()
     best_name = params["best_model"]
     prediction_started = time.monotonic()
-    best_predictions = automl.predict_all(X_test)
+    record_memory(output, "before_prediction")
+    try:
+        best_predictions = automl.predict_all(X_test)
+    finally:
+        record_memory(output, "after_prediction")
     prediction_seconds = time.monotonic() - prediction_started
     score, error = score_predictions(best_predictions, encoded_test, info["problem_type"],
                                     len(encoder.classes_) if encoder is not None else None)
     best_predictions.to_parquet(predictions_dir / "best.parquet", index=False)
-    metrics = dict(dataset=spec["dataset"], task_id=info["task_id"], version=version, fold=0, repeat=0,
+    metrics = dict(dataset=spec["dataset"], task_id=info["task_id"], version=spec.get("experiment", version),
+                   package_version=version, fold=0, repeat=0,
                    split="r0f0", metric=info["metric"], test_score=score, metric_error=error,
                    best_model=best_name, fit_seconds=fit_seconds, n_models=len(inventory),
                    time_train_s=fit_seconds, time_infer_s=prediction_seconds,
                    device=spec["device"], n_jobs=spec["n_jobs"], seconds=spec["seconds"],
-                   seed=spec["seed"], dataset_sha256=spec["dataset_sha256"])
+                   seed=spec["seed"], dataset_sha256=spec["dataset_sha256"],
+                   package_source=spec.get("package_source", "pypi"), wheel_sha256=spec.get("wheel_sha256"),
+                   resource_skips=resource_skips, training_candidate_errors=training_errors,
+                   budget_skips=budget_skips,
+                   algorithm_early_stopping_enabled=stopping.get("enabled", False),
+                   algorithm_early_stopping_skips=len(stopping.get("skipped", {})),
+                   algorithms_paused=len(stopping.get("paused", {})),
+                   **{k: v for k, v in graph.items() if k.startswith("n_")})
     write_json(output / "metrics.json", metrics)
     print(f"\nHELD-OUT TEST: {info['metric']}={score:.8g}; selected by validation: {best_name}", flush=True)
     by_name = {model.get_name(): model for model in automl._models}
@@ -207,6 +302,7 @@ def main(spec):
     print("Verifying that the selected saved model reloads...", flush=True)
     reloaded = AutoML(results_path=str(output / "automl"))
     actual = reloaded.predict_all(X_test.iloc[:20])
+    record_memory(output, "after_reload_prediction")
     pd.testing.assert_frame_equal(actual.reset_index(drop=True), best_predictions.iloc[:20].reset_index(drop=True),
                                   check_exact=False, rtol=1e-5, atol=1e-7)
     metrics.update(evaluation_seconds=time.monotonic() - evaluation_started, reload_verified=True,

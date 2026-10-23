@@ -97,7 +97,7 @@ class FeatureDiscovery:
         self.n_jobs = joblib.effective_n_jobs(n_jobs)
         self.data_store = data_store
 
-    def prepare(self, validation_params, time_limit):
+    def prepare(self, validation_params, time_limit, progress=None):
         GoldenFeatures = check_dependencies()
         package_version = importlib.metadata.version("features-goldmine")
         if not supported_validation(validation_params):
@@ -108,6 +108,13 @@ class FeatureDiscovery:
         count = validation.get_repeats() * validation.get_n_splits()
         deadline = time.monotonic() + time_limit
         folds, profiles = {}, None
+        shown_features = set()
+
+        def emit(message):
+            if progress is not None:
+                progress("Feature discovery: " + message)
+
+        emit(f"searching {count} training folds (budget {time_limit:.1f}s).")
         for repeat in range(validation.get_repeats()):
             for fold in range(validation.get_n_splits()):
                 train, _ = validation.get_split(fold, repeat)
@@ -116,6 +123,7 @@ class FeatureDiscovery:
                 )
                 X = discovery_input(X)
                 if not len(X.columns):
+                    emit("skipped: no supported input columns.")
                     return None
                 digest = fingerprint(X, y)
                 identity = joblib.hash(
@@ -124,7 +132,8 @@ class FeatureDiscovery:
                 relative = Path("feature_discovery") / identity
                 directory = self.root / relative
                 manifest = directory / "manifest.json"
-                if manifest.exists() and (directory / "training.joblib").exists():
+                cached = manifest.exists() and (directory / "training.joblib").exists()
+                if cached:
                     info = json.loads(manifest.read_text())
                     if not (directory / "generator.joblib").exists():
                         raise AutoMLException(
@@ -133,7 +142,12 @@ class FeatureDiscovery:
                 else:
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
+                        emit("stopped: discovery budget exhausted before all folds completed.")
                         return None
+                    emit(
+                        f"fold {len(folds) + 1}/{count}, {len(X)} rows, "
+                        f"{len(X.columns)} input columns."
+                    )
                     generator = GoldenFeatures(
                         time_limit=remaining / (count - len(folds)),
                         max_feature_sets=3,
@@ -183,6 +197,24 @@ class FeatureDiscovery:
                     )
                     write_json(manifest, info)
                     del generator, outputs, matrix, columns
+                action = "reused saved features" if cached else "constructed features"
+                emit(
+                    f"fold {len(folds) + 1}/{count}: {action}; "
+                    + ", ".join(
+                        f"{name}: {len(columns)} features"
+                        for name, columns in info["sets"].items()
+                    )
+                    + ("." if cached else f" in {info['discovery_seconds']:.2f}s.")
+                )
+                for profile, columns in info["sets"].items():
+                    new = [name for name in columns if name not in shown_features]
+                    if new:
+                        # Keep console output bounded; full transformations are in the report.
+                        preview = ", ".join(str(name).replace("\n", " ") for name in new[:20])
+                        suffix = f" (+{len(new) - 20} more)" if len(new) > 20 else ""
+                        emit(f"{profile}, newly listed features: {preview}{suffix}.")
+                        shown_features.update(new)
+                emit(f"transformations report: {directory / 'generator.md'}")
                 available = list(info["sets"])
                 profiles = (
                     available
@@ -192,6 +224,7 @@ class FeatureDiscovery:
                 folds[f"{repeat}:{fold}"] = {**info, "directory": relative.as_posix()}
                 del X, y, train
         if not profiles:
+            emit("no feature set is available in every training fold; no models scheduled.")
             return None
         # Profiles must differ in at least one fold to justify a new model.
         unique, seen = [], set()
@@ -200,6 +233,7 @@ class FeatureDiscovery:
             if signature not in seen:
                 unique.append(profile)
                 seen.add(signature)
+        emit("feature sets ready for model training: " + ", ".join(unique[:3]) + ".")
         return {"folds": folds, "profiles": unique[:3]}
 
 

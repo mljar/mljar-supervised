@@ -1,10 +1,11 @@
-"""Live, resumable comparison of published MLJAR releases on official TabArena splits."""
+"""Live, resumable comparison of MLJAR packages on official TabArena splits."""
 from __future__ import annotations
 
 import argparse
 import contextlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import signal
@@ -16,7 +17,7 @@ import time
 from common import (BASE, CANDIDATE_VERSIONS, DEFAULT_CANDIDATE, ROOT, SMALL,
                     SMOKE, STABLE_VERSION, TABARENA_REVISION, VERSIONS,
                     clean_environment, cpu_affinity, lock, now, read_json, sha256, write_json)
-from setup_env import command, ensure_environment, ensure_tabarena
+from setup_env import command, ensure_environment, ensure_tabarena, local_wheel_info
 
 HERE = Path(__file__).resolve().parent
 TERMINAL = {"success", "error", "timeout", "memory_limit"}
@@ -128,6 +129,10 @@ def execute(python, worker, case, spec, *, grace, evaluation_seconds, memory_gib
             state.update(status=reason or ("success" if process.returncode == 0 else "error"),
                          finished=now(), exit_code=process.returncode,
                          wall_seconds=time.monotonic() - started, peak_rss_gib=peak / 1024**3)
+            state["warning_lines"] = sum(
+                bool(re.search(r"\b(?:\w*Warning:|WARNING\b)", line))
+                for line in (attempt / "console.log").read_text(errors="replace").splitlines()
+            )
             write_json(status_file, state)
             write_json(attempt / "status.json", state)
     print(f"END {state['status']}: {spec['dataset']} ({state['wall_seconds']:.1f}s)\n", flush=True)
@@ -156,6 +161,10 @@ def freeze_run(run, config):
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, choices=VERSIONS)
+    parser.add_argument("--local-wheel", type=Path,
+                        help="Install this candidate wheel instead of downloading MLJAR from PyPI")
+    parser.add_argument("--wait-for-resources", action="store_true",
+                        help="Queue behind the existing candidate/GPU job")
     parser.add_argument("--candidate-version", choices=CANDIDATE_VERSIONS,
                         help=f"Comparison partner for 1.3.2 (default: {DEFAULT_CANDIDATE})")
     parser.add_argument("--suite", choices=["small", "smoke"], default="small")
@@ -190,7 +199,17 @@ def parse_args(argv=None):
     args.datasets = args.datasets or (SMALL if args.suite == "small" else SMOKE)
     if len(set(args.datasets)) != len(args.datasets):
         parser.error("Datasets must be unique")
-    args.run = (args.run or BASE / f"comparison-{STABLE_VERSION}-vs-{candidate}-{args.suite}-{args.seconds}s-{args.n_jobs}threads").resolve()
+    suffix = ""
+    if args.local_wheel:
+        if args.version not in CANDIDATE_VERSIONS:
+            parser.error("--local-wheel is for release candidates; retain the published stable baseline")
+        args.local_wheel = args.local_wheel.resolve()
+        try:
+            artifact = local_wheel_info(args.local_wheel, args.version)
+        except ValueError as error:
+            parser.error(str(error))
+        suffix = f"-local-{artifact['sha256'][:12]}"
+    args.run = (args.run or BASE / f"comparison-{STABLE_VERSION}-vs-{candidate}-{args.suite}-{args.seconds}s-{args.n_jobs}threads{suffix}").resolve()
     return args
 
 
@@ -203,12 +222,14 @@ def main():
     # Candidates share one CPU partition, even when using different environments.
     # Retain the version lock as well for compatibility with already-running jobs.
     with contextlib.ExitStack() as locks:
-        locks.enter_context(lock(BASE / f"comparison-environments/{args.version}.run.lock", wait=False))
+        if args.wait_for_resources:
+            print("Waiting for benchmark resources...", flush=True)
+        locks.enter_context(lock(BASE / f"comparison-environments/{args.version}.run.lock", wait=args.wait_for_resources))
         if args.version in CANDIDATE_VERSIONS:
-            locks.enter_context(lock(BASE / "comparison-environments/candidate.run.lock", wait=False))
-        python = ensure_environment(args.version)
+            locks.enter_context(lock(BASE / "comparison-environments/candidate.run.lock", wait=args.wait_for_resources))
+        python = ensure_environment(args.version, args.local_wheel)
         environment_dir = python.parent.parent
-        with (lock(BASE / "comparison-environments/gpu.lock", wait=False) if device == "cuda" else contextlib.nullcontext()):
+        with (lock(BASE / "comparison-environments/gpu.lock", wait=args.wait_for_resources) if device == "cuda" else contextlib.nullcontext()):
             preflight_output = environment_dir / "preflight.json"
             command([python, "-u", HERE / "preflight.py", "--version", args.version,
                      "--device", device, "--output", preflight_output], env=clean_environment(args.n_jobs, device))
@@ -234,18 +255,28 @@ def main():
             env_spec = dict(device=device, affinity=affinity, python=str(python),
                             packages=read_json(preflight_output)["packages"],
                             freeze_sha256=sha256(environment_dir / "requirements-frozen.txt"))
+            artifact = read_json(environment_dir / "benchmark-environment.json").get("local_wheel")
+            if artifact:
+                env_spec["local_wheel"] = artifact
             saved_env = version_root / "environment.json"
             if saved_env.exists() and read_json(saved_env) != env_spec:
                 raise ValueError("Version environment/resources changed; use a new --run directory")
             write_json(saved_env, env_spec)
+            if artifact:
+                (version_root / "artifacts").mkdir(exist_ok=True)
+                shutil.copy2(environment_dir / "artifacts" / artifact["filename"],
+                             version_root / "artifacts" / artifact["filename"])
             shutil.copy2(preflight_output, version_root / "preflight.json")
             shutil.copy2(environment_dir / "requirements-frozen.txt", version_root / "requirements-frozen.txt")
+            build_report(run)
             results = []
             for index, dataset in enumerate(datasets, 1):
                 data = BASE / "comparison-data" / TABARENA_REVISION / dataset / "r0f0"
                 print(f"\n{'=' * 78}\nDATASET {index}/{len(datasets)}: {dataset}\n{'=' * 78}", flush=True)
                 spec = dict(config, version=args.version, dataset=dataset, data=str(data),
-                            device=device, affinity=affinity, dataset_sha256=sha256(data / "dataset.json"))
+                            device=device, affinity=affinity, dataset_sha256=sha256(data / "dataset.json"),
+                            package_source="local-wheel" if artifact else "pypi",
+                            wheel_sha256=artifact["sha256"] if artifact else None)
                 case = version_root / dataset / "r0f0"
                 try:
                     result = execute(python, run / "code/worker.py", case, spec,

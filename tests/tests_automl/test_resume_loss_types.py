@@ -76,7 +76,10 @@ def test_stacking_orders_reloaded_and_new_losses_numerically(tmp_path):
     automl._models = [old, new, ensemble]
     automl._eval_metric = "rmse"
     automl._perform_model_stacking()
-    assert [m.get_name() for m in automl._stacked_models] == ["Ensemble", "new", "old"]
+    # Ensembles remain available for final selection, but no longer introduce
+    # hidden dependencies as stacking inputs. Loaded losses still sort numerically.
+    assert [m.get_name() for m in automl._stacked_models] == ["new", "old"]
+    assert ensemble in automl._models
     assert pd.api.types.is_numeric_dtype(automl.get_leaderboard().metric_value)
 
 
@@ -167,6 +170,9 @@ def test_optuna_resume_mixes_loaded_and_new_models_before_stacking(
     resumed = AutoML(**options)
     resumed.fit(X.copy(), y)
     assert checked
+    # The checks above apply during training. Reloading for inference may load
+    # only the selected model's dependencies, excluding unused models.
+    monkeypatch.setattr(BaseAutoML, "_perform_model_stacking", original_stacking)
     assert resumed._fit_level == "finished"
     assert any(m._is_stacked for m in resumed._models)
     names = [m.get_name() for m in resumed._models]

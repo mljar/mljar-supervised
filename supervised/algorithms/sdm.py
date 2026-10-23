@@ -29,7 +29,7 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
     REGRESSION,
 )
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import BudgetExceededError, AutoMLException, ResourceAdmissionError
 from supervised.prediction import current_prediction_context
 
 SDM_REVISION = "b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
@@ -200,8 +200,9 @@ class SDMAlgorithm(RealMLPAlgorithm):
 
     def _check_time(self):
         if self._deadline is not None and time.monotonic() >= self._deadline:
-            raise AutoMLException(
-                f"{self.algorithm_short_name} time budget exhausted during context/validation inference; increase model_time_limit."
+            raise BudgetExceededError(
+                f"{self.algorithm_short_name} time budget exhausted during context/validation inference; increase model_time_limit.",
+                phase=getattr(self, "_budget_phase", "context_or_validation"),
             )
 
     def _context_indices(self, y):
@@ -232,38 +233,47 @@ class SDMAlgorithm(RealMLPAlgorithm):
         host = (
             512 * 1024**2 + 3 * checkpoint_bytes + working + members * rows * cols * 16
         )
-        budget = available_memory() * self.params.get("memory_fraction", 0.6)
+        host_free = available_memory()
+        budget = host_free * self.params.get("memory_fraction", 0.6)
         if self.params.get("memory_limit_gb") is not None:
             budget = min(budget, self.params["memory_limit_gb"] * 1024**3)
+        info = dict(device=self.device, rows=rows, features=cols,
+                    estimated_ram_bytes=host, available_ram_bytes=host_free,
+                    ram_budget_bytes=int(budget))
         if host > budget:
-            raise AutoMLException(
-                f"{self.algorithm_short_name} estimated RAM exceeds budget; reduce max_context_size/predict_batch_size."
+            raise ResourceAdmissionError(
+                f"{self.algorithm_short_name} estimated RAM exceeds budget; reduce max_context_size/predict_batch_size.",
+                resources=info,
             )
         gpu = 0
         if self.device.startswith("cuda"):
-            from supervised.algorithms.realmlp_resources import available_gpu_memory
+            from supervised.algorithms.realmlp_resources import available_gpu_memory, gpu_allocation_stats
 
             gpu = 512 * 1024**2 + checkpoint_bytes + working
             # Driver-free memory is a conservative fast check: do not count
             # allocator cache as available. Reclaim unused allocations only if
             # needed, then remeasure using the same estimate and budget limits.
             for cleanup in (False, True):
-                free, _ = available_gpu_memory(self.device, cleanup=cleanup)
+                free, total = available_gpu_memory(self.device, cleanup=cleanup)
                 gpu_budget = free * self.params.get("gpu_memory_fraction", 0.7)
                 if self.params.get("gpu_memory_limit_gb") is not None:
                     gpu_budget = min(
                         gpu_budget, self.params["gpu_memory_limit_gb"] * 1024**3
                     )
+                info.update(estimated_vram_bytes=gpu, free_vram_bytes=free,
+                            total_vram_bytes=total, vram_budget_bytes=int(gpu_budget))
                 if gpu <= gpu_budget:
                     break
             else:
-                raise AutoMLException(
+                info.update(gpu_allocation_stats(self.device))
+                raise ResourceAdmissionError(
                     f"{self.algorithm_short_name} estimated VRAM exceeds budget: "
                     f"{gpu / 1024**3:.2f} GiB needed, {gpu_budget / 1024**3:.2f} GiB "
                     f"budget on {self.device} ({free / 1024**3:.2f} GiB free); "
-                    "reduce max_context_size/predict_batch_size."
+                    "reduce max_context_size/predict_batch_size.",
+                    resources=info,
                 )
-        return {"estimated_ram_bytes": host, "estimated_vram_bytes": gpu}
+        return dict(info, estimated_vram_bytes=gpu)
 
     def _download(self):
         from huggingface_hub import hf_hub_download
@@ -340,6 +350,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
         self.__dict__.pop("_validation_prediction", None)
         self.__dict__.pop("_evaluation_deadline", None)
         started = time.monotonic()
+        self._budget_phase = "context_or_validation"
         self._deadline = None if max_time is None else started + max_time
         self.device = self.params.get("device", "auto")
         if self.device == "auto":
@@ -468,6 +479,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
     def training_predictions(self, X_train, X_validation):
         # The framework's train/OOF scoring is part of the learner budget too.
         self._deadline = getattr(self, "_evaluation_deadline", None)
+        self._budget_phase = "training_predictions"
         try:
             train_prediction = self.predict(X_train)
             validation_prediction = self._validation_prediction

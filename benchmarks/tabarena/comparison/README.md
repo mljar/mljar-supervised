@@ -1,9 +1,9 @@
-# Compare published MLJAR releases on TabArena
+# Compare MLJAR packages on TabArena
 
 From the repository root, run one command in each terminal:
 
 ```bash
-./benchmarks/run.sh 1.3.2
+./benchmarks/run.sh 1.3.2 --candidate-version 1.4.0rc5
 ./benchmarks/run.sh 1.4.0rc5
 ```
 
@@ -25,6 +25,35 @@ are checked before fitting. MLJAR controls internal validation and ensembling.
 The dataset header describes sizes, feature types, missing values and the
 training target. MLJAR stdout/stderr stream live and are also saved to
 `console.log` in every attempt directory.
+
+### Benchmark a local RC7 wheel
+
+Build a wheel into `dist/`, then run it without publishing or activating an environment:
+
+```bash
+./benchmarks/run.sh 1.4.0rc7 \
+  --local-wheel dist/mljar_supervised-1.4.0rc7-py3-none-any.whl \
+  --wait-for-resources \
+  --baseline-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads \
+  --reference-run performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc5-small-3600s-15threads
+```
+
+The wheel metadata must match the requested version. Its SHA256 identifies a
+separate environment and default output directory; the wheel is retained with
+the run and labeled as an unpublished local package in the comparison report.
+Rebuilding RC7 produces a separate result set when its wheel hash changes.
+The existing baseline and reference runs are read without modifying their files.
+`--wait-for-resources` queues behind another candidate/GPU benchmark.
+
+RC7 preflight checks feature discovery, algorithm early stopping (three distinct
+configurations and a 20% gap relative to the leader's improvement over the fixed
+reference), and the fixed limits of five stacking inputs per algorithm and
+30 ensemble selection rounds. Benchmark metrics include early-stopping skip and
+paused-algorithm counts; each AutoML directory retains detailed decisions in
+`algorithm_early_stopping.json`. `prediction_graph.json`
+records the selected model's unique dependencies and fold learner counts.
+The report includes prediction time, memory, resource skips, training failures
+and warning-line counts; raw logs and all trained models are retained.
 
 The CPU sets use separate physical cores, keeping SMT siblings together and
 reserving two physical cores on larger machines. 15 threads per worker fits the
@@ -250,6 +279,47 @@ performance-results/tabarena/comparison-environments/1.3.2-*/bin/python -m pytes
 ```
 
 ## Profile inference on saved models
+
+To reevaluate saved RC5 models using a frozen copy of local inference changes:
+
+```bash
+performance-results/tabarena/comparison-environments/1.4.0rc5-0fb60923146b/bin/python \
+  benchmarks/tabarena/comparison/reevaluate.py --training-version 1.4.0rc5 \
+  --run performance-results/reevaluation-rc5-local-fixes
+```
+
+This performs prediction and reload checks without training. Existing successful
+test predictions are checked for numerical agreement. Failed attempts remain
+available; `--retry-failed` creates new attempts. When invoking a copied runner
+under its `code/` directory, set `MLJAR_BENCHMARK_ROOT` to the original repository
+path so defaults and resource locks still refer to the same workspace.
+
+### Compare stacking policies with new training
+
+`experiment.py` freezes the current source and runner before waiting for the GPU
+lock. It reuses the existing RC5 dependency environment and official dataset
+splits. By default it trains credit-g, anneal, Polish bankruptcy and Amazon with
+one and two stacking inputs per algorithm, at 3,600 seconds per fit and the
+original thread count. Eight fits therefore require at least eight hours plus
+evaluation and setup. These outputs are labeled as local experiments.
+The one- and two-input variants are diagnostic overrides of the fixed production
+limit of five inputs per algorithm. Existing experiments retain their frozen
+source, including the ensemble selection behavior at the time they were started.
+
+```bash
+performance-results/tabarena/comparison-environments/1.4.0rc5-0fb60923146b/bin/python \
+  benchmarks/tabarena/comparison/experiment.py \
+  --source-results performance-results/tabarena/comparison-1.3.2-vs-1.4.0rc5-small-3600s-15threads/1.4.0rc5 \
+  --run performance-results/stacking-policy-experiment
+```
+
+Each `top-1/` and `top-2/` directory retains complete model outputs and console
+logs. `report.md` and `results.json` summarize validation loss, held-out score,
+stack inputs and prediction time. Choose the policy using validation results;
+held-out scores are for reporting. `memory.jsonl` records RSS and available/live/
+reserved GPU memory around training and prediction, including failed calls.
+
+### Detailed prediction profiling
 
 `profile_predictions.py` measures the selected model and all required ensemble
 and stacking dependencies without fitting new models. It records checkpoint

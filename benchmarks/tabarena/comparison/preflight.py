@@ -6,7 +6,7 @@ import importlib.metadata
 from pathlib import Path
 import sys
 
-from common import CANDIDATE_VERSIONS, NEW_ALGORITHMS, now, write_json
+from common import CANDIDATE_VERSIONS, DISCOVERY_VERSIONS, NEW_ALGORITHMS, now, write_json
 
 
 def check(version, device, output, download=True):
@@ -21,11 +21,23 @@ def check(version, device, output, download=True):
                 executable=sys.executable, requested_device=device, cuda_available=False,
                 packages={dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()})
     if version in CANDIDATE_VERSIONS:
-        if version in ("1.4.0rc3", "1.4.0rc4", "1.4.0rc5"):
+        if version in DISCOVERY_VERSIONS:
             from supervised.preprocessing.feature_discovery_transformer import check_dependencies as check_discovery
             check_discovery()
             info["features_goldmine_version"] = importlib.metadata.version("features-goldmine")
             print(f"Feature discovery: features-goldmine {info['features_goldmine_version']}", flush=True)
+        if version in ("1.4.0rc6", "1.4.0rc7"):
+            from supervised.tuner.stacking import _MAX_MODELS_PER_TYPE
+            from supervised.ensemble import _SELECTION_ROUNDS
+            if (_MAX_MODELS_PER_TYPE, _SELECTION_ROUNDS) != (5, 30):
+                raise RuntimeError("Local candidates must use five stack inputs per algorithm and 30 ensemble rounds")
+            info["selection_limits"] = dict(stacking_per_algorithm=5, ensemble_rounds=30)
+        if version == "1.4.0rc7":
+            from supervised.tuner.algorithm_early_stopping import AlgorithmEarlyStopping
+            if (AlgorithmEarlyStopping.MIN_CONFIGURATIONS, AlgorithmEarlyStopping.MAX_GAP) != (3, .20):
+                raise RuntimeError("RC7 algorithm early stopping policy does not match the benchmark")
+            info["algorithm_early_stopping"] = dict(policy_version=AlgorithmEarlyStopping.VERSION,
+                                                   min_configurations=3, threshold=.20)
         import torch
         from supervised.algorithms.sdm import SDMAlgorithm, check_dependencies
         check_dependencies()

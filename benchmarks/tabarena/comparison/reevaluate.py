@@ -1,4 +1,4 @@
-"""Evaluate saved RC2 models with a frozen snapshot of local inference code; never fit."""
+"""Evaluate saved release models with a frozen snapshot of local inference code; never fit."""
 
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ def input_attempt(root, dataset):
         or params.get("fit_level") != "finished"
         or not params.get("best_model")
     ):
-        raise ValueError(f"Expected a finished RC2 fit for {dataset}")
+        raise ValueError(f"Expected a finished {VERSION} fit for {dataset}")
     return attempt, spec
 
 
@@ -260,7 +260,7 @@ def build_report(run):
         ]
     lines += [
         "",
-        f"Saved RC2 models: `{manifest['config']['source']}`",
+        f"Saved models: `{manifest['config']['source']}`",
         f"Baseline: `{baseline}`",
         "",
     ]
@@ -271,11 +271,12 @@ def build_report(run):
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--training-version", default=VERSION,
+                        help="Published version that trained the saved models")
     parser.add_argument(
         "--source",
         type=Path,
-        default=BASE / "comparison-1.3.2-vs-1.4.0rc2-small-3600s-15threads/1.4.0rc2",
-        help="Saved RC2 version directory",
+        help="Saved version directory (defaults to the selected training version)",
     )
     parser.add_argument(
         "--baseline",
@@ -283,7 +284,7 @@ def parse_args(argv=None):
         default=BASE / "comparison-1.3.2-vs-1.4.0rc1-small-3600s-15threads/1.3.2",
     )
     parser.add_argument(
-        "--run", type=Path, default=BASE / "reevaluation-1.4.0rc2-prediction-fix"
+        "--run", type=Path
     )
     parser.add_argument(
         "--datasets",
@@ -305,6 +306,8 @@ def parse_args(argv=None):
     )
     parser.add_argument("--report-only", action="store_true")
     args = parser.parse_args(argv)
+    args.source = args.source or BASE / f"comparison-1.3.2-vs-{args.training_version}-small-3600s-15threads/{args.training_version}"
+    args.run = args.run or BASE / f"reevaluation-{args.training_version}-prediction-fix"
     args.datasets = args.datasets or SMALL
     args.run, args.source, args.baseline = (
         args.run.resolve(),
@@ -330,7 +333,10 @@ def parse_args(argv=None):
 
 
 def main():
+    global VERSION, LABEL
     args = parse_args()
+    VERSION = args.training_version
+    LABEL = f"{VERSION} models + patched inference"
     if args.report_only:
         build_report(args.run)
         return 0
@@ -342,7 +348,7 @@ def main():
     with contextlib.ExitStack() as locks:
         for path in (
             args.run / "run.lock",
-            BASE / "comparison-environments/1.4.0rc2.run.lock",
+            BASE / f"comparison-environments/{VERSION}.run.lock",
             BASE / "comparison-environments/candidate.run.lock",
             BASE / "comparison-environments/gpu.lock",
         ):

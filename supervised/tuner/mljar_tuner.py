@@ -93,6 +93,7 @@ class MljarTuner:
         self._underprivileged_groups = underprivileged_groups
         self._seed = seed
         self._unique_params_keys = []
+        self._algorithm_early_stopping = None
 
     def _apply_categorical_strategies(self):
         if self._data_info is None:
@@ -246,9 +247,12 @@ class MljarTuner:
                     total_time_limit,
                 )
             elif "hill_climbing" in step:
-                return self.get_hill_climbing_params(
+                candidates = self.get_hill_climbing_params(
                     self.filter_random_feature_model(models)
                 )
+                if self._algorithm_early_stopping is not None:
+                    self._algorithm_early_stopping.filter_candidates(step, candidates)
+                return candidates
             elif step == "boost_on_errors":
                 return self.boost_params(models, results_path, total_time_limit)
             elif step == "ensemble":
@@ -964,6 +968,8 @@ class MljarTuner:
             if total == 0:
                 break
 
+        if self._algorithm_early_stopping is not None:
+            self._algorithm_early_stopping.filter_candidates("not_so_random", return_params)
         return return_params
 
     def get_hill_climbing_params(self, current_models):
@@ -1055,6 +1061,7 @@ class MljarTuner:
                     all_params["train_time"] = None
                     generated_params += [all_params]
 
+        # The orchestrator supplies the actual stage for persisted decisions.
         return generated_params
 
     def get_all_int_categorical_strategy(self, current_models, total_time_limit):

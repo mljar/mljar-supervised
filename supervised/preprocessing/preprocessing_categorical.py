@@ -53,12 +53,16 @@ class PreprocessingCategorical(object):
                 self._convert_params[column] = lbl.to_json()
 
     def transform(self, X):
+        if not self._convert_params:
+            return X
+        columns = dict(X.items())
         for column, lbl_params in self._convert_params.items():
             if "unique_values" in lbl_params and "new_columns" in lbl_params:
                 # convert to one hot
                 lbl = LabelBinarizer()
                 lbl.from_json(lbl_params)
-                X = lbl.transform(X, column)
+                columns.update(lbl._encoded_columns(columns[column], column))
+                del columns[column]
             else:
                 # convert to integer
                 lbl = LabelEncoder()
@@ -66,13 +70,13 @@ class PreprocessingCategorical(object):
                 # All unseen feature values share a fixed code after the fitted
                 # classes. Their encoding cannot depend on batch size or order.
                 transformed_values = lbl.transform(
-                    X.loc[:, column], unknown_value=len(lbl_params)
+                    columns[column], unknown_value=len(lbl_params)
                 )
                 # Replace the column so boolean/string/category extension dtypes
                 # cannot reject encoded integer values (#333).
-                X[column] = transformed_values
+                columns[column] = transformed_values
 
-        return X
+        return pd.DataFrame(columns, index=X.index)
 
     def inverse_transform(self, X):
         for column, lbl_params in self._convert_params.items():

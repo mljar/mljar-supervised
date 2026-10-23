@@ -25,7 +25,7 @@ from supervised.algorithms.realmlp_resources import (
     thread_count,
     validate_resource_params,
 )
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import BudgetExceededError, AutoMLException
 
 
 INSTALL_MESSAGE = 'Install RealMLP with pip install "mljar-supervised[realmlp]" (or "mljar-supervised[all]").'
@@ -270,6 +270,7 @@ class RealMLPAlgorithm(BaseAlgorithm):
         from supervised.algorithms.realmlp_resources import (
             available_memory,
             RealMLPResourceError,
+            RealMLPAdmissionError,
         )
 
         raw_bytes = sum(
@@ -285,8 +286,10 @@ class RealMLPAlgorithm(BaseAlgorithm):
         if self.params.get("memory_limit_gb") is not None:
             budget = min(budget, self.params["memory_limit_gb"] * 1024**3)
         if 6 * raw_bytes > budget:
-            raise RealMLPResourceError(
-                "RealMLP input/preprocessing memory estimate exceeds the RAM budget."
+            raise RealMLPAdmissionError(
+                "RealMLP input/preprocessing memory estimate exceeds the RAM budget.",
+                resources=dict(device=device, estimated_ram_bytes=6 * raw_bytes,
+                               ram_budget_bytes=int(budget)),
             )
         train = self._preprocess(X, fit=True)
         valid = None if X_validation is None else self._preprocess(X_validation)
@@ -343,7 +346,7 @@ class RealMLPAlgorithm(BaseAlgorithm):
         )
         remaining = None if max_time is None else max_time - (time.monotonic() - start)
         if remaining is not None and remaining <= 0:
-            raise AutoMLException("RealMLP time budget exhausted before training.")
+            raise BudgetExceededError("RealMLP time budget exhausted before training.")
         old_threads = torch.get_num_threads()
         old_tf32 = torch.backends.cuda.matmul.allow_tf32
         try:
@@ -370,6 +373,9 @@ class RealMLPAlgorithm(BaseAlgorithm):
         if valid is not None and (
             not history or not any(np.isfinite(h["validation"]) for h in history)
         ):
+            if not history and max_time is not None and time.monotonic() - start >= max_time:
+                raise BudgetExceededError("RealMLP deadline reached before its first validation checkpoint.",
+                                          phase="fit")
             raise AutoMLException(
                 "RealMLP finished without a finite validation checkpoint; increase its time budget or check the data."
             )
@@ -379,6 +385,9 @@ class RealMLPAlgorithm(BaseAlgorithm):
                 model.cv_alg_interface_.fit_params[0]["stop_epoch"][metric]
             )
             if best_epoch < 1:
+                if max_time is not None and time.monotonic() - start >= max_time:
+                    raise BudgetExceededError("RealMLP deadline reached before completing a validation epoch.",
+                                              phase="fit")
                 raise AutoMLException(
                     "RealMLP did not complete a validation epoch; increase its time budget."
                 )

@@ -98,17 +98,43 @@ def build_report(run, baseline_run=None, reference_runs=None):
         write_csv(out / "datasets.csv", cases)
         write_csv(out / "models.csv", models)
         write_csv(out / "paired.csv", paired)
-        text = ["# Published MLJAR version comparison", "",
+        local_sources = []
+        for version in versions:
+            environment_file = sources[version] / version / "environment.json"
+            if environment_file.exists():
+                wheel = read_json(environment_file).get("local_wheel")
+                if wheel:
+                    local_sources.append(f"{version} is an unpublished local wheel: `{wheel['filename']}`, SHA256 `{wheel['sha256']}`.")
+        text = ["# MLJAR version comparison", "",
                 "Official TabArena-v0.1 r0f0 splits; MLJAR owns internal validation and model selection.",
                 "Test metrics are separate from the internal leaderboard. No missing/failed results are imputed.",
                 "Scores from incomplete cases are provisional and excluded from paired win counts. Evaluation mode can differ; all model artifacts are retained.",
                 "GPU allocations differ between versions; timings and scores reflect those resource choices.",
                 "This subset is not the full TabArena leaderboard. External comparisons must match dataset, split and metric and disclose hardware/budgets.", "",
                 *[f"{version} results: `{sources[version]}`." for version in versions], "",
+                *local_sources, "",
                 "| Version | Dataset | Status | Test metric | Test score | Selected model |",
                 "|---|---|---|---|---:|---|"]
         for row in cases:
             text.append(f"| {row['version']} | {row['dataset']} | {row['status']} | {row.get('metric', '')} | {row.get('test_score', '')} | {row.get('best_model', '')} |")
+        text += ["", "## Prediction cost and diagnostics", "",
+                 "Counts describe the selected prediction graph. Fold learners are included separately. Missing entries were not recorded in older runs.", "",
+                 "| Version | Dataset | Prediction seconds | Stack inputs | Ensemble members | Dependency models | Fold learners | Resource skips | Budget skips | Training errors | Warning lines | Peak RSS GiB |",
+                 "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"]
+        for row in cases:
+            text.append("| " + " | ".join(str(row.get(key, "—")) for key in (
+                "version", "dataset", "time_infer_s", "n_stacking_inputs", "n_ensemble_members",
+                "n_prediction_models", "n_prediction_learners", "resource_skips", "budget_skips",
+                "training_candidate_errors", "warning_lines", "peak_rss_gib")) + " |")
+        stopping_cases = [row for row in cases if row.get("algorithm_early_stopping_enabled")]
+        if stopping_cases:
+            text += ["", "## Algorithm early stopping", "",
+                     "Original-feature tuning pauses after three distinct successful configurations "
+                     "when an algorithm retains less than 80% of the leader's improvement over the fixed reference.", "",
+                     "| Version | Dataset | Algorithms paused | Candidates skipped |",
+                     "|---|---|---:|---:|"]
+            for row in stopping_cases:
+                text.append(f"| {row['version']} | {row['dataset']} | {row['algorithms_paused']} | {row['algorithm_early_stopping_skips']} |")
         for compared in versions[1:]:
             matching = [r for r in paired if r["candidate_version"] == compared]
             text += ["", f"{compared}: matched successful datasets: {len(matching)}.",

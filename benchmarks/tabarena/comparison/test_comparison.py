@@ -44,9 +44,11 @@ def test_cpu_partitions_never_share_physical_cores():
     assert cpu_affinity("1.4.0rc3", 1) == second
     assert cpu_affinity("1.4.0rc4", 1) == second
     assert cpu_affinity("1.4.0rc5", 1) == second
+    assert cpu_affinity("1.4.0rc6", 1) == second
+    assert cpu_affinity("1.4.0rc7", 1) == second
 
 
-def test_rc5_defaults_preserve_older_candidate_paths():
+def test_rc7_defaults_preserve_older_candidate_paths():
     stable = parse_args(["--version", "1.3.2"])
     rc2 = parse_args(["--version", "1.4.0rc2"])
     rc1 = parse_args(["--version", "1.4.0rc1"])
@@ -54,7 +56,10 @@ def test_rc5_defaults_preserve_older_candidate_paths():
     rc3 = parse_args(["--version", "1.4.0rc3"])
     rc4 = parse_args(["--version", "1.4.0rc4"])
     rc5 = parse_args(["--version", "1.4.0rc5"])
-    assert stable.run == rc5.run != rc4.run != rc3.run
+    rc6 = parse_args(["--version", "1.4.0rc6"])
+    rc7 = parse_args(["--version", "1.4.0rc7"])
+    assert stable.run == rc7.run != rc6.run != rc5.run != rc4.run != rc3.run
+    assert "vs-1.4.0rc6-small-3600s-15threads" in rc6.run.name
     assert "vs-1.4.0rc5-small-3600s-15threads" in rc5.run.name
     assert "vs-1.4.0rc4-small-3600s-15threads" in rc4.run.name
     assert not rc5.evaluate_all_models
@@ -64,7 +69,7 @@ def test_rc5_defaults_preserve_older_candidate_paths():
     assert "vs-1.4.0rc2-small-3600s-15threads" in rc2.run.name
     assert legacy_stable.run == rc1.run != rc2.run
     assert stable.device == "cpu"
-    assert rc1.device == rc2.device == rc3.device == rc4.device == rc5.device == "cuda"
+    assert rc1.device == rc2.device == rc3.device == rc4.device == rc5.device == rc6.device == rc7.device == "cuda"
     assert parse_args(["--version", "1.4.0rc2", "--device", "cpu"]).device == "cpu"
     with pytest.raises(SystemExit):
         parse_args(["--version", "1.4.0rc2", "--candidate-version", "1.4.0rc1"])
@@ -72,12 +77,13 @@ def test_rc5_defaults_preserve_older_candidate_paths():
 
 def test_streams_stderr_and_stdout_and_skips_completed_case(tmp_path, capsys):
     script = tmp_path / "fake_worker.py"
-    script.write_text("import sys\nprint('model-start', flush=True)\nprint('candidate-warning', file=sys.stderr, flush=True)\n")
+    script.write_text("import sys\nprint('model-start', flush=True)\nprint('UserWarning: candidate-warning', file=sys.stderr, flush=True)\n")
     case = tmp_path / "case"
     spec = dict(version="1.3.2", dataset="credit-g", n_jobs=1, device="cpu", seconds=1,
                 affinity=[min(os.sched_getaffinity(0))])
     result = execute(sys.executable, script, case, spec, grace=5, evaluation_seconds=5, memory_gib=2)
     assert result["status"] == "success"
+    assert result["warning_lines"] == 1
     logged = (Path(result["attempt"]) / "console.log").read_text()
     assert "model-start" in logged and "candidate-warning" in logged
     assert "candidate-warning" in capsys.readouterr().out
@@ -110,7 +116,7 @@ def test_run_rejects_changed_budget(tmp_path):
         freeze_run(tmp_path, {"seconds": 3600})
 
 
-@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4", "1.4.0rc5"])
+@pytest.mark.parametrize("candidate", ["1.4.0rc1", "1.4.0rc2", "1.4.0rc3", "1.4.0rc4", "1.4.0rc5", "1.4.0rc6", "1.4.0rc7"])
 def test_report_compares_only_matching_successful_splits(tmp_path, candidate):
     config = {"datasets": ["credit-g"]}
     if candidate != "1.4.0rc1":
@@ -122,7 +128,18 @@ def test_report_compares_only_matching_successful_splits(tmp_path, candidate):
         write_json(case / "status.json", dict(dataset="credit-g", version=version, status="success", attempt=str(attempt)))
         write_json(attempt / "metrics.json", dict(dataset_sha256="same", metric="roc_auc", split="r0f0",
                    seed=1234, seconds=60, n_jobs=1, test_score=score, metric_error=1-score))
+    if candidate == "1.4.0rc6":
+        write_json(tmp_path / candidate / "environment.json", dict(local_wheel=dict(filename="rc6.whl", sha256="local-hash")))
+    if candidate == "1.4.0rc7":
+        metrics_path = tmp_path / candidate / "credit-g/r0f0/attempt-001/metrics.json"
+        write_json(metrics_path, dict(read_json(metrics_path), algorithm_early_stopping_enabled=True,
+                                      algorithms_paused=2, algorithm_early_stopping_skips=7))
     build_report(tmp_path)
+    if candidate == "1.4.0rc7":
+        assert "| 1.4.0rc7 | credit-g | 2 | 7 |" in (tmp_path / "comparison/report.md").read_text()
+    if candidate == "1.4.0rc6":
+        assert "unpublished local wheel" in (tmp_path / "comparison/report.md").read_text()
+        assert "local-hash" in (tmp_path / "comparison/report.md").read_text()
     with (tmp_path / "comparison/paired.csv").open() as stream:
         row = list(csv.DictReader(stream))[0]
         assert row["winner"] == candidate

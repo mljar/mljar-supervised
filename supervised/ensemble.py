@@ -29,6 +29,8 @@ from tabulate import tabulate
 
 from supervised.utils.learning_curves import LearningCurves
 
+_SELECTION_ROUNDS = 30
+
 
 class Ensemble:
     algorithm_name = "Greedy Ensemble"
@@ -156,14 +158,26 @@ class Ensemble:
             resp /= float(best_count)
         return resp
 
-    def get_oof_matrix(self, models):
+    def get_oof_matrix(self, models, stacked_models=None):
         # remember models, will be needed in predictions
         self.models_map = {m.get_name(): m for m in models}
 
         if self._max_single_prediction_time is not None:
+            from supervised.prediction import prediction_dependencies
+
             self.model_prediction_time = {
                 m.get_name(): m._single_prediction_time for m in models
             }
+            self._prediction_dependencies = {}
+            self._dependency_times = {}
+            for model in models:
+                dependencies = prediction_dependencies(model, stacked_models)
+                self._prediction_dependencies[model.get_name()] = set(dependencies)
+                measured = getattr(model, "_prediction_time_by_model", {})
+                for name, dependency in dependencies.items():
+                    own = getattr(dependency, "_prediction_time_by_model", {})
+                    cost = measured.get(name, own.get(name, dependency._single_prediction_time))
+                    self._dependency_times[name] = cost or 0.0
 
             if not [
                 m for m in models if m.is_fast_enough(self._max_single_prediction_time)
@@ -333,6 +347,14 @@ class Ensemble:
         self._is_fair = True
         return False
 
+    def _prediction_cost(self, names):
+        if not hasattr(self, "_prediction_dependencies"):
+            return sum(self.model_prediction_time.get(n) or 0.0 for n in set(names))
+        dependencies = set()
+        for name in names:
+            dependencies.update(self._prediction_dependencies.get(name, {name}))
+        return sum(self._dependency_times.get(name, 0.0) for name in dependencies)
+
     def fit(self, oofs, y, sample_weight=None, sensitive_features=None):
         logger.debug("Ensemble.fit")
         self.sensitive_features = sensitive_features
@@ -340,9 +362,9 @@ class Ensemble:
         selected_algs_cnt = 0  # number of selected algorithms
         self.best_algs = []  # selected algoritms indices from each loop
 
-        total_prediction_time = 0
         best_sum = None  # sum of best algorihtms
-        for j in range(len(oofs)):  # iterate over all solutions
+        # Repeated selections adjust weights, even with fewer than 30 candidates.
+        for j in range(_SELECTION_ROUNDS):
             min_score = self.metric.get_maximum()
             best_model = None
             # try to add some algorithm to the best_sum to minimize metric
@@ -352,7 +374,7 @@ class Ensemble:
                     and model_name in self.model_prediction_time
                 ):
                     if (
-                        total_prediction_time + self.model_prediction_time[model_name]
+                        self._prediction_cost(self.best_algs + [model_name])
                         > self._max_single_prediction_time
                     ):
                         continue
@@ -389,14 +411,6 @@ class Ensemble:
             if j == selected_algs_cnt:
                 self.total_best_sum = copy.deepcopy(best_sum)
 
-            # update prediction time estimate
-            if self._max_single_prediction_time is not None:
-                total_prediction_time = np.sum(
-                    [
-                        self.model_prediction_time[name]
-                        for name in np.unique(self.best_algs)
-                    ]
-                )
         # end of main loop #
 
         if not self.best_algs:

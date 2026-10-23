@@ -20,7 +20,7 @@ from supervised.algorithms.registry import (
 from supervised.algorithms.tabm_resources import (
     check_resources,
 )
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import BudgetExceededError, AutoMLException
 from supervised.algorithms.realmlp import RealMLPAlgorithm
 from supervised.algorithms.realmlp_resources import (
     thread_count,
@@ -183,7 +183,7 @@ class TabMAlgorithm(RealMLPAlgorithm):
             )
         self.device = device
         # Reject clearly oversized frames before copying/imputing them.
-        from supervised.algorithms.tabm_resources import TabMResourceError
+        from supervised.algorithms.tabm_resources import TabMResourceError, TabMAdmissionError
         from supervised.algorithms.realmlp_resources import available_memory
 
         raw_bytes = sum(
@@ -199,8 +199,10 @@ class TabMAlgorithm(RealMLPAlgorithm):
         if self.params.get("memory_limit_gb") is not None:
             budget = min(budget, self.params["memory_limit_gb"] * 1024**3)
         if 6 * raw_bytes > budget:
-            raise TabMResourceError(
-                "TabM input/preprocessing memory estimate exceeds the RAM budget."
+            raise TabMAdmissionError(
+                "TabM input/preprocessing memory estimate exceeds the RAM budget.",
+                resources=dict(device=device, estimated_ram_bytes=6 * raw_bytes,
+                               ram_budget_bytes=int(budget)),
             )
         train = self._preprocess(X, fit=True)
         valid = None if X_validation is None else self._preprocess(X_validation)
@@ -259,7 +261,7 @@ class TabMAlgorithm(RealMLPAlgorithm):
         )
         remaining = None if max_time is None else max_time - (time.monotonic() - start)
         if remaining is not None and remaining <= 0:
-            raise AutoMLException("TabM time budget exhausted before training.")
+            raise BudgetExceededError("TabM time budget exhausted before training.")
         model.deadline = None if max_time is None else start + max_time
         old_threads = torch.get_num_threads()
         old_tf32 = torch.backends.cuda.matmul.allow_tf32

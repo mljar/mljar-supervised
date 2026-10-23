@@ -17,7 +17,7 @@ from supervised.algorithms.registry import (
     AlgorithmsRegistry,
 )
 from supervised.callbacks.callback_list import CallbackList
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import AutoMLException, BudgetExceededError
 from supervised.prediction import current_prediction_context, prediction_scope
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
@@ -153,6 +153,9 @@ class ModelFramework:
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
+        budget_started = time.monotonic()
+        candidate_limit = self.params.get("candidate_time_limit")
+        completed_folds = 0
         np.random.seed(self.learner_params["seed"])
 
         optuna_tuner = None
@@ -175,8 +178,23 @@ class ModelFramework:
         )
 
         repeats = self.validation.get_repeats()
+        expected_folds = repeats * self.validation.get_n_splits()
         for repeat in range(repeats):
             for k_fold in range(self.validation.get_n_splits()):
+                if candidate_limit is not None:
+                    elapsed = time.monotonic() - budget_started
+                    remaining = candidate_limit - elapsed
+                    estimated = (elapsed / completed_folds * (expected_folds - completed_folds)
+                                 if completed_folds else 0)
+                    if remaining <= 0 or estimated > remaining:
+                        raise BudgetExceededError(
+                            "Remaining folds cannot finish within the candidate allowance.",
+                            phase="between_folds", completed_folds=completed_folds,
+                            expected_folds=expected_folds, allowance=candidate_limit,
+                            elapsed=elapsed,
+                            estimated_total=(elapsed + estimated),
+                            dimensions=getattr(self, "_budget_dimensions", None),
+                        )
                 train_data, validation_data = self.validation.get_split(k_fold, repeat)
                 logger.debug(
                     "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
@@ -210,6 +228,10 @@ class ModelFramework:
                     validation_data["X"],
                     validation_data["y"],
                     validation_data.get("sample_weight"),
+                )
+                self._budget_dimensions = dict(
+                    train_rows=len(X_train), validation_rows=len(X_validation),
+                    features=X_train.shape[1],
                 )
 
                 # skip preprocessing for sensitive features
@@ -257,6 +279,14 @@ class ModelFramework:
                 for i in range(learner.max_iters):
                     self.callbacks.on_iteration_start()
 
+                    learner_limit = self._max_time_for_learner
+                    if candidate_limit is not None:
+                        remaining = candidate_limit - (time.monotonic() - budget_started)
+                        if remaining <= 0:
+                            raise BudgetExceededError("Candidate budget exhausted during preprocessing.",
+                                                      phase="preprocessing", fold=k_fold, repeat=repeat)
+                        learner_limit = min(learner_limit, 0.8 * remaining / (expected_folds - completed_folds))
+
                     learner.fit(
                         X_train,
                         y_train,
@@ -265,7 +295,7 @@ class ModelFramework:
                         y_validation,
                         sample_weight_validation,
                         log_to_file,
-                        self._max_time_for_learner,
+                        learner_limit,
                     )
 
                     if self.params.get("injected_sample_weight", False):
@@ -294,7 +324,18 @@ class ModelFramework:
                     learner.update({"step": i})
 
                 # end of learner iters loop
-                self.callbacks.on_learner_train_end()
+                completed_folds += 1
+                try:
+                    self.callbacks.on_learner_train_end()
+                except BudgetExceededError as exc:
+                    elapsed = time.monotonic() - budget_started
+                    exc.details.update(
+                        phase="between_folds", completed_folds=completed_folds,
+                        expected_folds=expected_folds, elapsed=elapsed,
+                        estimated_total=elapsed * expected_folds / completed_folds,
+                        dimensions=self._budget_dimensions,
+                    )
+                    raise
 
                 model_path = resolve_artifact_path(results_path, model_subpath)
                 learner.interpret(
@@ -652,6 +693,7 @@ class ModelFramework:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:
                 desc["single_prediction_time"] = self._single_prediction_time
+                desc["prediction_time_by_model"] = getattr(self, "_prediction_time_by_model", {})
             fout.write(json.dumps(desc, indent=4, cls=MLJSONEncoder))
 
         learning_curve_metric = self.learners[0].get_metric_name()
@@ -777,6 +819,7 @@ class ModelFramework:
         mf._single_prediction_time = json_desc.get(
             "single_prediction_time", mf._single_prediction_time
         )
+        mf._prediction_time_by_model = json_desc.get("prediction_time_by_model", {})
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
             mf._oof_predictions_fname = resolve_artifact_path(

@@ -4,6 +4,7 @@ import time
 import numpy as np
 
 from supervised.utils.config import LOG_LEVEL
+from supervised.tuner.stacking_cost import StackingCostHistory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -21,6 +22,46 @@ class TimeController:
         self._spend = []
         self._is_hill_climbing = "hill_climbing_1" in steps
         self._is_stacking = "stack" in steps
+        self._active_algorithms = None
+        self._active_step = None
+        self._stage_budgets = {}
+        self.stacking_cost = StackingCostHistory()
+
+    def set_active_algorithms(self, step, algorithms):
+        # Reconstructed from pending candidates on resume, never a permanent
+        # blacklist: a changed feature representation remains eligible.
+        self._active_step = step
+        self._active_algorithms = set(algorithms)
+
+    def candidate_budget(self, model_type, step, configuration):
+        """Whole-trial allowance; unsuccessful work also consumes exploration."""
+        if self._model_time_limit is not None:
+            return self._model_time_limit
+        if self._total_time_limit is None:
+            return None
+        remaining = self.remaining_step_time(step)
+        families = (self._active_algorithms if self._active_step == step else None) or set(self._algorithms)
+        pool = self._stage_budgets.setdefault(step, remaining + self.step_spend(step))
+        spent = self.model_spend(model_type, step)
+        allowance = max(0.0, pool / max(1, len(families)) - spent)
+        budget = min(remaining, allowance)
+        # A timeout is only a lower bound. Retry this exact representation and
+        # configuration only with a larger budget, never a smaller one.
+        bounds = [s["train_time"] for s in self._spend
+                  if s.get("configuration") == configuration
+                  and s.get("outcome") == "budget_exhausted"]
+        if bounds and budget <= max(bounds):
+            return 0.0
+        return budget
+
+    def record_attempt(self, model_name, model_type, step, elapsed, outcome, configuration):
+        # keep_model logs successful fits; replace that entry with complete
+        # attempt wall time (including preparation, prediction and saving).
+        self._spend = [s for s in self._spend
+                       if not (s["model_name"] == model_name and s["fit_level"] == step)]
+        self._spend.append(dict(model_name=model_name, model_type=model_type,
+                                fit_level=step, train_time=elapsed, outcome=outcome,
+                                configuration=configuration))
 
     def to_json(self):
         return {
@@ -31,6 +72,8 @@ class TimeController:
             "spend": self._spend,
             "is_hill_climbing": self._is_hill_climbing,
             "is_stacking": self._is_stacking,
+            "stage_budgets": self._stage_budgets,
+            "stacking_cost_observations": self.stacking_cost.observations,
         }
 
     @staticmethod
@@ -47,6 +90,8 @@ class TimeController:
                 time.time(), total_time_limit, model_time_limit, steps, algorithms
             )
             tc._spend = data.get("spend")
+            tc._stage_budgets = data.get("stage_budgets", {})
+            tc.stacking_cost = StackingCostHistory(data.get("stacking_cost_observations"))
             tc._start_time -= tc.already_spend()  # update time with already spend
             return tc
         except Exception as e:
@@ -80,6 +125,19 @@ class TimeController:
             if "mix_encoding" in self._steps:
                 ratios["mix_encoding"] = 0.025
                 ratios["feature_discovery"] += 0.025
+
+        # Preserve the enabled feature stages' combined budget, but distribute
+        # it in 30/50/20 proportions. Disabled generators receive no allocation.
+        feature_shares = {
+            "golden_features": 0.3,
+            "feature_discovery": 0.5,
+            "kmeans_features": 0.2,
+        }
+        enabled_features = [step for step in feature_shares if step in self._steps]
+        feature_budget = sum(ratios[step] for step in enabled_features)
+        enabled_share = sum(feature_shares[step] for step in enabled_features)
+        for step in enabled_features:
+            ratios[step] = feature_budget * feature_shares[step] / enabled_share
 
         if (
             fit_level
@@ -242,6 +300,12 @@ class TimeController:
         if fit_level == "default_algorithms":
             return None
 
+        if self._active_step == fit_level and self._active_algorithms is not None:
+            if model_type not in self._active_algorithms:
+                return 0.0
+            allowance = self.time_should_use(fit_level) / len(self._active_algorithms)
+            return max(0.0, min(allowance, self.remaining_step_time(fit_level))) / k_folds
+
         tune_algorithms = [
             a
             for a in self._algorithms
@@ -288,7 +352,8 @@ class TimeController:
     def step_spend(self, step):
         return np.sum([s["train_time"] for s in self._spend if s["fit_level"] == step])
 
-    def model_spend(self, model_type):
+    def model_spend(self, model_type, step=None):
         return np.sum(
-            [s["train_time"] for s in self._spend if s["model_type"] == model_type]
+            [s["train_time"] for s in self._spend if s["model_type"] == model_type
+             and (step is None or s["fit_level"] == step)]
         )

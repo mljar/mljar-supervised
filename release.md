@@ -1,3 +1,36 @@
+## mljar-supervised 1.4.0rc7 (local candidate)
+
+Local candidate for validation and benchmarking; not published to PyPI.
+
+- Add automatic algorithm early stopping to ordinary Compete runs. After three distinct successful configurations, pause original-feature random search and hill climbing when an algorithm retains less than 80% of the leader's improvement over a fixed initial reference.
+- Apply one rule to all built-in and custom evaluation metrics using their optimization direction. Retain trained models for ensembles and stacking, and keep changed-feature searches eligible.
+- Persist policy state and skip evidence, print one message per paused algorithm, and summarize decisions in the Markdown report. Older interrupted searches retain their original behavior.
+- Allocate tuning allowances among eligible pending algorithms within existing stage and total budgets.
+- Share the existing feature-engineering budget in 30/50/20 proportions between golden features, feature discovery, and KMeans, retaining separate stages and existing API arguments.
+- Retain RC6 fixes and the fixed five-per-algorithm stacking input limit and 30 ensemble selection rounds. Add isolated local RC7 benchmarks with earlier results preserved.
+- Bound initial and subsequent trials by the remaining algorithm/stage allowance, include failed-attempt wall time, and reserve time for validation. Preserve explicit per-model time limits.
+- Treat expected training and inference deadline expirations as budget skips with saved diagnostics instead of candidate errors. Retain genuine failures as errors and release partial learners.
+- Reuse measured stacking costs to reject unaffordable compatible trials before training. Allow cheaper RealMLP architectures to probe their cost; persist observations for resumed runs.
+- Print feature-discovery fold progress, profile sizes, newly listed feature names, cache reuse, and transformation report paths. Respect AutoML verbosity and avoid repeating shared features across folds.
+
+Local validation found a dependency/environment limitation: GPU-enabled XGBoost
+3.2.0 and 3.4.1 raised CUDA-driver errors during CPU multiclass evaluation on the
+validation machine. All 14 affected cases in each environment passed with the
+matching CPU-only XGBoost wheel and unchanged MLJAR code. The original failures
+are retained in the validation logs; this candidate does not include a driver
+workaround or an XGBoost dependency pin.
+
+## mljar-supervised 1.4.0rc6 (local candidate)
+
+Local candidate for validation and benchmarking; not yet published to PyPI.
+
+- Build categorical encodings in batches to avoid fragmented DataFrames and repeated performance warnings.
+- Fit and save KMeans missing-value imputation on training folds, retaining compatibility with existing artifacts.
+- Record resource admission rejections as skipped candidates with diagnostics; preserve genuine failures and release partially trained learners.
+- Use at most five stacking inputs per algorithm and 30 greedy ensemble selection rounds. These are fixed internal limits; repeated ensemble selections adjust weights.
+- Count shared prediction dependencies once when enforcing prediction-time limits.
+- Support isolated local-wheel benchmarks with artifact hashes, prediction dependency counts, resource skips, memory diagnostics, and retained training logs.
+
 ## mljar-supervised 1.4.0rc5
 
 Fifth release candidate for 1.4.0, improving saved-model inference and avoiding

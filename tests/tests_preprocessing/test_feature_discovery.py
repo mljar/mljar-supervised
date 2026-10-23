@@ -252,6 +252,18 @@ def test_unavailable_profiles_and_expired_budget(tmp_path, monkeypatch):
         lambda name: "1.1.0",
     )
     discovery = FeatureDiscovery(tmp_path, "regression", 42, 1, store)
-    assert discovery.prepare(params, 0) is None
+    messages = []
+    assert discovery.prepare(params, 0, progress=messages.append) is None
+    assert any("budget exhausted" in line for line in messages)
     assert FakeGoldmine.calls == 0
-    assert discovery.prepare(params, 10)["profiles"] == ["default"]
+    messages.clear()
+    assert discovery.prepare(params, 10, progress=messages.append)["profiles"] == ["default"]
+    assert any("fold 1/2" in line and "input columns" in line for line in messages)
+    assert any("default: 1 features, compact: 1 features" in line for line in messages)
+    assert sum("default, newly listed features: a." in line for line in messages) == 1
+    assert any("generator.md" in line for line in messages)
+    assert messages[-1].endswith("feature sets ready for model training: default.")
+    messages.clear()
+    discovery.prepare(params, 10, progress=messages.append)
+    assert sum("reused saved features" in line for line in messages) == 2
+    assert FakeGoldmine.calls == 2

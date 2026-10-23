@@ -3,12 +3,17 @@
 from supervised.algorithms.realmlp_resources import (
     available_gpu_memory,
     available_memory,
+    gpu_allocation_stats,
     thread_count,
 )
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import AutoMLException, ResourceAdmissionError
 
 
 class TabMResourceError(AutoMLException):
+    pass
+
+
+class TabMAdmissionError(TabMResourceError, ResourceAdmissionError):
     pass
 
 
@@ -68,8 +73,9 @@ def check_resources(model, X, X_validation, n_classes, device, params):
         ram_budget_bytes=int(budget),
     )
     if host_need > budget:
-        raise TabMResourceError(
-            "TabM estimated RAM exceeds its memory budget; use fewer rows/features or a smaller network"
+        raise TabMAdmissionError(
+            "TabM estimated RAM exceeds its memory budget; use fewer rows/features or a smaller network",
+            resources=info,
         )
     if device.startswith("cuda"):
         free, total = available_gpu_memory(torch.device(device))
@@ -85,10 +91,12 @@ def check_resources(model, X, X_validation, n_classes, device, params):
             vram_budget_bytes=int(budget),
         )
         if need > budget:
-            raise TabMResourceError(
+            info.update(gpu_allocation_stats(device))
+            raise TabMAdmissionError(
                 f"TabM estimated GPU memory {need / 1024**3:.2f} GiB exceeds "
                 f"budget {budget / 1024**3:.2f} GiB on {device} "
                 f"({free / 1024**3:.2f} GiB free); use a smaller configuration "
-                "or explicitly select CPU"
+                "or explicitly select CPU",
+                resources=info,
             )
     return info

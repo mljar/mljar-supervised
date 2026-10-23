@@ -43,7 +43,8 @@ class TimedTabMInterface(TabMSubSplitInterface):
             return deadline is not None and time.monotonic() >= deadline
 
         if expired():
-            raise ValueError("TabM time budget exhausted before training")
+            from supervised.exceptions import BudgetExceededError
+            raise BudgetExceededError("TabM time budget exhausted before training", phase="fit")
         torch.manual_seed(split.sub_split_seeds[0])
         self.n_classes_ = ds.get_n_classes()
         self.task_type_ = "regression" if self.n_classes_ == 0 else "classification"
@@ -186,6 +187,9 @@ class TimedTabMInterface(TabMSubSplitInterface):
                 self.stop_reason = "early_stopping"
                 break
         if best_state is None:
+            if self.stop_reason == "time_limit":
+                from supervised.exceptions import BudgetExceededError
+                raise BudgetExceededError("TabM deadline reached before a validation checkpoint.", phase="fit")
             raise ValueError(
                 "TabM finished without a validation checkpoint; increase the time budget"
             )

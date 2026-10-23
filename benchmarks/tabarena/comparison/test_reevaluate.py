@@ -76,7 +76,7 @@ def test_unfinished_source_is_rejected(saved_run):
     write_json(
         path / "automl/params.json", dict(fit_level="stack", best_model="Ensemble")
     )
-    with pytest.raises(ValueError, match="finished RC2 fit"):
+    with pytest.raises(ValueError, match="finished 1.4.0rc2 fit"):
         input_attempt(source, "anneal")
 
 

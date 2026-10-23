@@ -35,8 +35,9 @@ def validate_reference(manifest, reference):
 class PredictionProfiler:
     """Synchronized, inclusive phase timings; nested times must not be summed."""
 
-    def __init__(self, synchronize=lambda: None):
+    def __init__(self, synchronize=lambda: None, memory_snapshot=lambda: None):
         self.synchronize = synchronize
+        self.memory_snapshot = memory_snapshot
         self.events = []
         self.model = None
         self.stack = ExitStack()
@@ -51,6 +52,7 @@ class PredictionProfiler:
                 self.model = args[0].get_name()
                 print(f"Predict {self.model}", flush=True)
             self.synchronize()
+            memory_before = self.memory_snapshot()
             started = time.perf_counter()
             success = False
             hit = None
@@ -69,6 +71,8 @@ class PredictionProfiler:
                         seconds=time.perf_counter() - started,
                         success=success,
                         hit=hit,
+                        memory_before=memory_before,
+                        memory_after=self.memory_snapshot(),
                         cleanup=(
                             kwargs.get("cleanup", True)
                             if phase == "gpu_admission_cleanup"
@@ -89,6 +93,7 @@ class PredictionProfiler:
         import sdm
 
         self.instrument(ModelFramework, "predict", "model")
+        self.instrument(ModelFramework, "release_learners", "release_learners")
         self.instrument(Preprocessing, "transform", "preprocessing")
         for method, phase in [
             ("_load_network", "checkpoint_load"),
@@ -188,13 +193,27 @@ def main(args):
             torch.cuda.reset_peak_memory_stats()
         synchronize()
         started = time.perf_counter()
-        with PredictionProfiler(synchronize) as profiler:
-            prediction = automl.predict_all(frame)
+        def memory_snapshot():
+            if args.device != "cuda":
+                return None
+            free, total = torch.cuda.mem_get_info()
+            return dict(
+                allocated_bytes=torch.cuda.memory_allocated(),
+                reserved_bytes=torch.cuda.memory_reserved(),
+                free_bytes=free, total_bytes=total,
+            )
+
+        profiler = PredictionProfiler(synchronize, memory_snapshot)
+        try:
+            with profiler:
+                prediction = automl.predict_all(frame)
+        finally:
+            # A failed admission is precisely when the memory trace is needed.
+            write_json(args.output / f"{name}.trace.json", profiler.events)
         synchronize()
         elapsed = time.perf_counter() - started
         assert_unloaded(automl)
         prediction.to_parquet(args.output / f"{name}.parquet", index=False)
-        write_json(args.output / f"{name}.trace.json", profiler.events)
         if reference is not None:
             pd.testing.assert_frame_equal(
                 prediction.reset_index(drop=True),

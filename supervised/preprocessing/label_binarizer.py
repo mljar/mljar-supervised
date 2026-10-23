@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 class LabelBinarizer(object):
@@ -20,17 +21,17 @@ class LabelBinarizer(object):
             for v in self._uniq_values:
                 self._new_columns.append(column + "_" + str(v))
 
-    def transform(self, X, column):
-        if len(self._uniq_values) == 2:
-            X[column + "_" + str(self._uniq_values[1])] = (
-                X[column] == self._uniq_values[1]
-            ).astype(int)
-        else:
-            for v in self._uniq_values:
-                X[column + "_" + str(v)] = (X[column] == v).astype(int)
+    def _encoded_columns(self, values, column):
+        unique = self._uniq_values[1:] if len(self._uniq_values) == 2 else self._uniq_values
+        return {f"{column}_{v}": (values == v).astype(int) for v in unique}
 
-        X.drop(column, axis=1, inplace=True)
-        return X
+    def transform(self, X, column):
+        # Construct the frame once, retaining assignment order (including an
+        # existing column overwritten by an encoded name) without fragmentation.
+        columns = dict(X.items())
+        columns.update(self._encoded_columns(columns[column], column))
+        del columns[column]
+        return pd.DataFrame(columns, index=X.index)
 
     def inverse_transform(self, X):
         if self._old_column is None:

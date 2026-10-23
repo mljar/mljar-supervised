@@ -1,9 +1,9 @@
 # How does ensemble stacking work?
 
 
-Before introducing ensemble stacking, we should talk about the steps of Ensemble and Stack first: 
+Before introducing ensemble stacking, we should talk about the steps of Ensemble and Stack first:
 
- 
+
 
 ### 1. Ensemble
 
@@ -12,6 +12,14 @@ After all Level-0 models are trained step by step *(like simple_algorithms, defa
 In this process, the weight values according to the all Level-0 model will be calculated and become Ensemble model. The final selected Level-0 model and their weight values will list in the ensemble.json under ensemble folder (example file showed as following , The “repeat” here means the weight value of each selected model)
 
 ![ensemble_json](../images/ensemble_json.png)
+
+Ensemble selection runs for up to **30 rounds**, using saved validation or
+out-of-fold predictions. Each round can select any eligible candidate, including
+a previously selected model. Repeated selections increase that model's weight;
+they do not add prediction work. The best validation combination is retained,
+so the final ensemble can use fewer than 30 distinct members. This fixed internal
+limit applies to both ordinary and stacked ensembles and has no public setting.
+It does not cap the upstream models required by stacked members.
 
 
 ### 2. Stack
@@ -27,6 +35,26 @@ The original input data is used to train several models of Level-0, and the pred
 **Ensemble stacking** means to ensemble the above-mentioned Level-0 and Level-1 models with different weight values and predict final results. The final selected Level-0 and Level-1 models and their weight values will list in the ensemble.json file which under the ensemble_stacked folder. (as shown in the figure below, repeat here means the weight value)
 
 ![](../images/ensemble_stack.png)
+
+## Selecting stacking inputs
+
+New stacks use at most **five models per algorithm**, ranked by internal validation
+loss. This is a fixed internal limit with no public setting; it is not a total
+limit across algorithms. Baseline, random-feature probes, existing stacked models
+and ensembles are excluded from these inputs. Excluding ensemble inputs prevents
+their full member lists from adding hidden prediction dependencies. Fairness constraints still
+apply when enabled. All trained models remain in the leaderboard; the final
+ensemble can still select ordinary and stacked models.
+
+The selected input names and order are saved with the run. Loading an older run
+preserves its original stack, even if it contains more inputs. Reducing an
+existing stack requires training new stacked models.
+
+When `max_single_prediction_time` is set, ensemble construction counts shared
+prediction dependencies once, including the inputs needed by stacked models.
+Repeated selection of a member changes its weight without adding another
+prediction cost. Timings are measurements on the training machine, not a
+hardware-independent latency guarantee.
 
 ## Stacked models in performance plots
 

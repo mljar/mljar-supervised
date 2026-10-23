@@ -436,6 +436,16 @@ class Preprocessing(object):
             if X_validation is not None and missing is not None:
                 X_validation = missing.transform(X_validation)
 
+        # New KMeans artifacts own their frozen imputation. Generate their
+        # features before the legacy fallback can fill numeric inputs using
+        # statistics of the prediction batch. Older artifacts keep their order.
+        frozen_kmeans = self._kmeans is not None and self._kmeans._fill_values is not None
+        kmeans_values = None
+        if frozen_kmeans and X_validation is not None:
+            kmeans_values = self._kmeans.transform(
+                X_validation[self._kmeans._input_columns].copy()
+            )[self._kmeans._new_features]
+
         # to be sure that all missing are filled
         # in case new data there can be gaps!
         if (
@@ -466,7 +476,9 @@ class Preprocessing(object):
         if discovery_values is not None:
             X_validation = pd.concat([X_validation, discovery_values], axis=1)
 
-        if self._kmeans is not None:
+        if kmeans_values is not None:
+            X_validation[kmeans_values.columns] = kmeans_values
+        elif self._kmeans is not None and not frozen_kmeans:
             X_validation = self._kmeans.transform(X_validation)
 
         for convert in self._categorical:
