@@ -23,12 +23,12 @@ There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
 the available devices for RealMLP, TabM, Kumo, and TabICLv2. Other algorithms
 use their own device settings.
 
-!!! note "Release candidate"
-    Version `1.4.0rc5` includes RealMLP, TabM mini, Kumo and TabICLv2 support,
+!!! note "Alpha release"
+    Version `1.4.0a1` includes RealMLP, TabM mini, Kumo and TabICLv2 support,
     plus optional [feature discovery](features/feature_discovery.md) powered by
     features-goldmine. Install `[feature-discovery]` or `[all]` on Python 3.10+
     to enable it automatically in Compete.
-    Select the exact release-candidate version in the commands below to test
+    Select the exact alpha version in the commands below to test
     these models. The stable `1.3.2` package does not include these integrations.
 
 ## Create an environment
@@ -61,14 +61,38 @@ virtual environment for your chosen CPU or GPU build.
 python -m pip install mljar-supervised
 ```
 
-To test the release candidate:
+To test the alpha release:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0rc5"
+python -m pip install "mljar-supervised==1.4.0a1"
 ```
 
 The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
 RealMLP is optional.
+
+## XGBoost CPU installation
+
+Starting with `1.4.0a1`, MLJAR installs `xgboost-cpu` on Linux x86-64/ARM64 and
+Windows x86-64. Other platforms retain `xgboost`. MLJAR trains XGBoost on CPU;
+this choice does not disable CUDA for RealMLP, TabM, Kumo or TabICLv2.
+
+Use a fresh environment when upgrading if possible. The `xgboost`,
+`xgboost-cpu` and `xgboost-cu12` distributions share the `xgboost` import and
+must not be installed together. Pip does not automatically remove the old
+provider when a dependency changes its name.
+
+On the platforms using `xgboost-cpu`, migrate an existing MLJAR environment with:
+
+```bash
+python -m pip uninstall -y xgboost xgboost-cpu xgboost-cu12
+python -m pip install --upgrade "mljar-supervised==1.4.0a1"
+python -m pip check
+```
+
+If another application requires the regular `xgboost` distribution, use a separate
+MLJAR environment. Keep only one provider, rather than installing overlapping
+packages or ignoring dependency-check failures. The benchmark launcher creates
+an isolated environment automatically and checks CPU multiclass evaluation.
 
 ## Kumo and TabICLv2 on CPU or NVIDIA GPU
 
@@ -99,7 +123,7 @@ Install your PyTorch build first:
 Then run **both** commands:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0rc5"
+python -m pip install "mljar-supervised[tfm]==1.4.0a1"
 python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
 ```
 
@@ -177,9 +201,9 @@ CUDA device, not multi-GPU training.
 After installing your chosen PyTorch build, install the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised[realmlp]==1.4.0rc5"
+python -m pip install "mljar-supervised[realmlp]==1.4.0a1"
 # Or all optional model dependencies:
-python -m pip install "mljar-supervised[all]==1.4.0rc5"
+python -m pip install "mljar-supervised[all]==1.4.0a1"
 ```
 
 `[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds

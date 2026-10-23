@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package_version:
-        description: 'Exact version (for example 1.4.0rc5); leave empty for latest stable'
+        description: 'Exact version (for example 1.4.0a1); leave empty for latest stable'
         required: false
         type: string
         default: ''
@@ -90,7 +90,7 @@ jobs:
               with TemporaryDirectory() as results_path:
                   automl = AutoML(
                       results_path=results_path, mode="Explain", ml_task=task,
-                      algorithms=["Baseline", "Linear", "Decision Tree"],
+                      algorithms=["Baseline", "Linear", "Decision Tree", "Xgboost"],
                       train_ensemble=False, stack_models=False, explain_level=0,
                       total_time_limit=60, n_jobs=1, random_state=42,
                   )

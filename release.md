@@ -1,3 +1,19 @@
+## mljar-supervised 1.4.0a1
+
+Alpha release for testing the accumulated RC6/RC7 changes. Install this exact
+version explicitly: alpha versions sort before release candidates.
+
+```bash
+python -m pip install "mljar-supervised[all]==1.4.0a1"
+```
+
+- Install CPU-only XGBoost on Linux x86-64/ARM64 and Windows x86-64, avoiding the CUDA-driver initialization failures observed during CPU multiclass evaluation. Other platforms retain their standard XGBoost package.
+- Document migration from overlapping XGBoost distributions, and check CPU multiclass training, evaluation and prediction before the alpha benchmark starts. GPU support for the optional neural and pretrained algorithms is unchanged.
+- Include algorithm early stopping, whole-trial budget accounting, measured stacking-cost admission, fixed ensemble/stacking limits, inference fixes, 30/50/20 feature-engineering allocation and readable feature-discovery training output from RC6/RC7.
+- Add a full 12-dataset alpha benchmark using retained models, logs and results, with earlier version outputs preserved for comparison.
+
+Use a fresh environment or follow the [XGBoost migration instructions](docs/docs/install.md#xgboost-cpu-installation). Pip does not remove an existing `xgboost` distribution when installing `xgboost-cpu`.
+
 ## mljar-supervised 1.4.0rc7 (local candidate)
 
 Local candidate for validation and benchmarking; not published to PyPI.

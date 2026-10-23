@@ -17,7 +17,7 @@ def make_wheel(path, version="1.4.0rc6", name="mljar-supervised", content="first
     return path
 
 
-@pytest.mark.parametrize("version", ["1.4.0rc6", "1.4.0rc7"])
+@pytest.mark.parametrize("version", ["1.4.0rc6", "1.4.0rc7", "1.4.0a1"])
 def test_local_wheel_metadata_and_separate_run_paths(tmp_path, version):
     wheel = make_wheel(tmp_path / "space in path" / f"mljar_supervised-{version}-py3-none-any.whl", version=version)
     args = parse_args(["--version", version, "--local-wheel", str(wheel), "--wait-for-resources"])

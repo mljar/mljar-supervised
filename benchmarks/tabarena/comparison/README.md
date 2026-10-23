@@ -1,3 +1,17 @@
+# Alpha 1 benchmark
+
+```bash
+./benchmarks/run.sh 1.4.0a1 --wait-for-resources
+```
+
+This runs all 12 datasets in the comparison suite, with official repeat 0/fold 0
+splits, Compete mode, 3600 seconds and 15 CPU threads per dataset, and CUDA for
+supported algorithms. XGBoost uses the CPU-only 2.1.4 build, matching the library
+version pinned for earlier comparisons. Models, training logs, predictions,
+metrics and environment metadata are retained in a separate alpha run. The
+preflight checks CPU multiclass XGBoost evaluation before starting training.
+Earlier candidate commands below remain available.
+
 # Compare MLJAR packages on TabArena
 
 From the repository root, run one command in each terminal:

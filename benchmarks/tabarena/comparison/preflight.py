@@ -9,6 +9,36 @@ import sys
 from common import CANDIDATE_VERSIONS, DISCOVERY_VERSIONS, NEW_ALGORITHMS, now, write_json
 
 
+def check_cpu_xgboost():
+    """Exercise CPU multiclass evaluation, which import-only checks miss."""
+    import numpy as np
+    import xgboost as xgb
+
+    providers = {}
+    for name in ("xgboost", "xgboost-cpu", "xgboost-cu12"):
+        try:
+            providers[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    if (set(providers) != {"xgboost-cpu"}
+            or providers.get("xgboost-cpu") != xgb.__version__
+            or xgb.build_info().get("USE_CUDA") is not False):
+        raise RuntimeError(
+            f"Expected one CPU-only XGBoost installation; found {providers}. "
+            "Use a fresh benchmark environment; overlapping XGBoost packages share files."
+        )
+    data = xgb.DMatrix(np.arange(72, dtype=np.float32).reshape(24, 3),
+                       label=np.arange(24) % 3)
+    model = xgb.train(dict(device="cpu", tree_method="hist", objective="multi:softprob",
+                           num_class=3, eval_metric="mlogloss", nthread=1, seed=42),
+                      data, num_boost_round=2, evals=[(data, "validation")], verbose_eval=False)
+    predictions = model.predict(data)
+    if predictions.shape != (24, 3) or not np.isfinite(predictions).all():
+        raise RuntimeError("XGBoost CPU multiclass prediction check failed")
+    return dict(version=xgb.__version__, providers=providers, module=xgb.__file__,
+                use_cuda=False, multiclass_evaluation="passed")
+
+
 def check(version, device, output, download=True):
     import supervised
     from supervised import AutoML
@@ -20,19 +50,22 @@ def check(version, device, output, download=True):
     info = dict(checked=now(), version=installed, module=str(module), python=sys.version,
                 executable=sys.executable, requested_device=device, cuda_available=False,
                 packages={dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()})
+    if version == "1.4.0a1":
+        info["xgboost"] = check_cpu_xgboost()
+        print(f"XGBoost {info['xgboost']['version']}: CPU multiclass evaluation passed", flush=True)
     if version in CANDIDATE_VERSIONS:
         if version in DISCOVERY_VERSIONS:
             from supervised.preprocessing.feature_discovery_transformer import check_dependencies as check_discovery
             check_discovery()
             info["features_goldmine_version"] = importlib.metadata.version("features-goldmine")
             print(f"Feature discovery: features-goldmine {info['features_goldmine_version']}", flush=True)
-        if version in ("1.4.0rc6", "1.4.0rc7"):
+        if version in ("1.4.0rc6", "1.4.0rc7", "1.4.0a1"):
             from supervised.tuner.stacking import _MAX_MODELS_PER_TYPE
             from supervised.ensemble import _SELECTION_ROUNDS
             if (_MAX_MODELS_PER_TYPE, _SELECTION_ROUNDS) != (5, 30):
                 raise RuntimeError("Local candidates must use five stack inputs per algorithm and 30 ensemble rounds")
             info["selection_limits"] = dict(stacking_per_algorithm=5, ensemble_rounds=30)
-        if version == "1.4.0rc7":
+        if version in ("1.4.0rc7", "1.4.0a1"):
             from supervised.tuner.algorithm_early_stopping import AlgorithmEarlyStopping
             if (AlgorithmEarlyStopping.MIN_CONFIGURATIONS, AlgorithmEarlyStopping.MAX_GAP) != (3, .20):
                 raise RuntimeError("RC7 algorithm early stopping policy does not match the benchmark")

@@ -4,6 +4,7 @@ pandas==2.2.3
 scipy==1.15.3
 scikit-learn==1.6.1
 xgboost==2.1.4
+xgboost-cpu==2.1.4
 lightgbm==4.7.0
 catboost==1.2.10
 shap==0.48.0
