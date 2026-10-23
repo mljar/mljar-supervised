@@ -95,6 +95,16 @@ class PreprocessingTuner:
                 ):
                     preprocessing_to_apply += [Scale.SCALE_NORMAL]
 
+            if (
+                "ip_transform" in required_preprocessing
+                and "ip_transform" in preprocessing_needed
+            ):
+                # IPTransformer handles missing addresses itself, and scaling
+                # must refer to its generated columns rather than the raw input.
+                preprocessing_to_apply = ["ip_transform"]
+                if "scale" in required_preprocessing:
+                    preprocessing_to_apply.append(Scale.SCALE_NORMAL)
+
             # remeber which preprocessing we need to apply
             if preprocessing_to_apply:
                 columns_preprocessing[col] = preprocessing_to_apply

@@ -2,6 +2,12 @@ name: Smoke test PyPI install + train
 
 on:
   workflow_dispatch:
+    inputs:
+      package_version:
+        description: 'Exact version (for example 1.4.0a1); leave empty for latest stable'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   smoke:
@@ -37,10 +43,69 @@ jobs:
           choco install graphviz
 
       - name: Install package from PyPI
+        shell: bash
+        env:
+          MLJAR_PACKAGE_VERSION: ${{ inputs.package_version }}
         run: |
           python -m pip install --upgrade pip
-          pip install -U mljar-supervised
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+          from importlib.metadata import version
 
-      - name: Smoke train
+          requested = os.environ.get("MLJAR_PACKAGE_VERSION", "").strip()
+          requirement = f"mljar-supervised=={requested}" if requested else "mljar-supervised"
+          subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", requirement])
+          installed = version("mljar-supervised")
+          if requested:
+              assert installed == requested, (installed, requested)
+          print(f"Testing mljar-supervised {installed} on Python {sys.version}")
+          PY
+          python -m pip check
+
+      - name: Smoke train and reload
+        shell: bash
         run: |
-          python -c "from sklearn.datasets import make_classification; from supervised import AutoML; X,y=make_classification(n_samples=120,n_features=8,n_informative=4,random_state=42); automl=AutoML(mode='Explain',algorithms=['Baseline','Linear','Decision Tree'],train_ensemble=False,stack_models=False,explain_level=0,total_time_limit=30,results_path='automl_smoke'); automl.fit(X,y); preds=automl.predict(X[:5]); print(preds)"
+          python - <<'PY'
+          from importlib.metadata import version
+          from tempfile import TemporaryDirectory
+
+          import numpy as np
+          from sklearn.datasets import make_classification, make_regression
+          import supervised
+          from supervised import AutoML
+
+          assert supervised.__version__ == version("mljar-supervised")
+          for task in ["binary_classification", "multiclass_classification", "regression"]:
+              if task == "regression":
+                  X, y = make_regression(n_samples=120, n_features=8, random_state=42)
+              else:
+                  classes = 2 if task == "binary_classification" else 3
+                  X, y = make_classification(
+                      n_samples=120, n_features=8, n_informative=4,
+                      n_classes=classes, random_state=42,
+                  )
+                  y = np.array([f"class_{label}" for label in y])
+              with TemporaryDirectory() as results_path:
+                  automl = AutoML(
+                      results_path=results_path, mode="Explain", ml_task=task,
+                      algorithms=["Baseline", "Linear", "Decision Tree", "Xgboost"],
+                      train_ensemble=False, stack_models=False, explain_level=0,
+                      total_time_limit=60, n_jobs=1, random_state=42,
+                  )
+                  automl.fit(X, y)
+                  predictions = automl.predict(X[:5])
+                  loaded = AutoML(results_path=results_path)
+                  restored = loaded.predict(X[:5])
+                  if task == "regression":
+                      assert np.isfinite(predictions).all()
+                      np.testing.assert_allclose(predictions, restored)
+                  else:
+                      np.testing.assert_array_equal(predictions, restored)
+                      probabilities = automl.predict_proba(X[:5])
+                      assert np.isfinite(probabilities).all()
+                      np.testing.assert_allclose(probabilities.sum(axis=1), 1)
+                      np.testing.assert_allclose(probabilities, loaded.predict_proba(X[:5]))
+                  print(f"PASS: {task} training, prediction and reload")
+          PY

@@ -1,3 +1,5 @@
+from functools import partial
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -45,7 +47,11 @@ def negative_r2(y_true, y_predicted, sample_weight=None):
     return -1.0 * val
 
 
-def negative_f1(y_true, y_predicted, sample_weight=None):
+F1_AVERAGES = {"f1_micro": "micro", "f1_macro": "macro", "f1_weighted": "weighted"}
+F1_METRICS = ("f1", *F1_AVERAGES)
+
+
+def negative_f1(y_true, y_predicted, sample_weight=None, average=None):
     if isinstance(y_true, pd.DataFrame):
         y_true = np.array(y_true)
     if isinstance(y_predicted, pd.DataFrame):
@@ -54,15 +60,25 @@ def negative_f1(y_true, y_predicted, sample_weight=None):
     if len(y_predicted.shape) == 2 and y_predicted.shape[1] == 1:
         y_predicted = y_predicted.ravel()
 
-    average = None
+    explicit_average = average is not None
+    labels = None
     if len(y_predicted.shape) == 1:
         y_predicted = (y_predicted > 0.5).astype(int)
-        average = "binary"
+        average = average or "binary"
+        labels = [0, 1] if explicit_average else None
     else:
+        labels = np.arange(y_predicted.shape[1]) if explicit_average else None
         y_predicted = np.argmax(y_predicted, axis=1)
-        average = "micro"
+        average = average or "micro"
 
-    val = f1_score(y_true, y_predicted, sample_weight=sample_weight, average=average)
+    val = f1_score(
+        y_true,
+        y_predicted,
+        sample_weight=sample_weight,
+        average=average,
+        labels=labels,
+        zero_division=0 if explicit_average else "warn",
+    )
 
     return -val
 
@@ -149,13 +165,14 @@ def xgboost_eval_metric_pearson(preds, dtrain):
     return "pearson", negative_pearson(target, preds)
 
 
-def xgboost_eval_metric_f1(preds, dtrain):
+def xgboost_eval_metric_f1(preds, dtrain, metric_name="f1", maximize=False):
     # Xgboost needs to minimize eval_metric
     target = dtrain.get_label()
     weight = dtrain.get_weight()
     if len(weight) == 0:
         weight = None
-    return "f1", negative_f1(target, preds, weight)
+    score = negative_f1(target, preds, weight, average=F1_AVERAGES.get(metric_name))
+    return metric_name, -score if maximize else score
 
 
 def xgboost_eval_metric_average_precision(preds, dtrain):
@@ -201,17 +218,20 @@ def lightgbm_eval_metric_pearson(preds, dtrain):
     return "pearson", -negative_pearson(target, preds), True
 
 
-def lightgbm_eval_metric_f1(preds, dtrain):
+def lightgbm_eval_metric_f1(preds, dtrain, metric_name="f1"):
     target = dtrain.get_label()
     weight = dtrain.get_weight()
 
-    unique_targets = np.unique(target)
-    if len(unique_targets) > 2:
-        cols = len(unique_targets)
-        rows = int(preds.shape[0] / len(unique_targets))
-        preds = np.reshape(preds, (rows, cols), order="F")
+    # Older LightGBM versions pass flattened class-major probabilities; modern
+    # versions pass a matrix. Infer classes from its size, including absent labels.
+    if preds.ndim == 1 and preds.size > len(target):
+        preds = np.reshape(preds, (len(target), -1), order="F")
 
-    return "f1", -negative_f1(target, preds, weight), True
+    return (
+        metric_name,
+        -negative_f1(target, preds, weight, average=F1_AVERAGES.get(metric_name)),
+        True,
+    )
 
 
 def lightgbm_eval_metric_average_precision(preds, dtrain):
@@ -366,7 +386,7 @@ class Metric(object):
             "mape",
             "spearman",  # negative
             "pearson",  # negative
-            "f1",  # negative
+            *F1_METRICS,  # negative
             "average_precision",  # negative
             "accuracy",  # negative
             "user_defined_metric",
@@ -391,8 +411,8 @@ class Metric(object):
             self.metric = negative_spearman
         elif self.name == "pearson":
             self.metric = negative_pearson
-        elif self.name == "f1":
-            self.metric = negative_f1
+        elif self.name in F1_METRICS:
+            self.metric = partial(negative_f1, average=F1_AVERAGES.get(self.name))
         elif self.name == "average_precision":
             self.metric = negative_average_precision
         elif self.name == "accuracy":
@@ -432,7 +452,7 @@ class Metric(object):
             "r2",
             "spearman",
             "pearson",
-            "f1",
+            *F1_METRICS,
             "average_precision",
             "accuracy",
         ]
@@ -444,7 +464,7 @@ class Metric(object):
             "r2",
             "spearman",
             "pearson",
-            "f1",
+            *F1_METRICS,
             "average_precision",
             "accuracy",
         ]

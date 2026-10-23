@@ -7,15 +7,17 @@ import numpy as np
 log = logging.getLogger(__name__)
 
 from sklearn.model_selection import train_test_split
+from sklearn.utils.validation import check_consistent_length
 
 from supervised.exceptions import AutoMLException
-from supervised.utils.utils import load_data
+from supervised.utils.utils import data_row_count, load_data
 from supervised.validation.validator_base import BaseValidator
 
 
 class SplitValidator(BaseValidator):
-    def __init__(self, params):
-        BaseValidator.__init__(self, params)
+
+    def __init__(self, params, data_store=None):
+        BaseValidator.__init__(self, params, data_store=data_store)
 
         self.train_ratio = self.params.get("train_ratio", 0.8)
         self.shuffle = self.params.get("shuffle", True)
@@ -39,63 +41,28 @@ class SplitValidator(BaseValidator):
             raise AutoMLException("No data path set in SplitValidator params")
 
     def get_split(self, k=0, repeat=0):
-        X = load_data(self._X_path)
-        y = load_data(self._y_path)
-        y = y["target"]
-
-        sample_weight = None
-        if self._sample_weight_path is not None:
-            sample_weight = load_data(self._sample_weight_path)
-            sample_weight = sample_weight["sample_weight"]
-
-        sensitive_features = None
-        if self._sensitive_features_path is not None:
-            sensitive_features = load_data(self._sensitive_features_path)
-
-        stratify = None
-        if self.stratify:
-            stratify = y
-        if self.shuffle == False:
-            stratify = None
-
-        input_data = [X, y]
-        if sample_weight is not None:
-            input_data += [sample_weight]
-        if sensitive_features is not None:
-            input_data += [sensitive_features]
-
-        output_data = train_test_split(
-            *input_data,
+        y = load_data(self._y_path, store=self._data_store)["target"]
+        # Keep train_test_split's input-length validation without loading features.
+        paths = (self._X_path, self._sample_weight_path, self._sensitive_features_path)
+        check_consistent_length(
+            y,
+            *(
+                range(data_row_count(path, store=self._data_store))
+                for path in paths
+                if path is not None
+            ),
+        )
+        stratify = y if self.stratify and self.shuffle else None
+        train_index, validation_index = train_test_split(
+            np.arange(len(y)),
             train_size=self.train_ratio,
             test_size=1.0 - self.train_ratio,
             shuffle=self.shuffle,
             stratify=stratify,
             random_state=self.random_seed + repeat,
         )
-
-        X_train = output_data[0]
-        X_validation = output_data[1]
-        y_train = output_data[2]
-        y_validation = output_data[3]
-        if sample_weight is not None:
-            sample_weight_train = output_data[4]
-            sample_weight_validation = output_data[5]
-            if sensitive_features is not None:
-                sensitive_features_train = output_data[6]
-                sensitive_features_validation = output_data[7]
-        else:
-            if sensitive_features is not None:
-                sensitive_features_train = output_data[4]
-                sensitive_features_validation = output_data[5]
-
-        train_data = {"X": X_train, "y": y_train}
-        validation_data = {"X": X_validation, "y": y_validation}
-        if sample_weight is not None:
-            train_data["sample_weight"] = sample_weight_train
-            validation_data["sample_weight"] = sample_weight_validation
-        if sensitive_features is not None:
-            train_data["sensitive_features"] = sensitive_features_train
-            validation_data["sensitive_features"] = sensitive_features_validation
+        train_data = self._load_rows(train_index)
+        validation_data = self._load_rows(validation_index)
 
         repeat_str = f"repeat_{repeat}_" if self.repeats > 1 else ""
 
@@ -106,8 +73,8 @@ class SplitValidator(BaseValidator):
             self._results_path, f"split_{repeat_str}validation_indices.npy"
         )
 
-        np.save(train_data_file, X_train.index)
-        np.save(validation_data_file, X_validation.index)
+        np.save(train_data_file, train_data["X"].index)
+        np.save(validation_data_file, validation_data["X"].index)
 
         return train_data, validation_data
 
@@ -124,6 +91,7 @@ import pandas as pd
 
 from sklearn.utils.fixes import bincount
 from sklearn.model_selection import train_test_split
+from sklearn.utils.validation import check_consistent_length
 
 import logging
 logger = logging.getLogger('mljar')

@@ -5,6 +5,7 @@ import shutil
 import time
 import types
 import uuid
+import warnings
 from abc import ABC
 from copy import deepcopy
 
@@ -25,16 +26,23 @@ from supervised.algorithms.registry import (
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
-from supervised.exceptions import AutoMLException, NotTrainedException
+from supervised.exceptions import AutoMLException, NotTrainedException, ResourceAdmissionError, BudgetExceededError
 from supervised.fairness.report import FairnessReport
 from supervised.model_framework import ModelFramework
+from supervised.prediction import PredictionContext
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
+from supervised.preprocessing.feature_discovery_transformer import (
+    FeatureDiscovery, check_dependencies as check_discovery_dependencies,
+    supported_validation as discovery_supports_validation,
+)
 # disable EDA
 # from supervised.preprocessing.eda import EDA
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.tuner.data_info import DataInfo
+from supervised.tuner.algorithm_early_stopping import AlgorithmEarlyStopping
 from supervised.tuner.mljar_tuner import MljarTuner
 from supervised.tuner.time_controller import TimeController
+from supervised.tuner.stacking_cost import StackingCostHistory
 from supervised.utils.automl_plots import AutoMLPlots
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.data_validation import (
@@ -55,7 +63,7 @@ from supervised.utils.report_structured import (
     save_structured_report,
     to_markdown,
 )
-from supervised.utils.utils import dump_data, load_data
+from supervised.utils.utils import Store, dump_data, load_data
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -69,6 +77,7 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
+        self._training_store = None
         self._mode = None
         self._ml_task = None
         self._results_path = None
@@ -82,6 +91,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = None
         self._explain_level = None
         self._golden_features = None
+        self._feature_discovery = None
         self._features_selection = None
         self._start_random_models = None
         self._hill_climbing_steps = None
@@ -102,6 +112,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._start_time = time.time()
         self._time_ctrl = None
         self._all_params = {}
+        self._algorithm_early_stopping = None
         # https://scikit-learn.org/stable/developers/develop.html#universal-attributes
         self.n_features_in_ = None  # for scikit-learn api
         self.tuner = None
@@ -157,6 +168,9 @@ class BaseAutoML(BaseEstimator, ABC):
                 "model_time_limit", self._model_time_limit
             )
             self._algorithms = params.get("algorithms", self._algorithms)
+            self.custom_params = params.get("custom_params", getattr(self, "custom_params", None))
+            if self.custom_params is None and params.get("realmlp_params") is not None:
+                self.custom_params = {"realmlp": params["realmlp_params"]}
             self._train_ensemble = params.get("train_ensemble", self._train_ensemble)
             self._stack_models = params.get("stack_models", self._stack_models)
             self._eval_metric = params.get("eval_metric", self._eval_metric)
@@ -166,6 +180,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._verbose = params.get("verbose", self._verbose)
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
+            self._feature_discovery = params.get("feature_discovery", False)
             self._features_selection = params.get(
                 "features_selection", self._features_selection
             )
@@ -191,9 +206,6 @@ class BaseAutoML(BaseEstimator, ABC):
             best_model_name = params.get("best_model")
             load_on_predict = params.get("load_on_predict")
             self._fit_level = params.get("fit_level")
-            lazy_load = not (
-                self._fit_level is not None and self._fit_level == "finished"
-            )
             load_models = self._model_subpaths
             if load_on_predict is not None and self._fit_level == "finished":
                 load_models = load_on_predict
@@ -203,6 +215,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 # join them and return unique list
                 load_models = list(np.unique(load_models + models_needed))
 
+            # Loading/resuming replaces the runtime models, including when fit
+            # is retried on the same instance after an interruption.
+            self._models = []
+            self._stacked_models = None
             models_map = {}
 
             for model_subpath in load_models:
@@ -213,7 +229,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     self._models += [ens]
                     models_map[ens.get_name()] = ens
                 else:
-                    m = ModelFramework.load(path, model_subpath, lazy_load)
+                    # Finished runs can contain many GPU folds. Load metadata
+                    # now; each learner reloads its artifact only when needed.
+                    m = ModelFramework.load(path, model_subpath, lazy_load=True)
                     self._models += [m]
                     models_map[m.get_name()] = m
 
@@ -245,6 +263,7 @@ class BaseAutoML(BaseEstimator, ABC):
         ldb = {
             "name": [],
             "model_type": [],
+            "is_stacked": [],
             "metric_type": [],
             "metric_value": [],
             "train_time": [],
@@ -266,6 +285,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 continue
             ldb["name"] += [m.get_name()]
             ldb["model_type"] += [m.get_type()]
+            ldb["is_stacked"] += [bool(m._is_stacked)]
             ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
@@ -346,12 +366,60 @@ class BaseAutoML(BaseEstimator, ABC):
             pass
         return 1
 
+    def _trial_configuration(self, params):
+        return joblib.hash((AlgorithmEarlyStopping.configuration_key(params),
+                            AlgorithmEarlyStopping.validation_key(params),
+                            params.get("is_stacked", False), params.get("data_type")))
+
+    def _stacking_descriptor(self, params):
+        if not params.get("is_stacked"):
+            return None
+        info = self._data_info or {}
+        inputs = dict(rows=info.get("rows"), columns=info.get("columns"),
+                      cols=info.get("cols"),
+                      stacked_models=[m.get_name() for m in self._stacked_models or []])
+        return StackingCostHistory.descriptor(params, inputs)
+
     def train_model(self, params):
+        params.pop("candidate_time_limit", None)
+        policy = self._algorithm_early_stopping
+        budgeted = (policy is not None and policy.enabled
+                    and self._fit_level not in ("simple_algorithms", "adjust_validation")
+                    and self._total_time_limit is not None
+                    and self._model_time_limit is None)
+        if budgeted:
+            allowance = self._time_ctrl.candidate_budget(
+                params["learner"]["model_type"], self._fit_level,
+                self._trial_configuration(params),
+            )
+            if allowance <= 0:
+                raise BudgetExceededError("No affordable exploration allowance remains.",
+                                          phase="admission", allowance=allowance)
+            params["candidate_time_limit"] = allowance
+            if self._fit_level == "stack":
+                decision = self._time_ctrl.stacking_cost.decision(
+                    self._stacking_descriptor(params), allowance,
+                )
+                if decision:
+                    raise BudgetExceededError(
+                        "Previous stacking timings predict this candidate cannot fit its allowance.",
+                        **decision,
+                    )
+        expected_time = None
+        if self._fit_level == "feature_discovery":
+            expected_time = params.get("feature_discovery_expected_time")
         # do we have enough time to train?
         # if not, skip
         if not self._time_ctrl.enough_time(
-            params["learner"]["model_type"], self._fit_level
+            params["learner"]["model_type"], self._fit_level, expected_time=expected_time
         ):
+            if budgeted:
+                raise BudgetExceededError("Estimated candidate cost exceeds the remaining stage budget.",
+                                          phase="admission")
+            if self._fit_level == "feature_discovery":
+                self.verbose_print(
+                    f"Skip {params['name']}: insufficient time for the estimated training cost."
+                )
             logger.info(f"Cannot train {params['name']} because of the time constraint")
             return False
         # let's create directory to log all training artifacts
@@ -375,6 +443,19 @@ class BaseAutoML(BaseEstimator, ABC):
             )
 
         params["max_time_for_learner"] = max_time_for_learner
+        if self._model_time_limit is not None:
+            params["max_time_for_learner"] = self._model_time_limit / self._expected_learners_cnt()
+        policy = self._algorithm_early_stopping
+        if policy is not None and policy.enabled and policy.tuning_step(self._fit_level):
+            allowance = self._time_ctrl.learner_time_limit(
+                params["learner"]["model_type"], self._fit_level,
+                self._expected_learners_cnt(),
+            )
+            if allowance is not None:
+                params["max_time_for_learner"] = allowance
+
+        if budgeted:
+            params["max_time_for_learner"] = params["candidate_time_limit"] / self._expected_learners_cnt()
 
         total_time_constraint = TotalTimeConstraint(
             {
@@ -390,19 +471,34 @@ class BaseAutoML(BaseEstimator, ABC):
         mf = ModelFramework(
             params,
             callbacks=[early_stop, total_time_constraint],
+            data_store=self._training_store,
         )
 
         # start training
         logger.info(
             f"Train model #{len(self._models)+1} / Model name: {params['name']}"
         )
-        mf.train(results_path, model_subpath)
+        try:
+            mf.train(results_path, model_subpath)
+        except BaseException:
+            # A failed fit may leave a partially constructed GPU learner alive
+            # through its traceback/callbacks. Release it before the next fit.
+            mf.release_learners()
+            raise
 
         # keep info about the model
         self.keep_model(mf, model_subpath)
 
         # save the model
         mf.save(results_path, model_subpath)
+        self._save_model_blueprint(model_subpath)
+
+        if self._fit_level == "stack":
+            folds = len(mf.learners)
+            self._time_ctrl.stacking_cost.observe(
+                params["name"], self._stacking_descriptor(params), mf.get_train_time(),
+                folds, folds, getattr(mf, "_budget_dimensions", None),
+            )
 
         return True
 
@@ -432,72 +528,77 @@ class BaseAutoML(BaseEstimator, ABC):
                 target,
                 sample_weight,
                 sensitive_features,
-            ) = self.ensemble.get_oof_matrix(self._models)
+            ) = self.ensemble.get_oof_matrix(self._models, self._stacked_models)
             self.ensemble.fit(oofs, target, sample_weight, sensitive_features)
             self.keep_model(self.ensemble, ensemble_subpath)
             self.ensemble.save(self._results_path, ensemble_subpath)
+            self._save_model_blueprint(ensemble_subpath)
             return True
         return False
+
+    def _save_model_blueprint(self, model_subpath):
+        if self._explain_level != 2:
+            return
+        from supervised.utils.blueprint import save_blueprints
+
+        try:
+            save_blueprints(
+                self._results_path,
+                [model_subpath],
+                {"stacked": [m.get_name() for m in self._stacked_models or []]},
+            )
+        except (OSError, ValueError, TypeError) as exc:
+            warnings.warn(f"Could not generate model blueprints: {exc}", RuntimeWarning)
 
     def can_we_stack_them(self, y):
         # if multiclass and too many classes then No
         return True
 
-    def get_stacked_data(self, X, mode="training"):
+    def get_stacked_data(self, X, mode="training", prediction_context=None):
         # mode can be `training` or `predict`
         if self._stacked_models is None:
             return X
+        if mode != "training" and prediction_context is None:
+            with PredictionContext() as context:
+                return self.get_stacked_data(X, mode, prediction_context=context)
         all_oofs = []
         for m in self._stacked_models:
             oof = None
             if mode == "training":
                 oof = m.get_out_of_folds()
             else:
-                oof = m.predict(X)
+                oof = prediction_context.predict(m, X)
                 if self._ml_task == BINARY_CLASSIFICATION:
                     cols = [f for f in oof.columns if "prediction" in f]
                     if len(cols) == 2:
-                        oof = pd.DataFrame({"prediction": oof[cols[1]]})
+                        # Match the binary OOF schema from ModelFramework.predictions.
+                        # KMeans and other preprocessors retain these training names.
+                        class_names = [c[len("prediction_"):] for c in cols]
+                        column = "prediction"
+                        if not ("0" in class_names and "1" in class_names):
+                            column = (
+                                f"prediction_0_for_{class_names[0]}_1_for_{class_names[1]}"
+                            )
+                        oof = pd.DataFrame({column: oof[cols[1]]})
 
             cols = [f for f in oof.columns if "prediction" in f]
-            oof = oof[cols]
+            oof = oof[cols].copy()
             oof.columns = [f"{m.get_name()}_{c}" for c in cols]
             all_oofs += [oof]
 
-        org_index = X.index.copy()
-        X.reset_index(drop=True, inplace=True)
-        X_stacked = pd.concat([X] + all_oofs, axis=1)
-
-        X_stacked.index = org_index.copy()
-        X.index = org_index.copy()
+        X_stacked = pd.concat([X.reset_index(drop=True)] + all_oofs, axis=1)
+        X_stacked.index = X.index.copy()
         return X_stacked
 
     def _perform_model_stacking(self):
         if self._stacked_models is not None:
             return
 
-        ldb = self.get_leaderboard(filter_random_feature=True)
-        if self._fairness_metric is not None:
-            # get only fair models if we train with sensitive features
-            ldb = ldb[ldb["is_fair"]]
-        ldb = ldb.sort_values(by="metric_value", ascending=True)
-        models_map = {m.get_name(): m for m in self._models if not m._is_stacked}
-        self._stacked_models = []
-        models_limit = 10
+        from supervised.tuner.stacking import select_stacking_models
 
-        for model_type in np.unique(ldb.model_type):
-            if model_type in ["Baseline"]:
-                continue
-            ds = ldb[ldb.model_type == model_type].copy()
-            ds.sort_values(by="metric_value", inplace=True)
-
-            for n in list(ds.name.iloc[:models_limit].values):
-                self._stacked_models += [models_map[n]]
-
-        scores = [m.get_final_loss() for m in self._stacked_models]
-        self._stacked_models = [
-            self._stacked_models[i] for i in np.argsort(scores).tolist()
-        ]
+        self._stacked_models = select_stacking_models(
+            self._models, require_fair=self._fairness_metric is not None
+        )
 
     def get_stacking_minimum_time_needed(self):
         try:
@@ -535,17 +636,17 @@ class BaseAutoML(BaseEstimator, ABC):
         self._perform_model_stacking()
 
         X_stacked_path = os.path.join(self._results_path, "X_stacked.data")
-        if os.path.exists(X_stacked_path):
+        if self._training_store.contains(X_stacked_path):
             return
 
-        X = load_data(self._X_path)
+        X = load_data(self._X_path, store=self._training_store)
         org_columns = X.columns.tolist()
         X_stacked = self.get_stacked_data(X)
         new_columns = X_stacked.columns.tolist()
         added_columns = [c for c in new_columns if c not in org_columns]
 
         # save stacked train data
-        dump_data(X_stacked_path, X_stacked)
+        dump_data(X_stacked_path, X_stacked, store=self._training_store)
 
         """
         # resue old params
@@ -586,6 +687,16 @@ class BaseAutoML(BaseEstimator, ABC):
         # for binary and multiclass classification
         self._handle_drastic_imbalance(X, y, sample_weight, sensitive_features)
 
+        # App generation must not retain the full training frame after fit.
+        # Capture the same (possibly resampled) data that the old store exposed.
+        from supervised.apps.metadata import _build_feature_schema
+
+        self._data_info["app_feature_schema"] = _build_feature_schema(
+            self, X, self._data_info["columns_values"], tolerate_errors=True
+        )
+        with open(os.path.join(self._results_path, "data_info.json"), "w") as fout:
+            json.dump(self._data_info, fout, indent=4, cls=MLJSONEncoder)
+
         # prepare path for saving files
         self._X_path = os.path.join(self._results_path, "X.data")
         self._y_path = os.path.join(self._results_path, "y.data")
@@ -595,21 +706,27 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._results_path, "sample_weight.data"
             )
             dump_data(
-                self._sample_weight_path, pd.DataFrame({"sample_weight": sample_weight})
+                self._sample_weight_path,
+                pd.DataFrame({"sample_weight": sample_weight}),
+                store=self._training_store,
             )
         self._sensitive_features_path = None
         if sensitive_features is not None:
             self._sensitive_features_path = os.path.join(
                 self._results_path, "sensitive_features.data"
             )
-            dump_data(self._sensitive_features_path, sensitive_features)
+            dump_data(
+                self._sensitive_features_path,
+                sensitive_features,
+                store=self._training_store,
+            )
 
-        dump_data(self._X_path, X)
+        dump_data(self._X_path, X, store=self._training_store)
 
         if self._ml_task == MULTICLASS_CLASSIFICATION:
             y = y.astype(str)
 
-        dump_data(self._y_path, pd.DataFrame({"target": y}))
+        dump_data(self._y_path, pd.DataFrame({"target": y}), store=self._training_store)
 
         # set paths in validation parameters
         self._validation_strategy["X_path"] = self._X_path
@@ -729,10 +846,72 @@ class BaseAutoML(BaseEstimator, ABC):
         state["time_controller"] = self._time_ctrl.to_json()
         state["all_params"] = self._all_params
         state["adjust_validation"] = self._adjust_validation
+        if self._algorithm_early_stopping is not None:
+            state["algorithm_early_stopping"] = self._algorithm_early_stopping.to_json()
 
         fname = os.path.join(self._results_path, "progress.json")
         with open(fname, "w") as fout:
             fout.write(json.dumps(state, indent=4, cls=MLJSONEncoder))
+        if self._algorithm_early_stopping is not None and self._algorithm_early_stopping.enabled:
+            with open(os.path.join(self._results_path, "algorithm_early_stopping.json"), "w") as fout:
+                json.dump(state["algorithm_early_stopping"], fout, indent=4, cls=MLJSONEncoder)
+        skips = self._resource_skip_records()
+        if skips:
+            with open(os.path.join(self._results_path, "resource_skips.json"), "w") as fout:
+                json.dump(skips, fout, indent=4, cls=MLJSONEncoder)
+        budget_skips = self._budget_skip_records()
+        if budget_skips:
+            with open(os.path.join(self._results_path, "budget_skips.json"), "w") as fout:
+                json.dump(budget_skips, fout, indent=4, cls=MLJSONEncoder)
+
+    def _budget_skip_records(self):
+        return [dict(step=step, name=p["name"], **p["budget_skip"])
+                for step, candidates in self._all_params.items()
+                for p in candidates if "budget_skip" in p]
+
+    def _resource_skip_records(self):
+        return [dict(step=step, name=p["name"], **p["resource_skip"])
+                for step, candidates in self._all_params.items()
+                for p in candidates if "resource_skip" in p]
+
+    def _resource_preflight(self, params):
+        """Recheck a previously rejected identical configuration before preprocessing.
+
+        Estimates are reused only for the same preprocessing/validation/learner
+        configuration. Free memory is measured again; transient pressure is not
+        an algorithm blacklist and smaller configurations get their own checks.
+        """
+        key = MljarTuner.get_params_key(params)
+        for candidates in self._all_params.values():
+            for previous in candidates:
+                skip = previous.get("resource_skip")
+                if (not skip or MljarTuner.get_params_key(previous) != key
+                        or previous.get("learner") != params.get("learner")
+                        or previous.get("custom_params") != params.get("custom_params")):
+                    continue
+                info = dict(skip["resources"])
+                learner = dict(params["learner"], **params.get("custom_params", {}))
+                from supervised.algorithms.realmlp_resources import (
+                    available_memory, available_gpu_memory,
+                )
+                if "estimated_ram_bytes" in info:
+                    free = available_memory()
+                    budget = free * learner.get("memory_fraction", 0.6)
+                    if learner.get("memory_limit_gb") is not None:
+                        budget = min(budget, learner["memory_limit_gb"] * 1024**3)
+                    info.update(available_ram_bytes=free, ram_budget_bytes=int(budget))
+                    if info["estimated_ram_bytes"] > budget:
+                        raise ResourceAdmissionError("Configuration still exceeds its RAM budget.", info)
+                if info.get("estimated_vram_bytes", 0) and str(info.get("device", "")).startswith("cuda"):
+                    free, total = available_gpu_memory(info["device"])
+                    budget = free * learner.get("gpu_memory_fraction", 0.7)
+                    if learner.get("gpu_memory_limit_gb") is not None:
+                        budget = min(budget, learner["gpu_memory_limit_gb"] * 1024**3)
+                    info.update(free_vram_bytes=free, total_vram_bytes=total,
+                                vram_budget_bytes=int(budget))
+                    if info["estimated_vram_bytes"] > budget:
+                        raise ResourceAdmissionError("Configuration still exceeds its GPU memory budget.", info)
+                return
 
     def load_progress(self):
         state = {}
@@ -745,6 +924,17 @@ class BaseAutoML(BaseEstimator, ABC):
         self._all_params = state.get("all_params", self._all_params)
         self._time_ctrl = TimeController.from_json(state.get("time_controller"))
         self._adjust_validation = state.get("adjust_validation", False)
+        policy = state.get("algorithm_early_stopping")
+        # An old interrupted search must not silently adopt a new pruning policy.
+        self._algorithm_early_stopping = (
+            AlgorithmEarlyStopping.from_json(policy) if policy is not None
+            else AlgorithmEarlyStopping(self._eval_metric, enabled=False)
+        )
+
+    def _report_algorithm_early_stopping(self):
+        if self._algorithm_early_stopping is not None:
+            for message in self._algorithm_early_stopping.messages():
+                self.verbose_print(message)
 
     def _validate_X_predict(self, X):
         """Validate X whenever one tries to predict, apply, predict_proba"""
@@ -845,11 +1035,6 @@ class BaseAutoML(BaseEstimator, ABC):
         return X, y, sample_weight, sensitive_features
 
     def _apply_constraints(self):
-        if "Neural Network" in self._algorithms and self._n_jobs != -1:
-            self._algorithms.remove("Neural Network")
-            self.verbose_print(
-                "Neural Network algorithm was disabled because it doesn't support n_jobs parameter."
-            )
         if "Linear" in self._algorithms and not (
             self.n_rows_in_ < 10000 and self.n_features_in_ < 1000
         ):
@@ -987,6 +1172,19 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
     def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
+        if self._training_store is not None:
+            raise AutoMLException("This AutoML instance already has an active fit")
+        store = Store()
+        self._training_store = store
+        try:
+            return self._fit_with_store(X, y, sample_weight, cv, sensitive_features)
+        finally:
+            store.clear()
+            self._training_store = None
+
+    def _fit_with_store(
+        self, X, y, sample_weight=None, cv=None, sensitive_features=None
+    ):
         """Fits the AutoML model with data"""
         if self._fit_level == "finished":
             print(
@@ -1009,6 +1207,39 @@ class BaseAutoML(BaseEstimator, ABC):
         self._total_time_limit = self._get_total_time_limit()
         self._model_time_limit = self._get_model_time_limit()
         self._algorithms = self._get_algorithms()
+        from supervised.algorithms.realmlp import check_dependencies
+        from supervised.tuner.custom_parameters import validate_custom_params
+
+        validate_custom_params(self.custom_params, self._ml_task)
+        if self._mode == "Optuna" and any((self.custom_params or {}).values()):
+            raise ValueError(
+                "custom_params currently supports random search and hill climbing, "
+                "not Optuna mode."
+            )
+        for algorithm in ["RealMLP", "TabM", "Kumo", "TabICLv2"]:
+            if algorithm not in self._algorithms:
+                continue
+            if sample_weight is not None:
+                if self.algorithms == "auto":
+                    warnings.warn(
+                        f"{algorithm} skipped because sample weights are not supported."
+                    )
+                    self._algorithms.remove(algorithm)
+                    continue
+                raise ValueError(
+                    f"{algorithm} does not support sample weights. "
+                    "Remove it from algorithms for weighted training."
+                )
+            if algorithm in ["Kumo", "TabICLv2"]:
+                from supervised.algorithms.sdm import check_dependencies as check_sdm
+
+                check_sdm()
+            elif algorithm == "TabM":
+                from supervised.algorithms.tabm import check_dependencies as check_tabm
+
+                check_tabm()
+            else:
+                check_dependencies()
         self._train_ensemble = self._get_train_ensemble()
         self._stack_models = self._get_stack_models()
         self._eval_metric = self._get_eval_metric()
@@ -1016,6 +1247,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._verbose = self._get_verbose()
         self._explain_level = self._get_explain_level()
         self._golden_features = self._get_golden_features()
+        self._feature_discovery = self._get_feature_discovery()
         self._features_selection = self._get_features_selection()
         self._start_random_models = self._get_start_random_models()
         self._hill_climbing_steps = self._get_hill_climbing_steps()
@@ -1053,6 +1285,13 @@ class BaseAutoML(BaseEstimator, ABC):
                 )
                 return
             self._check_can_load()
+
+            if self._algorithm_early_stopping is None:
+                self._algorithm_early_stopping = AlgorithmEarlyStopping(
+                    self._eval_metric,
+                    enabled=(self._mode == "Compete" and self._fairness_metric is None
+                             and self._optuna_time_budget is None),
+                )
 
             self.verbose_print(f"AutoML directory: {self._results_path}")
             if self._mode == "Optuna":
@@ -1126,8 +1365,12 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._fairness_threshold,
                 self._privileged_groups,
                 self._underprivileged_groups,
+                data_store=self._training_store,
+                custom_params=self.custom_params,
+                feature_discovery=self._feature_discovery,
             )
             self.tuner = tuner
+            tuner._algorithm_early_stopping = self._algorithm_early_stopping
 
             steps = tuner.steps()
             self.verbose_print(
@@ -1169,6 +1412,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 generated_params = []
                 if step in self._all_params:
                     generated_params = self._all_params[step]
+                elif step == "feature_discovery":
+                    generated_params = self._prepare_feature_discovery()
+                    # Persist the snapshot of parents and profiles before the first trial.
+                    self.save_progress(step, generated_params)
                 else:
                     generated_params = tuner.generate_params(
                         step,
@@ -1178,6 +1425,9 @@ class BaseAutoML(BaseEstimator, ABC):
                         self._total_time_limit,
                     )
 
+                self._report_algorithm_early_stopping()
+                if generated_params is not None:
+                    self.save_progress(step, generated_params)
                 if generated_params is None or not generated_params:
                     if "_update_" not in step:
                         self.verbose_print(
@@ -1189,16 +1439,39 @@ class BaseAutoML(BaseEstimator, ABC):
                         self.verbose_print(f"Skip {step} because of the time limit.")
                         continue
                     else:
-                        model_str = "models" if len(generated_params) > 1 else "model"
+                        pending_count = sum(p.get("status") not in ("trained", "skipped", "error")
+                                            for p in generated_params)
+                        model_str = "models" if pending_count != 1 else "model"
                         self.verbose_print(
-                            f"* Step {step} will try to check up to {len(generated_params)} {model_str}"
+                            f"* Step {step} will try to check up to {pending_count} {model_str}"
                         )
 
                 for params in generated_params:
                     if params.get("status", "") in ["trained", "skipped", "error"]:
-                        self.verbose_print(f"{params['name']}: {params['status']}.")
+                        if "algorithm_early_stopping" not in params:
+                            self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
 
+                    policy = self._algorithm_early_stopping
+                    if policy.skip_candidate(step, params):
+                        self._report_algorithm_early_stopping()
+                        self.save_progress(step, generated_params)
+                        continue
+                    if policy.enabled and not policy.tuning_step(step):
+                        self._time_ctrl.set_active_algorithms(step, {
+                            p["learner"]["model_type"] for p in generated_params
+                            if "learner" in p
+                        })
+                    if policy.enabled and policy.tuning_step(step):
+                        self._time_ctrl.set_active_algorithms(step, {
+                            p["learner"]["model_type"] for p in generated_params
+                            if p.get("status") not in ("trained", "skipped", "error")
+                            and policy.decision(step, p) is None
+                        })
+
+                    attempt_start = time.monotonic()
+                    configuration = self._trial_configuration(params) if "learner" in params else None
+                    outcome = "skipped"
                     try:
                         trained = False
                         if "ensemble" in step:
@@ -1206,10 +1479,14 @@ class BaseAutoML(BaseEstimator, ABC):
                                 is_stacked=params["is_stacked"]
                             )
                         else:
+                            self._resource_preflight(params)
                             trained = self.train_model(params)
                         params["status"] = "trained" if trained else "skipped"
-                        params["final_loss"] = self._models[-1].get_final_loss()
-                        params["train_time"] = self._models[-1].get_train_time()
+                        outcome = params["status"]
+                        params["final_loss"] = self._models[-1].get_final_loss() if trained else None
+                        params["train_time"] = self._models[-1].get_train_time() if trained else None
+                        if trained:
+                            policy.observe(step, params, params["final_loss"])
 
                         if (
                             self._adjust_validation
@@ -1218,18 +1495,46 @@ class BaseAutoML(BaseEstimator, ABC):
                         ):
                             self._set_adjusted_validation()
 
+                    except BudgetExceededError as e:
+                        outcome = "budget_exhausted"
+                        params.update(status="skipped", final_loss=None, train_time=None)
+                        params["budget_skip"] = {
+                            "reason": str(e), "elapsed": time.monotonic() - attempt_start,
+                            "allowance": params.get("candidate_time_limit"), **e.details,
+                        }
+                        if step == "stack" and e.details.get("completed_folds", 0) > 0:
+                            self._time_ctrl.stacking_cost.observe(
+                                params["name"], self._stacking_descriptor(params),
+                                e.details["elapsed"], e.details["completed_folds"],
+                                e.details["expected_folds"], e.details.get("dimensions"),
+                            )
+                    except ResourceAdmissionError as e:
+                        params["status"] = "skipped"
+                        params["resource_skip"] = dict(
+                            reason=str(e), resources=e.resources,
+                            learner=deepcopy(params.get("learner", {})),
+                        )
                     except NotTrainedException as e:
+                        outcome = "error"
                         params["status"] = "error"
                         self.verbose_print(
                             params.get("name") + " not trained. " + str(e)
                         )
                     except Exception as e:
+                        outcome = "error"
                         import traceback
 
                         self._update_errors_report(
                             params.get("name"), str(e) + "\n" + traceback.format_exc()
                         )
                         params["status"] = "error"
+
+                    finally:
+                        if "learner" in params:
+                            self._time_ctrl.record_attempt(
+                                params["name"], params["learner"]["model_type"], step,
+                                time.monotonic() - attempt_start, outcome, configuration,
+                            )
 
                     self.save_progress(step, generated_params)
 
@@ -1238,6 +1543,24 @@ class BaseAutoML(BaseEstimator, ABC):
             self._fit_level = "finished"
             self.save_progress()
             self.select_and_save_best(show_warnings=True)
+            if self._budget_skip_records():
+                self.verbose_print(
+                    f"Stopped or skipped {len(self._budget_skip_records())} candidates within "
+                    "time budgets. Details: budget_skips.json"
+                )
+            if self._resource_skip_records():
+                self.verbose_print(
+                    f"Skipped {len(self._resource_skip_records())} candidates exceeding "
+                    "resource budgets. Details: resource_skips.json"
+                )
+
+            # Training encodings support interrupted searches, not inference.
+            discovery_root = os.path.join(self._results_path, "feature_discovery")
+            if os.path.isdir(discovery_root):
+                for directory in os.scandir(discovery_root):
+                    cache = os.path.join(directory.path, "training.joblib")
+                    if directory.is_dir() and os.path.isfile(cache):
+                        os.remove(cache)
 
             self.verbose_print(
                 f"AutoML fit time: {np.round(time.time() - self._start_time,2)} seconds"
@@ -1357,6 +1680,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "total_time_limit": self._total_time_limit,
                 "model_time_limit": self._model_time_limit,
                 "algorithms": self._algorithms,
+                "custom_params": self.custom_params,
                 "train_ensemble": self._train_ensemble,
                 "stack_models": self._stack_models,
                 "eval_metric": self._eval_metric,
@@ -1364,6 +1688,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "verbose": self._verbose,
                 "explain_level": self._explain_level,
                 "golden_features": self._golden_features,
+                "feature_discovery": self._feature_discovery,
                 "features_selection": self._features_selection,
                 "start_random_models": self._start_random_models,
                 "hill_climbing_steps": self._hill_climbing_steps,
@@ -1390,6 +1715,21 @@ class BaseAutoML(BaseEstimator, ABC):
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4, cls=MLJSONEncoder))
 
+        blueprint_models = []
+        if self._explain_level == 2:
+            from supervised.utils.blueprint import save_blueprints
+
+            try:
+                blueprint_models = save_blueprints(
+                    self._results_path, self._model_subpaths, params
+                )
+            except (OSError, ValueError, TypeError) as exc:
+                warnings.warn(f"Could not generate model blueprints: {exc}", RuntimeWarning)
+            # Cached HTML includes inline SVGs; rebuild it after report updates.
+            html_path = os.path.join(self._results_path, "README.html")
+            if os.path.exists(html_path):
+                os.remove(html_path)
+
         if self._models:
             ldb = self.get_leaderboard(original_metric_values=True)
             ldb.to_csv(os.path.join(self._results_path, "leaderboard.csv"), index=False)
@@ -1405,6 +1745,49 @@ class BaseAutoML(BaseEstimator, ABC):
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
+                policy = self._algorithm_early_stopping
+                if self._budget_skip_records():
+                    fout.write(
+                        "\n\n## Time budgets\n\n"
+                        f"Stopped or skipped {len(self._budget_skip_records())} candidates "
+                        "within time budgets. These are not training errors. "
+                        "[Reasons and timings](budget_skips.json).\n"
+                    )
+                if policy is not None and policy.enabled and policy.paused:
+                    fout.write(
+                        "\n\n## Algorithm early stopping\n\n"
+                        f"Skipped {len(policy.skipped)} candidates while tuning original features. "
+                        "After at least three distinct successful configurations, an algorithm "
+                        "must retain 80% of the leader's improvement over the fixed initial reference. "
+                        "Trained models remain eligible for ensembles and stacking. "
+                        "[Decisions and validation scores](algorithm_early_stopping.json).\n"
+                    )
+                skips = self._resource_skip_records()
+                if skips:
+                    fout.write(
+                        f"\n\n## Resource budgets\n\n{len(skips)} candidates were skipped "
+                        "before model allocation because their estimated requirements "
+                        "exceeded the available budget. "
+                        "[Configurations and memory estimates](resource_skips.json).\n"
+                    )
+                if blueprint_models:
+                    fout.write("\n\n## Model blueprints\n\n")
+                    for model_name in blueprint_models:
+                        from urllib.parse import quote
+
+                        model_path = quote(model_name, safe="")
+                        fout.write(
+                            f"- [{model_name}]({model_path}/README.md)\n"
+                        )
+                skipped_weights = getattr(
+                    getattr(self, "tuner", None), "_weight_skip_reported", set()
+                )
+                if skipped_weights:
+                    fout.write(
+                        "\n\nSample-weighted training was skipped for: "
+                        + ", ".join(sorted(skipped_weights))
+                        + ". These algorithms do not support sample weights.\n"
+                    )
                 if self._fairness_metric is not None and self._best_model is not None:
                     additional_metrics = self._best_model.get_additional_metrics() or {}
                     fairness_metrics = additional_metrics.get("fairness_metrics")
@@ -1500,18 +1883,23 @@ class BaseAutoML(BaseEstimator, ABC):
         X = X[self._data_info["columns"]]
         self._validate_X_predict(X)
 
-        # is stacked model
-        if model._is_stacked:
-            self._perform_model_stacking()
-            X_stacked = self.get_stacked_data(X, mode="predict")
-
-            if model.get_type() == "Ensemble":
-                # Ensemble is using both original and stacked data
-                predictions = model.predict(X, X_stacked)
+        with PredictionContext() as context:
+            if model._is_stacked:
+                self._perform_model_stacking()
+                X_stacked = self.get_stacked_data(
+                    X, mode="predict", prediction_context=context
+                )
+                if model.get_type() == "Ensemble":
+                    # Ensemble uses both original and stacked data.
+                    predictions = context.predict(model, X, X_stacked)
+                else:
+                    predictions = context.predict(model, X_stacked)
             else:
-                predictions = model.predict(X_stacked)
-        else:
-            predictions = model.predict(X)
+                predictions = context.predict(model, X)
+            # Labels/thresholds are applied below, outside the shared cache.
+            predictions = predictions.copy()
+            if self._max_single_prediction_time is not None:
+                model._prediction_time_by_model = dict(context.model_prediction_times)
 
         if self._ml_task == BINARY_CLASSIFICATION:
             # need to predict the label based on predictions and threshold
@@ -1626,9 +2014,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     return name
             # If it got here, could not create, raise expection
             raise AutoMLException("Cannot create directory for AutoML results")
-        elif os.path.exists(self.results_path) and os.path.exists(
-            os.path.join(self.results_path, "params.json")
-        ):  # AutoML already loaded, return path
+        elif os.path.exists(self.results_path) and (
+            os.path.exists(os.path.join(self.results_path, "params.json"))
+            or os.path.exists(os.path.join(self.results_path, "progress.json"))
+        ):  # Includes interruption before the first model was saved.
             self._results_path = path
             return path
         # Dir does not exist, create it
@@ -1683,7 +2072,9 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                 ]
             if self._get_mode() == "Compete":
-                return [
+                from supervised.algorithms.realmlp import dependencies_available
+
+                algorithms = [
                     "Decision Tree",
                     "Linear",
                     "Random Forest",
@@ -1694,6 +2085,19 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                     "Nearest Neighbors",
                 ]
+                if dependencies_available():
+                    algorithms.append("RealMLP")
+                from supervised.algorithms.tabm import (
+                    dependencies_available as tabm_available,
+                )
+
+                if tabm_available():
+                    algorithms.append("TabM")
+                from supervised.algorithms.sdm import automatic_available
+
+                if automatic_available():
+                    algorithms.extend(["Kumo", "TabICLv2"])
+                return algorithms
             if self._get_mode() == "Optuna":
                 return [
                     "Random Forest",
@@ -1704,6 +2108,10 @@ class BaseAutoML(BaseEstimator, ABC):
                     "Neural Network",
                 ]
         else:
+            if self._get_mode() != "Compete":
+                for algorithm in ["RealMLP", "TabM", "Kumo", "TabICLv2"]:
+                    if algorithm in self.algorithms:
+                        raise ValueError(f'{algorithm} is supported only in mode="Compete".')
             return deepcopy(self.algorithms)
 
     def _get_train_ensemble(self):
@@ -1811,6 +2219,90 @@ class BaseAutoML(BaseEstimator, ABC):
                 return False
         else:
             return deepcopy(self.golden_features)
+
+    def _get_feature_discovery(self):
+        value = self.feature_discovery
+        if value != "auto" and not isinstance(value, bool):
+            raise ValueError("feature_discovery must be 'auto', True or False")
+        if value is False or (value == "auto" and self._get_mode() != "Compete"):
+            return False
+        reason = None
+        if not discovery_supports_validation(self._validation_strategy):
+            reason = "Feature discovery requires shuffled split or K-fold validation; custom/group/time-ordered encoding is not supported."
+        else:
+            try:
+                check_discovery_dependencies()
+            except AutoMLException as exc:
+                reason = str(exc)
+        if reason:
+            if value is True:
+                raise AutoMLException(reason)
+            self.verbose_print("Skip feature_discovery: " + reason)
+            return False
+        return True
+
+    def _prepare_feature_discovery(self):
+        remaining = self._time_ctrl.remaining_step_time("feature_discovery")
+        allocation = self._time_ctrl.time_should_use("feature_discovery")
+        if self._total_time_limit is None or self._model_time_limit is not None:
+            allocation = self._model_time_limit or 60
+        budget = min(allocation, remaining) * 0.25
+        if budget <= 0:
+            self.verbose_print("Skip feature_discovery: no time remaining in this step.")
+            return []
+        # Reserve generation time before selecting parents. Filter before taking
+        # the top models so faster runners-up can be tried when leaders cannot.
+        parents = self.tuner.feature_discovery_parents(
+            self._models, max_train_time=remaining - budget
+        )
+        if not parents:
+            self.verbose_print(
+                "Skip feature_discovery: no eligible parent fits the remaining training time."
+            )
+            return []
+        self.verbose_print(
+            f"* Step feature_discovery: up to 3 feature sets for {len(parents)} parents; discovery budget {budget:.1f}s."
+        )
+        discovery = FeatureDiscovery(
+            self._results_path,
+            self._ml_task,
+            self._random_state,
+            self._n_jobs,
+            self._training_store,
+        )
+        started = time.monotonic()
+        prepared, configurations = {}, {}
+        groups = {joblib.hash(m.validation_params) for m in parents}
+        try:
+            for parent in parents:
+                key = joblib.hash(parent.validation_params)
+                if key not in prepared:
+                    available = budget - (time.monotonic() - started)
+                    if available <= 0:
+                        break
+                    try:
+                        prepared[key] = discovery.prepare(
+                            parent.validation_params,
+                            available / (len(groups) - len(prepared)),
+                            progress=self.verbose_print,
+                        )
+                    except Exception:
+                        import traceback
+
+                        self._update_errors_report("feature_discovery", traceback.format_exc())
+                        prepared[key] = None
+                configurations[parent.get_name()] = prepared[key]
+        finally:
+            self._time_ctrl.log_time(
+                "feature_discovery",
+                "preprocessing",
+                "feature_discovery",
+                time.monotonic() - started,
+            )
+            self.save_progress()
+        return self.tuner.get_feature_discovery_params(
+            self._models, parents, configurations
+        )
 
     def _get_features_selection(self):
         """Gets the current features_selection"""
@@ -2045,20 +2537,25 @@ class BaseAutoML(BaseEstimator, ABC):
             "logloss",
             "auc",
             "f1",
+            "f1_micro",
+            "f1_macro",
+            "f1_weighted",
             "average_precision",
             "accuracy",
         ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss', 'auc', 'f1', 'average_precision', or 'accuracy'"
+                    Use 'logloss', 'auc', 'f1', 'f1_micro', 'f1_macro', 'f1_weighted', 'average_precision', or 'accuracy'"
             )
 
         elif (
             self._get_ml_task() == MULTICLASS_CLASSIFICATION
-        ) and self.eval_metric not in ["logloss", "f1", "accuracy"]:
+        ) and self.eval_metric not in [
+            "logloss", "f1", "f1_micro", "f1_macro", "f1_weighted", "accuracy"
+        ]:
             raise ValueError(
                 f"Metric {self.eval_metric} is not allowed in ML task: {self._get_ml_task()}. \
-                    Use 'logloss', 'f1', or 'accuracy'"
+                    Use 'logloss', 'f1', 'f1_micro', 'f1_macro', 'f1_weighted', or 'accuracy'"
             )
 
         elif self._get_ml_task() == REGRESSION and self.eval_metric not in [
@@ -2311,23 +2808,25 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._ml_task = json_data.get("ml_task")
 
+    _report_html_version = 2
+
     report_style = f"""
-.styled-table {{
+.mljar-automl-report .styled-table {{
     border-collapse: collapse;
     font-size: 0.9em;
     font-family: Courier New;
 }}
 
-.styled-table td, .styled-table th {{
+.mljar-automl-report .styled-table td, .mljar-automl-report .styled-table th {{
     border: 1px solid #ddd;
     padding: 8px;
 }}
 
-.styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
+.mljar-automl-report .styled-table tr:nth-child(even){{background-color: #f2f2f2;}}
 
-.styled-table tr:hover {{background-color: #e0ecf5;}}
+.mljar-automl-report .styled-table tr:hover {{background-color: #e0ecf5;}}
 
-.styled-table thead {{
+.mljar-automl-report .styled-table thead {{
     padding-top: 6px;
     padding-bottom: 6px;
     text-align: left;
@@ -2338,40 +2837,42 @@ class BaseAutoML(BaseEstimator, ABC):
 .mljar-automl-report {{
     font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: rgba(236, 243, 249, 0.15);
+}}
 
-
-h1 {{
+.mljar-automl-report h1 {{
     color: #004666;
     border-bottom: 1px solid rgba(0,70,102,0.3)
 }}
-h2 {{
+.mljar-automl-report h2 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
 }}
 
-ul {{
+.mljar-automl-report ul {{
     margin-top: 0px;
 }}
 
-p {{
+.mljar-automl-report p {{
     margin-top: 5px;
 }}
 
-h3 {{
+.mljar-automl-report h3 {{
     color: #004666;
     padding-bottom: 5px;
     margin-bottom: 0px;
 }}
-a {{
+.mljar-automl-report a {{
     font-weight: bold;
     color: #004666;
 }}
 
-a:hover {{
-    cursor: pointer;
+.mljar-automl-report a:hover {{
     color: #0099CC;
 }}
+
+.mljar-automl-report a[href], .mljar-automl-report a[onclick] {{
+    cursor: pointer;
 }}
 
 """
@@ -2434,6 +2935,16 @@ a:hover {{
             old = 'href="../README.html"'
             new = f"onclick=\"toggleShow('{me}-{self._id}');toggleShow('automl-report-main-{self._id}')\" "
             content_html = content_html.replace(old, new)
+            # Blueprint member links navigate between inline model reports.
+            from urllib.parse import quote
+
+            for model_name in self._model_subpaths:
+                old = f'href="../{quote(model_name, safe="")}/README.md"'
+                new = (
+                    f'href="#" onclick="toggleShow(\'{model_name}-{self._id}\');'
+                    f'toggleShow(\'{me}-{self._id}\')"'
+                )
+                content_html = content_html.replace(old, new)
 
         beginning = ""
 
@@ -2441,7 +2952,7 @@ a:hover {{
             beginning += """<img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_AutomatedML.png" style="height:128px; margin-left: auto;
 margin-right: auto;display: block;"/>\n\n"""
             if os.path.exists(os.path.join(self._results_path, "optuna/README.md")):
-                beginning += f"<h2><a onclick=\"toggleShow('optuna');toggleShow('automl-report-main-{self._id}')\" >&#187; Optuna Params Tuning Report</a></h2>"
+                beginning += f"<h2><a onclick=\"toggleShow('optuna-{self._id}');toggleShow('automl-report-main-{self._id}')\" >&#187; Optuna Params Tuning Report</a></h2>"
 
         content_html = beginning + content_html
 
@@ -2460,8 +2971,15 @@ margin-right: auto;display: block;"/>\n\n"""
         self._results_path = self._get_results_path()
         main_readme_html = os.path.join(self._results_path, "README.html")
 
+        report_version = (
+            f'<meta name="mljar-report-version" content="{self._report_html_version}">'
+        )
         if os.path.exists(main_readme_html):
-            return self._show_report(main_readme_html, width, height)
+            with open(main_readme_html) as fin:
+                cached_report = fin.read()
+            if report_version in cached_report:
+                return self._show_report(main_readme_html, width, height)
+            # Rebuild older HTML from the saved Markdown without retraining.
 
         body = ""
         fname = os.path.join(self._results_path, "README.md")
@@ -2499,14 +3017,15 @@ margin-right: auto;display: block;"/>\n\n"""
 <!DOCTYPE html>
 <html>
 <head>
+    {report_version}
     <style>
     {self.report_style}
     </style>
 </head>
 <body>
-    <div class="mljar-automl-report-{self._id}">
+    <div class="mljar-automl-report mljar-automl-report-{self._id}">
     {body}
-    <div>
+    </div>
 </body>
 </html>
 """
@@ -2549,6 +3068,8 @@ margin-right: auto;display: block;"/>\n\n"""
         return to_markdown(output_payload, model_name)
 
     def _need_retrain(self, X, y, sample_weight, decrease):
+        if self._best_model is None:
+            self.load(self.results_path)
         metric = self._best_model.get_metric()
 
         X, y, sample_weight, _ = ExcludeRowsMissingTarget.transform(
@@ -2557,12 +3078,10 @@ margin-right: auto;display: block;"/>\n\n"""
 
         if self._ml_task == BINARY_CLASSIFICATION:
             prediction = self._predict_proba(X)[:, 1]
-        if self._ml_task == MULTICLASS_CLASSIFICATION:
+        elif self._ml_task == MULTICLASS_CLASSIFICATION:
             prediction = self._predict_proba(X)
         else:
             prediction = self._predict(X)
-
-        sign = -1.0 if Metric.optimize_negative(metric.name) else 1.0
 
         new_score = metric(y, prediction, sample_weight)
         old_score = self._best_model.get_final_loss()

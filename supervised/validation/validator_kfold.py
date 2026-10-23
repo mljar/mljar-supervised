@@ -10,13 +10,15 @@ log = logging.getLogger(__name__)
 from sklearn.model_selection import KFold, StratifiedKFold
 
 from supervised.exceptions import AutoMLException
-from supervised.utils.utils import load_data
+from supervised.utils.utils import data_row_count, load_data
+from sklearn.utils.validation import check_consistent_length
 from supervised.validation.validator_base import BaseValidator
 
 
 class KFoldValidator(BaseValidator):
-    def __init__(self, params):
-        BaseValidator.__init__(self, params)
+
+    def __init__(self, params, data_store=None):
+        BaseValidator.__init__(self, params, data_store=data_store)
 
         self.k_folds = self.params.get("k_folds", 5)
         self.shuffle = self.params.get("shuffle", True)
@@ -73,17 +75,19 @@ class KFoldValidator(BaseValidator):
 
         if not os.path.exists(folds_path):
             os.mkdir(folds_path)
-            X = load_data(self._X_path)
-            y = load_data(self._y_path)
+            y = load_data(self._y_path, store=self._data_store)
             y = y["target"]
 
+            check_consistent_length(
+                y, range(data_row_count(self._X_path, store=self._data_store))
+            )
             if isinstance(y[0], bytes):
                 # see https://github.com/scikit-learn/scikit-learn/issues/16980
                 y = y.astype(str)
 
             for repeat_cnt, skf in enumerate(self.skf):
                 for fold_cnt, (train_index, validation_index) in enumerate(
-                    skf.split(X, y)
+                    skf.split(y, y)
                 ):
                     repeat_str = f"_repeat_{repeat_cnt}" if len(self.skf) > 1 else ""
                     train_index_file = os.path.join(
@@ -99,7 +103,6 @@ class KFoldValidator(BaseValidator):
 
                     np.save(train_index_file, train_index)
                     np.save(validation_index_file, validation_index)
-            del X
             del y
             gc.collect()
 
@@ -119,30 +122,9 @@ class KFoldValidator(BaseValidator):
         train_index = np.load(train_index_file)
         validation_index = np.load(validation_index_file)
 
-        X = load_data(self._X_path)
-        y = load_data(self._y_path)
-        y = y["target"]
-
-        sample_weight = None
-        if self._sample_weight_path is not None:
-            sample_weight = load_data(self._sample_weight_path)
-            sample_weight = sample_weight["sample_weight"]
-
-        sensitive_features = None
-        if self._sensitive_features_path is not None:
-            sensitive_features = load_data(self._sensitive_features_path)
-
-        train_data = {"X": X.loc[train_index], "y": y.loc[train_index]}
-        validation_data = {"X": X.loc[validation_index], "y": y.loc[validation_index]}
-        if sample_weight is not None:
-            train_data["sample_weight"] = sample_weight.loc[train_index]
-            validation_data["sample_weight"] = sample_weight.loc[validation_index]
-
-        if sensitive_features is not None:
-            train_data["sensitive_features"] = sensitive_features.loc[train_index]
-            validation_data["sensitive_features"] = sensitive_features.loc[
-                validation_index
-            ]
+        # Preserve the existing label-based k-fold selection semantics.
+        train_data = self._load_rows(train_index, positional=False)
+        validation_data = self._load_rows(validation_index, positional=False)
 
         return (train_data, validation_data)
 

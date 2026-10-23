@@ -1,3 +1,5 @@
+from functools import partial
+
 import lightgbm as lgb
 import numpy as np
 import optuna
@@ -9,6 +11,7 @@ from supervised.algorithms.registry import (
     MULTICLASS_CLASSIFICATION,
 )
 from supervised.utils.metric import (
+    F1_METRICS,
     Metric,
     lightgbm_eval_metric_accuracy,
     lightgbm_eval_metric_average_precision,
@@ -83,8 +86,10 @@ class LightgbmObjective:
             self.custom_eval_metric = lightgbm_eval_metric_spearman
         elif self.eval_metric.name == "pearson":
             self.custom_eval_metric = lightgbm_eval_metric_pearson
-        elif self.eval_metric.name == "f1":
-            self.custom_eval_metric = lightgbm_eval_metric_f1
+        elif self.eval_metric.name in F1_METRICS:
+            self.custom_eval_metric = partial(
+                lightgbm_eval_metric_f1, metric_name=self.eval_metric.name
+            )
         elif self.eval_metric.name == "average_precision":
             self.custom_eval_metric = lightgbm_eval_metric_average_precision
         elif self.eval_metric.name == "accuracy":

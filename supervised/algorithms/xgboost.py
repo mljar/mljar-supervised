@@ -1,3 +1,5 @@
+from functools import partial
+
 import copy
 import logging
 
@@ -15,6 +17,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import (
+    F1_METRICS,
     xgboost_eval_metric_accuracy,
     xgboost_eval_metric_average_precision,
     xgboost_eval_metric_f1,
@@ -114,8 +117,10 @@ class XgbAlgorithm(BaseAlgorithm):
             self.custom_eval_metric = xgboost_eval_metric_spearman
         elif self.params.get("eval_metric", "") == "pearson":
             self.custom_eval_metric = xgboost_eval_metric_pearson
-        elif self.params.get("eval_metric", "") == "f1":
-            self.custom_eval_metric = xgboost_eval_metric_f1
+        elif self.params.get("eval_metric", "") in F1_METRICS:
+            self.custom_eval_metric = partial(
+                xgboost_eval_metric_f1, metric_name=self.params.get("eval_metric", "")
+            )
         elif self.params.get("eval_metric", "") == "average_precision":
             self.custom_eval_metric = xgboost_eval_metric_average_precision
         elif self.params.get("eval_metric", "") == "accuracy":
@@ -170,7 +175,7 @@ class XgbAlgorithm(BaseAlgorithm):
             missing=np.nan,
             weight=sample_weight,
         )
-        
+
         if X_validation is not None and y_validation is not None:       
             dvalidation = xgb.DMatrix(
                 X_validation.values
@@ -207,7 +212,7 @@ class XgbAlgorithm(BaseAlgorithm):
             early_stopping_rounds=esr,
             evals_result=evals_result,
             verbose_eval=False,
-            custom_metric=self.custom_eval_metric
+            custom_metric=self.custom_eval_metric,
             # callbacks=[time_constraint] # callback slows down by factor ~8
         )
 
@@ -231,7 +236,7 @@ class XgbAlgorithm(BaseAlgorithm):
                 "r2",
                 "spearman",
                 "pearson",
-                "f1",
+                *F1_METRICS,
                 "average_precision",
                 "accuracy",
             ]:
@@ -364,6 +369,7 @@ required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_as_integer",
 ]
 
@@ -395,6 +401,7 @@ regression_required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_scale",
 ]
 

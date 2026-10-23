@@ -109,6 +109,7 @@ required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_as_integer",
 ]
 
@@ -163,6 +164,7 @@ regression_required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_scale",
 ]
 

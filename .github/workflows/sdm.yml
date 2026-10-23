@@ -1,0 +1,54 @@
+name: Optional SDM models
+on:
+  workflow_dispatch:
+    inputs:
+      all_kumo_sizes:
+        description: Test small, medium and large Kumo checkpoints
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'supervised/algorithms/*sdm*'
+      - 'supervised/algorithms/realmlp_resources.py'
+      - 'supervised/prediction.py'
+      - 'supervised/model_framework.py'
+      - 'tests/**/test_sdm*.py'
+      - 'tests/**/test_gpu_admission_cleanup.py'
+      - 'tests/**/test_prediction_lifecycle.py'
+      - '.github/workflows/sdm.yml'
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    env:
+      MLJAR_TEST_KUMO_SIZES: ${{ inputs.all_kumo_sizes && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'torch==2.11.0' --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install '.[tfm]' pytest
+      - run: python -m pip install 'git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface/hub
+          key: sdm-kumo-3c3e10bb-tabicl-4dcd344e-${{ inputs.all_kumo_sizes && 'all' || 'small' }}
+      - name: Download pinned checkpoints and notices
+        run: |
+          python - <<'PY'
+          import os
+          from supervised.algorithms.sdm import KumoClassificationAlgorithm, TabICLv2ClassificationAlgorithm
+          for cls in [KumoClassificationAlgorithm, TabICLv2ClassificationAlgorithm]:
+              for task in ['binary_classification', 'regression']:
+                  sizes = ['small', 'medium', 'large'] if cls is KumoClassificationAlgorithm and os.environ['MLJAR_TEST_KUMO_SIZES'] == '1' else ['small']
+                  for size in sizes:
+                      params = {'ml_task': task}
+                      if cls is KumoClassificationAlgorithm:
+                          params['size'] = size
+                      cls(params)._download()
+          PY
+      - run: python -m pip check
+      - run: python -m pytest tests/tests_algorithms/test_sdm.py tests/tests_algorithms/test_sdm_context.py tests/tests_algorithms/test_sdm_reuse.py tests/tests_algorithms/test_gpu_admission_cleanup.py tests/tests_automl/test_sdm.py tests/tests_automl/test_prediction_lifecycle.py tests/tests_tuner/test_sdm.py -q
+        env:
+          MLJAR_TEST_SDM: '1'
+          MLJAR_TEST_SDM_DEVICE: cpu

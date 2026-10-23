@@ -1,3 +1,5 @@
+from functools import partial
+
 import contextlib
 import copy
 import logging
@@ -17,6 +19,7 @@ from supervised.algorithms.registry import (
 )
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import (
+    F1_METRICS,
     lightgbm_eval_metric_accuracy,
     lightgbm_eval_metric_average_precision,
     lightgbm_eval_metric_f1,
@@ -42,6 +45,8 @@ def lightgbm_objective(ml_task, automl_eval_metric):
 
 
 def lightgbm_eval_metric(ml_task, automl_eval_metric):
+    if automl_eval_metric in F1_METRICS and ml_task != REGRESSION:
+        return "custom", automl_eval_metric
     if automl_eval_metric == "user_defined_metric":
         return "custom", automl_eval_metric
     metric_name_mapping = {
@@ -146,8 +151,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 self.custom_eval_metric = lightgbm_eval_metric_spearman
             elif self.params["custom_eval_metric_name"] == "pearson":
                 self.custom_eval_metric = lightgbm_eval_metric_pearson
-            elif self.params["custom_eval_metric_name"] == "f1":
-                self.custom_eval_metric = lightgbm_eval_metric_f1
+            elif self.params["custom_eval_metric_name"] in F1_METRICS:
+                self.custom_eval_metric = partial(
+                    lightgbm_eval_metric_f1,
+                    metric_name=self.params["custom_eval_metric_name"],
+                )
             elif self.params["custom_eval_metric_name"] == "average_precision":
                 self.custom_eval_metric = lightgbm_eval_metric_average_precision
             elif self.params["custom_eval_metric_name"] == "accuracy":
@@ -219,9 +227,11 @@ class LightgbmAlgorithm(BaseAlgorithm):
                 valid_sets = [
                     lgb_train,
                     lgb.Dataset(
-                        X_validation.values
-                        if isinstance(X_validation, pd.DataFrame)
-                        else X_validation,
+                        (
+                            X_validation.values
+                            if isinstance(X_validation, pd.DataFrame)
+                            else X_validation
+                        ),
                         y_validation,
                         weight=sample_weight_validation,
                     ),
@@ -332,6 +342,7 @@ required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_as_integer",
 ]
 
@@ -378,6 +389,7 @@ regression_required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "target_scale",
 ]
 

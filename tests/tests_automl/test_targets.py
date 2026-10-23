@@ -11,6 +11,10 @@ from supervised.exceptions import AutoMLException
 
 additional["max_rounds"] = 1
 
+MISSING_TARGET_WARNING = (
+    "There are samples with missing target values in the data which will be excluded for further analysis"
+)
+
 
 class AutoMLTargetsTest(unittest.TestCase):
     automl_dir = "automl_tests"
@@ -104,12 +108,14 @@ class AutoMLTargetsTest(unittest.TestCase):
 
         with pytest.warns(
             expected_warning=UserWarning,
-            match="There are samples with missing target values in the data which will be excluded for further analysis",
+            match=MISSING_TARGET_WARNING,
         ) as record:
             automl.fit(X, y)
 
-        # check that only one warning was raised
-        self.assertEqual(len(record), 1)
+        # Count only the missing-target warning; dependencies may emit others.
+        self.assertEqual(
+            sum(str(w.message) == MISSING_TARGET_WARNING for w in record), 1
+        )
 
         p = automl.predict(X)
         pred = automl.predict(X)
@@ -269,12 +275,14 @@ class AutoMLTargetsTest(unittest.TestCase):
 
         with pytest.warns(
             expected_warning=UserWarning,
-            match="There are samples with missing target values in the data which will be excluded for further analysis",
+            match=MISSING_TARGET_WARNING,
         ) as record:
             automl.fit(X, y)
 
-        # check that only one warning was raised
-        self.assertEqual(len(record), 1)
+        # Count only the missing-target warning; dependencies may emit others.
+        self.assertEqual(
+            sum(str(w.message) == MISSING_TARGET_WARNING for w in record), 1
+        )
 
         pred = automl.predict(X)
 
@@ -319,11 +327,14 @@ class AutoMLTargetsTest(unittest.TestCase):
         )
 
         with pytest.warns(
-            match="There are samples with missing target values in the data which will be excluded for further analysis"
+            expected_warning=UserWarning,
+            match=MISSING_TARGET_WARNING,
         ) as record:
             automl.fit(X, y)
 
-        self.assertEqual(len(record), 1)
+        self.assertEqual(
+            sum(str(w.message) == MISSING_TARGET_WARNING for w in record), 1
+        )
 
         pred = automl.predict(X)
 

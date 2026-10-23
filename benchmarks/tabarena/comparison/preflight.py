@@ -1,0 +1,124 @@
+"""Verify the published installation, CUDA and pretrained model files before timing."""
+from __future__ import annotations
+
+import argparse
+import importlib.metadata
+from pathlib import Path
+import sys
+
+from common import CANDIDATE_VERSIONS, DISCOVERY_VERSIONS, NEW_ALGORITHMS, now, write_json
+
+
+def check_cpu_xgboost():
+    """Exercise CPU multiclass evaluation, which import-only checks miss."""
+    import numpy as np
+    import xgboost as xgb
+
+    providers = {}
+    for name in ("xgboost", "xgboost-cpu", "xgboost-cu12"):
+        try:
+            providers[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            pass
+    if (set(providers) != {"xgboost-cpu"}
+            or providers.get("xgboost-cpu") != xgb.__version__
+            or xgb.build_info().get("USE_CUDA") is not False):
+        raise RuntimeError(
+            f"Expected one CPU-only XGBoost installation; found {providers}. "
+            "Use a fresh benchmark environment; overlapping XGBoost packages share files."
+        )
+    data = xgb.DMatrix(np.arange(72, dtype=np.float32).reshape(24, 3),
+                       label=np.arange(24) % 3)
+    model = xgb.train(dict(device="cpu", tree_method="hist", objective="multi:softprob",
+                           num_class=3, eval_metric="mlogloss", nthread=1, seed=42),
+                      data, num_boost_round=2, evals=[(data, "validation")], verbose_eval=False)
+    predictions = model.predict(data)
+    if predictions.shape != (24, 3) or not np.isfinite(predictions).all():
+        raise RuntimeError("XGBoost CPU multiclass prediction check failed")
+    return dict(version=xgb.__version__, providers=providers, module=xgb.__file__,
+                use_cuda=False, multiclass_evaluation="passed")
+
+
+def check(version, device, output, download=True):
+    import supervised
+    from supervised import AutoML
+
+    installed = importlib.metadata.version("mljar-supervised")
+    module = Path(supervised.__file__).resolve()
+    if installed != version or supervised.__version__ != version or not module.is_relative_to(Path(sys.prefix).resolve()):
+        raise RuntimeError(f"Wrong MLJAR installation: requested {version}, metadata {installed}, module {module}")
+    info = dict(checked=now(), version=installed, module=str(module), python=sys.version,
+                executable=sys.executable, requested_device=device, cuda_available=False,
+                packages={dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()})
+    if version == "1.4.0a1":
+        info["xgboost"] = check_cpu_xgboost()
+        print(f"XGBoost {info['xgboost']['version']}: CPU multiclass evaluation passed", flush=True)
+    if version in CANDIDATE_VERSIONS:
+        if version in DISCOVERY_VERSIONS:
+            from supervised.preprocessing.feature_discovery_transformer import check_dependencies as check_discovery
+            check_discovery()
+            info["features_goldmine_version"] = importlib.metadata.version("features-goldmine")
+            print(f"Feature discovery: features-goldmine {info['features_goldmine_version']}", flush=True)
+        if version in ("1.4.0rc6", "1.4.0rc7", "1.4.0a1"):
+            from supervised.tuner.stacking import _MAX_MODELS_PER_TYPE
+            from supervised.ensemble import _SELECTION_ROUNDS
+            if (_MAX_MODELS_PER_TYPE, _SELECTION_ROUNDS) != (5, 30):
+                raise RuntimeError("Local candidates must use five stack inputs per algorithm and 30 ensemble rounds")
+            info["selection_limits"] = dict(stacking_per_algorithm=5, ensemble_rounds=30)
+        if version in ("1.4.0rc7", "1.4.0a1"):
+            from supervised.tuner.algorithm_early_stopping import AlgorithmEarlyStopping
+            if (AlgorithmEarlyStopping.MIN_CONFIGURATIONS, AlgorithmEarlyStopping.MAX_GAP) != (3, .20):
+                raise RuntimeError("RC7 algorithm early stopping policy does not match the benchmark")
+            info["algorithm_early_stopping"] = dict(policy_version=AlgorithmEarlyStopping.VERSION,
+                                                   min_configurations=3, threshold=.20)
+        import torch
+        from supervised.algorithms.sdm import SDMAlgorithm, check_dependencies
+        check_dependencies()
+        info["cuda_available"] = torch.cuda.is_available()
+        if device == "cuda" and not info["cuda_available"]:
+            raise RuntimeError("CUDA is unavailable. Check the driver, or explicitly use --device cpu.")
+        if device == "cuda":
+            torch.ones(1, device="cuda").add_(1)
+            torch.cuda.synchronize()
+            free, total = torch.cuda.mem_get_info()
+            info.update(gpu=torch.cuda.get_device_name(), vram_free_bytes=free, vram_total_bytes=total)
+        resolved = AutoML(mode="Compete")._get_algorithms()
+        if device == "cuda" and not set(NEW_ALGORITHMS) <= set(resolved):
+            raise RuntimeError(f"New algorithms missing from Compete: {resolved}")
+        if download:
+            from supervised.algorithms.sdm import (
+                KumoClassificationAlgorithm, KumoRegressionAlgorithm,
+                TabICLv2ClassificationAlgorithm, TabICLv2RegressionAlgorithm,
+            )
+            checkpoints = []
+            for cls in (KumoClassificationAlgorithm, KumoRegressionAlgorithm,
+                        TabICLv2ClassificationAlgorithm, TabICLv2RegressionAlgorithm):
+                for size in (["small", "medium", "large"] if cls.algorithm_short_name == "Kumo" else [None]):
+                    params = {"ml_task": "regression" if "Regression" in cls.__name__ else "binary_classification"}
+                    if size:
+                        params["size"] = size
+                    model = cls(params)
+                    print(f"Preparing pretrained weights: {cls.__name__} {size or ''}", flush=True)
+                    # Download exactly the pinned files that this published release uses.
+                    SDMAlgorithm._download(model)
+                    checkpoints.append(dict(model.checkpoint_info, path=model.checkpoint_path,
+                                            bytes=Path(model.checkpoint_path).stat().st_size))
+            info["checkpoints"] = checkpoints
+    else:
+        resolved = AutoML(mode="Compete")._get_algorithms()
+    info["available_algorithms"] = resolved
+    if version == "1.3.2":
+        info["selection_note"] = "1.3.2 disables Neural Network during fit when n_jobs is explicitly limited."
+    write_json(output, info)
+    print(f"Verified MLJAR {installed}: {module}", flush=True)
+    print(f"Device: {device}; algorithms: {', '.join(resolved)}", flush=True)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", required=True)
+    parser.add_argument("--device", choices=["cpu", "cuda"], required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--no-download", action="store_true")
+    args = parser.parse_args()
+    check(args.version, args.device, args.output, not args.no_download)

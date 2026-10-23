@@ -37,7 +37,20 @@ Start quickly, iterate faster, and manage experiments in one place.
 
 ---
 
+**Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
+and a pinned SDM backend. Python 3.11+ required. See [installation and usage](docs/docs/features/sdm.md).
+
 ## Table of Contents
+
+Install standard MLJAR with `python -m pip install mljar-supervised`.
+For RealMLP, choose [CPU](docs/docs/install.md#realmlp-on-cpu) or
+[NVIDIA GPU](docs/docs/install.md#realmlp-on-nvidia-gpu) setup, then install the
+`[realmlp]` or `[all]` extra. **RealMLP currently requires installation from source**
+and is available only in `mode="Compete"`.
+See the [installation guide](docs/docs/install.md) for copyable commands and
+checks, and the [RealMLP guide](docs/docs/features/realmlp.md) for usage.
+[TabM mini](docs/docs/features/tabm.md) is also available in Compete mode through
+`[tabm]` or `[all]`, using the same pytabkit/PyTorch dependencies and CPU/GPU setup.
 
  - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
  - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
@@ -202,6 +215,10 @@ automl = AutoML(mode="Compete")
 ```
 
 It should be used for machine learning competitions.
+Kumo (small/medium/large) and TabICLv2 are also available with the
+[optional SDM installation](docs/docs/install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
+They are selected automatically when the backend and CUDA are available; select
+them explicitly for CPU use.
  - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: a train/test split (80/20), 5-fold CV or 10-fold CV. 
  - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network`, and `Nearest Neighbors`. It uses ensemble and **stacking**. 
  - It has only learning curves in the reports.
@@ -421,6 +438,8 @@ print("Test MSE:", mean_squared_error(y_test, predictions))
 
 ## :point_right: More Examples
 
+- [**IP address classification**](examples/scripts/binary_classifier_ip_addresses.py) - train on raw IPv4/IPv6 strings and verify predictions after reload; see the [tutorial](docs/docs/tutorials/ip-addresses.md).
+
 - [**Income classification**](https://github.com/mljar/mljar-examples/tree/master/Income_classification) - it is a binary classification task on census data
 - [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
 - [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
@@ -546,6 +565,10 @@ When `model_name` is provided, the markdown includes detailed metrics, fairness 
 
 # Installation  
 
+For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
+[installation guide](docs/docs/install.md). Version `1.4.0a1` is an alpha
+release with optional RealMLP, TabM mini, Kumo and TabICLv2 support.
+
 Compatibility:
 - Python `>=3.9`
 - NumPy `>=2.0,<3`
@@ -555,6 +578,15 @@ From PyPi repository:
 ```
 pip install mljar-supervised
 ```
+
+To test the alpha release, select its exact version:
+
+```bash
+python -m pip install "mljar-supervised==1.4.0a1"
+```
+
+See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)
+for changes and optional-model requirements.
 
 To install this package with conda run:
 ```

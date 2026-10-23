@@ -55,6 +55,10 @@ class AutoML(BaseAutoML):
                     "Xgboost",
                     "CatBoost",
                     "Neural Network",
+                    "RealMLP",
+                    "TabM",
+                    "Kumo",
+                    "TabICLv2",
                     "Nearest Neighbors",
                 ]
             ],
@@ -83,6 +87,8 @@ class AutoML(BaseAutoML):
         n_jobs: int = -1,
         verbose: int = 1,
         random_state: int = 1234,
+        custom_params: Optional[dict] = None,
+        feature_discovery: Union[Literal["auto"], bool] = "auto",
     ):
         """
         Initialize `AutoML` object.
@@ -143,6 +149,9 @@ class AutoML(BaseAutoML):
                 - `Xgboost`,
                 - `CatBoost`,
                 - `Neural Network`,
+                - `RealMLP` (Compete only; optional: install `mljar-supervised[realmlp]`),
+                - `TabM` (mini only, Compete only; install `mljar-supervised[tabm]`),
+                - `Kumo` and `TabICLv2` (Compete only; install `[tfm]` and the pinned SDM backend described in the installation guide),
                 - `Nearest Neighbors`,
 
 
@@ -152,9 +161,15 @@ class AutoML(BaseAutoML):
 
             eval_metric (str or function): The metric to be used in early stopping and to compare models.
 
-                - for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy` - default is logloss (if left "auto")
-                - for mutliclass classification: `logloss`, `f1`, `accuracy` - default is `logloss` (if left "auto")
+                - for binary classification: `logloss`, `auc`, `f1`, `f1_micro`, `f1_macro`, `f1_weighted`, `average_precision`, `accuracy` - default is logloss (if left "auto")
+                - for multiclass classification: `logloss`, `f1`, `f1_micro`, `f1_macro`, `f1_weighted`, `accuracy` - default is `logloss` (if left "auto")
                 - for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse` (if left "auto")
+
+                `f1` keeps its existing behavior: positive-class F1 for binary tasks and micro F1
+                for multiclass tasks. `f1_macro` averages classes equally; `f1_weighted` weights
+                each class by its support. `f1_micro` aggregates counts across all classes and
+                equals accuracy for single-label classification. `score()` returns accuracy for
+                classification regardless of `eval_metric`.
 
                 You can also pass a custom Python function directly. The expected interface is:
 
@@ -190,7 +205,7 @@ class AutoML(BaseAutoML):
 
                 - if `explain_level` is `0` no explanations are produced.
                 - if `explain_level` is `1` the following explanations are produced: importance plot (with permutation method), for decision trees produce tree plots, for linear models save coefficients.
-                - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations.
+                - if `explain_level` is `2` the following explanations are produced: the same as `1` plus SHAP explanations and model blueprints embedded in each model's README.
 
                 If left `auto` AutoML will produce explanations based on the selected `mode`.
 
@@ -205,6 +220,13 @@ class AutoML(BaseAutoML):
                 It is set to min(100, max(10, 0.1*number_of_input_features)).
 
                 If `int` value is set, the number of Golden Features is set to this value.
+
+            feature_discovery (boolean or "auto"): Generate up to three reusable feature
+                sets with the optional features-goldmine package and try them on the
+                best current models. Runs after golden_features and shares its time
+                allocation. "auto" enables this in Compete when Python 3.10+, the
+                dependency, and shuffled split/K-fold validation are available.
+                Explicit True reports unsupported configurations as errors.
 
             features_selection (boolean): Whether to do features_selection
                 If left `auto` AutoML will do feature selection based on the selected `mode`:
@@ -298,7 +320,10 @@ class AutoML(BaseAutoML):
 
                 Example value: `[{"sex": "Female"}]`
 
-            n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using  all processors.
+            n_jobs (int): Number of CPU cores to be used. By default is set to `-1` which means using all processors.
+                For Neural Network, explicit limits control BLAS threads during fitting and prediction;
+                `-1` preserves the numerical libraries' existing thread settings. These native thread
+                limits are process-wide while the operation runs, not per Python thread.
 
             verbose (int): Controls the verbosity when fitting and predicting.
 
@@ -306,6 +331,17 @@ class AutoML(BaseAutoML):
                     Still not implemented, please left `1`
 
             random_state (int): Controls the randomness of the `AutoML`
+
+            custom_params (dict): Fixed algorithm-specific overrides, keyed by algorithm
+                name, for example `{"realmlp": {"device": "auto", "hidden_width": 64}}`.
+                Names are case-insensitive; spaces, underscores and hyphens are ignored.
+                Overrides remain fixed during random search and hill climbing.
+                Kumo and TabICLv2 accept `precision="fp16"` or `"fp32"`.
+                Without a precision override, CUDA candidates start in FP16 and
+                hill climbing may try FP32 when memory permits. CPU uses FP32.
+                Custom overrides are currently unsupported in Optuna mode.
+                Compete automatically includes RealMLP and TabM mini when their optional dependencies are installed.
+                Providing overrides alone does not select an algorithm.
 
 
         Examples:
@@ -392,6 +428,7 @@ class AutoML(BaseAutoML):
         self.verbose = verbose
         self.explain_level = explain_level
         self.golden_features = golden_features
+        self.feature_discovery = feature_discovery
         self.features_selection = features_selection
         self.start_random_models = start_random_models
         self.hill_climbing_steps = hill_climbing_steps
@@ -409,6 +446,7 @@ class AutoML(BaseAutoML):
         self.underprivileged_groups = underprivileged_groups
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.custom_params = custom_params
 
     def fit(
         self,
@@ -536,10 +574,52 @@ class AutoML(BaseAutoML):
         Returns:
             float: Returns a goodness of fit measure (higher is better):
 
-            - For classification tasks: returns the mean accuracy on the given test data and labels.
+            - For classification tasks: returns the mean accuracy on the given test data and labels, regardless of `eval_metric`.
             - For regression tasks: returns the R^2 (coefficient of determination) on the given test data and labels.
         """
         return self._score(X, y, sample_weight)
+
+    def get_feature_importance(
+        self, model="best", kind="raw", X=None, y=None
+    ) -> pandas.DataFrame:
+        """Retrieve permutation feature importance, computing missing values when possible.
+
+        Parameters:
+            model (str): ``"best"`` (default), ``"all"``, or an exact saved model
+                name. ``"all"`` includes models not loaded for prediction.
+            kind (str): ``"raw"`` (default) or ``"normalized"``. Normalization
+                applies min-max scaling to each model's complete importance
+                vector; constant vectors become zero.
+            X (pandas.DataFrame or numpy.ndarray): Optional evaluation features
+                in the original input format. Used only for missing importance.
+            y (array-like): Evaluation targets, required together with ``X``.
+                Prefer held-out data that was not used for training.
+
+        Returns:
+            pandas.DataFrame: Columns ``model``, ``feature``, ``importance``,
+                sorted by decreasing importance within each model. Raw values
+                average available folds/repeats and can be negative. Feature
+                names describe preprocessed inputs, including generated and
+                stacking features. Ensembles return selection-weighted member
+                summaries, not direct ensemble permutation measurements.
+
+        Notes:
+            Existing learner CSVs are reused. Missing or invalid CSVs are
+            computed using fitted preprocessing and saved for subsequent calls
+            when ``X`` and ``y`` are supplied. Training inputs are not retained
+            after ``fit()``. Without evaluation data, unavailable learners are
+            skipped with a warning; a model with no importance returns no rows.
+            An ensemble returns no rows if a member has no importance.
+            Supplying new data does not replace existing importance. Partially
+            cached models can therefore combine different evaluation datasets.
+
+        Raises:
+            ValueError: Invalid ``kind``, ``model`` type, or evaluation inputs.
+            AutoMLException: AutoML is unfitted or the model name is unknown.
+        """
+        from supervised.utils.feature_importance import get_feature_importance
+
+        return get_feature_importance(self, model=model, kind=kind, X=X, y=y)
 
     def report(self, width=900, height=1200):
         return self._report(width, height)

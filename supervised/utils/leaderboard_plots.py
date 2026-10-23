@@ -18,6 +18,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 markers = {
+    "Kumo": {"marker": "D", "color": "#76b900"},
+    "TabICLv2": {"marker": "v", "color": "#8c564b"},
+    "TabM": {"marker": "X", "color": "#17becf"},
+    "RealMLP": {"marker": "P", "color": "#9467bd"},
     "Baseline": {"color": "tab:cyan", "marker": "8"},
     "Linear": {"color": "tab:pink", "marker": "s"},
     "Decision Tree": {"color": "tab:gray", "marker": "^"},
@@ -40,17 +44,31 @@ class LeaderboardPlots:
     def compute(ldb, model_path, fout, fairness_threshold=None):
         if ldb.shape[0] < 2:
             return
+        # Keep display grouping separate from the algorithm type used by training.
+        ldb = ldb.reset_index(drop=True)
+        if "is_stacked" not in ldb:
+            ldb["is_stacked"] = False
+        groups = []
+        for (model_type, is_stacked), rows in ldb.groupby(
+            ["model_type", "is_stacked"], sort=False
+        ):
+            label = model_type + (" (stacked)" if is_stacked else "")
+            style = markers[model_type].copy()
+            if is_stacked:
+                style["marker"] = "d"
+            groups.append((label, rows, style))
+
         # Scatter plot
         plt.figure(figsize=(10, 7))
-        for model_type in ldb.model_type.unique():
-            ii = ldb.model_type == model_type
+        for label, rows, style in groups:
             plt.plot(
-                ldb.metric_value[ii],
-                markers[model_type]["marker"],
+                rows.index,
+                rows.metric_value,
+                style["marker"],
                 markersize=12,
                 alpha=0.75,
-                color=markers[model_type]["color"],
-                label=model_type,
+                color=style["color"],
+                label=label,
             )
         # plt.plot(ldb.metric_value, "*", markersize=12, alpha=0.75)
 
@@ -67,9 +85,8 @@ class LeaderboardPlots:
         fout.write(f"![AutoML Performance]({LeaderboardPlots.performance_fname})")
 
         # Boxplot
-        by = "model_type"
         column = "metric_value"
-        df2 = pd.DataFrame({col: vals[column] for col, vals in ldb.groupby(by)})
+        df2 = pd.DataFrame({label: rows[column] for label, rows, _ in groups})
 
         ascending_sort = Metric.optimize_negative(ldb.metric_type.iloc[0])
         mins = df2.min().sort_values(ascending=ascending_sort)
@@ -99,16 +116,15 @@ class LeaderboardPlots:
 
                 # Scatter plot
                 plt.figure(figsize=(10, 7))
-                for model_type in ldb.model_type.unique():
-                    ii = ldb.model_type == model_type
+                for label, rows, style in groups:
                     plt.plot(
-                        ldb.metric_value[ii],
-                        ldb[fm][ii],
-                        markers[model_type]["marker"],
+                        rows.metric_value,
+                        rows[fm],
+                        style["marker"],
                         markersize=12,
                         alpha=0.75,
-                        color=markers[model_type]["color"],
-                        label=model_type,
+                        color=style["color"],
+                        label=label,
                     )
 
                 plt.xlabel(x_axis_name)

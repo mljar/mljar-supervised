@@ -1,9 +1,13 @@
+from contextlib import nullcontext
+
 import logging
 import warnings
 
 import numpy as np
 import pandas as pd
 import sklearn
+from joblib import cpu_count
+from threadpoolctl import threadpool_limits
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
@@ -21,6 +25,21 @@ logger.setLevel(LOG_LEVEL)
 
 
 class NNFit(SklearnAlgorithm):
+    def _thread_limit(self):
+        # MLP has no joblib n_jobs parameter; its matrix operations use BLAS.
+        # Preserve ambient library/environment limits for the existing -1 default.
+        n_jobs = self.params.get("n_jobs", -1)
+        if n_jobs == -1:
+            return nullcontext()
+        if n_jobs == 0:
+            raise ValueError("n_jobs must not be zero")
+        limit = n_jobs if n_jobs > 0 else max(1, cpu_count() + 1 + n_jobs)
+        return threadpool_limits(limits=limit, user_api="blas")
+
+    def predict(self, X):
+        with self._thread_limit():
+            return super().predict(X)
+
     def file_extension(self):
         return "neural_network"
 
@@ -42,7 +61,7 @@ class NNFit(SklearnAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
-        with warnings.catch_warnings():
+        with self._thread_limit(), warnings.catch_warnings():
             warnings.simplefilter(action="ignore")
             # filter
             # X does not have valid feature names, but MLPClassifier was fitted with feature names
@@ -139,6 +158,7 @@ required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "scale",
     "target_as_integer",
 ]
@@ -166,6 +186,7 @@ required_preprocessing = [
     "convert_categorical",
     "datetime_transform",
     "text_transform",
+    "ip_transform",
     "scale",
     "target_scale",
 ]

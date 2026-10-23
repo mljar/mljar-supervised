@@ -65,7 +65,12 @@ class PreprocessingMissingValues(object):
     def _transform_na_fill(self, X):
         for column, value in self._na_fill_params.items():
             ind = pd.isnull(X.loc[:, column])
-            X.loc[ind, column] = value
+            if ind.any():
+                # Preprocessing owns a shallow frame copy. Replace the column
+                # instead of writing through its shared backing array.
+                filled = X[column].copy()
+                filled.loc[ind] = value
+                X[column] = filled
         return X
 
     def _make_sure_na_filled(self, X):
@@ -78,7 +83,10 @@ class PreprocessingMissingValues(object):
             return {}
         params = {
             "fill_method": self._na_fill_method,
-            "fill_params": self._na_fill_params,
+            "fill_params": {
+                column: bool(value) if isinstance(value, np.bool_) else value
+                for column, value in self._na_fill_params.items()
+            },
             "datetime_columns": list(self._datetime_columns),
         }
         for col in self._datetime_columns:

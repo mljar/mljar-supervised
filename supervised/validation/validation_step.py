@@ -9,16 +9,17 @@ from supervised.validation.validator_split import SplitValidator
 
 
 class ValidationStep:
-    def __init__(self, params):
+
+    def __init__(self, params, data_store=None):
         # kfold is default validation technique
         self.validation_type = params.get("validation_type", "kfold")
 
         if self.validation_type == "kfold":
-            self.validator = KFoldValidator(params)
+            self.validator = KFoldValidator(params, data_store=data_store)
         elif self.validation_type == "split":
-            self.validator = SplitValidator(params)
+            self.validator = SplitValidator(params, data_store=data_store)
         elif self.validation_type == "custom":
-            self.validator = CustomValidator(params)
+            self.validator = CustomValidator(params, data_store=data_store)
         else:
             raise AutoMLException(
                 f"The validation type ({self.validation_type}) is not implemented."

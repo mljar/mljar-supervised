@@ -17,9 +17,11 @@ from supervised.algorithms.registry import (
     AlgorithmsRegistry,
 )
 from supervised.callbacks.callback_list import CallbackList
-from supervised.exceptions import AutoMLException
+from supervised.exceptions import AutoMLException, BudgetExceededError
+from supervised.prediction import current_prediction_context, prediction_scope
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.additional_metrics import AdditionalMetrics
+from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
@@ -35,8 +37,10 @@ from supervised.utils.learning_curves import LearningCurves
 
 
 class ModelFramework:
-    def __init__(self, params, callbacks=[]):
+
+    def __init__(self, params, callbacks=[], data_store=None):
         logger.debug("ModelFramework.__init__")
+        self._data_store = data_store
         self.uid = str(uuid.uuid4())
 
         for i in ["learner", "validation_strategy"]:  # mandatory parameters
@@ -102,9 +106,12 @@ class ModelFramework:
         sensitive_features_validation,
     ):
         y_train_true = y_train
-        y_train_predicted = learner.predict(X_train)
         y_validation_true = y_validation
-        y_validation_predicted = learner.predict(X_validation)
+        if learner.algorithm_short_name in ["Kumo", "TabICLv2"]:
+            y_train_predicted, y_validation_predicted = learner.training_predictions(X_train, X_validation)
+        else:
+            y_train_predicted = learner.predict(X_train)
+            y_validation_predicted = learner.predict(X_validation)
 
         y_train_true = preproces.inverse_scale_target(y_train_true)
         y_train_predicted = preproces.inverse_scale_target(y_train_predicted)
@@ -146,6 +153,9 @@ class ModelFramework:
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
+        budget_started = time.monotonic()
+        candidate_limit = self.params.get("candidate_time_limit")
+        completed_folds = 0
         np.random.seed(self.learner_params["seed"])
 
         optuna_tuner = None
@@ -163,11 +173,28 @@ class ModelFramework:
                 random_state=self._automl_random_state,
             )
 
-        self.validation = ValidationStep(self.validation_params)
+        self.validation = ValidationStep(
+            self.validation_params, data_store=self._data_store
+        )
 
         repeats = self.validation.get_repeats()
+        expected_folds = repeats * self.validation.get_n_splits()
         for repeat in range(repeats):
             for k_fold in range(self.validation.get_n_splits()):
+                if candidate_limit is not None:
+                    elapsed = time.monotonic() - budget_started
+                    remaining = candidate_limit - elapsed
+                    estimated = (elapsed / completed_folds * (expected_folds - completed_folds)
+                                 if completed_folds else 0)
+                    if remaining <= 0 or estimated > remaining:
+                        raise BudgetExceededError(
+                            "Remaining folds cannot finish within the candidate allowance.",
+                            phase="between_folds", completed_folds=completed_folds,
+                            expected_folds=expected_folds, allowance=candidate_limit,
+                            elapsed=elapsed,
+                            estimated_total=(elapsed + estimated),
+                            dimensions=getattr(self, "_budget_dimensions", None),
+                        )
                 train_data, validation_data = self.validation.get_split(k_fold, repeat)
                 logger.debug(
                     "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
@@ -183,7 +210,8 @@ class ModelFramework:
                 # the proprocessing is done at every validation step
                 self.preprocessings += [
                     Preprocessing(
-                        self.preprocessing_params, self.get_name(), k_fold, repeat
+                        self.preprocessing_params, self.get_name(), k_fold, repeat,
+                        results_path=results_path,
                     )
                 ]
 
@@ -200,6 +228,10 @@ class ModelFramework:
                     validation_data["X"],
                     validation_data["y"],
                     validation_data.get("sample_weight"),
+                )
+                self._budget_dimensions = dict(
+                    train_rows=len(X_train), validation_rows=len(X_validation),
+                    features=X_train.shape[1],
                 )
 
                 # skip preprocessing for sensitive features
@@ -229,6 +261,7 @@ class ModelFramework:
                     # exclude optuna optimize time from model training
                     start_time += time.time() - optuna_start_time
 
+                self.learner_params.update(self.params.get("custom_params", {}))
                 self.learner_params["explain_level"] = self._explain_level
                 self.learners += [
                     AlgorithmFactory.get_algorithm(copy.deepcopy(self.learner_params))
@@ -246,6 +279,14 @@ class ModelFramework:
                 for i in range(learner.max_iters):
                     self.callbacks.on_iteration_start()
 
+                    learner_limit = self._max_time_for_learner
+                    if candidate_limit is not None:
+                        remaining = candidate_limit - (time.monotonic() - budget_started)
+                        if remaining <= 0:
+                            raise BudgetExceededError("Candidate budget exhausted during preprocessing.",
+                                                      phase="preprocessing", fold=k_fold, repeat=repeat)
+                        learner_limit = min(learner_limit, 0.8 * remaining / (expected_folds - completed_folds))
+
                     learner.fit(
                         X_train,
                         y_train,
@@ -254,7 +295,7 @@ class ModelFramework:
                         y_validation,
                         sample_weight_validation,
                         log_to_file,
-                        self._max_time_for_learner,
+                        learner_limit,
                     )
 
                     if self.params.get("injected_sample_weight", False):
@@ -283,9 +324,20 @@ class ModelFramework:
                     learner.update({"step": i})
 
                 # end of learner iters loop
-                self.callbacks.on_learner_train_end()
+                completed_folds += 1
+                try:
+                    self.callbacks.on_learner_train_end()
+                except BudgetExceededError as exc:
+                    elapsed = time.monotonic() - budget_started
+                    exc.details.update(
+                        phase="between_folds", completed_folds=completed_folds,
+                        expected_folds=expected_folds, elapsed=elapsed,
+                        estimated_total=elapsed * expected_folds / completed_folds,
+                        dimensions=self._budget_dimensions,
+                    )
+                    raise
 
-                model_path = os.path.join(results_path, model_subpath)
+                model_path = resolve_artifact_path(results_path, model_subpath)
                 learner.interpret(
                     X_train,
                     y_train,
@@ -301,7 +353,10 @@ class ModelFramework:
 
                 # save learner and free the memory
                 p = os.path.join(model_path, learner.get_fname())
-                learner.save(p)
+                if learner.algorithm_short_name in ["Kumo", "TabICLv2"]:
+                    learner.save(p, weights_root=results_path)
+                else:
+                    learner.save(p)
                 del learner.model
                 learner.model = None
                 # end of learner training
@@ -338,9 +393,7 @@ class ModelFramework:
 
     def release_learners(self):
         for learner in self.learners:
-            if learner.model is not None:
-                del learner.model
-                learner.model = None
+            learner.unload()
 
     def get_metric_name(self):
         if self.metric_name is not None:
@@ -435,18 +488,28 @@ class ModelFramework:
 
         return self._single_prediction_time < max_single_prediction_time
 
+    @prediction_scope
     def predict(self, X):
         logger.debug("ModelFramework.predict")
+
+        if self.get_type() not in ["Kumo", "TabICLv2"]:
+            current_prediction_context().release_network()
 
         if self.learners is None or len(self.learners) == 0:
             raise Exception("Learnes are not initialized")
         # run predict on all learners and return the average
         y_predicted = None  # np.zeros((X.shape[0],))
         for ind, learner in enumerate(self.learners):
-            # preprocessing goes here
-            X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
-            y_p = learner.predict(X_data)
-            y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+            try:
+                X_data, _, _ = self.preprocessings[ind].transform(X.copy(), None)
+                y_p = learner.predict(X_data)
+                y_p = self.preprocessings[ind].inverse_scale_target(y_p)
+            finally:
+                # Fold predictions are CPU arrays. Keep only one saved learner
+                # resident, including when preprocessing/loading/prediction fails.
+                # An unsaved learner has no recovery path and must stay loaded.
+                if learner.model_file_path is not None:
+                    learner.unload()
 
             y_predicted = y_p if y_predicted is None else y_predicted + y_p
 
@@ -592,20 +655,20 @@ class ModelFramework:
 
     def save(self, results_path, model_subpath):
         start_time = time.time()
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Save the model {model_path}")
 
         type_of_predictions = (
             "validation" if "k_folds" not in self.validation_params else "out_of_folds"
         )
-        predictions_fname = os.path.join(
+        predictions_fname = portable_artifact_path(
             model_subpath, f"predictions_{type_of_predictions}.csv"
         )
-        self._oof_predictions_fname = os.path.join(results_path, predictions_fname)
+        self._oof_predictions_fname = resolve_artifact_path(results_path, predictions_fname)
         predictions = self.get_out_of_folds()
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
-        saved = [os.path.join(model_subpath, l.get_fname()) for l in self.learners]
+        saved = [portable_artifact_path(model_subpath, l.get_fname()) for l in self.learners]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:
             preprocessing = [p.to_json() for p in self.preprocessings]
@@ -630,6 +693,7 @@ class ModelFramework:
                 desc["threshold"] = self._threshold
             if self._single_prediction_time is not None:
                 desc["single_prediction_time"] = self._single_prediction_time
+                desc["prediction_time_by_model"] = getattr(self, "_prediction_time_by_model", {})
             fout.write(json.dumps(desc, indent=4, cls=MLJSONEncoder))
 
         learning_curve_metric = self.learners[0].get_metric_name()
@@ -678,14 +742,53 @@ class ModelFramework:
             if "path" not in k:
                 desc += f" - **{k}**: {v}\n"
         desc += "\n## Optimized metric\n"
-        desc += f"{self.get_metric_name()}\n"
+        metric_name = self.get_metric_name()
+        averaging = {
+            "f1_micro": "micro", "f1_macro": "macro", "f1_weighted": "weighted"
+        }.get(metric_name)
+        if metric_name == "f1":
+            averaging = (
+                "micro" if self._ml_task == MULTICLASS_CLASSIFICATION
+                else "binary positive-class"
+            )
+        desc += (
+            f"{metric_name} ({averaging} averaging)\n"
+            if averaging else f"{metric_name}\n"
+        )
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
+        discovery = self.preprocessing_params.get("feature_discovery")
+        if discovery:
+            desc += "\n## Feature discovery\n\n"
+            desc += f"Parent model: {discovery['parent_model']}.\n\n"
+            for i, preprocessing in enumerate(self.preprocessings):
+                if preprocessing._feature_discovery is not None:
+                    desc += f"\n### Learner {i + 1}\n\n"
+                    desc += preprocessing._feature_discovery.markdown()
+        if short_name in ["RealMLP", "TabM"]:
+            desc += f"\n## {short_name} training details\n\n"
+            desc += "Permutation importance uses logloss for classification and MSE for regression. SHAP is not enabled.\n\n"
+            for learner in self.learners:
+                info = getattr(learner, "training_info", {})
+                desc += f"- {learner.name}: architecture {info.get('hidden_sizes')}, "
+                desc += f"best epoch {info.get('best_epoch')}, completed epochs {info.get('completed_epochs')}, "
+                desc += f"stop reason {info.get('stop_reason')}, stopping metric {info.get('stopping_metric')}. "
+                desc += f"[Resource estimates and history]({learner.name}_training.log.json)\n"
+        if short_name in ["Kumo", "TabICLv2"]:
+            desc += "\n## In-context inference\n\n"
+            desc += "Saved artifacts retain labeled training context. SHAP is not enabled.\n\n"
+            for learner in self.learners:
+                info = getattr(learner, "training_info", {})
+                precision = info.get(
+                    "precision", "fp16" if info.get("device", "").startswith("cuda") else "fp32"
+                )
+                desc += f"- {learner.name}: {info.get('context_rows')} context rows from {info.get('training_rows')} training rows, {info.get('num_estimators')} estimators, {info.get('device')}, {precision}. "
+                desc += f"[Checkpoint and resource details]({learner.name}_training.log.json)\n"
         return desc
 
     @staticmethod
     def load(results_path, model_subpath, lazy_load=True):
-        model_path = os.path.join(results_path, model_subpath)
+        model_path = resolve_artifact_path(results_path, model_subpath)
         logger.info(f"Loading model framework from {model_path}")
 
         with open(os.path.join(model_path, "framework.json")) as file:
@@ -707,21 +810,27 @@ class ModelFramework:
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")
         mf.train_time = json_desc.get("train_time", mf.train_time)
-        mf.final_loss = json_desc.get("final_loss", mf.final_loss)
+        final_loss = json_desc.get("final_loss", mf.final_loss)
+        # Older framework files serialize losses as strings. Resumed training
+        # compares them with the numeric losses of newly trained models.
+        mf.final_loss = None if final_loss is None else float(final_loss)
         mf.metric_name = json_desc.get("metric_name", mf.metric_name)
         mf._is_stacked = json_desc.get("is_stacked", mf._is_stacked)
         mf._single_prediction_time = json_desc.get(
             "single_prediction_time", mf._single_prediction_time
         )
+        mf._prediction_time_by_model = json_desc.get("prediction_time_by_model", {})
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
-            mf._oof_predictions_fname = os.path.join(results_path, predictions_fname)
+            mf._oof_predictions_fname = resolve_artifact_path(
+                results_path, predictions_fname
+            )
 
         mf.learners = []
         for learner_desc, learner_subpath in zip(
             json_desc.get("learners"), json_desc.get("saved")
         ):
-            learner_path = os.path.join(results_path, learner_subpath)
+            learner_path = resolve_artifact_path(results_path, learner_subpath)
             l = AlgorithmFactory.load(learner_desc, learner_path, lazy_load)
             mf.learners += [l]
 

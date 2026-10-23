@@ -16,12 +16,12 @@ SINGLE_SAMPLE_FEATURE_LIMIT = 15
 
 def collect_app_metadata(automl, title=None, selected_models=None):
     report = automl.report_structured(format="dict")
-    X = _load_training_frame(automl)
-    feature_schema = _build_feature_schema(
-        automl,
-        X,
-        automl._data_info.get("columns_values", {}),
-    )
+    feature_schema = deepcopy(automl._data_info.get("app_feature_schema"))
+    if feature_schema is None:
+        X = _load_training_frame(automl)
+        feature_schema = _build_feature_schema(
+            automl, X, automl._data_info.get("columns_values", {})
+        )
     selected_models = list(selected_models or [])
     single_sample_available = len(feature_schema) <= SINGLE_SAMPLE_FEATURE_LIMIT
     notebooks = [
@@ -79,10 +79,11 @@ def _default_title(automl):
 
 def _load_training_frame(automl):
     x_path = getattr(automl, "_X_path", None)
-    if not x_path:
+    store = getattr(automl, "_training_store", None)
+    if not x_path or store is None:
         return None
     try:
-        X = load_data(x_path)
+        X = load_data(x_path, store=store)
     except Exception:
         return None
     if X is None:
@@ -94,19 +95,27 @@ def _load_training_frame(automl):
     return X
 
 
-def _build_feature_schema(automl, X, columns_values=None):
+def _build_feature_schema(automl, X, columns_values=None, tolerate_errors=False):
     columns_info = deepcopy(automl._data_info.get("columns_info", {}))
     columns_values = columns_values or {}
     feature_schema = []
     for column in automl._data_info.get("columns", []):
         info = columns_info.get(column, [])
         series = X[column] if X is not None and column in X.columns else None
-        feature_schema.append(_build_feature(column, info, series, columns_values.get(column)))
+        try:
+            feature = _build_feature(column, info, series, columns_values.get(column))
+        except (ValueError, TypeError, OverflowError):
+            if not tolerate_errors:
+                raise
+            # Optional UI statistics must not prevent otherwise valid training.
+            feature = _build_feature(column, info, None, columns_values.get(column))
+        feature_schema.append(feature)
     return feature_schema
 
 
 def _build_feature(name, info, series, fallback_values=None):
-    kind = _infer_kind(info, series)
+    non_null = _clean_column(series) if series is not None else None
+    kind = _infer_kind(info, non_null, cleaned=True)
     feature = {
         "name": name,
         "kind": kind,
@@ -118,7 +127,6 @@ def _build_feature(name, info, series, fallback_values=None):
     if series is None:
         return _fill_missing_feature_defaults(feature, fallback_values)
 
-    non_null = series.dropna()
     if non_null.empty:
         return _fill_missing_feature_defaults(feature, fallback_values)
 
@@ -131,27 +139,34 @@ def _build_feature(name, info, series, fallback_values=None):
     return _build_textual_feature(feature, non_null)
 
 
-def _infer_kind(info, series):
+def _clean_column(series):
+    # Wide NumPy frames often expose strided columns. Copy only this column so
+    # subsequent statistics scan contiguous memory, without retaining the frame.
+    values = series.to_numpy(copy=False)
+    if not values.flags.c_contiguous:
+        series = series.copy(deep=True)
+    missing = series.isna()
+    return series[~missing] if missing.any() else series
+
+
+def _unique_up_to(series, limit):
+    # A prefix can prove the threshold has been reached; otherwise use the
+    # complete column to preserve pandas' equality and extension-dtype rules.
+    prefix = pd.unique(series.iloc[:32])
+    return prefix if len(prefix) >= limit or len(series) <= 32 else pd.unique(series)
+
+
+def _infer_kind(info, series, cleaned=False):
     if "datetime_transform" in info:
         return "datetime"
-    if "text_transform" in info:
+    if "text_transform" in info or "ip_transform" in info:
         return "text"
-    if "categorical" in info:
-        if series is not None:
-            non_null = series.dropna()
-            unique_values = pd.unique(non_null)
-            if len(unique_values) <= 2 and _can_be_boolean(unique_values):
-                return "boolean"
-        return "categorical"
     if series is not None:
-        non_null = series.dropna()
-        if not non_null.empty:
-            unique_values = pd.unique(non_null)
-            if len(unique_values) <= 2 and _can_be_boolean(unique_values):
-                return "boolean"
-            if pd.api.types.is_numeric_dtype(non_null):
-                return "numeric"
-    return "numeric"
+        non_null = series if cleaned else _clean_column(series)
+        unique_values = _unique_up_to(non_null, 3)
+        if len(unique_values) <= 2 and _can_be_boolean(unique_values):
+            return "boolean"
+    return "categorical" if "categorical" in info else "numeric"
 
 
 def _infer_widget(kind, series):
@@ -165,20 +180,20 @@ def _infer_widget(kind, series):
 
 
 def _build_numeric_feature(feature, series):
-    clean = pd.to_numeric(series, errors="coerce").dropna()
+    clean = _clean_column(pd.to_numeric(series, errors="coerce"))
     if clean.empty:
         return _fill_missing_feature_defaults(feature)
-    numeric_dtype = _detect_numeric_dtype(clean)
+    numeric_dtype = _detect_numeric_dtype(clean, cleaned=True)
     min_value = float(clean.min())
     max_value = float(clean.max())
     median_value = float(clean.median())
     feature.update(
         {
             "dtype": numeric_dtype,
-            "default": _coerce_json_number(median_value, clean),
-            "min": _coerce_json_number(min_value, clean),
-            "max": _coerce_json_number(max_value, clean),
-            "step": _numeric_step(clean),
+            "default": _coerce_json_number(median_value, clean, numeric_dtype),
+            "min": _coerce_json_number(min_value, clean, numeric_dtype),
+            "max": _coerce_json_number(max_value, clean, numeric_dtype),
+            "step": _numeric_step(clean, numeric_dtype, cleaned=True),
             "distribution": _numeric_distribution(clean),
         }
     )
@@ -186,7 +201,9 @@ def _build_numeric_feature(feature, series):
 
 
 def _build_boolean_feature(feature, series):
-    normalized = [_normalize_bool(v) for v in series.tolist() if _normalize_bool(v) is not None]
+    normalized = [
+        _normalize_bool(v) for v in series.tolist() if _normalize_bool(v) is not None
+    ]
     default = bool(pd.Series(normalized).mode().iloc[0]) if normalized else False
     feature.update(
         {
@@ -261,27 +278,33 @@ def _fill_missing_feature_defaults(feature, fallback_values=None):
 
 
 def _numeric_distribution(series):
-    counts, bins = np.histogram(series.astype(float), bins=min(10, max(3, series.nunique())))
+    counts, bins = np.histogram(
+        series.astype(float), bins=min(10, max(3, len(_unique_up_to(series, 10))))
+    )
     return {
         "bin_edges": [float(v) for v in bins.tolist()],
         "counts": [int(v) for v in counts.tolist()],
     }
 
 
-def _numeric_step(series):
-    clean = pd.to_numeric(series, errors="coerce").dropna()
+def _numeric_step(series, numeric_dtype=None, cleaned=False):
+    clean = series if cleaned else _clean_column(pd.to_numeric(series, errors="coerce"))
     if clean.empty:
         return 0.1
-    if _detect_numeric_dtype(clean) == "int":
+    if (numeric_dtype or _detect_numeric_dtype(clean)) == "int":
         return 1
 
     decimal_places = 0
-    for value in clean.tolist():
+    for value in clean:
         if not math.isfinite(value):
             continue
         text = f"{float(value):.10f}".rstrip("0").rstrip(".")
         if "." in text:
             decimal_places = max(decimal_places, len(text.split(".")[1]))
+            # The result is capped at four decimal places. More values cannot
+            # change it after this point; avoid formatting the entire column.
+            if decimal_places >= 4:
+                return 0.0001
 
     if decimal_places == 0:
         return 1
@@ -289,20 +312,28 @@ def _numeric_step(series):
     return float(10 ** (-decimal_places))
 
 
-def _detect_numeric_dtype(series):
-    clean = pd.to_numeric(series, errors="coerce").dropna()
+def _detect_numeric_dtype(series, cleaned=False):
+    clean = series if cleaned else _clean_column(pd.to_numeric(series, errors="coerce"))
     if clean.empty:
         return "float"
     if pd.api.types.is_integer_dtype(clean):
         return "int"
     values = clean.astype(float).to_numpy()
+    # Most continuous columns can rule out integer values using a small prefix.
+    prefix = values[:32]
+    if not (
+        np.all(np.isfinite(prefix)) and np.allclose(prefix, np.round(prefix), atol=1e-9)
+    ):
+        return "float"
     if np.all(np.isfinite(values)) and np.allclose(values, np.round(values), atol=1e-9):
         return "int"
     return "float"
 
 
-def _coerce_json_number(value, series):
-    if _detect_numeric_dtype(series) == "int" and math.isfinite(value):
+def _coerce_json_number(value, series, numeric_dtype=None):
+    if (numeric_dtype or _detect_numeric_dtype(series)) == "int" and math.isfinite(
+        value
+    ):
         return int(round(value))
     return float(value)
 
@@ -336,7 +367,10 @@ def _get_class_labels(automl):
     if automl._best_model is None:
         automl.load(automl._get_results_path())
     try:
-        return [str(label) for label in automl._best_model.preprocessings[-1].get_target_class_names()]
+        return [
+            str(label)
+            for label in automl._best_model.preprocessings[-1].get_target_class_names()
+        ]
     except Exception:
         if automl._ml_task == BINARY_CLASSIFICATION:
             return ["0", "1"]

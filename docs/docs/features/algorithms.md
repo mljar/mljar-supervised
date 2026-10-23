@@ -1,5 +1,31 @@
 # Algorithms
 
+## Fixed custom parameters
+
+Use `custom_params` to keep selected parameters fixed during default training,
+random search and hill climbing:
+
+```python
+automl = AutoML(
+    mode="Compete",
+    algorithms=["Random Forest", "RealMLP"],
+    custom_params={
+        "random_forest": {"max_depth": 3},
+        "realmlp": {"device": "auto", "hidden_width": 64},
+    },
+)
+```
+
+Keys in `custom_params` are case-insensitive; spaces, underscores and hyphens are
+ignored. Values are fixed overrides, not lists of search candidates. Existing
+algorithms accept parameters from their registered search/default configuration;
+[RealMLP](realmlp.md), [TabM mini](tabm.md), and [Kumo/TabICLv2](sdm.md)
+also accept their documented training, inference, and memory controls.
+Unknown names and parameters are rejected. AutoML owns the task, metric, class
+count and CPU thread settings. Custom overrides are saved with the run, do not
+select algorithms automatically, and currently cannot be combined with Optuna
+mode. RealMLP requires the optional `[realmlp]` or `[all]` installation extra.
+
 ## Baseline
 
 ### Classification
@@ -38,13 +64,13 @@ The `Decision Tree` is using scikit-learn [`DecisionTreeRegressor`](https://scik
     The allowed values of hyperparameters:
     ```python
     dt_params = {
-        "criterion": ["mse", "friedman_mse"], 
+        "criterion": ["squared_error"],
         "max_depth": [2, 3, 4]
     }
     ```
     The default set of hyperparameters:
     ```python
-    classification_default_params = {"criterion": "mse", "max_depth": 3}
+    regression_default_params = {"criterion": "squared_error", "max_depth": 3}
     ```
 
 For `Decision Tree` a visualization can be created with `dtreeviz` package (not to have `explain_level > 0`).
@@ -456,6 +482,18 @@ The `Nearest Neighbor` algorithm is using scikit-learn:
 - the [`KNeighborsClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html) for classification,
 - the [`KNeighborsRegressor`](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor) for regression.
 
+Training uses at most 1,000 rows by default. Regression selects a reproducible
+random subset. Classification uses stratified sampling when it retains every
+training class. For singleton classes, a small discarded partition, or an omitted
+class, a reproducible fallback keeps at least one row per class and allocates the
+remaining places approximately proportionally. Sampling is without replacement
+and uses only the training fold. AutoML reports a warning when this fallback is used.
+
+If the row cap cannot retain every training class, Nearest Neighbors raises an
+error before fitting. The selected sample must also contain at least `n_neighbors`
+rows. These errors explain which limit needs changing. This handles the internal
+subsampling failure reported in [issue #794](https://github.com/mljar/mljar-supervised/issues/794).
+
 !!! note "`Nearest Neighbor` hyperparameters"
     The allowed hyperparameters values:
     ```python
@@ -471,6 +509,55 @@ The `Nearest Neighbor` algorithm is using scikit-learn:
         "weights": "uniform"
     }
     ```
+
+## Kumo
+
+`Kumo` uses NVIDIA SDM's pretrained tabular model for binary classification,
+multiclass classification, and regression. It is available only in **Compete**
+mode and supports small, medium, and large checkpoints.
+
+Allowed tuning values:
+
+```python
+kumo_params = {
+    "size": ["small", "medium", "large"],
+    "num_estimators": [4, 8, 16],
+    "max_context_size": [1024, 4096, 8192],
+}
+kumo_default_params = {
+    "size": "small",
+    "num_estimators": 8,
+    "max_context_size": 4096,
+}
+```
+
+An estimator is a transformed view of the context using shared pretrained weights.
+The context is a bounded sample of training-fold rows. We do not train new weights
+or tune network depth/learning rate. Fix any tuning parameter through
+`custom_params={"kumo": {"size": "large", "num_estimators": 8}}`.
+
+## TabICLv2
+
+`TabICLv2` is a separate Compete algorithm using SDM's fixed v2 checkpoint.
+It supports the same three tasks and has no small/medium/large setting.
+
+```python
+tabiclv2_params = {
+    "num_estimators": [4, 8, 16],
+    "max_context_size": [1024, 4096, 8192],
+}
+tabiclv2_default_params = {
+    "num_estimators": 8,
+    "max_context_size": 4096,
+}
+```
+
+Both algorithms require Python 3.11+, an optional extra (`[tfm]`, `[kumo]`,
+`[tabiclv2]`, or `[all]`), and the separate pinned SDM installation. They reject
+sample weights and sparse input. Permutation importance is supported; SHAP is
+not enabled. See [installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu)
+and the [full model guide](sdm.md) for CPU/GPU behavior, input limits, downloads,
+and portable saves.
 
 ## Stacked Algorithm
 

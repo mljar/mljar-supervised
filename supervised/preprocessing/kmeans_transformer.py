@@ -7,6 +7,10 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 
 from supervised.exceptions import AutoMLException
+from supervised.utils.artifact_paths import (
+    portable_artifact_path,
+    resolve_artifact_path,
+)
 
 
 class KMeansTransformer(object):
@@ -16,14 +20,15 @@ class KMeansTransformer(object):
         self._error = None
         self._kmeans = None
         self._scale = None
+        self._fill_values = None  # None preserves the behavior of legacy artifacts.
         self._model_name = model_name
         self._k_fold = k_fold
 
         if results_path is not None:
-            self._result_file = os.path.join(
+            self._result_file = portable_artifact_path(
                 self._model_name, f"kmeans_fold_{k_fold}.joblib"
             )
-            self._result_path = os.path.join(results_path, self._result_file)
+            self._result_path = resolve_artifact_path(results_path, self._result_file)
             # self.try_load()
 
     def fit(self, X, y):
@@ -43,15 +48,24 @@ class KMeansTransformer(object):
 
         n_clusters = int(np.log10(X.shape[0]) * 8)
         n_clusters = max(8, n_clusters)
-        n_clusters = min(n_clusters, X.shape[1])
+        n_clusters = min(n_clusters, X.shape[1], len(X))
 
         self._input_columns = X.columns.tolist()
+        # Fit only on the training fold, including columns with no missing values
+        # yet. Keep empty columns with a deterministic zero fallback.
+        self._fill_values = {
+            c: float(X[c].dropna().median()) if X[c].notna().any() else 0.0
+            for c in self._input_columns
+        }
+        X = X.fillna(self._fill_values)
         # scale data
         self._scale = StandardScaler(copy=True, with_mean=True, with_std=True)
         X = self._scale.fit_transform(X)
 
         # Kmeans
-        self._kmeans = kmeans = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++")
+        self._kmeans = MiniBatchKMeans(
+            n_clusters=n_clusters, init="k-means++", random_state=0
+        )
         self._kmeans.fit(X)
         self._create_new_features_names()
 
@@ -69,7 +83,10 @@ class KMeansTransformer(object):
             raise AutoMLException("KMeans not fitted")
 
         # scale
-        X_scaled = self._scale.transform(X[self._input_columns])
+        inputs = X[self._input_columns]
+        if self._fill_values is not None:
+            inputs = inputs.fillna(self._fill_values)
+        X_scaled = self._scale.transform(inputs)
 
         # kmeans
         distances = self._kmeans.transform(X_scaled)
@@ -94,14 +111,15 @@ class KMeansTransformer(object):
     def from_json(self, data_json, results_path):
         self._new_features = data_json.get("new_features", [])
         self._input_columns = data_json.get("input_columns", [])
-        self._result_file = data_json.get("result_file")
-        self._result_path = os.path.join(results_path, self._result_file)
+        self._result_file = portable_artifact_path(data_json["result_file"])
+        self._result_path = resolve_artifact_path(results_path, self._result_file)
         self._error = data_json.get("error")
         self.try_load()
 
     def save(self):
         joblib.dump(
-            {"kmeans": self._kmeans, "scale": self._scale},
+            {"kmeans": self._kmeans, "scale": self._scale,
+             "fill_values": self._fill_values},
             self._result_path,
             compress=True,
         )
@@ -111,5 +129,6 @@ class KMeansTransformer(object):
             data = joblib.load(self._result_path)
             self._kmeans = data["kmeans"]
             self._scale = data["scale"]
+            self._fill_values = data.get("fill_values")
 
             self._create_new_features_names()

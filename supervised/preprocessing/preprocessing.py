@@ -9,15 +9,18 @@ from supervised.algorithms.registry import (
 )
 from supervised.exceptions import AutoMLException
 from supervised.preprocessing.datetime_transformer import DateTimeTransformer
+from supervised.preprocessing.ip_transformer import IPTransformer
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.preprocessing.goldenfeatures_transformer import (
     GoldenFeaturesTransformer,
 )
+from supervised.preprocessing.feature_discovery_transformer import FeatureDiscoveryTransformer
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.preprocessing.preprocessing_missing import PreprocessingMissingValues
+from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.preprocessing.scale import Scale
 from supervised.preprocessing.text_transformer import TextTransformer
 from supervised.utils.config import LOG_LEVEL
@@ -33,6 +36,7 @@ class Preprocessing(object):
         model_name=None,
         k_fold=None,
         repeat=None,
+        results_path=None,
     ):
         self._params = preprocessing_params
 
@@ -50,7 +54,11 @@ class Preprocessing(object):
         self._remove_columns = []
         self._datetime_transforms = []
         self._text_transforms = []
+        self._ip_transforms = []
+        self._timedelta_columns = []
         self._golden_features = None
+        self._feature_discovery = None
+        self._results_path = results_path
         self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
         self._drop_features = self._params.get("drop_features", [])
@@ -75,6 +83,14 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
+        # Transformations replace columns; owning the frame metadata avoids
+        # chained-assignment warnings without copying every fold's data again.
+        if X_train is not None:
+            X_train = X_train.copy(deep=False)
+        self._timedelta_columns = PreprocessingUtils.timedelta_columns(X_train)
+        X_train = PreprocessingUtils.convert_timedeltas(
+            X_train, self._timedelta_columns
+        )
 
         if y_train is not None:
             # target preprocessing
@@ -85,6 +101,10 @@ class Preprocessing(object):
             X_train, y_train, sample_weight, _ = ExcludeRowsMissingTarget.transform(
                 X_train, y_train, sample_weight
             )
+
+            if "feature_discovery" in self._params:
+                discovery_X = X_train.copy(deep=False)
+                discovery_y = y_train.copy(deep=False)
 
             if PreprocessingCategorical.CONVERT_INTEGER in target_preprocessing:
                 logger.debug("Convert target to integer")
@@ -119,6 +139,17 @@ class Preprocessing(object):
                 self._scale_y.fit(y_train)
                 y_train = self._scale_y.transform(y_train)
                 y_train = y_train["target"]
+
+        discovery_columns = []
+        discovery_values = None
+        if "feature_discovery" in self._params:
+            config = self._params["feature_discovery"]
+            info = config["folds"][f"{self._repeat or 0}:{self._k_fold or 0}"]
+            self._feature_discovery = FeatureDiscoveryTransformer(
+                info, config["feature_set"], self._results_path
+            )
+            discovery_values = self._feature_discovery.fit_transform(discovery_X, discovery_y)
+            discovery_columns = self._feature_discovery._new_columns
 
         # columns preprocessing
         columns_preprocessing = self._params.get("columns_preprocessing")
@@ -164,6 +195,15 @@ class Preprocessing(object):
             new_text_columns += t._new_columns
         # end of text transform
 
+        transformed_columns = {}
+        for col, steps in columns_preprocessing.items():
+            if "ip_transform" in steps:
+                t = IPTransformer()
+                t.fit(X_train, col)
+                X_train = t.transform(X_train)
+                self._ip_transforms.append(t)
+                transformed_columns[col] = t._new_columns
+
         for missing_method in [PreprocessingMissingValues.FILL_NA_MEDIAN]:
             cols_to_process = list(
                 filter(
@@ -190,6 +230,11 @@ class Preprocessing(object):
             X_train = self._golden_features.transform(X_train)
             golden_columns = self._golden_features._new_columns
 
+        if discovery_values is not None:
+            if set(discovery_columns) & set(X_train.columns):
+                raise AutoMLException("Feature discovery output column collision.")
+            X_train = pd.concat([X_train, discovery_values], axis=1)
+
         kmeans_columns = []
         if "kmeans_features" in self._params:
             results_path = self._params["kmeans_features"]["results_path"]
@@ -214,6 +259,14 @@ class Preprocessing(object):
             convert.fit(X_train, y_train)
             X_train = convert.transform(X_train)
             self._categorical += [convert]
+            # One-hot encoding removes the source column. Explicit scaling must
+            # use the fitted outputs; integer encoding/fallback keeps the source.
+            for col, encoding in convert._convert_params.items():
+                transformed_columns[col] = (
+                    encoding["new_columns"]
+                    if "unique_values" in encoding and "new_columns" in encoding
+                    else [col]
+                )
 
         # datetime transform
         cols_to_process = list(
@@ -239,6 +292,11 @@ class Preprocessing(object):
                     columns_preprocessing,
                 )
             )
+            cols_to_process = [
+                generated
+                for col in cols_to_process
+                for generated in transformed_columns.get(col, [col])
+            ]
             if (
                 len(cols_to_process)
                 and len(new_datetime_columns)
@@ -265,6 +323,9 @@ class Preprocessing(object):
                 and scale_method == Scale.SCALE_NORMAL
             ):
                 cols_to_process += kmeans_columns
+
+            if scale_method == Scale.SCALE_NORMAL and self._params.get("feature_discovery", {}).get("scale", False):
+                cols_to_process += discovery_columns
 
             if len(cols_to_process):
                 scale = Scale(cols_to_process)
@@ -303,6 +364,9 @@ class Preprocessing(object):
         # doing copy to avoid SettingWithCopyWarning
         if X_validation is not None:
             X_validation = X_validation.copy(deep=False)
+            X_validation = PreprocessingUtils.convert_timedeltas(
+                X_validation, self._timedelta_columns
+            )
         if y_validation is not None:
             y_validation = y_validation.copy(deep=False)
 
@@ -347,6 +411,11 @@ class Preprocessing(object):
                     y_validation = self._scale_y.transform(y_validation)
                     y_validation = y_validation["target"]
 
+        discovery_values = (
+            self._feature_discovery.transform(X_validation)
+            if self._feature_discovery is not None and X_validation is not None else None
+        )
+
         # columns preprocessing
         if len(self._remove_columns) and X_validation is not None:
             cols_to_remove = [
@@ -359,9 +428,23 @@ class Preprocessing(object):
             if X_validation is not None and tt is not None:
                 X_validation = tt.transform(X_validation)
 
+        for ip in self._ip_transforms:
+            if X_validation is not None:
+                X_validation = ip.transform(X_validation)
+
         for missing in self._missing_values:
             if X_validation is not None and missing is not None:
                 X_validation = missing.transform(X_validation)
+
+        # New KMeans artifacts own their frozen imputation. Generate their
+        # features before the legacy fallback can fill numeric inputs using
+        # statistics of the prediction batch. Older artifacts keep their order.
+        frozen_kmeans = self._kmeans is not None and self._kmeans._fill_values is not None
+        kmeans_values = None
+        if frozen_kmeans and X_validation is not None:
+            kmeans_values = self._kmeans.transform(
+                X_validation[self._kmeans._input_columns].copy()
+            )[self._kmeans._new_features]
 
         # to be sure that all missing are filled
         # in case new data there can be gaps!
@@ -390,7 +473,12 @@ class Preprocessing(object):
         if self._golden_features is not None:
             X_validation = self._golden_features.transform(X_validation)
 
-        if self._kmeans is not None:
+        if discovery_values is not None:
+            X_validation = pd.concat([X_validation, discovery_values], axis=1)
+
+        if kmeans_values is not None:
+            X_validation[kmeans_values.columns] = kmeans_values
+        elif self._kmeans is not None and not frozen_kmeans:
             X_validation = self._kmeans.transform(X_validation)
 
         for convert in self._categorical:
@@ -528,6 +616,12 @@ class Preprocessing(object):
 
     def to_json(self):
         preprocessing_params = {}
+        if self._timedelta_columns:
+            preprocessing_params["timedelta_columns"] = self._timedelta_columns
+        if self._ip_transforms:
+            preprocessing_params["ip_transforms"] = [
+                ip.to_json() for ip in self._ip_transforms
+            ]
         if self._remove_columns:
             preprocessing_params["remove_columns"] = self._remove_columns
         if self._missing_values is not None and len(self._missing_values):
@@ -562,6 +656,9 @@ class Preprocessing(object):
         if self._golden_features is not None:
             preprocessing_params["golden_features"] = self._golden_features.to_json()
 
+        if self._feature_discovery is not None:
+            preprocessing_params["feature_discovery"] = self._feature_discovery.to_json()
+
         if self._kmeans is not None:
             preprocessing_params["kmeans"] = self._kmeans.to_json()
 
@@ -591,6 +688,12 @@ class Preprocessing(object):
 
     def from_json(self, data_json, results_path):
         self._params = data_json.get("params", self._params)
+        self._timedelta_columns = data_json.get("timedelta_columns", [])
+        self._ip_transforms = []
+        for ip_params in data_json.get("ip_transforms", []):
+            ip = IPTransformer()
+            ip.from_json(ip_params)
+            self._ip_transforms.append(ip)
 
         if "remove_columns" in data_json:
             self._remove_columns = data_json.get("remove_columns", [])
@@ -624,6 +727,9 @@ class Preprocessing(object):
         if "golden_features" in data_json:
             self._golden_features = GoldenFeaturesTransformer()
             self._golden_features.from_json(data_json["golden_features"], results_path)
+
+        if "feature_discovery" in data_json:
+            self._feature_discovery = FeatureDiscoveryTransformer.from_json(data_json["feature_discovery"], results_path)
 
         if "kmeans" in data_json:
             self._kmeans = KMeansTransformer()

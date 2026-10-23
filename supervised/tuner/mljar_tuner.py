@@ -19,6 +19,7 @@ from supervised.algorithms.xgboost import xgboost_eval_metric
 from supervised.preprocessing.label_encoder import LabelEncoder
 from supervised.preprocessing.preprocessing_categorical import PreprocessingCategorical
 from supervised.tuner.hill_climbing import HillClimbing
+from supervised.tuner.custom_parameters import algorithm_key, validate_custom_params
 from supervised.tuner.preprocessing_tuner import PreprocessingTuner
 from supervised.tuner.random_parameters import RandomParameters
 from supervised.utils.config import LOG_LEVEL
@@ -29,6 +30,7 @@ logger.setLevel(LOG_LEVEL)
 
 
 class MljarTuner:
+
     def __init__(
         self,
         tuner_params,
@@ -55,8 +57,14 @@ class MljarTuner:
         fairness_threshold=None,
         privileged_groups=[],
         underprivileged_groups=[],
+        data_store=None,
+        custom_params=None,
+        feature_discovery=False,
     ):
         logger.debug("MljarTuner.__init__")
+        self._data_store = data_store
+        self._custom_params = validate_custom_params(custom_params, ml_task)
+        self._weight_skip_reported = set()
         self._start_random_models = tuner_params.get("start_random_models", 5)
         self._hill_climbing_steps = tuner_params.get("hill_climbing_steps", 3)
         self._top_models_to_improve = tuner_params.get("top_models_to_improve", 3)
@@ -66,6 +74,7 @@ class MljarTuner:
         self._explain_level = explain_level
         self._data_info = data_info
         self._golden_features = golden_features
+        self._feature_discovery = feature_discovery
         self._features_selection = features_selection
         self._train_ensemble = train_ensemble
         self._stack_models = stack_models
@@ -84,6 +93,7 @@ class MljarTuner:
         self._underprivileged_groups = underprivileged_groups
         self._seed = seed
         self._unique_params_keys = []
+        self._algorithm_early_stopping = None
 
     def _apply_categorical_strategies(self):
         if self._data_info is None:
@@ -167,6 +177,8 @@ class MljarTuner:
             all_steps += ["mix_encoding"]
         if self._golden_features and self._can_apply_golden_features():
             all_steps += ["golden_features"]
+        if self._feature_discovery:
+            all_steps += ["feature_discovery"]
         if self._kmeans_features and self._can_apply_kmeans_features():
             all_steps += ["kmeans_features"]
         if self._features_selection:
@@ -219,6 +231,8 @@ class MljarTuner:
                     models, results_path, total_time_limit
                 )
             elif step == "kmeans_features":
+                if not models:
+                    return []
                 return self.get_kmeans_features_params(
                     models, results_path, total_time_limit
                 )
@@ -233,9 +247,12 @@ class MljarTuner:
                     total_time_limit,
                 )
             elif "hill_climbing" in step:
-                return self.get_hill_climbing_params(
+                candidates = self.get_hill_climbing_params(
                     self.filter_random_feature_model(models)
                 )
+                if self._algorithm_early_stopping is not None:
+                    self._algorithm_early_stopping.filter_candidates(step, candidates)
+                return candidates
             elif step == "boost_on_errors":
                 return self.boost_params(models, results_path, total_time_limit)
             elif step == "ensemble":
@@ -287,11 +304,11 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         # we operate here on full target data (for all samples)
         # we can't load preprocessed targets from other place
@@ -312,6 +329,9 @@ class MljarTuner:
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
+
+            if not self._supports_weights(model_type):
+                continue
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
@@ -357,7 +377,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -402,16 +425,19 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         sensitive_columns = list(sensitive_features.columns)
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
+
+            if not self._supports_weights(model_type):
+                continue
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
@@ -453,7 +479,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -503,16 +532,19 @@ class MljarTuner:
 
         # get sensitive features for all samples
         sensitive_features_path = os.path.join(results_path, "sensitive_features.data")
-        sensitive_features = load_data(sensitive_features_path)
+        sensitive_features = load_data(sensitive_features_path, store=self._data_store)
 
         # get target
         y_path = os.path.join(results_path, "y.data")
-        target = np.array(load_data(y_path)["target"])
+        target = np.array(load_data(y_path, store=self._data_store)["target"])
 
         sensitive_columns = list(sensitive_features.columns)
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
+
+            if not self._supports_weights(model_type):
+                continue
 
             if df_models["model_type"].iloc[i] in ["Baseline"]:
                 # we dont optimize Baseline
@@ -556,7 +588,10 @@ class MljarTuner:
                 results_path, m.get_type() + f"_fairness_sample_weight_{fo_step}.data"
             )
             dump_data(
-                sample_weight_path, pd.DataFrame({"sample_weight": samples_weight})
+                sample_weight_path,
+                pd.DataFrame({"sample_weight": samples_weight}),
+                store=self._data_store,
+                checkpoint=True,
             )
 
             fo = m.get_fairness_optimization()
@@ -621,6 +656,10 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
+            "TabM",
+            "Kumo",
+            "TabICLv2",
         ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
@@ -761,6 +800,10 @@ class MljarTuner:
             "Xgboost",
             "CatBoost",
             "Neural Network",
+            "RealMLP",
+            "TabM",
+            "Kumo",
+            "TabICLv2",
             "Random Forest",
             "Extra Trees",
             "Nearest Neighbors",
@@ -827,6 +870,10 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
+            "TabM",
+            "Kumo",
+            "TabICLv2",
             "Nearest Neighbors",
         ]
 
@@ -888,6 +935,10 @@ class MljarTuner:
             "Random Forest",
             "Extra Trees",
             "Neural Network",
+            "RealMLP",
+            "TabM",
+            "Kumo",
+            "TabICLv2",
             "Nearest Neighbors",
         ]:
             rest_params += generated_params[m]
@@ -905,6 +956,10 @@ class MljarTuner:
                 "Random Forest",
                 "Extra Trees",
                 "Neural Network",
+                "RealMLP",
+                "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Nearest Neighbors",
             ]:
                 if generated_params[m]:
@@ -913,12 +968,15 @@ class MljarTuner:
             if total == 0:
                 break
 
+        if self._algorithm_early_stopping is not None:
+            self._algorithm_early_stopping.filter_candidates("not_so_random", return_params)
         return return_params
 
     def get_hill_climbing_params(self, current_models):
         df_models, algorithms = self.df_models_algorithms(current_models)
         generated_params = []
         counts = {model_type: 0 for model_type in algorithms}
+        seen_keys = set(self._unique_params_keys)
 
         for i in range(df_models.shape[0]):
             model_type = df_models["model_type"].iloc[i]
@@ -928,9 +986,23 @@ class MljarTuner:
 
             m = df_models["model"].iloc[i]
 
-            for p in HillClimbing.get(
-                m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+            candidates = list(
+                HillClimbing.get(
+                    m.params.get("learner"), self._ml_task, len(current_models) + self._seed
+                )
+            )
+            is_sdm = model_type in ["Kumo", "TabICLv2"]
+            overrides = self._custom_params.get(algorithm_key(model_type), {})
+            if (
+                is_sdm
+                and "precision" not in overrides
+                and m.params["learner"].get("precision", "fp16") == "fp16"
             ):
+                # Compare precision on the same promising configuration. Initial
+                # search stays in FP16; this trial uses the usual tuning budget.
+                candidates.append(dict(m.params["learner"], precision="fp32"))
+
+            for p in candidates:
                 model_indices = [
                     int(m.get_name().split("_")[0]) for m in current_models
                 ]
@@ -940,6 +1012,27 @@ class MljarTuner:
                     "Hill climbing step, for model #{0}".format(model_max_index + 1)
                 )
                 if p is not None:
+                    p.update(overrides)
+                    if is_sdm and self._sdm_context_change_is_noop(m, p):
+                        continue
+                    unique_params_key = MljarTuner.get_params_key(
+                        dict(m.params, learner=p)
+                    )
+                    if unique_params_key in seen_keys:
+                        continue
+                    seen_keys.add(unique_params_key)
+                    if (
+                        is_sdm
+                        and p.get("precision", "fp16") == "fp32"
+                        and m.params["learner"].get("precision", "fp16") != "fp32"
+                    ):
+                        learners = getattr(m, "learners", [])
+                        if not learners or not all(l.can_try_fp32(p) for l in learners):
+                            logger.info(
+                                f"Skip FP32 trial for {m.get_name()}: "
+                                "no eligible GPU context within the memory budget."
+                            )
+                            continue
                     all_params = copy.deepcopy(m.params)
                     all_params["learner"] = p
 
@@ -956,6 +1049,9 @@ class MljarTuner:
 
                     if "golden_features" in all_params["preprocessing"]:
                         all_params["name"] += "_GoldenFeatures"
+                    if "feature_discovery" in all_params["preprocessing"]:
+                        profile = all_params["preprocessing"]["feature_discovery"]["feature_set"]
+                        all_params["name"] += f"_FeatureDiscovery_{profile.title()}"
                     if "drop_features" in all_params["preprocessing"] and len(
                         all_params["preprocessing"]["drop_features"]
                     ):
@@ -963,11 +1059,9 @@ class MljarTuner:
                     all_params["status"] = "initialized"
                     all_params["final_loss"] = None
                     all_params["train_time"] = None
-                    unique_params_key = MljarTuner.get_params_key(all_params)
+                    generated_params += [all_params]
 
-                    if unique_params_key not in self._unique_params_keys:
-                        generated_params += [all_params]
-
+        # The orchestrator supplies the actual stage for persisted decisions.
         return generated_params
 
     def get_all_int_categorical_strategy(self, current_models, total_time_limit):
@@ -993,7 +1087,7 @@ class MljarTuner:
             if m_type not in [
                 "Xgboost",
                 # "LightGBM", # use built-in categoricals (but need to int encode)
-                # "Neural Network",
+                "Neural Network",
                 # "Random Forest",
                 # "Extra Trees",
             ]:
@@ -1005,38 +1099,23 @@ class MljarTuner:
 
                 params = copy.deepcopy(m.params)
                 cols_preprocessing = params["preprocessing"]["columns_preprocessing"]
+                required_preprocessing = AlgorithmsRegistry.registry[self._ml_task][
+                    m_type
+                ]["required_preprocessing"]
+                refreshed_columns = PreprocessingTuner.get(
+                    required_preprocessing,
+                    self._data_info,
+                    self._ml_task,
+                    categorical_strategy=strategy,
+                )["columns_preprocessing"]
 
                 for col, preproc in params["preprocessing"][
                     "columns_preprocessing"
                 ].items():
-                    new_preproc = []
-                    convert_categorical = False
-
-                    for p in preproc:
-                        if "categorical" not in p:
-                            new_preproc += [p]
-                        else:
-                            convert_categorical = True
-
-                    col_data_info = self._data_info["columns_info"].get(col)
-                    few_categories = False
-                    if col_data_info is not None and "few_categories" in col_data_info:
-                        few_categories = True
-
-                    if convert_categorical:
-                        if strategy == PreprocessingTuner.CATEGORICALS_ALL_INT:
-                            new_preproc += [PreprocessingCategorical.CONVERT_INTEGER]
-                        elif strategy == PreprocessingTuner.CATEGORICALS_MIX:
-                            if few_categories:
-                                new_preproc += [
-                                    PreprocessingCategorical.CONVERT_ONE_HOT
-                                ]
-                            else:
-                                new_preproc += [
-                                    PreprocessingCategorical.CONVERT_INTEGER
-                                ]
-
-                    cols_preprocessing[col] = new_preproc
+                    if any("categorical" in step for step in preproc):
+                        # Recompute encoding and dependent scaling together,
+                        # preserving other columns and target preprocessing.
+                        cols_preprocessing[col] = refreshed_columns[col]
 
                 params["preprocessing"]["columns_preprocessing"] = cols_preprocessing
                 # if there is already a name of categorical strategy in the name
@@ -1095,7 +1174,9 @@ class MljarTuner:
             df_models.reset_index(drop=True, inplace=True)
 
         if exclude_golden:
-            ii = df_models["name"].apply(lambda x: "GoldenFeatures" in x)
+            # An empty apply result can have a non-boolean dtype. Keep this
+            # a row mask so filtering never drops the DataFrame's columns.
+            ii = df_models["name"].apply(lambda x: "GoldenFeatures" in x).astype(bool)
             df_models = df_models[~ii]
             df_models.reset_index(drop=True, inplace=True)
 
@@ -1121,6 +1202,89 @@ class MljarTuner:
         algorithms = u[np.argsort(idx)]
 
         return df_models, algorithms
+
+    def feature_discovery_parents(self, models, max_train_time=None):
+        eligible = [
+            m
+            for m in models
+            if m.get_type() not in ("Ensemble", "Baseline")
+            and not m._is_stacked
+            and m.get_final_loss() is not None
+            and np.isfinite(m.get_final_loss())
+            and "RandomFeature" not in m.get_name()
+            and "feature_discovery" not in m.params["preprocessing"]
+        ]
+        if not eligible:
+            return []
+        ranked, _ = self.df_models_algorithms(eligible)
+        if max_train_time is not None:
+            train_times = pd.to_numeric(ranked["train_time"], errors="coerce")
+            ranked = ranked[
+                np.isfinite(train_times)
+                & (train_times >= 0)
+                & (train_times <= max_train_time)
+            ]
+        limit = min(3, self._top_models_to_improve or 3)
+        return list(ranked["model"].iloc[:limit])
+
+    def get_feature_discovery_params(self, models, parents, discoveries):
+        candidates = []
+        max_index = max(
+            (
+                int(m.get_name().split("_")[0])
+                for m in models
+                if m.get_name().split("_")[0].isdigit()
+            ),
+            default=0,
+        )
+        seen = set(self._unique_params_keys)
+        for position in range(3):
+            for parent in parents:
+                discovery = discoveries.get(parent.get_name())
+                if discovery is None or position >= len(discovery["profiles"]):
+                    continue
+                profile = discovery["profiles"][position]
+                params = copy.deepcopy(parent.params)
+                params["learner"] = copy.deepcopy(
+                    getattr(parent, "learner_params", params["learner"])
+                )
+                model_type = params["learner"]["model_type"]
+                config = copy.deepcopy(discovery)
+                config.update(
+                    {
+                        "feature_set": profile,
+                        "parent_model": parent.get_name(),
+                        "scale": "scale"
+                        in AlgorithmsRegistry.registry[self._ml_task][model_type][
+                            "required_preprocessing"
+                        ],
+                    }
+                )
+                params["preprocessing"]["feature_discovery"] = config
+                suffix = parent.get_name().split("_", 1)[-1]
+                params.update(
+                    {
+                        "name": f"{max_index + len(candidates) + 1}_{suffix}_FeatureDiscovery_{profile.title()}",
+                        "status": "initialized",
+                        "final_loss": None,
+                        "train_time": None,
+                        "data_type": params.get("data_type", "")
+                        + f"_feature_discovery_{profile}",
+                        "feature_discovery_expected_time": parent.get_train_time(),
+                    }
+                )
+                # These are trials of the parent's chosen configuration, not new Optuna studies.
+                params.pop("optuna_time_budget", None)
+                params["learner"].pop("model_architecture_json", None)
+                key_params = copy.deepcopy(params)
+                key_params["preprocessing"]["feature_discovery"].pop(
+                    "parent_model", None
+                )
+                key = self.get_params_key(key_params)
+                if key not in seen:
+                    candidates.append(params)
+                    seen.add(key)
+        return candidates
 
     def get_golden_features_params(
         self, current_models, results_path, total_time_limit
@@ -1216,6 +1380,10 @@ class MljarTuner:
                 "LightGBM",
                 "CatBoost",
                 "Neural Network",
+                "RealMLP",
+                "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1308,6 +1476,10 @@ class MljarTuner:
                 "LightGBM",
                 "CatBoost",
                 "Neural Network",
+                "RealMLP",
+                "TabM",
+                "Kumo",
+                "TabICLv2",
                 "Random Forest",
                 "Extra Trees",
             ]:
@@ -1339,17 +1511,26 @@ class MljarTuner:
         return generated_params
 
     def _get_model_params(self, model_type, seed, params_type="random"):
+        if self._data_info.get('is_sample_weighted', False) and not self._supports_weights(model_type):
+            return None
         model_info = AlgorithmsRegistry.registry[self._ml_task][model_type]
 
         model_params = None
         if params_type == "default":
-            model_params = model_info["default_params"]
+            model_params = copy.deepcopy(model_info["default_params"])
             model_params["seed"] = seed
 
         else:
-            model_params = RandomParameters.get(model_info["params"], seed + self._seed)
+            search_params = model_info["params"]
+            if model_type in ["Kumo", "TabICLv2"]:
+                search_params = dict(search_params, precision=["fp16"])
+            model_params = RandomParameters.get(search_params, seed + self._seed)
         if model_params is None:
             return None
+
+        model_params.update(self._custom_params.get(algorithm_key(model_type), {}))
+        if model_type in ['RealMLP', 'TabM', 'Kumo', 'TabICLv2']:
+            model_params['eval_metric_name'] = self._eval_metric
 
         # set eval metric
         if model_info["class"].algorithm_short_name == "Xgboost":
@@ -1363,6 +1544,8 @@ class MljarTuner:
             model_params["metric"] = metric
             model_params["custom_eval_metric_name"] = custom_metric
         if model_info["class"].algorithm_short_name == "CatBoost":
+            if self._eval_metric in ("f1_micro", "f1_macro", "f1_weighted"):
+                model_params["eval_metric_name"] = self._eval_metric
             model_params["eval_metric"] = catboost_eval_metric(
                 self._ml_task, self._eval_metric
             )
@@ -1380,6 +1563,7 @@ class MljarTuner:
         )
 
         model_params = {
+            "custom_params": copy.deepcopy(self._custom_params.get(algorithm_key(model_type), {})),
             "additional": model_additional,
             "preprocessing": preprocessing_params,
             "validation_strategy": self._validation_strategy,
@@ -1405,6 +1589,40 @@ class MljarTuner:
             model_params["underprivileged_groups"] = self._underprivileged_groups
 
         return model_params
+
+    def _sdm_context_change_is_noop(self, model, candidate):
+        original = model.params["learner"]
+        if {k: v for k, v in original.items() if k != "max_context_size"} != {
+            k: v for k, v in candidate.items() if k != "max_context_size"
+        }:
+            return False
+        cap = min(
+            original.get("max_context_size", 4096),
+            candidate.get("max_context_size", 4096),
+        )
+        # Context rows alone cannot establish this: an already-sampled context
+        # hides discarded rows. Prefer actual training sizes, including custom
+        # validation that may repeat indices and exceed the original row count.
+        learners = getattr(model, "learners", [])
+        sizes = [
+            getattr(learner, "training_info", {}).get("training_rows")
+            for learner in learners
+        ]
+        if any(n is not None and n > cap for n in sizes):
+            return False
+        if sizes and all(n is not None for n in sizes):
+            return True
+        if model.params["validation_strategy"].get("validation_type") == "custom":
+            return False
+        rows = (self._data_info or {}).get("rows")
+        return rows is not None and rows <= cap
+
+    def _supports_weights(self, model_type):
+        supported = AlgorithmsRegistry.supports_sample_weight(self._ml_task, model_type)
+        if not supported:
+            # Expected scheduling decision; retain it for the Markdown report.
+            self._weight_skip_reported.add(model_type)
+        return supported
 
     @staticmethod
     def get_params_key(params):
@@ -1436,6 +1654,8 @@ class MljarTuner:
                 "Neural Network",
                 "Nearest Neighbors",
             ]:
+                continue
+            if not self._supports_weights(df_models["model_type"].iloc[i]):
                 continue
             if "RandomFeature" in df_models["model"].iloc[i].get_name():
                 continue
@@ -1472,7 +1692,10 @@ class MljarTuner:
             results_path, best_model.get_name() + "_sample_weight.data"
         )
         dump_data(
-            sample_weight_path, pd.DataFrame({"sample_weight": df_preds["order"]})
+            sample_weight_path,
+            pd.DataFrame({"sample_weight": df_preds["order"]}),
+            store=self._data_store,
+            checkpoint=True,
         )
 
         generated_params = []

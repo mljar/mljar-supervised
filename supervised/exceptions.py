@@ -14,7 +14,27 @@ class AutoMLException(Exception):
         super(AutoMLException, self).__init__(message)
 
 
+class ResourceAdmissionError(AutoMLException):
+    """A candidate exceeded an estimated budget before allocating its model.
+
+    Actual allocation failures remain ordinary errors. Prediction callers also
+    receive this exception: a trained model is never silently replaced.
+    """
+
+    def __init__(self, message, resources=None):
+        super().__init__(message)
+        self.resources = dict(resources or {})
+
+
 class NotTrainedException(Exception):
     def __init__(self, message):
         super(NotTrainedException, self).__init__(message)
         logger.debug(message)
+
+
+class BudgetExceededError(AutoMLException, NotTrainedException):
+    """An explicit training deadline or completion estimate stopped a trial."""
+
+    def __init__(self, message, **details):
+        super().__init__(message)
+        self.details = details

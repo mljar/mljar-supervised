@@ -1,5 +1,9 @@
 # Golden Features
 
+The separate [feature discovery step](feature_discovery.md) can run afterward,
+sharing this step's time allocation and testing up to three Goldmine feature sets
+on the best current models.
+
 Golden Features are the features which have great predictive power. They can be constructed based on the original features. The common way to construct them is to try features differences or ratios. The [`mljar-superverised`](https://github.com/mljar/mljar-supervised) package has built-in step that performs Golden Features search. 
 
 The procedure to find Golden Features:

@@ -11,6 +11,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 logger = logging.getLogger(__name__)
 from supervised.utils.config import LOG_LEVEL
+from supervised.utils.importance import load_model_importance
 logger.setLevel(LOG_LEVEL)
 # Add a handler if running standalone for testing
 if not logger.hasHandlers():
@@ -132,51 +133,12 @@ class AutoMLPlots:
         """
         logger.info("Starting feature importance generation (original and scaled).")
         try:
-            # --- Data Aggregation (Common part) ---
             model_feature_imp = {}
-            # (Same robust reading logic as before)
-            for m in models:
-                model_name = m.get_name()
-                model_path = os.path.join(results_path, model_name)
-                logger.debug(f"Processing model '{model_name}' in '{model_path}'")
-                if not os.path.isdir(model_path):
-                    logger.warning(f"Directory not found for model '{model_name}'. Skipping.")
-                    continue
-                try:
-                    all_files = os.listdir(model_path)
-                except OSError as e:
-                    logger.error(f"Cannot list directory {model_path}: {e}. Skipping model '{model_name}'.")
-                    continue
-                imp_data = [f for f in all_files if "_importance.csv" in f and "shap" not in f]
-                if not imp_data:
-                    logger.warning(f"No suitable importance files found for model '{model_name}'. Skipping.")
-                    continue
-                df_all = []
-                for fname in imp_data:
-                    file_path = os.path.join(model_path, fname)
-                    try:
-                        df = pd.read_csv(file_path, index_col=0)
-                        numeric_df = df.select_dtypes(include=np.number)
-                        if numeric_df.empty or numeric_df.isnull().all().all():
-                            logger.warning(f"File {fname} (model '{model_name}') contains no valid numeric data. Skipping.")
-                            continue
-                        df_all.append(df)
-                    except Exception as read_e:
-                        logger.error(f"Error reading/processing file {fname} (model '{model_name}'): {read_e}. Skipping.")
-                        continue
-                if not df_all:
-                    logger.warning(f"No valid importance dataframes read for model '{model_name}'. Skipping.")
-                    continue
-                try:
-                    df_concat = pd.concat(df_all, axis=1, join='outer')
-                    numeric_df_concat = df_concat.select_dtypes(include=np.number)
-                    if not numeric_df_concat.empty:
-                         model_feature_imp[model_name] = numeric_df_concat.mean(axis=1).fillna(0)
-                    else:
-                         logger.warning(f"No numeric data after concat for model '{model_name}'. Skipping.")
-                except Exception as concat_e:
-                     logger.error(f"Error aggregating importance for model '{model_name}': {concat_e}")
-                     continue
+            for model in models:
+                model_name = model.get_name()
+                importance = load_model_importance(os.path.join(results_path, model_name))
+                if importance is not None:
+                    model_feature_imp[model_name] = importance
 
             logger.info(f"Collected feature importance for {len(model_feature_imp)} models.")
             if len(model_feature_imp) < 2:

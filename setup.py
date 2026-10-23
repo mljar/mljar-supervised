@@ -10,7 +10,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 
 setup(
     name="mljar-supervised",
-    version="1.3.2",
+    version="1.4.0a1",
     description="Automated Machine Learning for Humans",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,6 +20,16 @@ setup(
     license="MIT",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=open("requirements.txt").readlines(),
+    extras_require={
+        "feature-discovery": ["features-goldmine>=1.1,<1.2; python_version >= '3.10'"],
+        # SDM itself currently requires the separately documented pinned Git install.
+        "kumo": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "tabiclv2": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "tfm": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "realmlp": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
+        "tabm": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
+        "all": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0", "huggingface_hub>=1,<3", "features-goldmine>=1.1,<1.2; python_version >= '3.10'"],
+    },
     include_package_data=True,
     python_requires='>=3.9',
     classifiers=[

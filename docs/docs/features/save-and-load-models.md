@@ -37,6 +37,32 @@ Then you can use it normally:
 predictions = automl.predict(X_test)
 ```
 
+## Prediction memory and reuse
+
+In `1.4.0rc3`, loading an AutoML directory reads
+model metadata and preprocessing first. Saved fold learners are loaded when
+needed for prediction and released after each fold, including failed prediction
+attempts. A later call reloads them from the same artifacts, so keep the results
+directory available while using the model. This avoids keeping all fold networks
+in GPU memory at once; a single learner still needs enough memory to predict.
+
+Within one `predict`, `predict_proba`, or `predict_all` call, shared model
+predictions are reused across ensembles and stacking. Intermediate predictions
+are held in host memory for that call and discarded afterwards. Separate calls
+compute fresh predictions, even when the same DataFrame is passed again.
+Preprocessing, fold averaging, ensemble weights, and classification thresholds
+are preserved. Existing saved runs use this behavior without retraining or new
+arguments. Loading learners again can add disk I/O to repeated small requests.
+
+Starting with `1.4.0rc5`, saved Kumo and TabICLv2 folds can retain one shared
+frozen checkpoint within a prediction request. Fold-specific encoded contexts
+are still cleared after use. Equivalent folds can also reuse predictions in a
+bounded CPU cache, while preserving every stacking column and ensemble weight.
+GPU admission checks every fold and performs cleanup only when needed.
+These caches are released when the request completes or fails; subsequent calls
+start fresh. See [SDM saved-model reuse](sdm.md#saved-model-reuse-starting-with-140rc5)
+for equivalence rules and memory limits.
+
 ## What is saved
 
 The full AutoML run is saved in the directory given by `results_path`.

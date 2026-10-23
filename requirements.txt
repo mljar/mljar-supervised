@@ -2,7 +2,9 @@ numpy>=2.0.0,<3.0.0
 pandas>=2.2.2
 scipy>=1.13.1
 scikit-learn>=1.5.0
-xgboost>=2.1.0
+# CPU wheels avoid CUDA-driver initialization during CPU metric evaluation.
+xgboost-cpu>=2.1.4; (sys_platform == "linux" and (platform_machine == "x86_64" or platform_machine == "aarch64")) or (sys_platform == "win32" and (platform_machine == "AMD64" or platform_machine == "x86_64"))
+xgboost>=2.1.0; (sys_platform != "linux" or (platform_machine != "x86_64" and platform_machine != "aarch64")) and (sys_platform != "win32" or (platform_machine != "AMD64" and platform_machine != "x86_64"))
 lightgbm>=4.3.0
 catboost>=1.2.8
 joblib>=1.0.1
@@ -16,3 +18,5 @@ mljar-scikit-plot>=0.3.11
 markdown
 typing-extensions
 ipython
+
+threadpoolctl>=3.1.0

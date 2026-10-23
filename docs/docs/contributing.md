@@ -36,6 +36,36 @@ pytest tests/tests_algorithms/test_nn.py -vsx
 
 I add `vsx` flags to see what's going on.
 
+### Adding an algorithm
+
+Algorithm implementations inherit from `BaseAlgorithm` in
+`supervised/algorithms/algorithm.py`. It uses Python's `ABC` and requires these
+methods, either implemented directly or inherited from an adapter:
+
+| Method | Responsibility |
+| --- | --- |
+| `fit` | Train using the training data and supported validation arguments. |
+| `predict` | Return task-appropriate predictions (positive-class probabilities for binary classification, class probabilities for multiclass classification, or numeric predictions for regression). |
+| `is_fitted` | Report whether the model is loaded and ready for prediction. |
+| `file_extension` | Return the saved model's extension without a leading dot. |
+| `copy` | Return an independent copy of the learner and its current model state. |
+| `save` | Persist the model to the supplied path. |
+| `load` | Restore the model from the supplied path. |
+
+Incomplete subclasses cannot be instantiated. Shared adapters such as
+`SklearnAlgorithm` can remain abstract until a concrete algorithm implements the
+remaining methods.
+
+The base class provides metadata serialization, lazy loading, interpretation,
+and probability formatting. `update` is an optional no-op hook;
+`get_metric_name` returns `None` unless the algorithm supplies a metric name.
+Override these defaults only when the algorithm needs different behavior.
+
+The abstract contract checks that methods are implemented; it does not validate
+their signatures or behavior. Add tests for training and prediction, independent
+copies, saving and loading, and prediction after lazy loading. Registered
+algorithms must also pass `tests/tests_algorithms/test_algorithm_contract.py`.
+
 ## Documentation :scroll:
 
 The project documentation source is in this repository under `docs/`. Deployed docs are available at [https://supervised.mljar.com](https://supervised.mljar.com).

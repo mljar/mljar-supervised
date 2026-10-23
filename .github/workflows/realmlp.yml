@@ -1,0 +1,19 @@
+name: Optional neural models
+on: [push, pull_request]
+jobs:
+  cpu:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+        pytabkit: ['1.7.2', '1.7.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install 'torch==2.11.0' --index-url https://download.pytorch.org/whl/cpu
+      - run: python -m pip install '.[all]' 'pytabkit==${{ matrix.pytabkit }}' pytest
+      - run: python -m pip check
+      - run: python -m pytest tests/tests_algorithms/test_realmlp.py tests/tests_automl/test_realmlp.py tests/tests_tuner/test_realmlp.py tests/tests_tuner/test_custom_parameters.py tests/tests_algorithms/test_tabm.py tests/tests_automl/test_tabm.py tests/tests_tuner/test_tabm.py tests/tests_algorithms/test_pytabkit_compat.py tests/tests_algorithms/test_gpu_admission_cleanup.py tests/tests_callbacks/test_early_stopping_memory.py -q

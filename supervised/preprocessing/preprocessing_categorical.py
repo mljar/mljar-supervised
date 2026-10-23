@@ -3,7 +3,6 @@ import pandas as pd
 
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
-from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 
 
 class PreprocessingCategorical(object):
@@ -24,9 +23,16 @@ class PreprocessingCategorical(object):
 
     def _fit_categorical_convert(self, X):
         for column in self._columns:
-            if PreprocessingUtils.get_type(X[column]) != PreprocessingUtils.CATEGORICAL:
-                # no need to convert, already a number
+            dtype = X[column].dtype
+            if (
+                pd.api.types.is_numeric_dtype(dtype)
+                and not pd.api.types.is_bool_dtype(dtype)
+            ) or pd.api.types.is_datetime64_any_dtype(dtype):
+                # Numeric/datetime inputs are already represented by their dtype.
                 continue
+            # The preprocessing plan already selected categorical encoding.
+            # Do not rerun text detection on a fold: its cardinality ratio can
+            # differ from the full data and otherwise leave raw strings (#147).
             # limit categories - it is needed when doing one hot encoding
             # this code is also used in predict.py file
             # and transform_utils.py
@@ -47,30 +53,30 @@ class PreprocessingCategorical(object):
                 self._convert_params[column] = lbl.to_json()
 
     def transform(self, X):
+        if not self._convert_params:
+            return X
+        columns = dict(X.items())
         for column, lbl_params in self._convert_params.items():
             if "unique_values" in lbl_params and "new_columns" in lbl_params:
                 # convert to one hot
                 lbl = LabelBinarizer()
                 lbl.from_json(lbl_params)
-                X = lbl.transform(X, column)
+                columns.update(lbl._encoded_columns(columns[column], column))
+                del columns[column]
             else:
                 # convert to integer
                 lbl = LabelEncoder()
                 lbl.from_json(lbl_params)
-                transformed_values = lbl.transform(X.loc[:, column])
-                col_dtype = X.loc[:, column].dtype
-                # check for pandas FutureWarning: Setting an item
-                # of incompatible dtype is deprecated and will raise
-                # in a future error of pandas.
-                if transformed_values.dtype != col_dtype and \
-                    (col_dtype == bool or col_dtype == int):
-                    X = X.astype({column: transformed_values.dtype})
-                # pandas string/categorical extension dtypes reject integer arrays.
-                if isinstance(col_dtype, pd.CategoricalDtype) or pd.api.types.is_string_dtype(col_dtype):
-                    X[column] = X[column].astype('object')
-                X.loc[:, column] = transformed_values
+                # All unseen feature values share a fixed code after the fitted
+                # classes. Their encoding cannot depend on batch size or order.
+                transformed_values = lbl.transform(
+                    columns[column], unknown_value=len(lbl_params)
+                )
+                # Replace the column so boolean/string/category extension dtypes
+                # cannot reject encoded integer values (#333).
+                columns[column] = transformed_values
 
-        return X
+        return pd.DataFrame(columns, index=X.index)
 
     def inverse_transform(self, X):
         for column, lbl_params in self._convert_params.items():

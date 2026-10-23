@@ -6,6 +6,19 @@ social:
 
 # MLJAR AutoML for Python
 
+**Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
+and a pinned SDM backend. Python 3.11+ required. See [installation and usage](features/sdm.md).
+
+Install standard MLJAR with `python -m pip install mljar-supervised`.
+For RealMLP, choose [CPU](install.md#realmlp-on-cpu) or
+[NVIDIA GPU](install.md#realmlp-on-nvidia-gpu) setup, then install `[realmlp]` or
+`[all]`. **RealMLP currently requires installation from source** and is available
+only in `mode="Compete"`.
+See [Installation](install.md) for environment setup, commands and checks, and
+[RealMLP](features/realmlp.md) for usage and resource limits.
+[TabM mini](features/tabm.md) is also available in Compete mode through `[tabm]`
+or `[all]`, with the same CPU/GPU setup.
+
 [![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
 [![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/version.svg)](https://anaconda.org/conda-forge/mljar-supervised)
