@@ -8,6 +8,13 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+TFM_REQUIREMENTS = [
+    "structured-data-models==0.2.1",
+    "torch>=2.7,<3",
+    "huggingface_hub>=1,<3",
+    "psutil>=5.0",
+]
+
 setup(
     name="mljar-supervised",
     version="1.4.0a1",
@@ -22,13 +29,15 @@ setup(
     install_requires=open("requirements.txt").readlines(),
     extras_require={
         "feature-discovery": ["features-goldmine>=1.1,<1.2; python_version >= '3.10'"],
-        # SDM itself currently requires the separately documented pinned Git install.
-        "kumo": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
-        "tabiclv2": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
-        "tfm": ["torch>=2.7,<3", "huggingface_hub>=1,<3", "psutil>=5.0"],
+        "kumo": TFM_REQUIREMENTS,
+        "tabiclv2": TFM_REQUIREMENTS,
+        "tfm": TFM_REQUIREMENTS,
         "realmlp": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
         "tabm": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
-        "all": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0", "huggingface_hub>=1,<3", "features-goldmine>=1.1,<1.2; python_version >= '3.10'"],
+        "all": TFM_REQUIREMENTS + [
+            "pytabkit>=1.7.2,<1.8",
+            "features-goldmine>=1.1,<1.2; python_version >= '3.10'",
+        ],
     },
     include_package_data=True,
     python_requires='>=3.9',

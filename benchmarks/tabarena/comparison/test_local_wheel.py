@@ -9,10 +9,13 @@ from run import parse_args
 from worker import prediction_graph
 
 
-def make_wheel(path, version="1.4.0rc6", name="mljar-supervised", content="first"):
+def make_wheel(path, version="1.4.0rc6", name="mljar-supervised", content="first", sdm=False):
     path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(path, "w") as archive:
-        archive.writestr("mljar_supervised.dist-info/METADATA", f"Name: {name}\nVersion: {version}\n")
+        metadata = f"Name: {name}\nVersion: {version}\n"
+        if sdm:
+            metadata += 'Requires-Dist: structured-data-models==0.2.1; extra == "all"\n'
+        archive.writestr("mljar_supervised.dist-info/METADATA", metadata)
         archive.writestr("supervised/__init__.py", content)
     return path
 
@@ -33,7 +36,8 @@ def test_local_wheel_metadata_and_separate_run_paths(tmp_path, version):
         setup_env.local_wheel_info(wheel, version)
 
 
-def test_local_environment_installs_retained_wheel_and_changes_path_for_new_build(tmp_path, monkeypatch):
+@pytest.mark.parametrize("sdm", [False, True])
+def test_local_environment_installs_retained_wheel_and_changes_path_for_new_build(tmp_path, monkeypatch, sdm):
     monkeypatch.setattr(setup_env, "BASE", tmp_path / "benchmarks")
     monkeypatch.setattr(setup_env.shutil, "which", lambda name: "/usr/bin/uv")
     commands = []
@@ -47,20 +51,23 @@ def test_local_environment_installs_retained_wheel_and_changes_path_for_new_buil
 
     monkeypatch.setattr(setup_env, "command", command)
     monkeypatch.setattr(setup_env.subprocess, "check_output", lambda *args, **kwargs: "mljar-supervised==1.4.0rc6\n")
-    wheel = make_wheel(tmp_path / "mljar_supervised-1.4.0rc6-py3-none-any.whl")
+    wheel = make_wheel(tmp_path / "mljar_supervised-1.4.0rc6-py3-none-any.whl", sdm=sdm)
     original_hash = sha256(wheel)
     first = setup_env.ensure_environment("1.4.0rc6", wheel)
     root = first.parent.parent
     info = read_json(root / "benchmark-environment.json")
     assert info["local_wheel"]["sha256"] == original_hash
     assert info["features_goldmine"] == "1.1.0"
+    assert bool(info["sdm_revision"]) is not sdm
+    git_installs = [arg for args in commands for arg in args if arg.startswith("git+")]
+    assert bool(git_installs) is not sdm
     retained = root / "artifacts" / wheel.name
     assert sha256(retained) == original_hash
     assert any(f"mljar-supervised[all] @ {retained.as_uri()}" in args for args in commands)
     count = len(commands)
     assert setup_env.ensure_environment("1.4.0rc6", wheel) == first
     assert len(commands) == count
-    make_wheel(wheel, content="second build")
+    make_wheel(wheel, content="second build", sdm=sdm)
     second = setup_env.ensure_environment("1.4.0rc6", wheel)
     assert second != first
     assert sha256(retained) == original_hash

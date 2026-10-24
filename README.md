@@ -38,7 +38,8 @@ Start quickly, iterate faster, and manage experiments in one place.
 ---
 
 **Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
-and a pinned SDM backend. Python 3.11+ required. See [installation and usage](docs/docs/features/sdm.md).
+including the SDM 0.2.1 PyPI backend in the current source checkout. Python 3.11+ required.
+The published alpha uses an older backend; see [installation and usage](docs/docs/features/sdm.md).
 
 ## Table of Contents
 

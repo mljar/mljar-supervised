@@ -1,3 +1,9 @@
+## Unreleased — SDM installation
+
+- Install `structured-data-models==0.2.1` from PyPI through `[tfm]`, `[kumo]`, `[tabiclv2]`, or `[all]`. No separate Git backend installation is needed for the current source checkout.
+- Keep the exact backend-version check and existing pinned model checkpoints. Weights still download on first use.
+- The published `1.4.0a1` retains its original Git backend requirement; use a fresh environment when testing the updated source checkout.
+
 ## mljar-supervised 1.4.0a1
 
 Alpha release for testing the accumulated RC6/RC7 changes. Install this exact

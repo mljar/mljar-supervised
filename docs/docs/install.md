@@ -1,7 +1,8 @@
 # Installation
 
 For **Kumo and TabICLv2**, use Python 3.11+, `[tfm]` (or `[kumo]`, `[tabiclv2]`,
-`[all]`) **and a separate pinned SDM backend installation**. See the
+`[all]`). The current source checkout installs `structured-data-models==0.2.1`
+from PyPI through these extras. The published alpha still needs its older Git backend. See the
 [Kumo/TabICLv2 instructions](features/sdm.md#installation). Weights download from
 Hugging Face on first use, not during package installation.
 
@@ -12,7 +13,7 @@ Choose the models and hardware you want to use:
 | Standard MLJAR | `mljar-supervised`; PyTorch is not required |
 | RealMLP on CPU | CPU PyTorch, then MLJAR with `[realmlp]` or `[all]` |
 | RealMLP on NVIDIA GPU | CUDA PyTorch, then the same MLJAR extra |
-| Kumo / TabICLv2 on CPU or NVIDIA GPU | Python 3.11+, chosen PyTorch build, `[tfm]`, then pinned SDM |
+| Kumo / TabICLv2 on CPU or NVIDIA GPU | Python 3.11+, chosen PyTorch build, then `[tfm]`; see version-specific commands below |
 
 **TabM mini uses the same CPU/GPU setup.** Substitute `[tabm]` for `[realmlp]`
 in the commands below, or use `[all]` for both. These extras share
@@ -96,9 +97,10 @@ an isolated environment automatically and checks CPU multiclass evaluation.
 
 ## Kumo and TabICLv2 on CPU or NVIDIA GPU
 
-Use Python **3.11+**. Installation has two parts: MLJAR's optional dependencies and the
-separately pinned SDM backend. There is **no direct GitHub dependency in MLJAR's
-package metadata**; the second command explicitly installs it.
+Use Python **3.11+**. In the current source checkout, `[tfm]`, `[kumo]`,
+`[tabiclv2]`, and `[all]` install the tested PyPI backend
+`structured-data-models==0.2.1` automatically. This change is not yet published;
+`1.4.0a1` uses the older Git backend.
 
 Install your PyTorch build first:
 
@@ -120,20 +122,27 @@ Install your PyTorch build first:
     [PyTorch installation selector](https://pytorch.org/get-started/locally/).
     Keep PyTorch within `>=2.7,<3`.
 
-Then run **both** commands:
+From the root of the current MLJAR source checkout, run:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0a1"
-python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
+python -m pip install ".[tfm]"
 ```
 
-From an existing MLJAR checkout, replace the first command with
-`python -m pip install ".[tfm]"`.
+No separate SDM install or Git dependency is needed for this checkout.
 
-| Extra | Dependencies it adds | Separate SDM install needed? |
-|---|---|---|
-| `[kumo]`, `[tabiclv2]`, `[tfm]` | PyTorch, Hugging Face Hub, psutil | Yes |
-| `[all]` | Those dependencies plus pytabkit for RealMLP/TabM | Yes |
+!!! note "Published alpha 1.4.0a1"
+    To reproduce the published alpha in a separate environment, use its original
+    backend. Installing SDM 0.2.1 alongside the published alpha is not supported.
+
+    ```bash
+    python -m pip install "mljar-supervised[tfm]==1.4.0a1"
+    python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
+    ```
+
+| Extra (current source checkout) | Dependencies it adds |
+|---|---|
+| `[kumo]`, `[tabiclv2]`, `[tfm]` | SDM 0.2.1, PyTorch, Hugging Face Hub, psutil |
+| `[all]` | Those dependencies plus pytabkit for RealMLP/TabM and feature discovery |
 
 The three TFM extras share dependencies; installing one does not restrict which
 of the two algorithms can be selected. SDM installs its own dependencies,
@@ -207,8 +216,9 @@ python -m pip install "mljar-supervised[all]==1.4.0a1"
 ```
 
 `[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds
-Hugging Face support for Kumo and TabICLv2, but their pinned SDM backend still
-requires the separate installation described above.
+Hugging Face support for Kumo and TabICLv2. For the published alpha shown above,
+install its Git SDM backend separately as described above. The current source
+checkout includes SDM 0.2.1 from PyPI in `[all]`.
 
 To install from source instead:
 

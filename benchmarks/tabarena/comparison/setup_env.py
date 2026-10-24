@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import re
 from email.parser import BytesParser
 from pathlib import Path
 from zipfile import ZipFile, BadZipFile
@@ -32,7 +33,14 @@ def local_wheel_info(wheel, version):
         raise ValueError(f"Invalid wheel: {wheel}") from error
     if package.get("Name", "").lower().replace("_", "-") != "mljar-supervised" or package.get("Version") != version:
         raise ValueError(f"Local wheel must contain mljar-supervised {version}")
-    return dict(filename=wheel.name, sha256=sha256(wheel))
+    info = dict(filename=wheel.name, sha256=sha256(wheel))
+    # New wheels declare SDM themselves. Preserve the Git pin for historical
+    # wheels and published candidates that predate the PyPI backend migration.
+    sdm_requirements = [value for value in package.get_all("Requires-Dist", [])
+                        if re.match(r"structured[-_]data[-_]models\b", value, re.I)]
+    if sdm_requirements:
+        info["sdm_requirements"] = sdm_requirements
+    return info
 
 
 def ensure_environment(version, local_wheel=None):
@@ -55,6 +63,8 @@ def ensure_environment(version, local_wheel=None):
         spec["features_goldmine"] = "1.1.0"
     if artifact:
         spec["local_wheel"] = artifact
+        if artifact.get("sdm_requirements"):
+            spec["sdm_revision"] = None
     with lock(root.parent / f"{version}.setup.lock"):
         if marker.exists():
             if read_json(marker) != spec:
@@ -80,8 +90,9 @@ def ensure_environment(version, local_wheel=None):
         if version in DISCOVERY_VERSIONS:
             requirements.append("features-goldmine==1.1.0")
         if version in CANDIDATE_VERSIONS:
-            requirements += [f"torch=={spec['torch']}",
-                             f"git+https://github.com/NVIDIA/structured-data-models.git@{SDM_REVISION}"]
+            requirements.append(f"torch=={spec['torch']}")
+            if spec["sdm_revision"]:
+                requirements.append(f"git+https://github.com/NVIDIA/structured-data-models.git@{SDM_REVISION}")
         # Pick up a just-published candidate even if uv cached the previous index.
         command([uv, "pip", "install", "--python", python, "--refresh-package", "mljar-supervised",
                  "--constraint", HERE / "constraints.txt", *requirements])

@@ -113,7 +113,7 @@ There are 3 built-in modes available in `AutoML`:
 - **Perform** - to be used when the user wants to train a model that will be used in real-life use cases.
 - **Compete** - To be used for machine learning competitions (maximum performance!).
 
-Kumo and TabICLv2 require [optional dependencies and a pinned SDM backend](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
+Kumo and TabICLv2 require [the optional TFM dependencies](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
 Compete selects them automatically when the tested backend and CUDA are available.
 For CPU runs, select `algorithms=["Kumo", "TabICLv2"]` explicitly in Compete mode.
 They are not available in Explain, Perform, or Optuna mode.

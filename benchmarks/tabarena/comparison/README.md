@@ -57,6 +57,8 @@ separate environment and default output directory; the wheel is retained with
 the run and labeled as an unpublished local package in the comparison report.
 Rebuilding RC7 produces a separate result set when its wheel hash changes.
 The existing baseline and reference runs are read without modifying their files.
+For local wheels that declare SDM as a dependency, the installer uses that
+dependency. Historical candidates retain their original Git backend pin.
 `--wait-for-resources` queues behind another candidate/GPU benchmark.
 
 RC7 preflight checks feature discovery, algorithm early stopping (three distinct

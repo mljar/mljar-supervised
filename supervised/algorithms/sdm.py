@@ -32,13 +32,10 @@ from supervised.algorithms.registry import (
 from supervised.exceptions import BudgetExceededError, AutoMLException, ResourceAdmissionError
 from supervised.prediction import current_prediction_context
 
-SDM_REVISION = "b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
-SDM_VERSION = "0.2.0rc2.dev18+gb97cb914e"
+SDM_VERSION = "0.2.1"
 INSTALL_MESSAGE = (
-    "Install mljar-supervised[tfm] and the tested SDM backend: pip install "
-    '"git+https://github.com/NVIDIA/structured-data-models.git@'
-    + SDM_REVISION
-    + '". Python >=3.11 is required.'
+    'Install with: pip install "mljar-supervised[tfm]" '
+    f'"structured-data-models=={SDM_VERSION}". Python >=3.11 is required.'
 )
 CHECKPOINTS = {
     "Kumo": ("nvidia/Kumo-Tabular", "3c3e10bbdb590ace29e7026847f92db3c603096d"),
@@ -97,9 +94,11 @@ def dependencies_available():
 def check_dependencies():
     if not dependencies_available():
         raise AutoMLException(INSTALL_MESSAGE)
-    if version("structured-data-models") != SDM_VERSION:
+    installed_version = version("structured-data-models")
+    if installed_version != SDM_VERSION:
         raise AutoMLException(
-            "This integration requires the tested SDM revision. " + INSTALL_MESSAGE
+            f"This integration requires structured-data-models=={SDM_VERSION}; "
+            f"found {installed_version}. " + INSTALL_MESSAGE
         )
     from packaging.version import Version
 
