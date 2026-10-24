@@ -236,6 +236,10 @@ adds pytabkit and the other RealMLP dependencies.
 
 ## Verify the installation
 
+See [native runtime compatibility](#native-runtime-compatibility) for the macOS
+check in the current source checkout. Installing the optional dependencies does
+not by itself establish that the native libraries can run together.
+
 ```bash
 python -m pip check
 python -c "from importlib.metadata import version; import torch; print('MLJAR:', version('mljar-supervised')); print('pytabkit:', version('pytabkit')); print('torch:', torch.__version__); print('CUDA build:', torch.version.cuda); print('CUDA available:', torch.cuda.is_available())"
@@ -286,3 +290,46 @@ python examples/scripts/realmlp_synthetic.py --output AutoML_realmlp_check
 
 The script uses CPU and eight epochs per task. See the [RealMLP guide](features/realmlp.md)
 for supported data, tuning parameters, memory limits and explanations.
+
+## Native runtime compatibility
+
+The current source checkout checks for the reproduced macOS conflict between
+PyTorch and the native libraries used by standard ML models. This protection is
+not included in the published `1.4.0a1` wheel.
+
+When Torch models are needed, MLJAR runs tiny synthetic workloads in a temporary
+Python process before allowing them in the main process. All cases share one
+**three-second deadline**, including interpreter startup. A hung child is killed
+and reaped; operating-system scheduling and termination can add a small delay.
+A slow or cold start can time out even without a native conflict.
+
+- Standard models with Torch unused and unloaded run without a probe. A base
+  installation still requires no Torch.
+- Automatic selection skips optional Torch models if the check fails or cannot
+  finish, provided Torch has not been loaded in the main process. Training
+  continues with the remaining models.
+- Explicit requests raise `NativeCompatibilityError` instead of silently changing
+  the requested algorithms. Saved models, ensembles, and resumed runs are checked
+  too; their members are never replaced to bypass a failure.
+- If Torch is already loaded, MLJAR also checks standard-model operations. An
+  unverified mixed environment stops with the same error.
+- Linux and Windows keep their existing execution paths; this macOS check does
+  not launch children on those platforms.
+
+The child receives no training data and downloads no weights. Only one probe
+child runs at a time. It needs at least 1 GiB of available host RAM to start and
+is stopped if its sampled RSS exceeds 768 MiB. Sampling is not a hard OS memory
+limit. Training itself stays in the main process; no training worker is retained.
+
+Results are cached in memory for the inspected environment and loaded backend
+state. Low-memory and other inconclusive results can be checked again on a later
+request. Reports record skipped algorithms and reasons, including in quiet mode.
+The run's `params.json` preserves requested and effective algorithms, while
+`native_compatibility.log` holds bounded child diagnostics when available.
+
+This detects the tested conflict; it does not repair incompatible binaries or
+guarantee safety for arbitrary third-party imports and workloads. A timeout means
+“unverified,” not “known broken.” There is no import-order requirement for users
+and no unverified version pin to apply. To keep working after a refusal, use the
+standard models in a fresh process where Torch has not been imported. Running
+the blocked Torch models requires a compatible environment.

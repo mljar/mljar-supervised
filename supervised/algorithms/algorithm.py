@@ -1,5 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
+from functools import wraps
 
 import numpy as np
 
@@ -18,6 +19,28 @@ class BaseAlgorithm(BaseEstimator, ABC):
 
     algorithm_name = "Unknown"
     algorithm_short_name = "Unknown"
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Also protect direct learner calls, inherited predictors and reloads.
+        # On unaffected platforms this is a cheap no-op, with no Torch import.
+        def guarded(method):
+            @wraps(method)
+            def call(self, *args, **kwargs):
+                from supervised.utils.native_compatibility import (
+                    require_algorithm,
+                )
+                require_algorithm(
+                    self.algorithm_short_name,
+                    f"{self.algorithm_short_name}.{method.__name__}",
+                )
+                return method(self, *args, **kwargs)
+            return call
+
+        for name in ("fit", "predict", "predict_proba", "load", "save", "interpret"):
+            method = cls.__dict__.get(name)
+            if method is not None:
+                setattr(cls, name, guarded(method))
 
     def __init__(self, params):
         self.params = params
@@ -113,6 +136,9 @@ class BaseAlgorithm(BaseEstimator, ABC):
         ml_task=None,
         explain_level=2,
     ):
+        from supervised.utils.native_compatibility import require_algorithm
+
+        require_algorithm(self.algorithm_short_name, "model interpretation")
         # do not produce feature importance for Baseline
         if self.algorithm_short_name == "Baseline":
             return

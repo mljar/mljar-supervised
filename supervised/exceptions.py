@@ -14,6 +14,14 @@ class AutoMLException(Exception):
         super(AutoMLException, self).__init__(message)
 
 
+class NativeCompatibilityError(AutoMLException):
+    """Native execution was declined before risking the caller's process."""
+
+    def __init__(self, message, result):
+        super().__init__(message)
+        self.result = result
+
+
 class ResourceAdmissionError(AutoMLException):
     """A candidate exceeded an estimated budget before allocating its model.
 

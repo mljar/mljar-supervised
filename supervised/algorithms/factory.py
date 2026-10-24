@@ -21,6 +21,10 @@ class AlgorithmFactory(object):
 
     @classmethod
     def load(cls, json_desc, learner_path, lazy_load):
+        from supervised.utils.native_compatibility import require_algorithm
+
+        kind = json_desc.get("params", {}).get("model_type")
+        require_algorithm(kind, f"loading saved {kind} model")
         learner = AlgorithmFactory.get_algorithm(json_desc.get("params"))
         learner.set_params(json_desc, learner_path)
         if not lazy_load:

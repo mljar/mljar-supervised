@@ -1,8 +1,9 @@
-## Unreleased — SDM installation
+## Unreleased — SDM installation and macOS runtime checks
 
 - Install `structured-data-models==0.2.1` from PyPI through `[tfm]`, `[kumo]`, `[tabiclv2]`, or `[all]`. No separate Git backend installation is needed for the current source checkout.
 - Keep the exact backend-version check and existing pinned model checkpoints. Weights still download on first use.
 - The published `1.4.0a1` retains its original Git backend requirement; use a fresh environment when testing the updated source checkout.
+- Add a macOS compatibility probe before mixing PyTorch with the standard native ML libraries. All probe cases share a three-second deadline. Automatic selection can skip optional Torch models; explicit requests and incompatible saved models raise `NativeCompatibilityError` before execution. Decisions appear in run reports. Training stays in the main process; Linux and Windows retain their existing paths.
 
 ## mljar-supervised 1.4.0a1
 

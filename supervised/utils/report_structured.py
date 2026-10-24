@@ -362,6 +362,7 @@ def build_structured_report(automl):
         "mljar_supervised_version": _get_package_version(),
         "results_path": automl._results_path,
         "run_summary": {
+            "native_compatibility": getattr(automl, "_native_compatibility", None),
             "mode": automl._mode,
             "ml_task": automl._ml_task,
             "eval_metric": automl._eval_metric,
@@ -605,6 +606,7 @@ def build_compact_view(payload, model_name=None):
         "leaderboard": payload.get("leaderboard", []),
         "global_feature_importance": payload.get("global_feature_importance"),
         "fairness_summary": payload.get("fairness_summary"),
+        "native_compatibility": payload.get("run_summary", {}).get("native_compatibility"),
     }
     if model_name is not None:
         selected = _find_model(payload.get("models", []), model_name)
@@ -628,6 +630,14 @@ def to_markdown(payload, model_name=None):
         lines.append(f"# MLJAR AutoML report for {selected_model.get('name')}")
     lines.append("")
     _append_automation_disclosure(lines)
+
+    compatibility = payload.get("native_compatibility") or {}
+    if compatibility.get("skipped_algorithms"):
+        skipped = ", ".join(compatibility["skipped_algorithms"])
+        lines.extend([
+            f"Native runtime compatibility: skipped **{skipped}** ({compatibility['reason']}).",
+            "",
+        ])
 
     if selected_model is None:
         lines.append("## Leaderboard")

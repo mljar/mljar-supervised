@@ -150,6 +150,9 @@ class ModelFramework:
         }
 
     def train(self, results_path, model_subpath):
+        from supervised.utils.native_compatibility import require_algorithm
+
+        require_algorithm(self.learner_params.get("model_type"), "model training")
         logger.debug(f"ModelFramework.train {self.learner_params.get('model_type')}")
 
         start_time = time.time()
@@ -490,6 +493,9 @@ class ModelFramework:
 
     @prediction_scope
     def predict(self, X):
+        from supervised.utils.native_compatibility import require_algorithm
+
+        require_algorithm(self.get_type(), "model prediction")
         logger.debug("ModelFramework.predict")
 
         if self.get_type() not in ["Kumo", "TabICLv2"]:
@@ -793,6 +799,10 @@ class ModelFramework:
 
         with open(os.path.join(model_path, "framework.json")) as file:
             json_desc = json.load(file)
+
+        from supervised.utils.native_compatibility import require_algorithm
+
+        require_algorithm(json_desc["params"]["learner"]["model_type"], "loading a saved model")
 
         joblib_version_computer = joblib.__version__
         joblib_version_framework = json_desc.get("joblib_version")

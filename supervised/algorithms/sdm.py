@@ -107,6 +107,10 @@ def check_dependencies():
 
 
 def automatic_available():
+    # These integrations use CUDA for automatic selection and do not use MPS.
+    # Never import Torch into a Mac host just to discover that CUDA is absent.
+    if sys.platform == "darwin":
+        return False
     if not dependencies_available():
         return False
     try:

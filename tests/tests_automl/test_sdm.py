@@ -82,7 +82,7 @@ def test_automatic_selection(monkeypatch, available):
     monkeypatch.setattr(
         "supervised.algorithms.sdm.automatic_available", lambda: available
     )
-    algorithms = AutoML(mode="Compete")._get_algorithms()
+    algorithms = AutoML(mode="Compete")._candidate_algorithms()
     assert ("Kumo" in algorithms) == available
     assert ("TabICLv2" in algorithms) == available
     assert "Kumo" not in AutoML(mode="Explain")._get_algorithms()
@@ -237,7 +237,7 @@ def test_automatic_weights_skip_both(tmp_path, monkeypatch):
         n_jobs=2,
     )
     monkeypatch.setattr(
-        m, "_get_algorithms", lambda: ["Decision Tree", "Kumo", "TabICLv2"]
+        m, "_candidate_algorithms", lambda: ["Decision Tree", "Kumo", "TabICLv2"]
     )
     with pytest.warns(UserWarning, match="skipped because sample weights"):
         m.fit(X, y, sample_weight=np.ones(len(y)))

@@ -64,6 +64,9 @@ from supervised.utils.report_structured import (
     to_markdown,
 )
 from supervised.utils.utils import Store, dump_data, load_data
+from supervised.utils import native_compatibility
+from supervised.utils.artifact_paths import resolve_artifact_path
+from supervised.exceptions import NativeCompatibilityError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -78,6 +81,7 @@ class BaseAutoML(BaseEstimator, ABC):
     def __init__(self):
         logger.debug("BaseAutoML.__init__")
         self._training_store = None
+        self._native_compatibility = None
         self._mode = None
         self._ml_task = None
         self._results_path = None
@@ -150,6 +154,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._results_path = self.results_path
 
     def load(self, path):
+        native_compatibility.require_compatible(context="loading an AutoML run")
         logger.info("Loading AutoML models ...")
         try:
             with open(os.path.join(path, "params.json")) as file:
@@ -168,6 +173,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 "model_time_limit", self._model_time_limit
             )
             self._algorithms = params.get("algorithms", self._algorithms)
+            self._requested_algorithms = params.get("requested_algorithms", self._algorithms)
+            # Historical evidence is for reporting only, never an admission cache.
+            self._native_compatibility = params.get("native_compatibility")
+            self._native_diagnostic = ""
             self.custom_params = params.get("custom_params", getattr(self, "custom_params", None))
             if self.custom_params is None and params.get("realmlp_params") is not None:
                 self.custom_params = {"realmlp": params["realmlp_params"]}
@@ -217,6 +226,16 @@ class BaseAutoML(BaseEstimator, ABC):
 
             # Loading/resuming replaces the runtime models, including when fit
             # is retried on the same instance after an interruption.
+            # Check the complete saved dependency graph before restoring objects.
+            for model_subpath in load_models:
+                framework_path = os.path.join(resolve_artifact_path(path, model_subpath), "framework.json")
+                if os.path.exists(framework_path):
+                    with open(framework_path) as file:
+                        description = json.load(file)
+                    native_compatibility.require_algorithm(
+                        description["params"]["learner"]["model_type"],
+                        f"loading saved model {model_subpath}",
+                    )
             self._models = []
             self._stacked_models = None
             models_map = {}
@@ -254,6 +273,8 @@ class BaseAutoML(BaseEstimator, ABC):
             if "n_classes" in self._data_info:
                 self.n_classes = self._data_info["n_classes"]
 
+        except NativeCompatibilityError:
+            raise
         except Exception as e:
             raise AutoMLException(f"Cannot load AutoML directory. {str(e)}")
 
@@ -1172,6 +1193,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
     def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
+        native_compatibility.require_compatible(context="AutoML training")
         if self._training_store is not None:
             raise AutoMLException("This AutoML instance already has an active fit")
         store = Store()
@@ -1206,7 +1228,6 @@ class BaseAutoML(BaseEstimator, ABC):
         self._results_path = self._get_results_path()
         self._total_time_limit = self._get_total_time_limit()
         self._model_time_limit = self._get_model_time_limit()
-        self._algorithms = self._get_algorithms()
         from supervised.algorithms.realmlp import check_dependencies
         from supervised.tuner.custom_parameters import validate_custom_params
 
@@ -1216,20 +1237,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 "custom_params currently supports random search and hill climbing, "
                 "not Optuna mode."
             )
+        self._algorithms = self._get_algorithms(sample_weight=sample_weight)
         for algorithm in ["RealMLP", "TabM", "Kumo", "TabICLv2"]:
             if algorithm not in self._algorithms:
                 continue
-            if sample_weight is not None:
-                if self.algorithms == "auto":
-                    warnings.warn(
-                        f"{algorithm} skipped because sample weights are not supported."
-                    )
-                    self._algorithms.remove(algorithm)
-                    continue
-                raise ValueError(
-                    f"{algorithm} does not support sample weights. "
-                    "Remove it from algorithms for weighted training."
-                )
             if algorithm in ["Kumo", "TabICLv2"]:
                 from supervised.algorithms.sdm import check_dependencies as check_sdm
 
@@ -1520,6 +1531,8 @@ class BaseAutoML(BaseEstimator, ABC):
                         self.verbose_print(
                             params.get("name") + " not trained. " + str(e)
                         )
+                    except NativeCompatibilityError:
+                        raise
                     except Exception as e:
                         outcome = "error"
                         import traceback
@@ -1680,6 +1693,8 @@ class BaseAutoML(BaseEstimator, ABC):
                 "total_time_limit": self._total_time_limit,
                 "model_time_limit": self._model_time_limit,
                 "algorithms": self._algorithms,
+                "requested_algorithms": getattr(self, "_requested_algorithms", self.algorithms),
+                "native_compatibility": self._native_compatibility,
                 "custom_params": self.custom_params,
                 "train_ensemble": self._train_ensemble,
                 "stack_models": self._stack_models,
@@ -1715,6 +1730,10 @@ class BaseAutoML(BaseEstimator, ABC):
                 params["stacked"] = [m.get_name() for m in self._stacked_models]
             fout.write(json.dumps(params, indent=4, cls=MLJSONEncoder))
 
+        if getattr(self, "_native_diagnostic", ""):
+            with open(os.path.join(self._results_path, "native_compatibility.log"), "w") as fout:
+                fout.write(self._native_diagnostic[:native_compatibility.MAX_OUTPUT_BYTES])
+
         blueprint_models = []
         if self._explain_level == 2:
             from supervised.utils.blueprint import save_blueprints
@@ -1744,6 +1763,13 @@ class BaseAutoML(BaseEstimator, ABC):
             with open(os.path.join(self._results_path, "README.md"), "w") as fout:
                 fout.write(f"# AutoML Leaderboard\n\n")
                 fout.write(f"> {AUTOMATION_DISCLOSURE_TEXT}\n\n")
+                if self._native_compatibility and self._native_compatibility.get("skipped_algorithms"):
+                    skipped = ", ".join(self._native_compatibility["skipped_algorithms"])
+                    reason = self._native_compatibility["reason"]
+                    fout.write(
+                        f"Native runtime compatibility: skipped **{skipped}** "
+                        f"({reason}). Training used the remaining algorithms.\n\n"
+                    )
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 policy = self._algorithm_early_stopping
                 if self._budget_skip_records():
@@ -1859,6 +1885,7 @@ class BaseAutoML(BaseEstimator, ABC):
         )
 
     def _base_predict(self, X, model=None):
+        native_compatibility.require_compatible(context="AutoML prediction")
         if model is None:
             if self._best_model is None:
                 self.load(self.results_path)
@@ -2049,7 +2076,52 @@ class BaseAutoML(BaseEstimator, ABC):
         self._validate_model_time_limit()
         return deepcopy(self.model_time_limit)
 
-    def _get_algorithms(self):
+    def _get_algorithms(self, sample_weight=None):
+        self._requested_algorithms = deepcopy(self.algorithms)
+        algorithms = self._candidate_algorithms()
+        if sample_weight is not None:
+            for algorithm in list(algorithms):
+                if algorithm not in native_compatibility.TORCH_ALGORITHMS:
+                    continue
+                if self.algorithms != "auto":
+                    raise ValueError(
+                        f"{algorithm} does not support sample weights. "
+                        "Remove it from algorithms for weighted training."
+                    )
+                warnings.warn(f"{algorithm} skipped because sample weights are not supported.")
+                algorithms.remove(algorithm)
+        native_compatibility.validate_dependencies(algorithms)
+        result = native_compatibility.check_native_compatibility(
+            any(name in native_compatibility.TORCH_ALGORITHMS for name in algorithms)
+        )
+        if result["status"] == "not_needed":
+            self._native_compatibility = None
+            self._native_diagnostic = ""
+            return algorithms
+        effective = list(algorithms)
+        skipped = []
+        if not native_compatibility.allowed(result):
+            if self.algorithms != "auto" or native_compatibility.torch_loaded():
+                native_compatibility.raise_incompatible(result, ", ".join(algorithms))
+            skipped = [name for name in algorithms if name in native_compatibility.TORCH_ALGORITHMS]
+            effective = [name for name in algorithms if name not in skipped]
+            if not effective:
+                native_compatibility.raise_incompatible(result, "any eligible algorithm")
+        evidence = {key: value for key, value in result.items() if key != "diagnostic"}
+        evidence.update(requested_algorithms=deepcopy(self.algorithms),
+                        effective_algorithms=effective, skipped_algorithms=skipped)
+        changed = self._native_compatibility != evidence
+        self._native_compatibility = evidence
+        self._native_diagnostic = result.get("diagnostic", "")
+        if skipped and changed and self.verbose:
+            self.verbose_print(
+                f"{', '.join(skipped)} skipped: native runtime compatibility "
+                f"could not be verified ({result['reason']}). "
+                "Training continues with the available standard models."
+            )
+        return effective
+
+    def _candidate_algorithms(self):
         """Gets the current algorithms. If "auto" it is determined"""
         self._validate_algorithms()
         if self.algorithms == "auto":

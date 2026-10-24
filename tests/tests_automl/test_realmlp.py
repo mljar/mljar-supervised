@@ -105,7 +105,7 @@ def test_automatic_realmlp_selection(monkeypatch, available, mode):
     monkeypatch.setattr(
         "supervised.algorithms.realmlp.dependencies_available", lambda: available
     )
-    assert ("RealMLP" in AutoML(mode=mode)._get_algorithms()) == (
+    assert ("RealMLP" in AutoML(mode=mode)._candidate_algorithms()) == (
         mode == "Compete" and available
     )
 
@@ -124,7 +124,7 @@ def test_automatic_weighted_training_skips_realmlp(tmp_path, monkeypatch):
         validation_strategy={"validation_type": "split", "train_ratio": 0.8,
                              "shuffle": True, "stratify": True},
     )
-    monkeypatch.setattr(model, "_get_algorithms", lambda: ["Decision Tree", "RealMLP"])
+    monkeypatch.setattr(model, "_candidate_algorithms", lambda: ["Decision Tree", "RealMLP"])
     with pytest.warns(UserWarning, match="RealMLP skipped"):
         model.fit(X, y, sample_weight=np.ones(len(y)))
     assert model._algorithms == ["Decision Tree"]

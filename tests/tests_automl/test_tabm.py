@@ -100,7 +100,7 @@ def test_automatic_tabm_selection(monkeypatch, available, mode):
     monkeypatch.setattr(
         "supervised.algorithms.tabm.dependencies_available", lambda: available
     )
-    assert ("TabM" in AutoML(mode=mode)._get_algorithms()) == (
+    assert ("TabM" in AutoML(mode=mode)._candidate_algorithms()) == (
         mode == "Compete" and available
     )
 
@@ -131,7 +131,7 @@ def test_automatic_weighted_training_skips_tabm(tmp_path, monkeypatch):
             "stratify": True,
         },
     )
-    monkeypatch.setattr(model, "_get_algorithms", lambda: ["Decision Tree", "TabM"])
+    monkeypatch.setattr(model, "_candidate_algorithms", lambda: ["Decision Tree", "TabM"])
     with pytest.warns(UserWarning, match="TabM skipped"):
         model.fit(X, y, sample_weight=np.ones(len(y)))
     assert model._algorithms == ["Decision Tree"]
