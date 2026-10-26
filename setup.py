@@ -28,7 +28,8 @@ setup(
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=open("requirements.txt").readlines(),
     extras_require={
-        "feature-discovery": ["features-goldmine>=1.1,<1.2; python_version >= '3.10'"],
+        # Compatibility alias: feature discovery is included in every install.
+        "feature-discovery": [],
         "kumo": TFM_REQUIREMENTS,
         "tabiclv2": TFM_REQUIREMENTS,
         "tfm": TFM_REQUIREMENTS,
@@ -36,15 +37,12 @@ setup(
         "tabm": ["pytabkit>=1.7.2,<1.8", "torch>=2.7,<3", "psutil>=5.0"],
         "all": TFM_REQUIREMENTS + [
             "pytabkit>=1.7.2,<1.8",
-            "features-goldmine>=1.1,<1.2; python_version >= '3.10'",
         ],
     },
     include_package_data=True,
-    python_requires='>=3.9',
+    python_requires='>=3.11',
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
     ],

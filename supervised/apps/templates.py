@@ -354,7 +354,7 @@ def config_toml(title):
 
 def requirements_txt():
     return (
-        "# Requires Python 3.10+ because Mercury v3 uses Python 3.10 syntax.\n"
+        "# Requires Python 3.11+ for MLJAR AutoML.\n"
         "mercury\n"
         "mljar-supervised\n"
         "matplotlib\n"
@@ -364,7 +364,7 @@ def requirements_txt():
 
 
 def runtime_txt():
-    return "python-3.10\n"
+    return "python-3.11\n"
 
 
 def readme_md():
@@ -378,14 +378,11 @@ def readme_md():
 
         ## Python version
 
-        Mercury v3 requires **Python 3.10 or newer**.
-
-        If you try to run `mercury` with Python 3.9, it will fail with syntax errors
-        from Mercury itself, for example around `str | None`.
+        MLJAR AutoML requires **Python 3.11 or newer**.
 
         ## Local run
 
-        1. Create a Python 3.10+ virtual environment.
+        1. Create a Python 3.11+ virtual environment.
         2. Install dependencies:
 
         ```bash

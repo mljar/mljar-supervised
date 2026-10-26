@@ -1,5 +1,4 @@
-pytest>=8.4.2,<9; python_version < "3.10"
-pytest>=9.0.3; python_version >= "3.10"
+pytest>=9.0.3
 black
 pytest-cov
 psutil>=5.0

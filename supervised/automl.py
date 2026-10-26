@@ -222,10 +222,10 @@ class AutoML(BaseAutoML):
                 If `int` value is set, the number of Golden Features is set to this value.
 
             feature_discovery (boolean or "auto"): Generate up to three reusable feature
-                sets with the optional features-goldmine package and try them on the
+                sets with the included features-goldmine package and try them on the
                 best current models. Runs after golden_features and shares its time
-                allocation. "auto" enables this in Compete when Python 3.10+, the
-                dependency, and shuffled split/K-fold validation are available.
+                allocation. "auto" enables this in Compete when the
+                dependency and shuffled split/K-fold validation are available.
                 Explicit True reports unsupported configurations as errors.
 
             features_selection (boolean): Whether to do features_selection

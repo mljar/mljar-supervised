@@ -69,7 +69,9 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertEqual(len(manifest["notebooks"]), 2)
         self.assertEqual(manifest["model_task"], "multiclass_classification")
         self.assertEqual(len(manifest["feature_schema"]), iris.data.shape[1])
-        self.assertEqual(manifest["python_requires"], ">=3.10")
+        self.assertEqual(manifest["python_requires"], ">=3.11")
+        with open(os.path.join(self.app_dir, "runtime.txt")) as fin:
+            self.assertEqual(fin.read().strip(), "python-3.11")
         self.assertEqual(manifest["automl_bundle"]["archive_name"], "automl.zip")
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", stdout.getvalue())
         self.assertIn(

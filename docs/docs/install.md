@@ -1,5 +1,20 @@
 # Installation
 
+The **current source checkout requires Python 3.11+** for every installation
+option. It includes feature discovery (`features-goldmine>=1.1,<1.2`) in the base
+package. No extra tag is needed. These changes are not yet published in `1.4.0a1`.
+From the repository root, install them with:
+
+```bash
+python -m pip install .
+```
+
+The `[feature-discovery]` extra remains a compatibility alias and adds nothing.
+`[realmlp]`, `[tabm]`, `[tfm]`, and `[all]` still add optional model backends.
+A base install does not require PyTorch, SDM, or the Mercury app runtime.
+Feature discovery runs automatically in eligible Compete workflows; disable it
+with `feature_discovery=False`. Installation does not enable it in every mode.
+
 For **Kumo and TabICLv2**, use Python 3.11+, `[tfm]` (or `[kumo]`, `[tabiclv2]`,
 `[all]`). The current source checkout installs `structured-data-models==0.2.1`
 from PyPI through these extras. The published alpha still needs its older Git backend. See the
@@ -142,7 +157,7 @@ No separate SDM install or Git dependency is needed for this checkout.
 | Extra (current source checkout) | Dependencies it adds |
 |---|---|
 | `[kumo]`, `[tabiclv2]`, `[tfm]` | SDM 0.2.1, PyTorch, Hugging Face Hub, psutil |
-| `[all]` | Those dependencies plus pytabkit for RealMLP/TabM and feature discovery |
+| `[all]` | Those dependencies plus pytabkit for RealMLP/TabM; feature discovery is already in base |
 
 The three TFM extras share dependencies; installing one does not restrict which
 of the two algorithms can be selected. SDM installs its own dependencies,

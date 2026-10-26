@@ -69,7 +69,7 @@ def collect_app_metadata(automl, title=None, selected_models=None):
             "batch_prediction": True,
             "predict_proba": automl._ml_task != REGRESSION,
         },
-        "python_requires": ">=3.10",
+        "python_requires": ">=3.11",
     }
 
 

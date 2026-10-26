@@ -20,10 +20,11 @@ from supervised.validation.validation_step import ValidationStep
 
 def check_dependencies():
     message = (
-        "Feature discovery requires Python 3.10+ and features-goldmine>=1.1,<1.2. "
-        'Install with: pip install "mljar-supervised[feature-discovery]"'
+        "Feature discovery requires Python 3.11+ and features-goldmine>=1.1,<1.2. "
+        "It is included in the standard MLJAR installation. "
+        'Repair this environment with: python -m pip install "features-goldmine>=1.1,<1.2"'
     )
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 11):
         raise AutoMLException(message)
     try:
         version = Version(importlib.metadata.version("features-goldmine"))

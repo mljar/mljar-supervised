@@ -1,4 +1,7 @@
-## Unreleased — SDM installation and macOS runtime checks
+## Unreleased — installation and macOS runtime checks
+
+- Require Python 3.11+ for the base package, all extras, and newly generated prediction apps. Test Python 3.11 and 3.12; older releases remain available for older interpreters.
+- Include `features-goldmine>=1.1,<1.2` in the base installation. Keep `[feature-discovery]` as an empty compatibility alias and preserve existing mode/validation rules and `feature_discovery=False`. Neural/TFM models and the app runtime remain optional.
 
 - Install `structured-data-models==0.2.1` from PyPI through `[tfm]`, `[kumo]`, `[tabiclv2]`, or `[all]`. No separate Git backend installation is needed for the current source checkout.
 - Keep the exact backend-version check and existing pinned model checkpoints. Weights still download on first use.

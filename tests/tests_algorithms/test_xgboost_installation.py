@@ -13,7 +13,7 @@ def xgboost_requirements():
             if (r := Requirement(value)).name in ("xgboost", "xgboost-cpu")]
 
 
-@pytest.mark.parametrize("python_version", ["3.9", "3.10", "3.11", "3.12"])
+@pytest.mark.parametrize("python_version", ["3.11", "3.12"])
 @pytest.mark.parametrize("system,machine,expected", [
     ("linux", "x86_64", "xgboost-cpu"),
     ("linux", "aarch64", "xgboost-cpu"),

@@ -41,13 +41,16 @@ Start quickly, iterate faster, and manage experiments in one place.
 including the SDM 0.2.1 PyPI backend in the current source checkout. Python 3.11+ required.
 The published alpha uses an older backend; see [installation and usage](docs/docs/features/sdm.md).
 
+The current source checkout requires **Python 3.11+** and includes feature discovery
+in the standard installation. Torch-based models remain optional. These packaging
+changes are not included in the published `1.4.0a1` wheel.
+
 ## Table of Contents
 
 Install standard MLJAR with `python -m pip install mljar-supervised`.
 For RealMLP, choose [CPU](docs/docs/install.md#realmlp-on-cpu) or
 [NVIDIA GPU](docs/docs/install.md#realmlp-on-nvidia-gpu) setup, then install the
-`[realmlp]` or `[all]` extra. **RealMLP currently requires installation from source**
-and is available only in `mode="Compete"`.
+`[realmlp]` or `[all]` extra. RealMLP is available only in `mode="Compete"`.
 See the [installation guide](docs/docs/install.md) for copyable commands and
 checks, and the [RealMLP guide](docs/docs/features/realmlp.md) for usage.
 [TabM mini](docs/docs/features/tabm.md) is also available in Compete mode through
@@ -571,7 +574,7 @@ For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see
 release with optional RealMLP, TabM mini, Kumo and TabICLv2 support.
 
 Compatibility:
-- Python `>=3.9`
+- Python `>=3.11` for the current source checkout
 - NumPy `>=2.0,<3`
 
 From PyPi repository:
@@ -589,23 +592,28 @@ python -m pip install "mljar-supervised==1.4.0a1"
 See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)
 for changes and optional-model requirements.
 
-To install this package with conda run:
+To install the current source checkout in a conda environment:
 ```
-conda install -c conda-forge mljar-supervised
+conda create -n mljar python=3.12 pip
+conda activate mljar
+python -m pip install .
 ```
+
+Run the last command from the repository root. The conda-forge package is
+maintained separately and may contain an earlier release.
 
 From source code:
 
 ```
 git clone https://github.com/mljar/mljar-supervised.git
 cd mljar-supervised
-python setup.py install
+python -m pip install .
 ```
 
 Installation for development
 ```
 git clone https://github.com/mljar/mljar-supervised.git
-virtualenv venv --python=python3.9
+python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements_dev.txt
@@ -613,7 +621,7 @@ pip install -r requirements_dev.txt
 
 Running in the docker:
 ```
-FROM python:3.9-slim-buster
+FROM python:3.12-slim-bookworm
 RUN apt-get update && apt-get -y update
 RUN apt-get install -y build-essential python3-pip python3-dev
 RUN pip3 -q install pip --upgrade

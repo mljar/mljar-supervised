@@ -56,7 +56,7 @@ def test_discovery_training_reports_and_reload(
             "stratify": task != "regression",
         },
         golden_features=True,
-        feature_discovery=True,
+        feature_discovery="auto" if default_budget else True,
         kmeans_features=False,
         features_selection=False,
         start_random_models=1,
