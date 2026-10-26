@@ -16,15 +16,14 @@ social:
 ## Generate app files
 
 The base package can export an app without Mercury installed. To run apps from
-the current source checkout, use Python 3.11+ and install the optional runtime:
+beta 1, use Python 3.11+ and install the optional runtime:
 
 ```bash
-python -m pip install ".[apps]"
+python -m pip install "mljar-supervised[apps]==1.4.0b1"
 ```
 
 This adds `mercury>=3.2.12,<4`; Mercury 3.2.12 is the tested version. `[all]`
-continues to mean all optional model backends. Use `.[all,apps]` when you need both.
-These extras changes are not in the published `1.4.0a1` wheel.
+continues to mean all optional model backends. Use `mljar-supervised[all,apps]==1.4.0b1` when you need both.
 
 Use `app()` to generate the app workspace:
 

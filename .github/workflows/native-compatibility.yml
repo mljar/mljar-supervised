@@ -1,6 +1,15 @@
 name: Native compatibility guard
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'supervised/**'
+      - 'tests/tests_utils/test_native_compatibility.py'
+      - 'tests/checks/check_native_compatibility.py'
+      - 'setup.py'
+      - 'requirements.txt'
+      - '.github/workflows/native-compatibility.yml'
   pull_request:
     paths:
       - 'supervised/**'

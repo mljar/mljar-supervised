@@ -6,6 +6,19 @@ on:
         description: Test small, medium and large Kumo checkpoints
         type: boolean
         default: false
+  push:
+    branches: [master]
+    paths:
+      - 'setup.py'
+      - 'requirements.txt'
+      - 'supervised/algorithms/*sdm*'
+      - 'supervised/algorithms/realmlp_resources.py'
+      - 'supervised/prediction.py'
+      - 'supervised/model_framework.py'
+      - 'tests/**/test_sdm*.py'
+      - 'tests/**/test_gpu_admission_cleanup.py'
+      - 'tests/**/test_prediction_lifecycle.py'
+      - '.github/workflows/sdm.yml'
   pull_request:
     paths:
       - 'setup.py'

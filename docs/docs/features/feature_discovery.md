@@ -4,16 +4,15 @@ Feature discovery uses the included `features-goldmine` package to generate up t
 three feature sets and evaluate them with the best current models. It runs after
 golden features, before KMeans features and subsequent tuning.
 
-In the current source checkout, feature discovery is included in the base package
-and requires Python 3.11 or newer. From the repository root:
+Starting with beta 1, feature discovery is included in the base package
+and requires Python 3.11 or newer:
 
 ```bash
-python -m pip install .
+python -m pip install "mljar-supervised==1.4.0b1"
 ```
 
 No extra tag is needed. `[feature-discovery]` is retained as a compatibility alias.
-The published `1.4.0a1` still uses the older optional-extra installation; see the
-[installation guide](../install.md).
+See the [installation guide](../install.md) for supported environments.
 
 ```python
 from supervised import AutoML

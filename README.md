@@ -38,12 +38,11 @@ Start quickly, iterate faster, and manage experiments in one place.
 ---
 
 **Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
-including the SDM 0.2.1 PyPI backend in the current source checkout. Python 3.11+ required.
-The published alpha uses an older backend; see [installation and usage](docs/docs/features/sdm.md).
+including the SDM 0.2.1 PyPI backend in beta 1. Python 3.11+ required.
+See [installation and usage](docs/docs/features/sdm.md).
 
-The current source checkout requires **Python 3.11+** and includes feature discovery
-in the standard installation. Torch-based models remain optional. These packaging
-changes are not included in the published `1.4.0a1` wheel.
+Version **1.4.0b1** requires **Python 3.11+** and includes feature discovery
+in the standard installation. Torch-based models and the app runtime remain optional.
 
 ## Table of Contents
 
@@ -100,9 +99,9 @@ Of course, you can further customize the details of each `mode` to meet the requ
 
 MLJAR AutoML does not stop after training a model. It can automatically generate a web app for your trained model with [Mercury](https://github.com/mljar/mercury). This is useful when you want to share predictions with domain experts, business users, researchers, or other people who do not want to work directly with Python code. 
 
-The base installation can generate app files. In the current source checkout,
-install `.[apps]` to run them, or `.[all,apps]` for the app runtime and all optional
-models. Exported requirements include the backends needed by the selected model.
+The base installation can generate app files. With beta 1, install
+`mljar-supervised[apps]==1.4.0b1` to run them, or
+`mljar-supervised[all,apps]==1.4.0b1` for the app runtime and all optional models. Exported requirements include the backends needed by the selected model.
 See the [app guide](docs/docs/features/apps.md) for setup.
 
 After training AutoML, generate the app files with:
@@ -575,11 +574,11 @@ When `model_name` is provided, the markdown includes detailed metrics, fairness 
 # Installation  
 
 For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
-[installation guide](docs/docs/install.md). Version `1.4.0a1` is an alpha
+[installation guide](docs/docs/install.md). Version `1.4.0b1` is a beta
 release with optional RealMLP, TabM mini, Kumo and TabICLv2 support.
 
 Compatibility:
-- Python `>=3.11` for the current source checkout
+- Python `>=3.11` for 1.4.0b1
 - NumPy `>=2.0,<3`
 
 From PyPi repository:
@@ -588,10 +587,10 @@ From PyPi repository:
 pip install mljar-supervised
 ```
 
-To test the alpha release, select its exact version:
+To test the beta release, select its exact version:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0a1"
+python -m pip install "mljar-supervised==1.4.0b1"
 ```
 
 See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)

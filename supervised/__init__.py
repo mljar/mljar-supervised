@@ -1,4 +1,4 @@
-__version__ = "1.4.0a1"
+__version__ = "1.4.0b1"
 
 import numpy as np
 

@@ -1,14 +1,34 @@
-## Unreleased — installation and macOS runtime checks
+## mljar-supervised 1.4.0b1
+
+First beta release for testing the 1.4.0 installation and prediction workflows.
+Requires Python **3.11+**; Python 3.11 and 3.12 are tested. Install the exact
+version explicitly: beta versions sort before the previously published RCs.
+
+```bash
+python -m pip install "mljar-supervised==1.4.0b1"
+```
+
+Feature discovery is included in this base installation. Choose a PyTorch build
+before adding optional neural/TFM extras; use `[apps]` to run exported apps.
+See the [installation guide](docs/docs/install.md) for CPU/CUDA commands.
 
 - Add `[apps]` with `mercury>=3.2.12,<4`, keeping `[all]` limited to optional model backends. Export requirements for the selected prediction graph, pin MLJAR/joblib/scikit-learn versions, and bundle shared discovery transformations plus TFM weights/licenses for portable predictions.
 
 - Require Python 3.11+ for the base package, all extras, and newly generated prediction apps. Test Python 3.11 and 3.12; older releases remain available for older interpreters.
 - Include `features-goldmine>=1.1,<1.2` in the base installation. Keep `[feature-discovery]` as an empty compatibility alias and preserve existing mode/validation rules and `feature_discovery=False`. Neural/TFM models and the app runtime remain optional.
 
-- Install `structured-data-models==0.2.1` from PyPI through `[tfm]`, `[kumo]`, `[tabiclv2]`, or `[all]`. No separate Git backend installation is needed for the current source checkout.
+- Install `structured-data-models==0.2.1` from PyPI through `[tfm]`, `[kumo]`, `[tabiclv2]`, or `[all]`. No separate Git backend installation is needed for beta 1.
 - Keep the exact backend-version check and existing pinned model checkpoints. Weights still download on first use.
-- The published `1.4.0a1` retains its original Git backend requirement; use a fresh environment when testing the updated source checkout.
+- The published `1.4.0a1` retains its original Git backend requirement; use a fresh environment when upgrading to beta 1.
 - Add a macOS compatibility probe before mixing PyTorch with the standard native ML libraries. All probe cases share a three-second deadline. Automatic selection can skip optional Torch models; explicit requests and incompatible saved models raise `NativeCompatibilityError` before execution. Decisions appear in run reports. Training stays in the main process; Linux and Windows retain their existing paths.
+
+- Correct saved-model test metadata, quoted app-path expectations on Windows, and simulated GPU allocation diagnostics. Preserve test reports and separate app CI stages for easier diagnosis.
+
+Known limits: optional Torch models can be refused on incompatible macOS native
+runtimes; the guard detects unsafe execution rather than repairing the installed
+libraries. Apple MPS is not supported by these integrations. Local CUDA checks
+cover Linux, an RTX 3070, PyTorch 2.11.0+cu128, and SDM 0.2.1, including all three
+Kumo sizes. Python versions newer than 3.12 are not yet validated.
 
 ## mljar-supervised 1.4.0a1
 

@@ -9,11 +9,10 @@ The relational model is not included.
 ## Installation
 
 Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
-[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then from the
-root of the current MLJAR source checkout:
+[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install beta 1:
 
 ```bash
-python -m pip install ".[tfm]"
+python -m pip install "mljar-supervised[tfm]==1.4.0b1"
 ```
 
 This installs `structured-data-models==0.2.1` from PyPI automatically.
@@ -21,9 +20,6 @@ This installs `structured-data-models==0.2.1` from PyPI automatically.
 The integration checks this exact backend version. Model weights remain pinned
 and download from Hugging Face on first use.
 
-This installation change is not yet published. The published `1.4.0a1` still
-requires its older Git backend; use the version-specific commands in the
-[installation guide](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
 Standard MLJAR installation does not install these optional models.
 
 ## Usage
