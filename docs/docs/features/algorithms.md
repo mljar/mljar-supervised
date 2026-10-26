@@ -553,9 +553,8 @@ tabiclv2_default_params = {
 ```
 
 Both algorithms require Python 3.11+ and an optional extra (`[tfm]`, `[kumo]`,
-`[tabiclv2]`, or `[all]`). These extras include the SDM 0.2.1 PyPI backend in the
-current source checkout. The published alpha requires its older Git backend;
-see the installation guide. Both algorithms reject sample weights and sparse input. Permutation importance is supported; SHAP is
+`[tabiclv2]`, or `[all]`). In `1.4.0b1`, these extras install the SDM 0.2.1 backend from PyPI.
+Select the exact beta version when installing; see the installation guide. Both algorithms reject sample weights and sparse input. Permutation importance is supported; SHAP is
 not enabled. See [installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu)
 and the [full model guide](sdm.md) for CPU/GPU behavior, input limits, downloads,
 and portable saves.

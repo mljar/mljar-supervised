@@ -6,6 +6,13 @@ social:
 
 # Fairness aware AutoML on binary classification task
 
+!!! note "Existing report illustrations"
+    The report images on this page are retained from earlier documentation;
+    they are not measurements from `1.4.0b1`. Their original execution
+    environment is not recorded here. Re-run the example to measure predictive
+    performance and group metrics with your data and installed version.
+
+
 Please run the [example script](https://github.com/mljar/mljar-supervised/blob/master/examples/scripts/binary_classifier_adult_fairness.py) to get example results for binary classification task on Adult dataset with `sex` as sensitive feature.
 
 ```

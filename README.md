@@ -363,7 +363,7 @@ automl.fit(X_train, y_train)
 predictions = automl.predict(X_test)
 ```
 
-AutoML `fit` will print:
+Historical output from the [income-classification example](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1) is shown below. It has not been rerun with `1.4.0b1`; the original environment is not established here. Scores, timings, and log formatting are illustrative, not expected beta results:
 ```py
 Create directory AutoML_1
 AutoML task to be solved: binary_classification
@@ -378,15 +378,15 @@ AutoML will optimize for metric: logloss
 Ensemble final logloss 0.2731086821194617 time 1.43 seconds
 ```
 
-- the AutoML results in [Markdown report](https://github.com/mljar/mljar-examples/tree/master/Income_classification/AutoML_1#automl-leaderboard)
-- the Xgboost [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/5_Default_Xgboost/README.md), please take a look at amazing dependence plots produced by SHAP package :sparkling_heart:
-- the Decision Tree [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/2_DecisionTree/README.md), please take a look at beautiful tree visualization :sparkles:
-- the Logistic Regression [Markdown report](https://github.com/mljar/mljar-examples/blob/master/Income_classification/AutoML_1/3_Linear/README.md), please take a look at coefficients table, and you can compare the SHAP plots between (Xgboost, Decision Tree and Logistic Regression) :coffee:
+- the AutoML results in [Markdown report](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1#automl-leaderboard)
+- the Xgboost [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/5_Default_Xgboost/README.md), please take a look at amazing dependence plots produced by SHAP package :sparkling_heart:
+- the Decision Tree [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/2_DecisionTree/README.md), please take a look at beautiful tree visualization :sparkles:
+- the Logistic Regression [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/3_Linear/README.md), please take a look at coefficients table, and you can compare the SHAP plots between (Xgboost, Decision Tree and Logistic Regression) :coffee:
 
 
 ## :point_right: Multi-Class Classification Example
 
-The example code for classification of the optical recognition of handwritten digits dataset. Running this code in less than 30 minutes will result in test accuracy ~98%.
+This example classifies handwritten digits and computes accuracy on held-out data. Measure runtime and accuracy in your environment; no fixed score or runtime is guaranteed.
 
 ```python
 import pandas as pd 

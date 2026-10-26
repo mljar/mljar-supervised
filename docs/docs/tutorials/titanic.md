@@ -6,9 +6,19 @@ social:
 
 # Classify Titanic passengers
 
-In this example, I would like to show you how to analyze Titanic dataset with AutoML [`mljar-supervised`](https://github.com/mljar/mljar-supervised). The AutoML will do all the job and let's go through all results.
+!!! note "Historical example — not a 1.4.0b1 benchmark"
+    The tables, screenshots, and console output below reproduce an earlier run
+    from the [archived examples repository](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification).
+    Report links are pinned to snapshot `3035b1e`. The original training
+    date, exact package versions, and hardware are not established here. These
+    results have not been rerun with `1.4.0b1`; use them to learn how to read a
+    report, not to predict current accuracy or runtime. For a new run, use the
+    [beta installation instructions](../install.md) and record your environment.
 
-All the code and results are available at the [GitHub](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification)
+
+This historical example shows how to read an AutoML classification report, inspect model explanations, and make predictions.
+
+All the code and results are available at the [GitHub](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification)
 
 
 ## The code
@@ -17,7 +27,7 @@ What does python code do:
 
 - reads Titanic train dataset (the same data as in [Kaggle platform](https://www.kaggle.com/c/titanic)),
 - trains `AutoML` object,
-- computes predictions and accuracy on test dataset (the same test data as in [Kaggle](https://www.kaggle.com/c/titanic))
+- computes predictions using a separately hosted file named `test_with_Survived.csv`. The label provenance of that file is not verified here; the reported accuracy is not a verified Kaggle score or a current benchmark.
 
 ```python
 import pandas as pd
@@ -59,7 +69,7 @@ All results created during `AutoML` training will be saved to the hard drive. Th
 
 ## The AutoML leaderboard report
 
-The main [`README.md`](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3) in the report will contain:
+The main [`README.md`](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3) in the report will contain:
 
 - table will all models performance,
 - performance plotted as scatter plot and box plot.
@@ -68,40 +78,46 @@ The leaderbord:
 
 | Best model   | name                    | model_type     | metric_type   |   metric_value |   train_time | Link                                              |
 |:-------------|:------------------------|:---------------|:--------------|---------------:|-------------:|:--------------------------------------------------|
-|              | 1_Baseline              | Baseline       | logloss       |       0.666775 |         0.26 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/1_Baseline/README.md)              |
-|              | 2_DecisionTree          | Decision Tree  | logloss       |       0.648504 |        18    | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/2_DecisionTree/README.md)          |
-|              | 3_Linear                | Linear         | logloss       |       0.593649 |        12.2  | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/3_Linear/README.md)                |
-|              | 4_Default_RandomForest  | Random Forest  | logloss       |       0.448691 |        22.24 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/4_Default_RandomForest/README.md)  |
-|              | 5_Default_Xgboost       | Xgboost        | logloss       |       0.458922 |        12.63 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/5_Default_Xgboost/README.md)       |
-|              | 6_Default_NeuralNetwork | Neural Network | logloss       |       0.733411 |        23.84 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/6_Default_NeuralNetwork/README.md) |
-| **the best** | Ensemble                | Ensemble       | logloss       |       0.436319 |         0.83 | [Results link](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/Ensemble/README.md)                |
+|              | 1_Baseline              | Baseline       | logloss       |       0.666775 |         0.26 | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/1_Baseline/README.md)              |
+|              | 2_DecisionTree          | Decision Tree  | logloss       |       0.648504 |        18    | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/2_DecisionTree/README.md)          |
+|              | 3_Linear                | Linear         | logloss       |       0.593649 |        12.2  | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/3_Linear/README.md)                |
+|              | 4_Default_RandomForest  | Random Forest  | logloss       |       0.448691 |        22.24 | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/4_Default_RandomForest/README.md)  |
+|              | 5_Default_Xgboost       | Xgboost        | logloss       |       0.458922 |        12.63 | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/5_Default_Xgboost/README.md)       |
+|              | 6_Default_NeuralNetwork | Neural Network | logloss       |       0.733411 |        23.84 | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/6_Default_NeuralNetwork/README.md) |
+| **the best** | Ensemble                | Ensemble       | logloss       |       0.436319 |         0.83 | [Results link](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/Ensemble/README.md)                |
 
 From the above table you can check what was the performance of the models and how long was the training. There is a `Results link` in the table for each model (please scroll this table if you don't see it), which you can **click** and go into model details :+1: :tada:
 
 The performance is presented in the plots:
 
-![AutoML Performance](https://raw.githubusercontent.com/mljar/mljar-examples/master/Titanic_Classification/AutoML_3/ldb_performance.png)
+![AutoML Performance](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/ldb_performance.png)
 
-![AutoML Performance Boxplot](https://raw.githubusercontent.com/mljar/mljar-examples/master/Titanic_Classification/AutoML_3/ldb_performance_boxplot.png)
+![AutoML Performance Boxplot](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/ldb_performance_boxplot.png)
 
 ## The `Baseline`
 
-The `Baseline` algorithm is very important during initial analysis. It tells us about the [quality of our data](random.md) and helps to check if we need Machine Learning to solve this problem. 
+The `Baseline` provides a reference on the same evaluation rows. For classification logloss, it predicts training class probabilities. Comparing against it helps interpret a result, but does not by itself establish data quality or whether a model should be used.
 
 Let's compute the percentage difference between the best model (`Ensemble`) and the `Baseline`:
 
-```python
-% difference = (0.667 - 0.436) / 0.667 * 100.0 = 34.6% 
+```text
+Relative reduction in validation logloss = (0.667 - 0.436) / 0.667 * 100 = 34.6%
 ```
 
-The best model is `34.6%` better than `Baseline`, the usage of ML is justifed and the data doesn't look like the random data. 
+The selected ensemble has about 34.6% lower validation logloss than the baseline
+in the rounded historical values above. This is a reduction in this metric,
+not a 34.6-percentage-point increase in accuracy or proof of practical usefulness.
 
-!!! note "When data looks like random?"
-    I personally assume that if the best model is less than `5%` better than `Baseline` then data looks like the random data and ML usage should be reconsidered.
+!!! note "Assess improvement on independent data"
+    There is no universal 5% threshold that separates useful data from random
+    data. Model selection can make validation results optimistic. Use a held-out
+    test set with verified labels and a split appropriate for the problem;
+    assess uncertainty and the practical consequences of errors. Keep that test
+    set out of further tuning decisions.
 
 ## `Decision Tree`
 
-Let's look closer into `Decision Tree` [report](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/2_DecisionTree/README.md).
+Let's look closer into `Decision Tree` [report](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/2_DecisionTree/README.md).
 
 The part of report is below:
 
@@ -145,36 +161,38 @@ There are many metrics and confusion matrix pre-computed.
 
 Additionally, there is a `Decision Tree` visualization:
 
-![Decision Tree visualization](https://raw.githubusercontent.com/mljar/mljar-examples/1295c77b6ac617b8d91ea7d8fffc6cd4c2605701/Titanic_Classification/AutoML_3/2_DecisionTree/learner_1_tree.svg)
+![Decision Tree visualization](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/2_DecisionTree/learner_1_tree.svg)
 
 There are created many explanations for each model. Let's check how they look like for `Xgboost` (the best single model).
 
 ## The `Xgboost` model
 
-You can check details of `Xgboost` model in the Markdown [report](https://github.com/mljar/mljar-examples/tree/master/Titanic_Classification/AutoML_3/5_Default_Xgboost/README.md). Here I will show some parts of the report with short comment.
+You can check details of `Xgboost` model in the Markdown [report](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/5_Default_Xgboost/README.md). Here I will show some parts of the report with short comment.
 
 ### Learning curves
 
 The vertical line indicates the optimal number of trees in the `Xgboost` (found with early stopping). This number of trees will be used during computning predictions.
 
-![Xgboost learning curve](https://raw.githubusercontent.com/mljar/mljar-examples/master/Titanic_Classification/AutoML_3/5_Default_Xgboost/learning_curves.png)
+![Xgboost learning curve](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/5_Default_Xgboost/learning_curves.png)
 
 ### Feature Importance
 
 The permutation-based feature importance:
 
-![Permutation based feature importance](https://raw.githubusercontent.com/mljar/mljar-examples/master/Titanic_Classification/AutoML_3/5_Default_Xgboost/permutation_importance.png)
+![Permutation based feature importance](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/5_Default_Xgboost/permutation_importance.png)
 
 From the plot you can see that the most used feature is `Name_mr`. There wasn't such feature in the training data. There was `Name` feature. The `AutoML` used `TF-IDF` transformation (scikit-learn [`TfidfVectorizer`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html)) to construct new features from `Name` text feature.
 
 ### SHAP dependence plots
 
-![SHAP dependece plots](https://raw.githubusercontent.com/mljar/mljar-examples/master/Titanic_Classification/AutoML_3/5_Default_Xgboost/learner_1_shap_dependence.png)
+![SHAP dependece plots](https://raw.githubusercontent.com/mljar/mljar-examples/3035b1e39208e71efa979b002b044e923a82bc40/Titanic_Classification/AutoML_3/5_Default_Xgboost/learner_1_shap_dependence.png)
 
 
 ## The test accuracy
 
-The `AutoML` is used to predict the labels for test data samples. The accuracy computed on test data:
+The `AutoML` is used to predict the labels for test data samples. The archived console output reports accuracy using the separately hosted
+`test_with_Survived.csv` file. Its label provenance is not verified here.
+The following numbers are historical output, not beta acceptance criteria:
 
 ```python
 AutoML directory: AutoML_3
@@ -196,12 +214,11 @@ AutoML fit time: 96.77 seconds
 Accuracy: 77.99%
 ```
 
-## Summary
+## Adapting this example
 
-The `AutoML` was used to analyze Titanic dataset. I hope you see advantages of AutoML (with `2` lines of code):
-
-- all needed preprocessing were done automatically: insert missing values, convert categoricals, convert text to numbers.
-- there were checked many different algorithms,
-- all results are saved to the hard drive, Markdown reports are available for all models.
-
-Do you see If you  are still asking yourself if AutoML will replace data scientist. Then I hope you have an answer now. **Yes**, the AutoML will replace Data Scientists who are not using AutoML with the ones that are using AutoML.
+Choose input columns that will be available when making a prediction. Reserve
+held-out evaluation rows with verified labels before training, choose a suitable
+validation strategy, and compare against a baseline on the same rows. Inspect
+errors and reports, then verify predictions after reloading the saved run.
+The historical tables above illustrate the reports; measure results again for
+your own data and installed version.
