@@ -15,6 +15,11 @@ A base install does not require PyTorch, SDM, or the Mercury app runtime.
 Feature discovery runs automatically in eligible Compete workflows; disable it
 with `feature_discovery=False`. Installation does not enable it in every mode.
 
+For generated prediction apps, `python -m pip install ".[apps]"` adds
+`mercury>=3.2.12,<4` from the current checkout. Use `.[all,apps]` for all optional
+model backends plus the app runtime. `[all]` alone keeps the app server optional.
+See [apps](features/apps.md) for exported requirements and fresh-environment setup.
+
 For **Kumo and TabICLv2**, use Python 3.11+, `[tfm]` (or `[kumo]`, `[tabiclv2]`,
 `[all]`). The current source checkout installs `structured-data-models==0.2.1`
 from PyPI through these extras. The published alpha still needs its older Git backend. See the

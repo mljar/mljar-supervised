@@ -1,5 +1,7 @@
 ## Unreleased — installation and macOS runtime checks
 
+- Add `[apps]` with `mercury>=3.2.12,<4`, keeping `[all]` limited to optional model backends. Export requirements for the selected prediction graph, pin MLJAR/joblib/scikit-learn versions, and bundle shared discovery transformations plus TFM weights/licenses for portable predictions.
+
 - Require Python 3.11+ for the base package, all extras, and newly generated prediction apps. Test Python 3.11 and 3.12; older releases remain available for older interpreters.
 - Include `features-goldmine>=1.1,<1.2` in the base installation. Keep `[feature-discovery]` as an empty compatibility alias and preserve existing mode/validation rules and `feature_discovery=False`. Neural/TFM models and the app runtime remain optional.
 

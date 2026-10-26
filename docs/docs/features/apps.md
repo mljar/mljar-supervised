@@ -15,6 +15,17 @@ social:
 
 ## Generate app files
 
+The base package can export an app without Mercury installed. To run apps from
+the current source checkout, use Python 3.11+ and install the optional runtime:
+
+```bash
+python -m pip install ".[apps]"
+```
+
+This adds `mercury>=3.2.12,<4`; Mercury 3.2.12 is the tested version. `[all]`
+continues to mean all optional model backends. Use `.[all,apps]` when you need both.
+These extras changes are not in the published `1.4.0a1` wheel.
+
 Use `app()` to generate the app workspace:
 
 ```python
@@ -35,6 +46,25 @@ The generated app directory contains runtime files such as:
 - `requirements.txt`
 - `runtime.txt`
 - `automl.zip`
+
+`requirements.txt` includes only the optional model backends needed by the
+selected prediction path, including ensemble and stacking inputs. It pins the
+exporter's MLJAR version, the saved models' joblib version, and the exporting
+environment's scikit-learn version. `mljar_app.json` records this environment.
+
+The archive includes shared discovery transformations and selected TFM weights
+and licenses, so predictions do not need the original training directory or
+checkpoint downloads. Discovery's temporary training encodings are omitted.
+
+For an unreleased checkout, install the **same locally built wheel** on the app
+machine before installing the generated requirements. A public wheel with the
+same version label can contain older code. For released builds, install the
+generated requirements directly. Choose the appropriate CPU/CUDA PyTorch build
+first if the app needs Torch; see [installation](../install.md).
+
+Export does not fix native-library incompatibilities. Apps use the same runtime
+checks as Python predictions and refuse incompatible saved models without
+substituting a different model.
 
 The default generated app title is `MLJAR AutoML`. You can provide your own title with:
 

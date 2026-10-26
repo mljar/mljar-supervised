@@ -5,7 +5,9 @@ import shutil
 import shlex
 import tempfile
 import zipfile
+from pathlib import Path
 
+from supervised.apps.dependencies import runtime_environment, selected_frameworks
 from supervised.apps.metadata import collect_app_metadata
 from supervised.apps.templates import (
     app_support_source,
@@ -17,6 +19,7 @@ from supervised.apps.templates import (
     single_notebook_source,
 )
 from supervised.exceptions import AutoMLException
+from supervised.utils.artifact_paths import resolve_artifact_path
 
 
 PUBLISHABLE_WORKSPACE_FILES = (
@@ -44,6 +47,7 @@ def generate_app(automl, path=None, overwrite=False, title=None, verbose=True):
         selected_models=selected_models,
     )
     try:
+        manifest["environment"] = runtime_environment(results_path, selected_models)
         _write_workspace(output_path, results_path, manifest, selected_models)
     except Exception:
         shutil.rmtree(output_path, ignore_errors=True)
@@ -105,7 +109,7 @@ def _write_workspace(output_path, results_path, manifest, selected_models):
             _write_json(os.path.join(output_path, filename), payload)
     _write_text(os.path.join(output_path, "app_support.py"), app_support_source())
     _write_text(os.path.join(output_path, "config.toml"), config_toml(manifest["title"]))
-    _write_text(os.path.join(output_path, "requirements.txt"), requirements_txt())
+    _write_text(os.path.join(output_path, "requirements.txt"), requirements_txt(manifest["environment"]))
     _write_text(os.path.join(output_path, "runtime.txt"), runtime_txt())
     _write_text(os.path.join(output_path, "README.md"), readme_md())
 
@@ -164,6 +168,7 @@ def _create_automl_zip(output_path, results_path, selected_models):
         )
         _copy_root_runtime_files(results_path, bundle_root, selected_models)
         _copy_selected_model_dirs(results_path, bundle_root, selected_models)
+        _copy_shared_runtime_files(results_path, bundle_root, selected_models)
 
         with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             for root, _, files in os.walk(temp_dir):
@@ -219,7 +224,52 @@ def _copy_selected_model_dirs(results_path, bundle_root, selected_models):
             shutil.copytree(source, target, ignore=_ignore_non_runtime_files)
 
 
-def _ignore_non_runtime_files(_, names):
+def _copy_shared_runtime_files(results_path, bundle_root, selected_models):
+    root = Path(results_path).resolve()
+    copied = set()
+
+    def copy_directory(relative, *, discovery=False):
+        source = Path(os.path.abspath(resolve_artifact_path(root, relative)))
+        if not source.resolve().is_relative_to(root):
+            raise AutoMLException(f"Cannot export app: shared artifact is outside the results directory: {relative}")
+        if source in copied:
+            return
+        if not source.is_dir():
+            raise AutoMLException(f"Cannot export app: missing shared artifact directory {relative}.")
+        if discovery and not (source / "generator.joblib").is_file():
+            raise AutoMLException(f"Cannot export app: missing discovery generator in {relative}.")
+        target = Path(bundle_root) / source.relative_to(root)
+        # Training encodings are unnecessary for prediction. Keep TFM licenses.
+        ignored = shutil.ignore_patterns("training.joblib", "*.tmp") if discovery else None
+        shutil.copytree(source, target, dirs_exist_ok=True, ignore=ignored)
+        copied.add(source)
+
+    for model_name, framework in selected_frameworks(results_path, selected_models):
+        for preprocessing in framework.get("preprocessing", []):
+            discovery = preprocessing.get("feature_discovery")
+            if discovery:
+                copy_directory(discovery["info"]["directory"], discovery=True)
+        for learner in framework.get("learners", []):
+            kind = learner.get("params", {}).get("model_type")
+            if kind not in ("Kumo", "TabICLv2"):
+                continue
+            checkpoint = learner.get("training_info", {}).get("checkpoint", {})
+            if not checkpoint.get("revision"):
+                raise AutoMLException(f"Cannot export app: missing checkpoint metadata for {model_name}.")
+            relative = Path("sdm_weights") / f"{kind}-{checkpoint['revision']}"
+            if kind == "Kumo":
+                relative /= learner["params"].get("size", "small")
+            if not (root / relative).is_dir():
+                # Older/directly saved learners kept weights beside the model.
+                relative = Path(model_name) / relative
+            if checkpoint.get("filename") and not (root / relative / checkpoint["filename"]).is_file():
+                raise AutoMLException(f"Cannot export app: missing checkpoint file for {model_name}.")
+            copy_directory(relative)
+
+
+def _ignore_non_runtime_files(directory, names):
+    if "sdm_weights" in Path(directory).parts:
+        return []  # Checkpoints reference license/notice files, including Markdown.
     ignored = []
     for name in names:
         lower = name.lower()

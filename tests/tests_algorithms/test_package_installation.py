@@ -36,6 +36,7 @@ def test_discovery_is_unconditional_and_alias_adds_nothing():
 
 @pytest.mark.parametrize("extra,backends", [
     ("", set()), ("feature-discovery", set()),
+    ("apps", {"mercury"}),
     ("realmlp", {"torch", "pytabkit"}), ("tabm", {"torch", "pytabkit"}),
     ("tfm", {"torch", "structured-data-models", "huggingface_hub"}),
     ("kumo", {"torch", "structured-data-models", "huggingface_hub"}),
@@ -47,6 +48,14 @@ def test_optional_backends_remain_opt_in(extra, backends):
     optional = {"torch", "pytabkit", "structured-data-models", "huggingface_hub", "mercury"}
     assert selected.keys() & optional == backends
     assert "features-goldmine" in selected
+
+
+def test_apps_extra_matches_generated_runtime_and_combines_with_all():
+    from supervised.apps.dependencies import MERCURY_REQUIREMENT
+
+    assert selected_requirements("apps")["mercury"].specifier == Requirement(MERCURY_REQUIREMENT).specifier
+    combined = selected_requirements("all") | selected_requirements("apps")
+    assert {"mercury", "torch", "pytabkit", "structured-data-models"} <= combined.keys()
 
 
 def test_installed_discovery_and_activation_policy():

@@ -30,6 +30,7 @@ setup(
     extras_require={
         # Compatibility alias: feature discovery is included in every install.
         "feature-discovery": [],
+        "apps": ["mercury>=3.2.12,<4"],
         "kumo": TFM_REQUIREMENTS,
         "tabiclv2": TFM_REQUIREMENTS,
         "tfm": TFM_REQUIREMENTS,

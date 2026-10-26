@@ -100,6 +100,11 @@ Of course, you can further customize the details of each `mode` to meet the requ
 
 MLJAR AutoML does not stop after training a model. It can automatically generate a web app for your trained model with [Mercury](https://github.com/mljar/mercury). This is useful when you want to share predictions with domain experts, business users, researchers, or other people who do not want to work directly with Python code. 
 
+The base installation can generate app files. In the current source checkout,
+install `.[apps]` to run them, or `.[all,apps]` for the app runtime and all optional
+models. Exported requirements include the backends needed by the selected model.
+See the [app guide](docs/docs/features/apps.md) for setup.
+
 After training AutoML, generate the app files with:
 
 ```python 

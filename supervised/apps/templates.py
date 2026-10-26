@@ -352,14 +352,11 @@ def config_toml(title):
     ).lstrip()
 
 
-def requirements_txt():
+def requirements_txt(environment):
     return (
-        "# Requires Python 3.11+ for MLJAR AutoML.\n"
-        "mercury\n"
-        "mljar-supervised\n"
-        "matplotlib\n"
-        "pandas\n"
-        "numpy\n"
+        "# Requires Python 3.11+. Use the same MLJAR build that exported this app.\n"
+        "# For an unreleased checkout, install its matching wheel before this file.\n"
+        + "\n".join(environment["requirements"]) + "\n"
     )
 
 
@@ -388,6 +385,18 @@ def readme_md():
         ```bash
         pip install -r requirements.txt
         ```
+
+        Requirements include the optional model backends needed by the selected
+        prediction path, including ensemble and stacking inputs. The app keeps
+        shared discovery transformations and TFM weights/licenses in `automl.zip`.
+
+        If this app was exported from an unreleased source checkout, install the
+        wheel built from that same checkout before installing these requirements.
+        A public wheel with the same version label may contain older code.
+
+        For Torch models, install the appropriate CPU or CUDA build first using
+        the [MLJAR installation guide](https://supervised.mljar.com/install/).
+        The app uses the same native compatibility checks as Python predictions.
 
         3. Start Mercury:
 
