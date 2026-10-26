@@ -42,4 +42,9 @@ jobs:
           pip install -e .
       - name: Test with pytest
         run: |
-          pytest tests --cov=supervised/
+          pytest tests --cov=supervised/ --junitxml=test-results.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tests-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: test-results.xml

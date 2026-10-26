@@ -76,6 +76,8 @@ def admission(request, monkeypatch):
     )
     model.device = "cuda:1"
     monkeypatch.setattr(sdm, "available_memory", lambda: 100 * 1024**3)
+    # This simulated device need not exist, even after another test initializes CUDA.
+    monkeypatch.setattr(realmlp_resources, "gpu_allocation_stats", lambda device: {})
     resources = (128, 10, 64 * 1024**2)
     required = (
         512 * 1024**2

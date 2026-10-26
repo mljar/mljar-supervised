@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - if: runner.os == 'macOS'
         run: brew install libomp
-      - name: Separate author and app environments
+      - name: Build wheel and create isolated environments
         shell: bash
         run: |
           python -m pip wheel . --no-deps --wheel-dir dist
@@ -50,10 +50,32 @@ jobs:
             author_python=author/bin/python
             runtime_python=runtime/bin/python
           fi
-          "$author_python" -m pip install dist/*.whl
-          "$author_python" tests/checks/check_app_runtime.py export app-smoke
-          "$runtime_python" -m pip install dist/*.whl pytest
-          "$runtime_python" -m pip install -r app-smoke/discovery/requirements.txt
-          "$runtime_python" -m pip check
-          "$runtime_python" -m pytest tests/tests_automl/test_app_dependencies.py tests/tests_automl/test_automl_app.py tests/tests_automl/test_automl_local_app.py tests/tests_algorithms/test_package_installation.py -q
-          "$runtime_python" tests/checks/check_app_runtime.py run app-smoke
+          echo "AUTHOR_PYTHON=$author_python" >> "$GITHUB_ENV"
+          echo "RUNTIME_PYTHON=$runtime_python" >> "$GITHUB_ENV"
+      - name: Export apps from base installation
+        shell: bash
+        run: |
+          "$AUTHOR_PYTHON" -m pip install dist/*.whl
+          "$AUTHOR_PYTHON" tests/checks/check_app_runtime.py export app-smoke
+      - name: Install isolated app runtime
+        shell: bash
+        run: |
+          "$RUNTIME_PYTHON" -m pip install dist/*.whl pytest
+          "$RUNTIME_PYTHON" -m pip install -r app-smoke/discovery/requirements.txt
+          "$RUNTIME_PYTHON" -m pip check
+      - name: Test app exports and dependencies
+        shell: bash
+        run: |
+          "$RUNTIME_PYTHON" -m pytest tests/tests_automl/test_app_dependencies.py tests/tests_automl/test_automl_app.py tests/tests_automl/test_automl_local_app.py tests/tests_algorithms/test_package_installation.py -q --junitxml=app-smoke/tests.xml
+      - name: Execute notebooks and start Mercury
+        shell: bash
+        run: |
+          "$RUNTIME_PYTHON" tests/checks/check_app_runtime.py run app-smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apps-${{ matrix.os }}-py${{ matrix.python }}
+          path: |
+            app-smoke/**/*.log
+            app-smoke/tests.xml
+          if-no-files-found: ignore

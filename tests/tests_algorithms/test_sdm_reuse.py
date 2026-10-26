@@ -240,6 +240,9 @@ def test_actual_admission_evicts_retained_weights_after_cleanup_fails(
     monkeypatch.setattr(
         "supervised.algorithms.realmlp_resources.available_gpu_memory", available
     )
+    monkeypatch.setattr(
+        "supervised.algorithms.realmlp_resources.gpu_allocation_stats", lambda device: {}
+    )
     with PredictionContext() as request:
         for _ in range(2):
             model = make()

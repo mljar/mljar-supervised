@@ -2,6 +2,7 @@ import json
 import importlib
 import os
 import shutil
+import shlex
 import unittest
 from io import StringIO
 from unittest.mock import patch
@@ -75,7 +76,7 @@ class AutoMLAppTest(unittest.TestCase):
         self.assertEqual(manifest["automl_bundle"]["archive_name"], "automl.zip")
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", stdout.getvalue())
         self.assertIn(
-            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            f"Start Mercury: mercury --working-dir={shlex.quote(os.path.abspath(self.app_dir))}",
             stdout.getvalue(),
         )
 
@@ -127,6 +128,34 @@ class AutoMLAppTest(unittest.TestCase):
 
         self.assertEqual(stdout.getvalue(), "")
 
+    def test_verbose_commands_preserve_paths(self):
+        from supervised.apps.generator import _print_verbose_summary
+
+        for path in [
+            "/tmp/my app",
+            r"D:\a\mljar-supervised\app",
+            r"C:\Users\Jane Doe\app",
+        ]:
+            with self.subTest(path=path):
+                with patch(
+                    "supervised.apps.generator._load_manifest", return_value=None
+                ):
+                    with patch("sys.stdout", new_callable=StringIO) as stdout:
+                        _print_verbose_summary(path)
+                commands = stdout.getvalue().splitlines()
+                cd = next(
+                    line.removeprefix("Enter app directory: ")
+                    for line in commands
+                    if line.startswith("Enter app directory: ")
+                )
+                start = next(
+                    line.removeprefix("Start Mercury: ")
+                    for line in commands
+                    if line.startswith("Start Mercury: ")
+                )
+                self.assertEqual(shlex.split(cd), ["cd", path])
+                self.assertEqual(shlex.split(start), ["mercury", f"--working-dir={path}"])
+
     def test_app_verbose_prints_start_command_when_mercury_exists(self):
         model = AutoML(
             algorithms=["Baseline"],
@@ -150,9 +179,9 @@ class AutoMLAppTest(unittest.TestCase):
 
         output = stdout.getvalue()
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", output)
-        self.assertIn(f"cd {os.path.abspath(self.app_dir)}", output)
+        self.assertIn(f"cd {shlex.quote(os.path.abspath(self.app_dir))}", output)
         self.assertIn(
-            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            f"Start Mercury: mercury --working-dir={shlex.quote(os.path.abspath(self.app_dir))}",
             output,
         )
         self.assertNotIn("Mercury is not available.", output)
@@ -183,14 +212,14 @@ class AutoMLAppTest(unittest.TestCase):
 
         output = stdout.getvalue()
         self.assertIn(f"App directory: {os.path.abspath(self.app_dir)}", output)
-        self.assertIn(f"cd {os.path.abspath(self.app_dir)}", output)
+        self.assertIn(f"cd {shlex.quote(os.path.abspath(self.app_dir))}", output)
         self.assertIn(
             "Mercury is not available in the current Python environment. "
             "Install it with: pip install -r requirements.txt",
             output,
         )
         self.assertIn(
-            f"Start Mercury: mercury --working-dir={os.path.abspath(self.app_dir)}",
+            f"Start Mercury: mercury --working-dir={shlex.quote(os.path.abspath(self.app_dir))}",
             output,
         )
 

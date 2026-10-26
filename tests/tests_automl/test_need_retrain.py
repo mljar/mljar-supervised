@@ -20,7 +20,10 @@ def test_load_final_loss(tmp_path, saved_loss):
     model_path = tmp_path / "model"
     model_path.mkdir()
     desc = {
-        "params": {"learner": {}, "validation_strategy": {}},
+        "params": {
+            "learner": {"model_type": "Baseline"},
+            "validation_strategy": {},
+        },
         "final_loss": saved_loss,
         "learners": [],
         "saved": [],
