@@ -53,6 +53,19 @@
 .md-nav--secondary { border-left: 1px solid var(--mljar-border); }
 .md-nav--secondary .md-nav__title { color: var(--mljar-blue-dark); }
 
+@media screen and (min-width: 76.25em) {
+    /* Let expanded navigation grow on short pages instead of inheriting the
+       theme's JavaScript height based on the article. Reserve the 3.2rem header,
+       its border, and the sidebar's 1.2rem top and bottom padding. */
+    .md-sidebar--primary { height: auto; }
+    .md-sidebar--primary .md-sidebar__scrollwrap {
+        height: auto !important;
+        max-height: calc(100vh - 5.6rem - 1px);
+        max-height: calc(100dvh - 5.6rem - 1px);
+        overflow-y: auto;
+    }
+}
+
 .md-typeset { font-size: .8rem; line-height: 1.75; }
 .md-typeset h1, .md-typeset h2, .md-typeset h3 {
     color: var(--mljar-blue-dark);

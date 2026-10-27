@@ -27,7 +27,8 @@ markdown_extensions:
     - pymdownx.highlight:
         use_pygments: true
     - toc:
-        permalink: true
+        permalink: false
+        anchorlink: true
     - codehilite
     - pymdownx.tabbed
     - pymdownx.superfences
@@ -65,7 +66,7 @@ edit_uri: edit/master/docs/docs/
 copyright: Copyright © MLJAR, Inc.
 
 extra_css:
-  - stylesheets/extra.css?v=docs-20261027-9
+  - stylesheets/extra.css?v=docs-20261027-10
 
 extra_javascript:
   - javascripts/training-console.js?v=console-20261027-2

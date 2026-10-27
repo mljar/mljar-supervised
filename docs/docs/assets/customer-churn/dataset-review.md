@@ -1,3 +1,8 @@
+---
+title: "Iranian Customer Churn Dataset Review"
+description: "Review the UCI Iranian Churn dataset used in the MLJAR AutoML tutorial, including provenance, licensing, feature timing, and validation limitations."
+---
+
 # Iranian telecom customer churn — dataset review
 
 Reviewed 27 October 2026 for the beginner classification tutorial.
