@@ -1,3 +1,7 @@
+---
+title: "Contributing and Community"
+description: "Contribute to mljar-supervised by reporting bugs, improving documentation, adding algorithms, writing tests, or helping the AutoML community."
+---
 # Contributing 
 
 Thank you! :tada:
@@ -69,6 +73,16 @@ algorithms must also pass `tests/tests_algorithms/test_algorithm_contract.py`.
 ## Documentation :scroll:
 
 The project documentation source is in this repository under `docs/`. Deployed docs are available at [https://supervised.mljar.com](https://supervised.mljar.com).
+
+## Help the community
+
+You can contribute without writing code:
+
+- Help other users with their [GitHub issues](https://github.com/mljar/mljar-supervised/issues).
+- Write a tutorial about how you use AutoML. Publish it on your own blog or a community site, or contact us about sharing it on the [MLJAR blog](https://mljar.com/blog).
+- Star the [repository](https://github.com/mljar/mljar-supervised) to help others discover it. Select **Watch → Custom → Releases** to follow new releases.
+- Share your projects and connect with [MLJAR on Twitter](https://twitter.com/MLJARofficial), or with Piotr Płoński on [LinkedIn](https://www.linkedin.com/in/piotr-plonski-mljar/) and [GitHub](https://github.com/pplonski).
+- Join the [Slack community](https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/) to discuss machine learning and AutoML development.
 
 ## Contributor License Agreement :necktie:
 

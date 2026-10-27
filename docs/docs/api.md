@@ -1,10 +1,15 @@
 ---
-description: Python API reference for MLJAR AutoML, including the AutoML class, training options, prediction methods, reports, fairness settings, and app generation helpers.
+title: "Python API Reference"
+description: "Explore the MLJAR AutoML Python API for training, prediction, validation, evaluation metrics, model reports, fairness, and prediction apps."
 social:
   cards_layout: default/variant
 ---
 
 # API documentation
+
+Use the `AutoML` Python class to configure training, fit models, make predictions,
+and generate reports or prediction apps. For a complete workflow before exploring
+individual parameters, start with the [Python tutorials](examples.md).
 
 If you are looking for how trained models are stored and reloaded, see [Save and Load models](features/save-and-load-models.md).
 If you need a user-defined evaluation function, see [Custom eval metric](features/custom-eval-metric.md).

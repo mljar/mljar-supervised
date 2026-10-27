@@ -1,3 +1,7 @@
+---
+title: "AutoML Training Steps and Model Search"
+description: "Understand MLJAR AutoML training stages, from validation and initial models to feature engineering, hyperparameter tuning, and ensembles."
+---
 # Steps of AutoML
 
 AutoML searches for models in stages. The stages available in a run depend on its

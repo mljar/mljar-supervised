@@ -1,5 +1,6 @@
 ---
-description: How to use a custom evaluation metric in MLJAR AutoML by passing a Python function directly as eval_metric.
+title: "Custom Evaluation Metrics in Python"
+description: "Use a Python function as an MLJAR AutoML evaluation metric. Define the score, optimization direction, and optional sample weights."
 social:
   cards_layout: default/variant
 ---

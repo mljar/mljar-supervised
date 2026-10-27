@@ -1,5 +1,6 @@
 ---
-description: Beginner-friendly tutorial for training MLJAR AutoML on the diabetes classification dataset and sharing the model as a Mercury app.
+title: "Build a Classification Prediction Web App"
+description: "Train a classification model with MLJAR AutoML, generate a Mercury prediction app, run it locally, and optionally publish it online."
 social:
   cards_layout: default/variant
 ---

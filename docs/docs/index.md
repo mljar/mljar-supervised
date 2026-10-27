@@ -1,6 +1,6 @@
 ---
-title: Get started
-description: Build machine learning models from tabular data. Start with a tested Python tutorial, compare results, read reports, and reuse your saved model.
+title: "Automated Machine Learning in Python"
+description: "Train and compare machine learning models for tabular data with MLJAR AutoML. Follow Python tutorials, explore reports, and reuse saved models."
 hide:
   - toc
 ---

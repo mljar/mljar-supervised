@@ -1,4 +1,12 @@
+---
+title: "Install AutoML in Python"
+description: "Install mljar-supervised with pip. Check Python requirements and choose CPU, NVIDIA GPU, optional model backends, or prediction app dependencies."
+---
 # Installation
+
+Install `mljar-supervised` with pip to train AutoML models in Python. Start with
+the base package, then add optional model backends or the prediction app runtime
+when your workflow needs them.
 
 **Version 1.4.0b1 requires Python 3.11+** for every installation option.
 It includes feature discovery (`features-goldmine>=1.1,<1.2`) in the base package.

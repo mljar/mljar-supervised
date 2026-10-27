@@ -1,5 +1,6 @@
 ---
-description: Fairness-aware regression with MLJAR AutoML on the housing dataset, including fairness metrics and generated fairness reports.
+title: "Fairness-Aware Regression"
+description: "Explore fairness-aware regression with MLJAR AutoML using a housing example, sensitive features, fairness metrics, and model reports."
 social:
   cards_layout: default/variant
 ---

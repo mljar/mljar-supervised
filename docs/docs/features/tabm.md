@@ -1,3 +1,7 @@
+---
+title: "TabM Mini for Tabular Machine Learning"
+description: "Train TabM mini neural models in MLJAR AutoML Compete mode. Install dependencies and configure tabular classification or regression on CPU or GPU."
+---
 # TabM mini
 
 TabM is an optional neural model for binary classification, multiclass

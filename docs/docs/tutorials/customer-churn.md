@@ -1,5 +1,6 @@
 ---
-description: Predict customer churn from a CSV with Python. Learn classification, probabilities, baseline comparisons, and how to read model reports.
+title: "Customer Churn Prediction with Python AutoML"
+description: "Predict customer churn from a CSV with Python and MLJAR AutoML. Learn classification, evaluate probabilities, compare baselines, and reload your model."
 ---
 
 # Predict which customers may leave with Python

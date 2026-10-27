@@ -1,3 +1,7 @@
+---
+title: "RealMLP for Tabular Classification and Regression"
+description: "Train RealMLP neural models with MLJAR AutoML. Install optional dependencies and configure CPU or GPU training for tabular classification and regression."
+---
 # RealMLP
 
 RealMLP is an optional neural model for binary classification, multiclass

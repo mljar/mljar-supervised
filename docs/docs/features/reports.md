@@ -1,8 +1,16 @@
+---
+title: "Model Evaluation Reports and Leaderboards"
+description: "Read MLJAR AutoML leaderboards and individual model reports. Open HTML reports, inspect validation metrics, and reuse structured results."
+---
 # Read and reuse AutoML reports
 
 AutoML saves a run-level `README.md` and individual model reports in its results
 directory. The leaderboard compares validation scores. Keep final held-out test
 results separate from the scores used to select models.
+
+For details behind individual predictions, see [model explainability](explain.md).
+Once you have evaluated a model, [reload it for predictions](save-and-load-models.md)
+or [create a prediction web app](apps.md).
 
 ## Open the HTML report
 

@@ -1,5 +1,6 @@
 ---
-description: Learn how to use MLJAR AutoML on random data to detect weak signal, compare against the baseline, and recognize overfitting and low-value features.
+title: "AutoML on Random Data and Validation Noise"
+description: "Explore a historical MLJAR AutoML experiment on random features and labels. Learn why validation scores can improve even without predictive signal."
 social:
   cards_layout: default/variant
 ---

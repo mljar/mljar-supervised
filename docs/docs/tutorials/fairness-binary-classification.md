@@ -1,5 +1,6 @@
 ---
-description: Fairness-aware binary classification with MLJAR AutoML on the Adult dataset, including demographic parity metrics, multiple sensitive features, and fairness-performance tradeoffs.
+title: "Fairness-Aware Binary Classification"
+description: "Explore fairness-aware binary classification with MLJAR AutoML on the Adult dataset, using sensitive features, demographic parity, and fairness reports."
 social:
   cards_layout: default/variant
 ---

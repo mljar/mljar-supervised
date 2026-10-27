@@ -1,4 +1,13 @@
+---
+title: "Supported Machine Learning Algorithms"
+description: "Explore MLJAR AutoML algorithms and configure fixed model parameters, including tree models, neural networks, and tabular foundation models."
+---
 # Algorithms
+
+MLJAR AutoML compares machine learning algorithms for tabular classification
+and regression. Use the `algorithms` argument to choose models and `custom_params`
+to fix supported settings. Your [AutoML mode](modes.md) and installed optional
+dependencies determine which algorithms are available.
 
 ## Fixed custom parameters
 

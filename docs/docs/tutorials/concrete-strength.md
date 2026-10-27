@@ -1,5 +1,6 @@
 ---
-description: Build your first machine learning model from a CSV. Learn what inputs and a target are, predict concrete strength, compare errors, and read the reports.
+title: "Predict Concrete Strength with Python AutoML"
+description: "Build a regression model from a CSV with Python and MLJAR AutoML. Predict concrete strength, compare held-out errors, and reuse your saved model."
 ---
 
 # Predict a number from a CSV with Python

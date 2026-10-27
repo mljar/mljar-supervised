@@ -1,5 +1,6 @@
 ---
-description: End-to-end Titanic classification tutorial with MLJAR AutoML, including training, leaderboard interpretation, explainability, and prediction accuracy.
+title: "Titanic Classification with Python AutoML"
+description: "Explore a historical Titanic classification example with MLJAR AutoML. Learn to read leaderboards, inspect model explanations, and make predictions."
 social:
   cards_layout: default/variant
 ---

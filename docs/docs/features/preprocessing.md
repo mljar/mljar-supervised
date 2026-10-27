@@ -1,5 +1,6 @@
 ---
-description: How preprocessing works in MLJAR AutoML, including missing values, categorical features, text, datetime columns, durations, IP addresses, and prediction-time reuse of learned transforms.
+title: "Automatic Data Preprocessing for Machine Learning"
+description: "Learn how MLJAR AutoML handles missing values, categorical data, text, dates, and IP addresses, then reuses learned transformations for predictions."
 social:
   cards_layout: default/variant
 ---

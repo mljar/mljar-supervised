@@ -17,6 +17,7 @@ from sklearn.metrics import accuracy_score, r2_score
 from sklearn.utils.validation import check_array
 from tabulate import tabulate
 
+from supervised import __version__
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -1195,6 +1196,15 @@ class BaseAutoML(BaseEstimator, ABC):
                 self._time_ctrl._steps.remove("boost_on_errors")
 
     def _fit(self, X, y, sample_weight=None, cv=None, sensitive_features=None):
+        self._verbose = self._get_verbose()
+        self.verbose_print(
+            "   ______________\n"
+            "  [______________]\n"
+            "  /              \\      mljar automl\n"
+            " |     mljar      |     Automated Machine Learning\n"
+            f" |     automl     |     v{__version__}\n"
+            "  \\______________/\n"
+        )
         native_compatibility.require_compatible(context="AutoML training")
         if self._training_store is not None:
             raise AutoMLException("This AutoML instance already has an active fit")

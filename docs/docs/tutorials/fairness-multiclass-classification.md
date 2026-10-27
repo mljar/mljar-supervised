@@ -1,5 +1,6 @@
 ---
-description: Fairness-aware multiclass classification with MLJAR AutoML, including per-class fairness metrics and automated fairness reporting.
+title: "Fairness-Aware Multiclass Classification"
+description: "Explore multiclass classification fairness with MLJAR AutoML, including sensitive features, per-class fairness metrics, and generated reports."
 social:
   cards_layout: default/variant
 ---

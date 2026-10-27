@@ -1,4 +1,4 @@
-site_name: MLJAR AutoML documentation
+site_name: MLJAR AutoML
 site_url: https://supervised.mljar.com/
 site_description: Automated machine learning for Python with model training, explainability, fairness-aware learning, and report generation for tabular data.
 site_author: MLJAR
@@ -72,40 +72,42 @@ extra_javascript:
 
 nav:
   - Get started: index.md
-  - Examples and guides: examples.md
   - Installation: install.md
-  - Features: 
-    - Reports: features/reports.md
-    - Apps: features/apps.md
-    - Custom eval metric: features/custom-eval-metric.md
-    - Custom validation: features/custom-validation.md
-    - Preprocessing: features/preprocessing.md
-    - Save and Load models: features/save-and-load-models.md
-    - Steps of AutoML: features/automl.md
+  - Examples and tutorials:
+    - Overview: examples.md
+    - Predict a number from a CSV: tutorials/concrete-strength.md
+    - Predict customer churn: tutorials/customer-churn.md
+    - Train with IP addresses: tutorials/ip-addresses.md
+    - Share a classification app: tutorials/app-classification.md
+    - Share a regression app: tutorials/app-regression.md
+    - Classify Titanic passengers: tutorials/titanic.md
+    - Classify synthetic data: tutorials/random.md
+    - Fairness:
+      - Binary classification: tutorials/fairness-binary-classification.md
+      - Multiclass classification: tutorials/fairness-multiclass-classification.md
+      - Regression: tutorials/fairness-regression.md
+  - Using AutoML:
     - AutoML modes: features/modes.md
-    - Golden Features: features/golden_features.md
-    - Feature Discovery: features/feature_discovery.md
-    - Features Selection: features/features_selection.md
-    - Algorithms: features/algorithms.md
-    - RealMLP: features/realmlp.md
-    - TabM mini: features/tabm.md
-    - Kumo and TabICLv2: features/sdm.md
+    - Training steps: features/automl.md
+    - Algorithms:
+      - Overview: features/algorithms.md
+      - RealMLP: features/realmlp.md
+      - TabM mini: features/tabm.md
+      - Kumo and TabICLv2: features/sdm.md
+    - Preprocessing: features/preprocessing.md
+    - Feature engineering:
+      - Feature selection: features/features_selection.md
+      - Feature discovery: features/feature_discovery.md
+      - Golden features: features/golden_features.md
+    - Validation: features/custom-validation.md
+    - Custom metrics: features/custom-eval-metric.md
+    - Stacking and ensembles: features/stacking-ensemble.md
+    - Save and load models: features/save-and-load-models.md
+  - Results and deployment:
+    - Reports: features/reports.md
     - Explainability: features/explain.md
-    - Stacking Ensemble: features/stacking-ensemble.md
-    
-  - Get help: get_help.md
-  - How can you help?: help.md
-  - Contributing: contributing.md
-  - AutoML API: api.md
-  - Tutorials:
-    - Predict a Number from a CSV: tutorials/concrete-strength.md
-    - Predict Customer Churn: tutorials/customer-churn.md
-    - Train with IP Addresses: tutorials/ip-addresses.md
-    - Share Classification Model as App: tutorials/app-classification.md
-    - Share Regression Model as App: tutorials/app-regression.md
-    - Classify Titanic Passengers: tutorials/titanic.md
-    - Classify Random Data: tutorials/random.md
-    - Fairness Binary Classification: tutorials/fairness-binary-classification.md
-    - Fairness Multiclass Classification: tutorials/fairness-multiclass-classification.md
-    - Fairness Regression: tutorials/fairness-regression.md
-        
+    - Prediction apps: features/apps.md
+  - API reference: api.md
+  - Help and community:
+    - Get help: get_help.md
+    - Contributing: contributing.md

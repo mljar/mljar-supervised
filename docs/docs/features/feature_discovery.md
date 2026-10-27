@@ -1,3 +1,7 @@
+---
+title: "Automated Feature Discovery"
+description: "Generate and evaluate additional features with MLJAR AutoML and features-goldmine. Learn how to enable feature discovery and control its workflow."
+---
 # Feature discovery
 
 Feature discovery uses the included `features-goldmine` package to generate up to

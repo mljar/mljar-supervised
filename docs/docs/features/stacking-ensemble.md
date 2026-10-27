@@ -1,7 +1,14 @@
+---
+title: "Model Stacking and Ensemble Selection"
+description: "Understand how MLJAR AutoML combines model predictions through ensemble selection and stacking, including validation scores and ensemble weights."
+---
 # How does ensemble stacking work?
 
 
-Before introducing ensemble stacking, we should talk about the steps of Ensemble and Stack first:
+MLJAR AutoML combines predictions from multiple models using ensemble selection
+and stacking. Ensemble selection assigns weights to existing model predictions;
+stacking trains additional models using predictions as inputs. Compare the
+resulting models in the [AutoML leaderboard and reports](reports.md).
 
 
 

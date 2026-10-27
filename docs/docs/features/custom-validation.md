@@ -1,5 +1,6 @@
 ---
-description: Supply grouped or time-ordered validation splits to MLJAR AutoML. Keep a separate final test set and check row alignment, group separation, and chronology.
+title: "Grouped and Time-Ordered Cross-Validation"
+description: "Use custom validation splits in MLJAR AutoML for grouped or time-ordered data. Keep groups separate and reserve a final test set."
 ---
 
 # Choose validation that matches your predictions

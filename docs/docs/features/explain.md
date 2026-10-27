@@ -1,3 +1,7 @@
+---
+title: "Model Explainability and SHAP Values"
+description: "Configure MLJAR AutoML explanations with feature importance, SHAP values, decision tree plots, linear coefficients, and prediction pipeline diagrams."
+---
 # Explainability in AutoML
 
 There are three modes of explanations available in [`mljar-supervised`](https://github.com/mljar/mljar-supervised). The explanations are controlled by `explain_level` parameter in `AutoML` constructor.

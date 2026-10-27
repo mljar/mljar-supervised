@@ -1,10 +1,16 @@
+---
+title: "Golden Features for Automated Feature Engineering"
+description: "Learn how MLJAR AutoML generates golden features from differences and ratios of input columns, scores candidates, and adds selected features to training."
+---
 # Golden Features
+
+Golden features are new input columns constructed from pairs of existing numeric
+features. MLJAR AutoML tests differences and ratios, scores the candidates, and
+adds selected features to the training data.
 
 The separate [feature discovery step](feature_discovery.md) can run afterward,
 sharing this step's time allocation and testing up to three Goldmine feature sets
 on the best current models.
-
-Golden Features are the features which have great predictive power. They can be constructed based on the original features. The common way to construct them is to try features differences or ratios. The [`mljar-superverised`](https://github.com/mljar/mljar-supervised) package has built-in step that performs Golden Features search. 
 
 The procedure to find Golden Features:
 

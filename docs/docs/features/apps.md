@@ -1,12 +1,13 @@
 ---
-description: Generate Mercury apps from trained MLJAR AutoML models, run them locally, publish them quickly with platform.mljar.com, or host them on your own server.
+title: "Turn Your ML Model into a Web App"
+description: "Create a prediction web app from a trained MLJAR AutoML model. Run single predictions or batch CSV scoring locally, publish online, or host it yourself."
 social:
   cards_layout: default/variant
 ---
 
-# Apps
+# Turn your model into a web app
 
-`mljar-supervised` can generate Mercury apps from trained `AutoML` models. You can:
+Create a web app from your trained AutoML model for single predictions or batch CSV scoring. The generated apps run with Mercury. You can:
 
 - generate the app workspace with `AutoML.app()`
 - start it locally with `AutoML.local_app()`

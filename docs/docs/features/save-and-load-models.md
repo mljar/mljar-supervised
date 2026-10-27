@@ -1,5 +1,6 @@
 ---
-description: How MLJAR AutoML saves trained models, what is stored in results_path, how to load a trained run, and what files like learner_fold_0.catboost mean.
+title: "Save and Load Trained AutoML Models"
+description: "Learn how MLJAR AutoML saves models, reload a run from results_path, and make predictions using the saved model and preprocessing pipeline."
 social:
   cards_layout: default/variant
 ---

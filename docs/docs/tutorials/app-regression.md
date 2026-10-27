@@ -1,5 +1,6 @@
 ---
-description: Beginner-friendly tutorial for training MLJAR AutoML on house prices regression data and sharing the model as a Mercury app.
+title: "Build a Regression Prediction Web App"
+description: "Train a house-price regression model with MLJAR AutoML and create a web app for single predictions and batch CSV scoring."
 social:
   cards_layout: default/variant
 ---

@@ -1,6 +1,6 @@
 ---
-title: Examples and guides
-description: Learn MLJAR AutoML with tested regression and classification tutorials, then explore custom metrics, validation, feature engineering, fairness, and prediction apps.
+title: "Python AutoML Examples and Tutorials"
+description: "Learn automated machine learning with Python regression and classification tutorials, then explore validation, feature engineering, fairness, and apps."
 ---
 
 # Find an example for your data

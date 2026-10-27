@@ -1,3 +1,7 @@
+---
+title: "Kumo and TabICLv2 Tabular Foundation Models"
+description: "Use Kumo and TabICLv2 with MLJAR AutoML. Install the SDM backend and configure tabular foundation models for classification and regression."
+---
 # Kumo and TabICLv2
 
 `Kumo` and `TabICLv2` are separate optional algorithms in **Compete** mode.

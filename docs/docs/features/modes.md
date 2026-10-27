@@ -1,4 +1,12 @@
+---
+title: "AutoML Modes and Training Budgets"
+description: "Choose an MLJAR AutoML mode and understand how model search, training budgets, and algorithm early stopping affect your run."
+---
 # AutoML Modes
+
+AutoML modes configure the model search for different training goals. Choose a
+mode and time budget, then use the [training steps guide](automl.md) to understand
+the work performed and the [model reports](reports.md) to compare results.
 
 ## Algorithm early stopping in Compete
 

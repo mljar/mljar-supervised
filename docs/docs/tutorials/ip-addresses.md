@@ -1,3 +1,7 @@
+---
+title: "Train Machine Learning Models with IP Addresses"
+description: "Use raw IPv4 and IPv6 addresses in MLJAR AutoML. Follow a synthetic Python example of automatic IP detection, preprocessing, and model training."
+---
 # Train with IP addresses
 
 Pass raw IPv4/IPv6 strings directly to `AutoML.fit()`. IP detection and numeric

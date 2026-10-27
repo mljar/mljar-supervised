@@ -1,3 +1,7 @@
+---
+title: "Automatic Feature Selection"
+description: "Learn how MLJAR AutoML selects features using a random-feature baseline and permutation importance, then retrains models on the selected inputs."
+---
 # Universal Features Selection Procedure
 
 Feature selection in `AutoML` is performed in two steps during fitting:

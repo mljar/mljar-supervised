@@ -1,4 +1,12 @@
+---
+title: "Get Help and Support"
+description: "Find support for mljar-supervised, report bugs, suggest features on GitHub, and discuss machine learning with the MLJAR community."
+---
 # Do you need help?
+
+Get help with installing, training, or using MLJAR AutoML. Check the
+[installation guide](install.md) and [examples](examples.md), or use the community
+channels below to report a problem or ask a question.
 
 ## Create GitHub issue
 
