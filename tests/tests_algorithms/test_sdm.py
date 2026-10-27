@@ -161,21 +161,6 @@ def test_weights_rejected(cls):
         m.fit(np.zeros((3, 2)), [0, 1, 0], sample_weight_validation=np.ones(3))
 
 
-@pytest.mark.parametrize("cls", CLASSES)
-def test_context_sampling_preserves_rare_classes(cls):
-    m = cls(
-        {"ml_task": "multiclass_classification", "max_context_size": 10, "seed": 42}
-    )
-    y = np.array([0] * 100 + [1] * 3 + [2])
-    a = m._context_indices(y)
-    assert len(a) == 10 and len(set(a)) == 10
-    assert set(y[a]) == {0, 1, 2}
-    np.testing.assert_array_equal(a, m._context_indices(y))
-    m.params["max_context_size"] = 2
-    with pytest.raises(ValueError, match="number of classes"):
-        m._context_indices(y)
-
-
 @pytest.mark.parametrize(
     "options",
     [
@@ -311,7 +296,6 @@ def test_checkpoint_predictions_and_portable_offline_reload(
         {
             "ml_task": task,
             "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
-            "max_context_size": 256,
             "num_estimators": 2,
             "predict_batch_size": 128,
             "local_files_only": True,
@@ -348,7 +332,7 @@ def test_checkpoint_predictions_and_portable_offline_reload(
                 cached_fp32, m.predict(valid), atol=1e-5 * scale, rtol=1e-5
             )
     assert m.model._cache is None
-    assert m.training_info["context_rows"] == 256
+    assert m.training_info["context_rows"] == len(train)
     if n_classes:
         np.testing.assert_allclose(m.predict_proba(valid).sum(1), 1, atol=1e-6)
         if n_classes == 2:
@@ -406,7 +390,6 @@ def test_twenty_classes(cls):
             "ml_task": "multiclass_classification",
             "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
             "num_estimators": 2,
-            "max_context_size": 256,
             "n_jobs": 4,
             "local_files_only": True,
         }
@@ -509,7 +492,6 @@ def test_all_kumo_sizes_synthetic_and_reload(size, task, classes, tmp_path):
             "size": size,
             "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
             "num_estimators": 2,
-            "max_context_size": 128,
             "predict_batch_size": 64,
             "n_jobs": 4,
             "local_files_only": True,

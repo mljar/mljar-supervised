@@ -75,7 +75,6 @@ def main():
                 custom_params={
                     algorithm.lower(): {
                         "device": args.device,
-                        "max_context_size": 1024,
                         "num_estimators": 4,
                         "local_files_only": args.local_files_only,
                     }

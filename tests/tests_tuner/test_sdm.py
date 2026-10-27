@@ -41,18 +41,18 @@ def tuner(**kwargs):
 
 
 def test_default_and_random_scheduling():
-    t = tuner(custom_params={"kumo": {"device": "cpu", "max_context_size": 64}})
+    t = tuner(custom_params={"kumo": {"device": "cpu", "predict_batch_size": 64}})
     before = copy.deepcopy(
         AlgorithmsRegistry.registry["binary_classification"]["Kumo"]["default_params"]
     )
     default = t.default_params(0)
     assert len(default) == 1
-    assert default[0]["learner"]["max_context_size"] == 64
+    assert default[0]["learner"]["predict_batch_size"] == 64
     assert default[0]["learner"]["eval_metric_name"] == "auc"
     assert default[0]["learner"]["num_estimators"] == 8
     random = t.get_not_so_random_params(1, [])
     assert len(random) == 2
-    assert all(p["learner"]["max_context_size"] == 64 for p in random)
+    assert all(p["learner"]["predict_batch_size"] == 64 for p in random)
     assert (
         AlgorithmsRegistry.registry["binary_classification"]["Kumo"]["default_params"]
         == before
@@ -112,12 +112,12 @@ def test_fairness_never_reweights_kumo(method):
 
 def test_tabiclv2_scheduling_and_weights():
     t = tuner(
-        algorithms=["TabICLv2"], custom_params={"tabiclv2": {"max_context_size": 128}}
+        algorithms=["TabICLv2"], custom_params={"tabiclv2": {"predict_batch_size": 128}}
     )
     params = t.default_params(0)
     assert len(params) == 1
     assert params[0]["learner"]["model_type"] == "TabICLv2"
-    assert params[0]["learner"]["max_context_size"] == 128
+    assert params[0]["learner"]["predict_batch_size"] == 128
     assert len(t.get_not_so_random_params(1, [])) == 2
     t = tuner(algorithms=["TabICLv2"], data_info={"is_sample_weighted": True})
     with warnings.catch_warnings(record=True) as captured:
@@ -205,51 +205,10 @@ def test_precision_trial_checks_every_fold_and_skips_missing_metadata():
 
 
 @pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
-@pytest.mark.parametrize("rows,fold_rows,skipped", [
-    (666, [], True), (1200, [1000, 999], True),
-    (1200, [1000, 1100], False), (1200, [None, 1000], False),
-    (1200, [], False), (None, [], False), (666, [1200, 1200], False),
-])
-def test_context_only_hill_climbing_skips_equivalent_caps(algorithm, rows, fold_rows, skipped):
-    from types import SimpleNamespace
-
-    t = tuner(algorithms=[algorithm], custom_params={algorithm: {"precision": "fp16"}})
-    params = t.default_params(0)[0]
-    t._data_info["rows"] = rows
-    params["learner"]["max_context_size"] = 1024
-    model = SimpleNamespace(
-        params=params, get_name=lambda: "1_Model",
-        learners=[SimpleNamespace(training_info={"training_rows": n, "context_rows": 500}) for n in fold_rows],
-    )
-    original = copy.deepcopy(params)
-    proposal = dict(params["learner"], max_context_size=4096)
-    frame = pd.DataFrame({"model_type": [algorithm], "model": [model]})
-    with patch.object(t, "df_models_algorithms", return_value=(frame, [algorithm])), patch(
-        "supervised.tuner.mljar_tuner.HillClimbing.get", return_value=[proposal]
-    ):
-        assert bool(t.get_hill_climbing_params([model])) is not skipped
-    assert params == original
-
-
-@pytest.mark.parametrize("change", [
-    {"precision": "fp32"}, {"seed": 999}, {"num_estimators": 16}, {"size": "large"},
-])
-def test_context_filter_preserves_other_changes(change):
-    from types import SimpleNamespace
-
-    t = tuner()
-    params = t.default_params(0)[0]
-    model = SimpleNamespace(params=params)
-    candidate = dict(params["learner"], max_context_size=8192, **change)
-    assert not t._sdm_context_change_is_noop(model, candidate)
-
-
-def test_custom_validation_needs_actual_fold_sizes():
-    from types import SimpleNamespace
-
-    t = tuner()
-    params = t.default_params(0)[0]
-    params["validation_strategy"]["validation_type"] = "custom"
-    model = SimpleNamespace(params=params)
-    candidate = dict(params["learner"], max_context_size=8192)
-    assert not t._sdm_context_change_is_noop(model, candidate)
+def test_context_size_is_not_searched(algorithm):
+    registry = AlgorithmsRegistry.registry["binary_classification"][algorithm]
+    assert "max_context_size" not in registry["default_params"]
+    t = tuner(algorithms=[algorithm])
+    candidates = t.default_params(0) + t.get_not_so_random_params(1, [])
+    assert candidates
+    assert all("max_context_size" not in p["learner"] for p in candidates)

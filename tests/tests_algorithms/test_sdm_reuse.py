@@ -328,7 +328,6 @@ def test_real_checkpoint_reuse_parity(algorithm, task, tmp_path, monkeypatch):
             ml_task=task,
             device=os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
             num_estimators=2,
-            max_context_size=64,
             predict_batch_size=8,
             n_jobs=2,
             local_files_only=True,

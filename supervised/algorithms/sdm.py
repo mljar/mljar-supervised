@@ -43,10 +43,14 @@ CHECKPOINTS = {
 }
 SEARCH_PARAMS = {
     "num_estimators": [4, 8, 16],
-    "max_context_size": [1024, 4096, 8192],
     "precision": ["fp16", "fp32"],
 }
-DEFAULT_PARAMS = {"num_estimators": 8, "max_context_size": 4096, "precision": "fp16"}
+# MLJAR admission policies, not model-level capacity guarantees. Kumo's
+# published pretraining extends to 60k rows; use a conservative 100k policy for
+# the SDM TabICLv2 backend. RAM/VRAM checks can reject much smaller contexts.
+# These are deliberately not custom parameters or tuning dimensions.
+MAX_TRAINING_ROWS = {"Kumo": 60_000, "TabICLv2": 100_000}
+DEFAULT_PARAMS = {"num_estimators": 8, "precision": "fp16"}
 OPTIONS = set(DEFAULT_PARAMS) | {
     "device",
     "predict_batch_size",
@@ -60,11 +64,17 @@ OPTIONS = set(DEFAULT_PARAMS) | {
 
 
 def validate_options(options, algorithm):
+    if "max_context_size" in options:
+        raise ValueError(
+            "max_context_size is no longer supported for training. Remove it: "
+            "Kumo and TabICLv2 use all training rows or skip the candidate. "
+            "Existing saved models can still be loaded for prediction."
+        )
     allowed = OPTIONS | ({"size"} if algorithm == "Kumo" else set())
     unknown = set(options) - allowed
     if unknown:
         raise ValueError(f"Unknown {algorithm} custom parameters: {sorted(unknown)}")
-    for key in ["num_estimators", "max_context_size", "predict_batch_size"]:
+    for key in ["num_estimators", "predict_batch_size"]:
         if key in options and (type(options[key]) is not int or options[key] <= 0):
             raise ValueError(f"{algorithm} {key} must be a positive integer")
     if options.get("size", "small") not in ["small", "medium", "large"]:
@@ -147,7 +157,7 @@ def working_memory_bytes(params, algorithm, rows, cols, device):
 
 
 class SDMAlgorithm(RealMLPAlgorithm):
-    """Pretrained inference with bounded, fold-local context and no fine-tuning."""
+    """Pretrained inference with complete, fold-local context and no fine-tuning."""
 
     def __init__(self, params):
         BaseAlgorithm.__init__(self, params)
@@ -208,22 +218,16 @@ class SDMAlgorithm(RealMLPAlgorithm):
                 phase=getattr(self, "_budget_phase", "context_or_validation"),
             )
 
-    def _context_indices(self, y):
-        rng = np.random.default_rng(self.params.get("seed", 1234))
-        limit = min(len(y), self.params.get("max_context_size", 4096))
-        if self.ml_task == REGRESSION:
-            return rng.choice(len(y), size=limit, replace=False)
-        # Guarantee a representative of every class, including singleton classes.
-        classes = np.unique(y)
-        if limit < len(classes):
-            raise ValueError("max_context_size must be at least the number of classes")
-        first = np.array([rng.choice(np.flatnonzero(y == c)) for c in classes])
-        remaining = np.setdiff1d(np.arange(len(y)), first)
-        result = np.concatenate(
-            [first, rng.choice(remaining, size=limit - len(first), replace=False)]
-        )
-        rng.shuffle(result)
-        return result
+    def _check_training_size(self, rows):
+        limit = MAX_TRAINING_ROWS[self.algorithm_short_name]
+        if rows > limit:
+            raise ResourceAdmissionError(
+                f"{self.algorithm_short_name} has {rows} training rows, exceeding "
+                f"MLJAR's fixed {limit}-row admission threshold; skipping without sampling.",
+                resources={
+                    "rows": rows, "max_training_rows": limit, "reason": "training_rows"
+                },
+            )
 
     def _check_resources(self, rows, cols, checkpoint_bytes=0):
         """Conservative admission estimate, not a hardware-independent size guarantee."""
@@ -245,7 +249,8 @@ class SDMAlgorithm(RealMLPAlgorithm):
                     ram_budget_bytes=int(budget))
         if host > budget:
             raise ResourceAdmissionError(
-                f"{self.algorithm_short_name} estimated RAM exceeds budget; reduce max_context_size/predict_batch_size.",
+                f"{self.algorithm_short_name} estimated RAM exceeds budget; "
+                "full training context does not fit; reduce predict_batch_size or use more memory.",
                 resources=info,
             )
         gpu = 0
@@ -273,7 +278,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
                     f"{self.algorithm_short_name} estimated VRAM exceeds budget: "
                     f"{gpu / 1024**3:.2f} GiB needed, {gpu_budget / 1024**3:.2f} GiB "
                     f"budget on {self.device} ({free / 1024**3:.2f} GiB free); "
-                    "reduce max_context_size/predict_batch_size.",
+                    "full training context does not fit; reduce predict_batch_size or use more memory.",
                     resources=info,
                 )
         return dict(info, estimated_vram_bytes=gpu)
@@ -346,6 +351,12 @@ class SDMAlgorithm(RealMLPAlgorithm):
             )
         if X_validation is None or y_validation is None:
             raise ValueError("SDM requires validation inputs and targets")
+        if "max_context_size" in self.params:
+            validate_options(
+                {"max_context_size": self.params["max_context_size"]},
+                self.algorithm_short_name,
+            )
+        self._check_training_size(X.shape[0] if hasattr(X, "shape") else len(X))
         check_dependencies()
         import torch
 
@@ -365,7 +376,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
             or int(self.device.split(":")[1]) >= torch.cuda.device_count()
         ):
             raise AutoMLException(f"Requested device {self.device} is unavailable")
-        # Validate without copying the full training frame: only selected context is retained.
+        # Validate before retaining the complete training context.
         from scipy import sparse
 
         if sparse.issparse(X):
@@ -384,10 +395,9 @@ class SDMAlgorithm(RealMLPAlgorithm):
                 raise ValueError("SDM classification requires at least two classes")
         elif not np.isfinite(targets).all():
             raise ValueError("SDM regression targets must be finite")
-        indices = self._context_indices(targets)
-        self._check_resources(len(indices), frame.shape[1])
-        self.context = self._preprocess(frame.iloc[indices], fit=True)
-        self.context_y = targets[indices]
+        self._check_resources(len(frame), frame.shape[1])
+        self.context = self._preprocess(frame, fit=True)
+        self.context_y = targets.copy()
         if not self.context.shape[1] or not any(self.context.nunique(dropna=False) > 1):
             raise ValueError("SDM requires at least one nonconstant context feature")
         # Kumo adds count features for high-cardinality categories before its 500-column cap.
@@ -398,13 +408,17 @@ class SDMAlgorithm(RealMLPAlgorithm):
                 for c in self.context.select_dtypes("category")
             )
             if effective_cols > 500:
-                raise ValueError(
-                    "Kumo supports at most 500 effective columns; refusing silent feature truncation"
+                raise ResourceAdmissionError(
+                    "Kumo supports at most 500 effective columns; skipping without feature truncation",
+                    resources={
+                        "rows": len(frame), "features": effective_cols,
+                        "max_features": 500, "reason": "features",
+                    },
                 )
         self._check_time()
         self._download()
         resources = self._check_resources(
-            len(indices), effective_cols, Path(self.checkpoint_path).stat().st_size
+            len(frame), effective_cols, Path(self.checkpoint_path).stat().st_size
         )
         self._check_time()
         self._load_network()
@@ -447,7 +461,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
         self._evaluation_deadline = None if max_time is None else started + max_time
         self._validation_prediction = prediction
         self.training_info = dict(
-            context_rows=len(indices),
+            context_rows=len(frame),
             training_rows=len(frame),
             effective_columns=effective_cols,
             num_estimators=self.params.get("num_estimators", 8),
@@ -533,7 +547,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
         except torch.cuda.OutOfMemoryError as exc:
             torch.cuda.empty_cache()
             raise AutoMLException(
-                "SDM ran out of GPU memory; reduce max_context_size or predict_batch_size. No device or context was changed automatically."
+                "SDM ran out of GPU memory; reduce predict_batch_size or use more GPU memory. No device or context was changed automatically."
             ) from exc
         finally:
             torch.set_num_threads(old_threads)
@@ -573,7 +587,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
         # The outer preprocessing has already run on X. Include the entire
         # remaining fitted transform, ordered context/targets, class mapping,
         # checkpoint identity and execution options. OOF equality is insufficient.
-        # max_context_size is only a sampling cap; the actual context is hashed.
+        # Ignore the legacy sampling option in saved models; actual context is hashed.
         return joblib.hash(
             (
                 self._network_key(),

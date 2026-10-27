@@ -23,7 +23,7 @@ def test_preflight_rechecks_pressure_and_does_not_blacklist_smaller_models(monke
     from supervised.algorithms import realmlp_resources
 
     params = dict(name="candidate", preprocessing={}, validation_strategy={},
-                  learner={"model_type": "Kumo", "max_context_size": 4096})
+                  learner={"model_type": "Kumo", "num_estimators": 16})
     previous = copy.deepcopy(params)
     previous["resource_skip"] = dict(resources=dict(device="cuda:0",
                                                    estimated_vram_bytes=100))
@@ -37,7 +37,7 @@ def test_preflight_rechecks_pressure_and_does_not_blacklist_smaller_models(monke
     free[0] = 1000
     automl._resource_preflight(params)
     free[0] = 0
-    params["learner"]["max_context_size"] = 1024
+    params["learner"]["num_estimators"] = 4
     automl._resource_preflight(params)
 
 
@@ -93,3 +93,43 @@ def test_failed_framework_releases_partial_learner(tmp_path, monkeypatch):
     with pytest.raises(AutoMLException, match="No models produced"):
         automl.fit(X, y)
     assert learners and all(learner.model is None for learner in learners)
+
+
+@pytest.mark.parametrize("reason", ["training_rows", "features"])
+def test_fixed_size_preflight_preserves_skip_without_memory_query(monkeypatch, reason):
+    from supervised.algorithms import realmlp_resources
+
+    params = dict(name="candidate", preprocessing={}, validation_strategy={},
+                  learner={"model_type": "Kumo"})
+    previous = copy.deepcopy(params)
+    previous["resource_skip"] = dict(reason="fixed size exceeded", resources={"reason": reason})
+    automl = AutoML()
+    automl._all_params = {"default": [previous]}
+    monkeypatch.setattr(realmlp_resources, "available_memory",
+                        lambda: pytest.fail("fixed limits do not require a memory query"))
+    with pytest.raises(ResourceAdmissionError, match="fixed size exceeded"):
+        automl._resource_preflight(params)
+
+
+@pytest.mark.parametrize("algorithm", ["Kumo", "TabICLv2"])
+def test_full_context_size_skip_continues_with_other_algorithm(tmp_path, monkeypatch, algorithm):
+    from supervised.algorithms.sdm import MAX_TRAINING_ROWS
+
+    monkeypatch.setitem(MAX_TRAINING_ROWS, algorithm, 10)
+    monkeypatch.setattr("supervised.algorithms.sdm.check_dependencies", lambda: None)
+    X, y = make_classification(n_samples=120, n_features=4, random_state=42)
+    automl = AutoML(
+        mode="Compete", algorithms=["Decision Tree", algorithm],
+        results_path=str(tmp_path / algorithm), total_time_limit=30,
+        start_random_models=1, hill_climbing_steps=0, stack_models=False,
+        train_ensemble=False, explain_level=0, n_jobs=1, verbose=0,
+        golden_features=False, features_selection=False,
+        validation_strategy={"validation_type": "kfold", "k_folds": 2},
+    )
+    automl.fit(X, y)
+    assert len(automl.predict(X[:3])) == 3
+    records = json.loads((tmp_path / algorithm / "resource_skips.json").read_text())
+    assert records
+    assert all(r["resources"]["reason"] == "training_rows" for r in records)
+    assert all(r["resources"]["rows"] == 60 for r in records)
+    assert not (tmp_path / algorithm / "errors.md").exists()

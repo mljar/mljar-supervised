@@ -911,6 +911,8 @@ class BaseAutoML(BaseEstimator, ABC):
                         or previous.get("custom_params") != params.get("custom_params")):
                     continue
                 info = dict(skip["resources"])
+                if info.get("reason") in {"training_rows", "features"}:
+                    raise ResourceAdmissionError(skip["reason"], info)
                 learner = dict(params["learner"], **params.get("custom_params", {}))
                 from supervised.algorithms.realmlp_resources import (
                     available_memory, available_gpu_memory,

@@ -25,7 +25,6 @@ def test_saved_sdm_folds_release_networks_after_prediction(
         "model_type": algorithm,
         "ml_task": "binary_classification",
         "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
-        "max_context_size": 64,
         "num_estimators": 1,
         "local_files_only": True,
         "n_jobs": 2,
@@ -129,7 +128,6 @@ def test_compete_both_algorithms_and_reload(tmp_path):
         custom_params={
             name: {
                 "device": os.environ.get("MLJAR_TEST_SDM_DEVICE", "cpu"),
-                "max_context_size": 256,
                 "num_estimators": 2,
                 "local_files_only": True,
             }
@@ -187,7 +185,6 @@ def test_compete_precision_trials_and_saved_reports(tmp_path, monkeypatch):
         custom_params={
             name: {
                 "device": device,
-                "max_context_size": 64,
                 "num_estimators": 1,
                 "local_files_only": True,
             }

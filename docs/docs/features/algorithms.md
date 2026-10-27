@@ -522,17 +522,16 @@ Allowed tuning values:
 kumo_params = {
     "size": ["small", "medium", "large"],
     "num_estimators": [4, 8, 16],
-    "max_context_size": [1024, 4096, 8192],
 }
 kumo_default_params = {
     "size": "small",
     "num_estimators": 8,
-    "max_context_size": 4096,
 }
 ```
 
 An estimator is a transformed view of the context using shared pretrained weights.
-The context is a bounded sample of training-fold rows. We do not train new weights
+The context contains every training-fold row. Oversized fits are skipped under
+fixed size thresholds and RAM/VRAM checks; rows are never sampled. We do not train new weights
 or tune network depth/learning rate. Fix any tuning parameter through
 `custom_params={"kumo": {"size": "large", "num_estimators": 8}}`.
 
@@ -544,11 +543,9 @@ It supports the same three tasks and has no small/medium/large setting.
 ```python
 tabiclv2_params = {
     "num_estimators": [4, 8, 16],
-    "max_context_size": [1024, 4096, 8192],
 }
 tabiclv2_default_params = {
     "num_estimators": 8,
-    "max_context_size": 4096,
 }
 ```
 

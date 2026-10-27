@@ -31,8 +31,8 @@ model = AutoML(
     mode="Compete",
     algorithms=["Kumo", "TabICLv2"],
     custom_params={
-        "kumo": {"device": "auto", "size": "medium", "max_context_size": 4096},
-        "tabiclv2": {"device": "auto", "max_context_size": 4096},
+        "kumo": {"device": "auto", "size": "medium"},
+        "tabiclv2": {"device": "auto"},
     },
 )
 model.fit(X_train, y_train)
@@ -47,7 +47,19 @@ and `cuda:<index>` are supported. This first version does not fine-tune weights.
 
 `num_estimators` controls the number of transformed context views combined into
 one prediction. It does not train that many independent neural networks.
-`max_context_size` caps how many labeled training rows each candidate retains.
+Each fit uses every training row as labeled context. During cross-validation,
+this means the complete training portion of that fold, excluding validation rows.
+MLJAR skips fits above fixed internal admission thresholds: **60,000 rows for
+Kumo** and **100,000 rows for TabICLv2**. These are conservative MLJAR policies,
+not guaranteed model capacities, and are not configurable. Kumo's published
+[pretraining recipe](https://huggingface.co/blog/nvidia/kumo-tabular) extends to
+60,000 rows; the SDM TabICLv2 threshold is a conservative integration policy.
+RAM/VRAM checks on the full context can reject smaller datasets, particularly
+wide ones. Kumo also skips inputs above 500 effective columns.
+
+`max_context_size` is no longer accepted for new training; remove it from
+`custom_params`. Saved models retain their original context and remain loadable.
+There is no automatic context subsampling or full-data refit after CV.
 Kumo's `size` selects a pretrained architecture; TabICLv2 has a fixed architecture.
 
 The following lists are MLJAR's search space. SDM preprocessing stays at its
@@ -58,7 +70,6 @@ temperature are not separate tuning parameters in this integration.
 | Parameter | Allowed search values | Default |
 |---|---|---|
 | `num_estimators` | `[4, 8, 16]` | `8` |
-| `max_context_size` | `[1024, 4096, 8192]` | `4096` |
 | `size` (Kumo only) | `["small", "medium", "large"]` | `"small"` |
 | `precision` | `["fp16", "fp32"]` (hill climbing) | `"fp16"` on CUDA |
 
@@ -152,7 +163,7 @@ See [prediction memory and reuse](save-and-load-models.md#prediction-memory-and-
 
 ### Resource skips and diagnostics
 
-During AutoML training, an estimated RAM or GPU budget rejection is recorded as
+During AutoML training, a fixed size limit or estimated RAM/GPU budget rejection is recorded as
 a skipped candidate in `progress.json` and `resource_skips.json`. The latter
 contains the candidate configuration, required memory and measured budget, and is
 linked from the Markdown leaderboard report. Training prints one summary of
@@ -189,18 +200,12 @@ needed to use this optimization with saved models.
 
 Equivalent saved folds can also reuse CPU predictions. Equivalence requires the
 same checkpoint, fitted preprocessing, ordered context and targets, class mapping,
-seed, precision, execution settings, and transformed query data. The sampling cap
+seed, precision, execution settings, and transformed query data. For legacy saved models, the old sampling cap
 can differ when the actual retained context is identical. Matching validation
 predictions alone does not establish equivalence. All original stacking columns
 and ensemble weights are preserved, including columns from equivalent models.
 The additional prediction cache is capped at 32 MiB and 1% of available RAM
 (and 1% of an explicit RAM limit, when supplied); nothing is reused across calls.
-
-Hill climbing skips changes to `max_context_size` alone when both caps already
-cover every training fold. Changes to seeds, precision, estimator counts, and
-model size remain eligible. Missing fold metadata never justifies assuming that
-a sampled context contains all training rows. These changes work with existing
-saved RC4 models; changing future tuning candidates requires a new fit.
 
 SDM predictions prepare a fold's context once and reuse it across query batches.
 Ensemble members execute sequentially; SDM offloads their caches to host memory.
