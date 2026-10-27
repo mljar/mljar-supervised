@@ -423,16 +423,18 @@ Read the [contribution guide](https://supervised.mljar.com/contributing/) and
 
 ## Cite
 
-The project's published citation is:
+If you use MLJAR AutoML in your research, please cite:
 
 ```bibtex
-@misc{mljar,
-  author    = {Aleksandra P\l{}o\'{n}ska and Piotr P\l{}o\'{n}ski},
-  year      = {2021},
-  publisher = {MLJAR},
-  address   = {\L{}apy, Poland},
-  title     = {MLJAR: State-of-the-art Automated Machine Learning Framework for Tabular Data.  Version 0.10.3},
-  url       = {https://github.com/mljar/mljar-supervised}
+@inproceedings{plonska2026mljar,
+  title     = {{MLJAR AutoML}: Transparent and Fairness-Aware {AutoML} for Tabular Data with Automatic Documentation},
+  author    = {P{\l}o{\'n}ska, Aleksandra and P{\l}o{\'n}ski, Piotr},
+  booktitle = {Proceedings of the Fifth International Conference on Automated Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  publisher = {PMLR},
+  year      = {2026},
+  note      = {To appear},
+  url       = {https://openreview.net/forum?id=MeGWjXDu0q}
 }
 ```
 
