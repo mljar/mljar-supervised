@@ -1,0 +1,108 @@
+{
+  "recorded_on": "2026-10-27",
+  "synthetic": true,
+  "purpose": "Validation API recipes, not real-domain performance benchmarks.",
+  "source": "Published PyPI mljar-supervised==1.4.0b1, executed outside source import path.",
+  "training_budget_seconds": 60,
+  "n_jobs": 2,
+  "runs": {
+    "grouped-311": {
+      "metrics": {
+        "synthetic": true,
+        "seed": 42,
+        "train_rows": 384,
+        "test_rows": 96,
+        "folds": 3,
+        "baseline_mae": 3.360390616019887,
+        "automl_mae": 1.193034626077063,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.11.15",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "scikit-learn": "1.9.1",
+          "numpy": "2.4.6",
+          "pandas": "3.1.0"
+        }
+      },
+      "script_sha256": "9057c9b5c114179894d4156727dc0a0defc9c4a75c5eb064e30a7bee76ee786e",
+      "log_sha256": "f3a028bda72c250b528faad5ff0181705ffce41d53913566b75ff098a73f1451",
+      "splits_sha256": "fd7d2191009f3d49aeb981c238c8f3953b1fad89df58f97f211795f906d45efb"
+    },
+    "grouped-312": {
+      "metrics": {
+        "synthetic": true,
+        "seed": 42,
+        "train_rows": 384,
+        "test_rows": 96,
+        "folds": 3,
+        "baseline_mae": 3.360390616019887,
+        "automl_mae": 1.193034626077063,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.12.3",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "scikit-learn": "1.9.1",
+          "numpy": "2.5.4",
+          "pandas": "3.1.0"
+        }
+      },
+      "script_sha256": "9057c9b5c114179894d4156727dc0a0defc9c4a75c5eb064e30a7bee76ee786e",
+      "log_sha256": "e731ca3182e4bac81ad44e113cf702b85fbe75724ff204654a41891d3f0bbb0c",
+      "splits_sha256": "fd7d2191009f3d49aeb981c238c8f3953b1fad89df58f97f211795f906d45efb"
+    },
+    "time-311": {
+      "metrics": {
+        "synthetic": true,
+        "seed": 42,
+        "train_rows": 293,
+        "test_rows": 60,
+        "folds": 3,
+        "baseline_mae": 5.486581660451336,
+        "automl_mae": 0.422572825563258,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.11.15",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "scikit-learn": "1.9.1",
+          "numpy": "2.4.6",
+          "pandas": "3.1.0"
+        }
+      },
+      "script_sha256": "bfddd404b9608720dcc67148b13e3e48debfbcd48c883692fba3a2fcada01115",
+      "log_sha256": "5c64d3f0cbb70298e8148dd0272408a21f9b094d37e1c93bba93d0fb0410a691",
+      "splits_sha256": "0dd54d1fda098398cea15552c8767cc0c0419e493b13e186b857c5003142bfcf"
+    },
+    "time-312": {
+      "metrics": {
+        "synthetic": true,
+        "seed": 42,
+        "train_rows": 293,
+        "test_rows": 60,
+        "folds": 3,
+        "baseline_mae": 5.486581660451336,
+        "automl_mae": 0.422572825563258,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.12.3",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "scikit-learn": "1.9.1",
+          "numpy": "2.5.4",
+          "pandas": "3.1.0"
+        }
+      },
+      "script_sha256": "bfddd404b9608720dcc67148b13e3e48debfbcd48c883692fba3a2fcada01115",
+      "log_sha256": "843740de166ff9bb00e832b655b7f00dd1a7ae17674efd84d9570a140f206c51",
+      "splits_sha256": "0dd54d1fda098398cea15552c8767cc0c0419e493b13e186b857c5003142bfcf"
+    }
+  },
+  "diagrams": {
+    "grouped-splits.png": {
+      "source_run": "grouped-312",
+      "sha256": "331743b7e35cf4c172549541c2d0316f6b21374220818e0d502e1a25e2d56e69"
+    },
+    "time-splits.png": {
+      "source_run": "time-312",
+      "sha256": "d31551bf353d271e38b47c1858b3f1877cbad2e8976644f76548c71fa99b3d44"
+    }
+  }
+}

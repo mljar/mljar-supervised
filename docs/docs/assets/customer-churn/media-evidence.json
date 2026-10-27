@@ -1,0 +1,55 @@
+{
+  "source_run": "Python 3.12.3, public mljar-supervised==1.4.0b1, 2026-10-27",
+  "source_report_sha256": "772f507adc5f33c6b0533c02c333f63bb5f385d67dc12d5cd80c51c4c17770d5",
+  "console": {
+    "source": "python312.log",
+    "lines_1_based": [
+      26,
+      34
+    ],
+    "sha256": "606cd0e74826b38f47450cfd0a54676c40b03f6235ece322673ec5b3d4e4ffb0"
+  },
+  "report_capture": "Browser screenshots of the unchanged generated HTML report. Overview includes leaderboard and performance chart. Model image includes LightGBM settings and first metric table. No fabricated report content.",
+  "capture_viewport_css_pixels": [
+    1265,
+    720
+  ],
+  "capture_clips_css_pixels": {
+    "run-report.jpg": [
+      0,
+      0,
+      1000,
+      1059
+    ],
+    "model-report.jpg": [
+      0,
+      0,
+      1000,
+      907
+    ]
+  },
+  "chart_source": "customer_churn.py, fixed threshold 0.5 and held-out test rows",
+  "assets": {
+    "model-report.jpg": {
+      "sha256": "bfa205093e53ced07f384ef6027c7462b2860c9971101aa6dd2ed61a610842a1",
+      "pixels": [
+        1000,
+        907
+      ]
+    },
+    "run-report.jpg": {
+      "sha256": "3eb869987d94d3ba1348c7d11250b8e83dfdaa694383c145f1a7df022d47f3e5",
+      "pixels": [
+        1000,
+        1059
+      ]
+    },
+    "confusion-matrix.png": {
+      "sha256": "04fbb398d771d43e2eb3393918198a7677c91bf7fa7810f6f7753ef5eddee515",
+      "pixels": [
+        1440,
+        640
+      ]
+    }
+  }
+}

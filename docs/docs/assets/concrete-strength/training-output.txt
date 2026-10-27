@@ -1,0 +1,9 @@
+1_Baseline mae 13.660954 trained in 0.51 seconds
+2_DecisionTree mae 9.101997 trained in 2.58 seconds
+3_Linear mae 8.676548 trained in 0.71 seconds
+* Step default_algorithms will try to check up to 1 model
+4_Default_LightGBM mae 4.680081 trained in 1.99 seconds
+* Step ensemble will try to check up to 1 model
+Ensemble mae 4.657805 trained in 0.28 seconds
+AutoML fit time: 10.12 seconds
+AutoML best model: Ensemble

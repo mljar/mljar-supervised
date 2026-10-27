@@ -1,0 +1,86 @@
+{
+  "recorded_on": "2026-10-26",
+  "source": "Published mljar-supervised==1.4.0b1, installed from PyPI",
+  "script_sha256": "a4ed3677ab92428051a46a665bdc2f8aa571b45670b3502dde0df715ca4ca1d7",
+  "plot_sha256": "4bbc7a69085b645400a039edb93b7269de7f381535a2fb59ea7fd1747d21d0f1",
+  "plot_run": "python312",
+  "seed": 42,
+  "hardware": "Intel Core i9-10980XE, Linux x86_64, approximately 251 GiB host RAM",
+  "n_jobs": 2,
+  "runs": {
+    "python311": {
+      "metrics": {
+        "dataset_url": "https://archive.ics.uci.edu/static/public/165/data.csv",
+        "dataset_sha256": "8d4b15b6fc68cd932d745cbd663d5ceae66dd54422e99c1e4865f2936ab7e2af",
+        "train_rows": 838,
+        "test_rows": 192,
+        "train_groups": 341,
+        "test_groups": 86,
+        "baseline_strategy": "training median",
+        "baseline_mae_mpa": 12.587708333333332,
+        "automl_mae_mpa": 4.297214128819009,
+        "training_budget_seconds": 120,
+        "fit_wall_seconds": 10.785563203971833,
+        "workflow_seconds_excluding_imports": 13.692990201059729,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.11.15",
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "numpy": "2.4.6",
+          "pandas": "3.1.0",
+          "scikit-learn": "1.9.1",
+          "lightgbm": "4.7.0",
+          "features-goldmine": "1.1.0",
+          "joblib": "1.6.0"
+        }
+      },
+      "resources": {
+        "exit_code": 0,
+        "total_process_wall_seconds": 21.35339317494072,
+        "sampled_peak_parent_plus_children_rss_bytes": 1489362944,
+        "rss_sampling_interval_seconds": 0.1,
+        "host_ram_bytes": 269944492032,
+        "logical_cpus": 36,
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39"
+      }
+    },
+    "python312": {
+      "metrics": {
+        "dataset_url": "https://archive.ics.uci.edu/static/public/165/data.csv",
+        "dataset_sha256": "8d4b15b6fc68cd932d745cbd663d5ceae66dd54422e99c1e4865f2936ab7e2af",
+        "train_rows": 838,
+        "test_rows": 192,
+        "train_groups": 341,
+        "test_groups": 86,
+        "baseline_strategy": "training median",
+        "baseline_mae_mpa": 12.587708333333332,
+        "automl_mae_mpa": 4.297214128819009,
+        "training_budget_seconds": 120,
+        "fit_wall_seconds": 10.118786515900865,
+        "workflow_seconds_excluding_imports": 12.855569029925391,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.12.3",
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "numpy": "2.5.4",
+          "pandas": "3.1.0",
+          "scikit-learn": "1.9.1",
+          "lightgbm": "4.7.0",
+          "features-goldmine": "1.1.0",
+          "joblib": "1.6.0"
+        }
+      },
+      "resources": {
+        "exit_code": 0,
+        "total_process_wall_seconds": 15.759369590086862,
+        "sampled_peak_parent_plus_children_rss_bytes": 1228959744,
+        "rss_sampling_interval_seconds": 0.1,
+        "host_ram_bytes": 269944492032,
+        "logical_cpus": 36,
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39"
+      }
+    }
+  }
+}

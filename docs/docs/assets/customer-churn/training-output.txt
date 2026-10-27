@@ -1,0 +1,9 @@
+1_Baseline logloss 0.433171 trained in 1.1 seconds
+2_DecisionTree logloss 0.312209 trained in 8.63 seconds
+3_Linear logloss 0.232629 trained in 2.67 seconds
+* Step default_algorithms will try to check up to 1 model
+4_Default_LightGBM logloss 0.134072 trained in 3.6 seconds
+* Step ensemble will try to check up to 1 model
+Ensemble logloss 0.132638 trained in 2.45 seconds
+AutoML fit time: 25.01 seconds
+AutoML best model: Ensemble

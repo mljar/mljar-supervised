@@ -1,0 +1,194 @@
+{
+  "recorded_on": "2026-10-27",
+  "source": "Published mljar-supervised==1.4.0b1 installed from PyPI; script executed outside source import path",
+  "script_sha256": "fc2a062f17533bd17011b3542330224366cccfe2e7dd5e2be2b7876352dc1906",
+  "hardware": "Intel Core i9-10980XE, Linux x86_64, approximately 251 GiB host RAM",
+  "n_jobs": 2,
+  "plot_run": "python312",
+  "runs": {
+    "python311": {
+      "metrics": {
+        "dataset_url": "https://archive.ics.uci.edu/static/public/563/data.csv",
+        "dataset_sha256": "90d5fb6bd1630cd4de4b4d28fcf8b4cb92a8f6ab7484605b0799d47386f7dbe1",
+        "features": [
+          "Call Failure",
+          "Complains",
+          "Subscription Length",
+          "Charge Amount",
+          "Seconds of Use",
+          "Frequency of use",
+          "Frequency of SMS",
+          "Distinct Called Numbers",
+          "Tariff Plan",
+          "Age"
+        ],
+        "seed": 42,
+        "threshold": 0.5,
+        "train_rows": 2511,
+        "test_rows": 639,
+        "train_churned": 392,
+        "test_churned": 103,
+        "profile_groups": 2826,
+        "scores": {
+          "baseline": {
+            "roc_auc": 0.5,
+            "average_precision": 0.16118935837245696,
+            "log_loss": 0.44173380402421103,
+            "brier_score": 0.13523311749514155,
+            "accuracy": 0.838810641627543,
+            "precision": 0.0,
+            "recall": 0.0,
+            "confusion_matrix": [
+              [
+                536,
+                0
+              ],
+              [
+                103,
+                0
+              ]
+            ]
+          },
+          "automl": {
+            "roc_auc": 0.9861795391972178,
+            "average_precision": 0.9439699741056298,
+            "log_loss": 0.11007306013007491,
+            "brier_score": 0.03291843563887006,
+            "accuracy": 0.9420970266040689,
+            "precision": 0.8586956521739131,
+            "recall": 0.7669902912621359,
+            "confusion_matrix": [
+              [
+                523,
+                13
+              ],
+              [
+                24,
+                79
+              ]
+            ]
+          }
+        },
+        "training_budget_seconds": 120,
+        "fit_wall_seconds": 28.360531233949587,
+        "workflow_seconds_excluding_imports": 32.544482396915555,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.11.15",
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "numpy": "2.4.6",
+          "pandas": "3.1.0",
+          "scikit-learn": "1.9.1",
+          "lightgbm": "4.7.0",
+          "features-goldmine": "1.1.0",
+          "joblib": "1.6.0"
+        }
+      },
+      "resources": {
+        "exit_code": 0,
+        "total_process_wall_seconds": 36.30775062995963,
+        "sampled_peak_parent_plus_children_rss_bytes": 1554620416,
+        "rss_sampling_interval_seconds": 0.1,
+        "host_ram_bytes": 269944492032,
+        "logical_cpus": 36,
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39"
+      },
+      "log_sha256": "0b98bd61967e642e077fb5df3f5c7999106d9d6aa0e20378e83bced00d1cf76a",
+      "splits_sha256": "d318f4bc34cd3941364889e2fbed87c8fbe67f0b745be60f8988e2962839858a"
+    },
+    "python312": {
+      "metrics": {
+        "dataset_url": "https://archive.ics.uci.edu/static/public/563/data.csv",
+        "dataset_sha256": "90d5fb6bd1630cd4de4b4d28fcf8b4cb92a8f6ab7484605b0799d47386f7dbe1",
+        "features": [
+          "Call Failure",
+          "Complains",
+          "Subscription Length",
+          "Charge Amount",
+          "Seconds of Use",
+          "Frequency of use",
+          "Frequency of SMS",
+          "Distinct Called Numbers",
+          "Tariff Plan",
+          "Age"
+        ],
+        "seed": 42,
+        "threshold": 0.5,
+        "train_rows": 2511,
+        "test_rows": 639,
+        "train_churned": 392,
+        "test_churned": 103,
+        "profile_groups": 2826,
+        "scores": {
+          "baseline": {
+            "roc_auc": 0.5,
+            "average_precision": 0.16118935837245696,
+            "log_loss": 0.44173380402421103,
+            "brier_score": 0.13523311749514155,
+            "accuracy": 0.838810641627543,
+            "precision": 0.0,
+            "recall": 0.0,
+            "confusion_matrix": [
+              [
+                536,
+                0
+              ],
+              [
+                103,
+                0
+              ]
+            ]
+          },
+          "automl": {
+            "roc_auc": 0.9861795391972178,
+            "average_precision": 0.9439699741056298,
+            "log_loss": 0.11007306013007491,
+            "brier_score": 0.03291843563887006,
+            "accuracy": 0.9420970266040689,
+            "precision": 0.8586956521739131,
+            "recall": 0.7669902912621359,
+            "confusion_matrix": [
+              [
+                523,
+                13
+              ],
+              [
+                24,
+                79
+              ]
+            ]
+          }
+        },
+        "training_budget_seconds": 120,
+        "fit_wall_seconds": 25.01113112294115,
+        "workflow_seconds_excluding_imports": 28.443170017097145,
+        "reload_max_absolute_difference": 0.0,
+        "python": "3.12.3",
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39",
+        "package_versions": {
+          "mljar-supervised": "1.4.0b1",
+          "numpy": "2.5.4",
+          "pandas": "3.1.0",
+          "scikit-learn": "1.9.1",
+          "lightgbm": "4.7.0",
+          "features-goldmine": "1.1.0",
+          "joblib": "1.6.0"
+        }
+      },
+      "resources": {
+        "exit_code": 0,
+        "total_process_wall_seconds": 31.39272507186979,
+        "sampled_peak_parent_plus_children_rss_bytes": 1303785472,
+        "rss_sampling_interval_seconds": 0.1,
+        "host_ram_bytes": 269944492032,
+        "logical_cpus": 36,
+        "platform": "Linux-6.8.0-79-generic-x86_64-with-glibc2.39"
+      },
+      "log_sha256": "606cd0e74826b38f47450cfd0a54676c40b03f6235ece322673ec5b3d4e4ffb0",
+      "splits_sha256": "d318f4bc34cd3941364889e2fbed87c8fbe67f0b745be60f8988e2962839858a"
+    }
+  },
+  "plot_sha256": "04fbb398d771d43e2eb3393918198a7677c91bf7fa7810f6f7753ef5eddee515",
+  "report_sha256": "772f507adc5f33c6b0533c02c333f63bb5f385d67dc12d5cd80c51c4c17770d5"
+}

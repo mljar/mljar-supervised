@@ -1,669 +1,199 @@
+<p><img src="docs/docs/images/brand/mljar-logo.webp" alt="MLJAR" width="64" /></p>
 
+# Build machine learning models from your tabular data
 
-# MLJAR Automated Machine Learning for Humans
+MLJAR AutoML trains and compares models, creates reports, and saves the results
+for future predictions. Use it for classification and regression with data from
+CSV files, spreadsheets, or pandas DataFrames.
 
-[![Tests status](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg)](https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml)
-[![PyPI version](https://badge.fury.io/py/mljar-supervised.svg)](https://badge.fury.io/py/mljar-supervised)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/version.svg)](https://anaconda.org/conda-forge/mljar-supervised)
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mljar-supervised/badges/license.svg)](https://anaconda.org/conda-forge/mljar-supervised)
-[![Downloads](https://pepy.tech/badge/mljar-supervised)](https://pepy.tech/project/mljar-supervised)
+[Documentation](https://supervised.mljar.com/) ·
+[Example gallery](docs/docs/examples.md) ·
+[Installation](docs/docs/install.md) ·
+[Release notes](release.md)
 
-<p align="center">
-  <img 
-    alt="mljar AutoML"
-    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_white.png#gh-light-mode-only" width="50%" />  
-</p>
-<p align="center">
-  <img 
-    alt="mljar AutoML"
-    src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/AutoML_black.png#gh-dark-mode-only" width="50%" />  
-</p>
+## Choose your starting point
 
----
+| Python | MLJAR Studio |
+| --- | --- |
+| Follow a standalone script or notebook, from loading data to evaluating and reloading a model. | Work in a conversational notebook with visible Python code. |
+| [Start with a Python tutorial](docs/docs/tutorials/concrete-strength.md) | [Explore MLJAR Studio](https://mljar.com/studio/) |
 
-**Documentation**: <a href="https://supervised.mljar.com/" target="_blank">https://supervised.mljar.com/</a>
+The two beginner workflows below were tested as Python scripts and notebooks.
+Their Studio walkthroughs are still being validated.
 
-**Source Code**: <a href="https://github.com/mljar/mljar-supervised" target="_blank">https://github.com/mljar/mljar-supervised</a>
+## Quickstart
 
-**Use MLJAR Studio (Easiest Way to Run MLJAR AutoML)**  
-MLJAR Studio is the easiest way to run MLJAR AutoML, with conversational notebooks and AutoLab experiments (autonomous AI for ML pipeline optimization).  
-Start quickly, iterate faster, and manage experiments in one place.  
-[Try MLJAR Studio](https://mljar.com)
-
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/mljar-examples/master/media/pipeline_AutoML.png" width="100%" />
-</p>
-
----
-
-**Kumo and TabICLv2:** separate Compete algorithms with optional `[tfm]` dependencies
-including the SDM 0.2.1 PyPI backend in beta 1. Python 3.11+ required.
-See [installation and usage](docs/docs/features/sdm.md).
-
-Version **1.4.0b1** requires **Python 3.11+** and includes feature discovery
-in the standard installation. Torch-based models and the app runtime remain optional.
-
-## Table of Contents
-
-Install standard MLJAR with `python -m pip install mljar-supervised`.
-For RealMLP, choose [CPU](docs/docs/install.md#realmlp-on-cpu) or
-[NVIDIA GPU](docs/docs/install.md#realmlp-on-nvidia-gpu) setup, then install the
-`[realmlp]` or `[all]` extra. RealMLP is available only in `mode="Compete"`.
-See the [installation guide](docs/docs/install.md) for copyable commands and
-checks, and the [RealMLP guide](docs/docs/features/realmlp.md) for usage.
-[TabM mini](docs/docs/features/tabm.md) is also available in Compete mode through
-`[tabm]` or `[all]`, using the same pytabkit/PyTorch dependencies and CPU/GPU setup.
-
- - [Automated Machine Learning](https://github.com/mljar/mljar-supervised#automated-machine-learning)
- - [Generate Web Apps for Trained Models](https://github.com/mljar/mljar-supervised#generate-web-apps-for-trained-models)
- - [What's good in it?](https://github.com/mljar/mljar-supervised#whats-good-in-it)
- - [Automatic Documentation](https://github.com/mljar/mljar-supervised#automatic-documentation)
- - [Available Modes](https://github.com/mljar/mljar-supervised#available-modes)
- - [Fairness Aware Training](https://github.com/mljar/mljar-supervised#fairness-aware-training)
- - [Examples](https://github.com/mljar/mljar-supervised#examples)
- - [FAQ](https://github.com/mljar/mljar-supervised#faq)
- - [Documentation](https://github.com/mljar/mljar-supervised#documentation)
- - [Installation](https://github.com/mljar/mljar-supervised#installation)
- - [Demo](https://github.com/mljar/mljar-supervised#demo)
- - [Contributing](https://github.com/mljar/mljar-supervised#contributing)
- - [Cite](https://github.com/mljar/mljar-supervised#cite)
- - [License](https://github.com/mljar/mljar-supervised#license)
- - [Commercial support](https://github.com/mljar/mljar-supervised#commercial-support)
- - [MLJAR](https://github.com/mljar/mljar-supervised#mljar)
- 
-
-
-
-
-# Automated Machine Learning 
-
-The `mljar-supervised` is an Automated Machine Learning Python package that works with tabular data. It is designed to save time for a data scientist. It abstracts the common way to preprocess the data, construct the machine learning models, and perform hyper-parameters tuning to find the best model :trophy:. It is no black box, as you can see exactly how the ML pipeline is constructed (with a detailed Markdown report for each ML model). 
-
-The `mljar-supervised` will help you with:
- - explaining and understanding your data through model reports, feature importance, and SHAP explanations,
- - trying many different machine learning models (Algorithm Selection and Hyper-Parameters tuning),
- - creating Markdown reports from analysis with details about all models (Automatic-Documentation),
- - generating a web app for a trained model, so predictions can be used by domain experts,
- - saving, re-running, and loading the analysis and ML models.
-
-It has four built-in modes of work:
- - `Explain` mode, which is ideal for explaining and understanding the data, with many data explanations, like decision trees visualization, linear models coefficients display, permutation importance, and SHAP explanations of data,
- - `Perform` for building ML pipelines to use in production,
- - `Compete` mode that trains highly-tuned ML models with ensembling and stacking, with the purpose to use in ML competitions.
- - `Optuna` mode can be used to search for highly-tuned ML models should be used when the performance is the most important, and computation time is not limited (it is available from version `0.10.0`)
-
-Of course, you can further customize the details of each `mode` to meet the requirements.
-
-## Generate Web Apps for Trained Models
-
-MLJAR AutoML does not stop after training a model. It can automatically generate a web app for your trained model with [Mercury](https://github.com/mljar/mercury). This is useful when you want to share predictions with domain experts, business users, researchers, or other people who do not want to work directly with Python code. 
-
-The base installation can generate app files. With beta 1, install
-`mljar-supervised[apps]==1.4.0b1` to run them, or
-`mljar-supervised[all,apps]==1.4.0b1` for the app runtime and all optional models. Exported requirements include the backends needed by the selected model.
-See the [app guide](docs/docs/features/apps.md) for setup.
-
-After training AutoML, generate the app files with:
-
-```python 
-from supervised import AutoML
-# AutoML training
-automl = AutoML(results_path="AutoML")
-automl.fit(X, y)
-
-# Generate a Mercury web app for the trained model
-automl.app()
-``` 
-
-You can also start the app locally:
-
-```python
-automl.local_app()
-```
-
-or publish it quickly:
-
-```python
-automl.publish_app()
-```
-
-`publish_app()` creates an app URL on the first publish and then reuses the last successfully published URL by default.
-
-The generated app can include:
-- single prediction dashboard,
-- batch prediction from CSV files,
-- downloadable predictions,
-- feature importance plots,
-- feature context plots for single predictions.
-
-With this feature, you can go from: CSV data -> trained ML model -> ready-to-use prediction web app.
-
-Please check the [Apps documentation](https://supervised.mljar.com/features/apps/) for details.
-
-## What's good in it? 
-
-- It uses many algorithms: `Baseline`, `Linear`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Networks`, and `Nearest Neighbors`.
-- It can compute Ensemble based on a greedy algorithm from [Caruana paper](http://www.cs.cornell.edu/~alexn/papers/shotgun.icml04.revised.rev2.pdf).
-- It can stack models to build a level 2 ensemble (available in `Compete` mode or after setting the `stack_models` parameter).
-- It can do features preprocessing, like missing values imputation and converting categoricals. What is more, it can also handle target values preprocessing.
-- It can do advanced features engineering, like [Golden Features](https://supervised.mljar.com/features/golden_features/), [Features Selection](https://supervised.mljar.com/features/features_selection/), Text and Time Transformations.
-- It can tune hyper-parameters with a `not-so-random-search` algorithm (random-search over a defined set of values) and hill climbing to fine-tune final models.
-- It can compute the `Baseline` for your data so that you will know if you need Machine Learning or not!
-- It has extensive explanations. This package is training simple `Decision Trees` with `max_depth <= 5`, so you can easily visualize them with amazing [dtreeviz](https://github.com/parrt/dtreeviz) to better understand your data.
-- The `mljar-supervised` uses simple linear regression and includes its coefficients in the summary report, so you can check which features are used the most in the linear model.
-- It cares about the explainability of models: for every algorithm, the feature importance is computed based on permutation. Additionally, for every algorithm, the SHAP explanations are computed: feature importance, dependence plots, and decision plots (explanations can be switched off with the `explain_level` parameter).
-- There is automatic documentation for every ML experiment run with AutoML. The `mljar-supervised` creates markdown reports from AutoML training full of ML details, metrics, and charts.
-- It can generate Mercury web apps from trained AutoML models, so the model can be shared as an interactive prediction app.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/infograph.png" width="100%" />
-</p>
-
-# Automatic Documentation
-
-## The AutoML Report
-
-The report from running AutoML will contain the table with information about each model score and the time needed to train the model. There is a link for each model, which you can click to see the model's details. The performance of all ML models is presented as scatter and box plots so you can visually inspect which algorithms perform the best :trophy:.
-
-![AutoML leaderboard](https://github.com/mljar/mljar-examples/blob/master/media/automl_summary.gif)
-
-## The `Decision Tree` Report
-
-The example for `Decision Tree` summary with trees visualization. For classification tasks, additional metrics are provided:
-- confusion matrix
-- threshold (optimized in the case of binary classification task)
-- F1 score
-- Accuracy
-- Precision, Recall, MCC
-
-![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/decision_tree_summary.gif)
-
-## The `LightGBM` Report
-
-The example for `LightGBM` summary:
-
-![Decision Tree summary](https://github.com/mljar/mljar-examples/blob/master/media/lightgbm_summary.gif)
-
-
-## Available Modes
-
-In the [docs](https://supervised.mljar.com/features/modes/) you can find details about AutoML modes that are presented in the table.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/mljar/visual-identity/main/media/mljar_modes.png" width="100%" />
-</p>
-
-### Explain 
-
-```py
-automl = AutoML(mode="Explain")
-```
-
-It is aimed to be used when the user wants to explain and understand the data.
- - It is using 75%/25% train/test split. 
- - It uses: `Baseline`, `Linear`, `Decision Tree`, `Random Forest`, `Xgboost`, `Neural Network' algorithms, and ensemble. 
- - It has full explanations: learning curves, importance plots, and SHAP plots.
-
-### Perform
-
-```py
-automl = AutoML(mode="Perform")
-```
-
-It should be used when the user wants to train a model that will be used in real-life use cases.
- - It uses a 5-fold CV.
- - It uses: `Linear`, `Random Forest`, `LightGBM`, `Xgboost`, `CatBoost`, and `Neural Network`. It uses ensembling. 
- - It has learning curves and importance plots in reports.
-
-### Compete
-
-```py
-automl = AutoML(mode="Compete")
-```
-
-It should be used for machine learning competitions.
-Kumo (small/medium/large) and TabICLv2 are also available with the
-[optional SDM installation](docs/docs/install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu).
-They are selected automatically when the backend and CUDA are available; select
-them explicitly for CPU use.
- - It adapts the validation strategy depending on dataset size and `total_time_limit`. It can be: a train/test split (80/20), 5-fold CV or 10-fold CV. 
- - It is using: `Linear`, `Decision Tree`, `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, `CatBoost`, `Neural Network`, and `Nearest Neighbors`. It uses ensemble and **stacking**. 
- - It has only learning curves in the reports.
-
-### Optuna
-
-```py
-automl = AutoML(mode="Optuna", optuna_time_budget=3600)
-```
-
-It should be used when the performance is the most important and time is not limited.
-- It uses a 10-fold CV
-- It uses: `Random Forest`, `Extra Trees`, `LightGBM`, `Xgboost`, and `CatBoost`. Those algorithms are tuned by `Optuna` framework for `optuna_time_budget` seconds, each. Algorithms are tuned with original data, without advanced feature engineering.
-- It uses advanced feature engineering, stacking and ensembling. The hyperparameters found for original data are reused with those steps.
-- It produces learning curves in the reports.
-
-
-
-## How to save and load AutoML?
-
-All models in the AutoML are saved and loaded automatically. No need to call `save()` or `load()`.
-
-### Example:
-
-#### Train AutoML
-
-```python
-automl = AutoML(results_path="AutoML_classifier")
-automl.fit(X, y)
-```
-
-You will have all models saved in the `AutoML_classifier` directory. Each model will have a separate directory with the `README.md` file with all details from the training.
-
-#### Compute predictions
-```python
-automl = AutoML(results_path="AutoML_classifier")
-automl.predict(X)
-```
-
-The  AutoML automatically loads models from the `results_path` directory. If you will call `fit()` on already trained AutoML then you will get a warning message that AutoML is already fitted.
-
-
-### Why do you automatically save all models?
-
-All models are automatically saved to be able to restore the training after interruption. For example, you are training AutoML for 48 hours, and after 47 hours, there is some unexpected interruption. In MLJAR AutoML you just call the same training code after the interruption and AutoML reloads already trained models and finishes the training.
-
-## Supported evaluation metrics (`eval_metric` argument in `AutoML()`)
-
-- for binary classification: `logloss`, `auc`, `f1`, `average_precision`, `accuracy`- default is `logloss`
-- for multiclass classification: `logloss`, `f1`, `accuracy` - default is `logloss`
-- for regression: `rmse`, `mse`, `mae`, `r2`, `mape`, `spearman`, `pearson` - default is `rmse`
-
-You can also pass a custom Python function directly as `eval_metric`. See the docs for [Custom eval metric](https://supervised.mljar.com/features/custom-eval-metric/).
-
-If you don't find the `eval_metric` that you need, please add a new issue. We will add it.
-
-
-## Fairness Aware Training
-
-Starting from version `1.0.0` AutoML can optimize the Machine Learning pipeline with sensitive features. There are the following fairness related arguments in the AutoML constructor:
- - `fairness_metric` - metric which will be used to decide if the model is fair,
- - `fairness_threshold` - threshold used in decision about model fairness,
- - `privileged_groups` - privileged groups used in fairness metrics computation,
- - `underprivileged_groups` - underprivileged groups used in fairness metrics computation.
-
-The `fit()` method accepts `sensitive_features`. When sensitive features are passed to AutoML, the best model will be selected among fair models only. In the AutoML reports, additional information about fairness metrics will be added. The MLJAR AutoML supports two methods for bias mitigation:
- - Sample Weighting - assigns weights to samples to treat samples equally,
- - Smart Grid Search - similar to Sample Weighting, where different weights are checked to optimize fairness metric.
-
-The fair ML building can be used with all algorithms, including `Ensemble` and `Stacked Ensemble`. We support three Machine Learning tasks:
- - binary classification,
- - mutliclass classification,
- - regression.
-
-Example code:
-
-
-```python
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import fetch_openml
-from supervised.automl import AutoML
-
-data = fetch_openml(data_id=1590, as_frame=True)
-X = data.data
-y = (data.target == ">50K") * 1
-sensitive_features = X[["sex"]]
-
-X_train, X_test, y_train, y_test, S_train, S_test = train_test_split(
-    X, y, sensitive_features, stratify=y, test_size=0.75, random_state=42
-)
-
-automl = AutoML(
-    algorithms=[
-        "Xgboost"
-    ],
-    train_ensemble=False,
-    fairness_metric="demographic_parity_ratio",  
-    fairness_threshold=0.8,
-    privileged_groups = [{"sex": "Male"}],
-    underprivileged_groups = [{"sex": "Female"}],
-)
-
-automl.fit(X_train, y_train, sensitive_features=S_train)
-```
-
-You can read more about fairness aware AutoML training in our article https://mljar.com/blog/fairness-machine-learning/
-
-![Fairness aware AutoML](https://raw.githubusercontent.com/mljar/visual-identity/main/automl/fairness-automl.gif)
-
-
-
-# Examples
-
-## :point_right: Binary Classification Example
-
-There is a simple interface available with `fit` and `predict` methods.
-
-```python
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from supervised.automl import AutoML
-
-df = pd.read_csv(
-    "https://raw.githubusercontent.com/pplonski/datasets-for-start/master/adult/data.csv",
-    skipinitialspace=True,
-)
-X_train, X_test, y_train, y_test = train_test_split(
-    df[df.columns[:-1]], df["income"], test_size=0.25
-)
-
-automl = AutoML()
-automl.fit(X_train, y_train)
-
-predictions = automl.predict(X_test)
-```
-
-Historical output from the [income-classification example](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1) is shown below. It has not been rerun with `1.4.0b1`; the original environment is not established here. Scores, timings, and log formatting are illustrative, not expected beta results:
-```py
-Create directory AutoML_1
-AutoML task to be solved: binary_classification
-AutoML will use algorithms: ['Baseline', 'Linear', 'Decision Tree', 'Random Forest', 'Xgboost', 'Neural Network']
-AutoML will optimize for metric: logloss
-1_Baseline final logloss 0.5519845471086654 time 0.08 seconds
-2_DecisionTree final logloss 0.3655910192804364 time 10.28 seconds
-3_Linear final logloss 0.38139916864708445 time 3.19 seconds
-4_Default_RandomForest final logloss 0.2975204390214936 time 79.19 seconds
-5_Default_Xgboost final logloss 0.2731086827200411 time 5.17 seconds
-6_Default_NeuralNetwork final logloss 0.319812276905242 time 21.19 seconds
-Ensemble final logloss 0.2731086821194617 time 1.43 seconds
-```
-
-- the AutoML results in [Markdown report](https://github.com/mljar/mljar-examples/tree/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1#automl-leaderboard)
-- the Xgboost [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/5_Default_Xgboost/README.md), please take a look at amazing dependence plots produced by SHAP package :sparkling_heart:
-- the Decision Tree [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/2_DecisionTree/README.md), please take a look at beautiful tree visualization :sparkles:
-- the Logistic Regression [Markdown report](https://github.com/mljar/mljar-examples/blob/3035b1e39208e71efa979b002b044e923a82bc40/Income_classification/AutoML_1/3_Linear/README.md), please take a look at coefficients table, and you can compare the SHAP plots between (Xgboost, Decision Tree and Logistic Regression) :coffee:
-
-
-## :point_right: Multi-Class Classification Example
-
-This example classifies handwritten digits and computes accuracy on held-out data. Measure runtime and accuracy in your environment; no fixed score or runtime is guaranteed.
-
-```python
-import pandas as pd 
-# scikit learn utilites
-from sklearn.datasets import load_digits
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-# mljar-supervised package
-from supervised.automl import AutoML
-
-# load the data
-digits = load_digits()
-X_train, X_test, y_train, y_test = train_test_split(
-    pd.DataFrame(digits.data), digits.target, stratify=digits.target, test_size=0.25,
-    random_state=123
-)
-
-# train models with AutoML
-automl = AutoML(mode="Perform")
-automl.fit(X_train, y_train)
-
-# compute the accuracy on test data
-predictions = automl.predict_all(X_test)
-print(predictions.head())
-print("Test accuracy:", accuracy_score(y_test, predictions["label"].astype(int)))
-```
-
-## :point_right: Regression Example
-
-Regression example on `California Housing` house prices data.
-
-```python
-import numpy as np
-import pandas as pd
-from sklearn.datasets import fetch_california_housing
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
-from supervised.automl import AutoML # mljar-supervised
-
-# Load the data
-housing = fetch_california_housing()
-X_train, X_test, y_train, y_test = train_test_split(
-    pd.DataFrame(housing.data, columns=housing.feature_names),
-    housing.target,
-    test_size=0.25,
-    random_state=123,
-)
-
-# train models with AutoML
-automl = AutoML(mode="Explain")
-automl.fit(X_train, y_train)
-
-# compute the MSE on test data
-predictions = automl.predict(X_test)
-print("Test MSE:", mean_squared_error(y_test, predictions))
-```
-
-## :point_right: More Examples
-
-- [**IP address classification**](examples/scripts/binary_classifier_ip_addresses.py) - train on raw IPv4/IPv6 strings and verify predictions after reload; see the [tutorial](docs/docs/tutorials/ip-addresses.md).
-
-- [**Income classification**](https://github.com/mljar/mljar-examples/tree/master/Income_classification) - it is a binary classification task on census data
-- [**Iris classification**](https://github.com/mljar/mljar-examples/tree/master/Iris_classification) - it is a multiclass classification on Iris flowers data
-- [**House price regression**](https://github.com/mljar/mljar-examples/tree/master/House_price_regression) - it is a regression task on Boston houses data
-
-# FAQ
-
-<details><summary>What method is used for hyperparameters optimization?</summary>
-  - For modes: `Explain`, `Perform`, and `Compete` there is used a random search method combined with hill climbing. In this approach, all checked models are saved and used for building Ensemble.
-  - For mode: `Optuna` the Optuna framework is used. It uses using TPE sampler for tuning. Models checked during the Optuna hyperparameters search are not saved, only the best model is saved (the final model from tuning). You can check the details about checked hyperparameters from optuna by checking study files in the `optuna` directory in your AutoML `results_path`.
-</details>
-
-<details><summary>How to save and load AutoML?</summary>
-
-The save and load of AutoML models is automatic. All models created during AutoML training are saved in the directory set in `results_path` (argument of `AutoML()` constructor). If there is no `results_path` set, then the directory is created based on following name convention: `AutoML_{number}` the `number` will be number from 1 to 1000 (depends which directory name will be free).
-
-Example save and load:
-
-```python
-automl = AutoML(results_path='AutoML_1')
-automl.fit(X, y)
-```
-
-The all models from AutoML are saved in `AutoML_1` directory.
-
-To load models:
-
-```python
-automl = AutoML(results_path='AutoML_1')
-automl.predict(X)
-```
-
-</details>
-
-<details><summary>How to set ML task (select between classification or regression)?</summary>
-
-The MLJAR AutoML can work with:
-- binary classification
-- multi-class classification
-- regression
-
-The ML task detection is automatic based on target values. There can be situation if you want to manually force AutoML to select the ML task, then you need to set `ml_task` parameter. It can be set to `'binary_classification'`, `'multiclass_classification'`, `'regression'`.
-
-Example:
-```python
-automl = AutoML(ml_task='regression')
-automl.fit(X, y)
-```
-In the above example the regression model will be fitted.
-
-</details>
-
-<details><summary>How to reuse Optuna hyperparameters?</summary>
-  
-  You can reuse Optuna hyperparameters that were found in other AutoML training. You need to pass them in `optuna_init_params` argument. All hyperparameters found during Optuna tuning are saved in the `optuna/optuna.json` file (inside `results_path` directory).
-  
- Example:
- 
- ```python
- optuna_init = json.loads(open('previous_AutoML_training/optuna/optuna.json').read())
- 
- automl = AutoML(
-     mode='Optuna',
-     optuna_init_params=optuna_init
- )
- automl.fit(X, y)
- ```
-  
- When reusing Optuna hyperparameters the Optuna tuning is simply skipped. The model will be trained with hyperparameters set in `optuna_init_params`. Right now there is no option to continue Optuna tuning with seed parameters.
-  
-  
-</details>
-
-
-<details><summary>How to know the order of classes for binary or multiclass problem when using predict_proba?</summary>
-
-To get predicted probabilites with information about class label please use the `predict_all()` method. It returns the pandas DataFrame with class names in the columns. The order of predicted columns is the same in the `predict_proba()` and `predict_all()` methods. The `predict_all()` method will additionaly have the column with the predicted class label.
-
-</details>
-
-# Documentation  
-
-For details please check [mljar-supervised docs](https://supervised.mljar.com).
-
-## Structured Report for LLMs
-
-The AutoML object can generate a structured report that is easier to analyze with LLMs and external tools:
-
-```python
-from supervised import AutoML
-
-automl = AutoML(results_path="AutoML_example")
-automl.fit(X, y)
-
-# Default output is markdown text
-markdown_report = automl.report_structured()
-print(markdown_report)
-```
-
-You can also get programmatic formats:
-
-```python
-# Python dictionary
-payload = automl.report_structured(format="dict")
-
-# JSON string
-payload_json = automl.report_structured(format="json")
-```
-
-Each call creates/updates:
-
-```text
-<results_path>/report_structured.json
-```
-
-Use `model_name` to display detailed metrics for one selected model:
-
-```python
-compact = automl.report_structured()
-detailed = automl.report_structured(model_name="3_Linear")
-```
-
-When `model_name` is provided, the markdown includes detailed metrics, fairness details (if used), and feature importance summaries for that model.
-
-# Installation  
-
-For standard MLJAR, optional neural models, and Kumo/TabICLv2 CPU/GPU setup, see the
-[installation guide](docs/docs/install.md). Version `1.4.0b1` is a beta
-release with optional RealMLP, TabM mini, Kumo and TabICLv2 support.
-
-Compatibility:
-- Python `>=3.11` for 1.4.0b1
-- NumPy `>=2.0,<3`
-
-From PyPi repository:
-
-```
-pip install mljar-supervised
-```
-
-To test the beta release, select its exact version:
+Use Python 3.11 or 3.12 in a virtual environment. Install the exact beta used by
+the new tutorials:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0b1"
+python -m pip install 'mljar-supervised==1.4.0b1'
 ```
 
-See the [release notes](https://github.com/mljar/mljar-supervised/blob/master/release.md)
-for changes and optional-model requirements.
+Save [customer_churn.py](examples/scripts/customer_churn.py) in your working
+folder, then run:
 
-To install the current source checkout in a conda environment:
-```
-conda create -n mljar python=3.12 pip
-conda activate mljar
-python -m pip install .
+```bash
+python customer_churn.py --output AutoML_CustomerChurn
 ```
 
-Run the last command from the repository root. The conda-forge package is
-maintained separately and may contain an earlier release.
+The script downloads a reviewed public dataset, compares standard CPU models
+against a baseline, evaluates held-out customers, and verifies predictions after
+reload. It uses a 120-second training budget and two CPU threads; total runtime
+varies. No GPU or optional Torch packages are needed.
 
-From source code:
+Open `AutoML_CustomerChurn/automl/README.html` to read your report. In a new
+Python session, predict with the saved model:
 
-```
-git clone https://github.com/mljar/mljar-supervised.git
-cd mljar-supervised
-python -m pip install .
-```
+```python
+import pandas as pd
+from supervised import AutoML
 
-Installation for development
-```
-git clone https://github.com/mljar/mljar-supervised.git
-python3.12 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -r requirements_dev.txt
+model = AutoML(results_path="AutoML_CustomerChurn/automl")
+customers = pd.read_csv("AutoML_CustomerChurn/new_customers.csv")
+churn_probability = model.predict_proba(customers)[:, 1]
+print(churn_probability)
 ```
 
-Running in the docker:
-```
-FROM python:3.12-slim-bookworm
-RUN apt-get update && apt-get -y update
-RUN apt-get install -y build-essential python3-pip python3-dev
-RUN pip3 -q install pip --upgrade
-RUN pip3 install mljar-supervised jupyter
-CMD ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
-```
+The example target is numeric: 0 means stayed, 1 means churned. The CSV contains
+three held-out example inputs, not independently collected new customers. Keep
+the complete `automl` directory for future predictions. Use a new output path to
+train again. [Follow the full tutorial](docs/docs/tutorials/customer-churn.md)
+for the data, validation choices, and interpretation.
 
-Install from GitHub with pip:
-```
-pip install -q -U git+https://github.com/mljar/mljar-supervised.git@master
-```
-# Demo
+## Examples
 
-In the below demo GIF you will see:
-- MLJAR AutoML trained in Jupyter Notebook on the Titanic dataset
-- overview of created files
-- a showcase of selected plots created during AutoML training
-- algorithm comparison report along with their plots
-- example of README file and CSV file with results
+Start with a question similar to yours. Each tutorial includes a standalone
+script, a notebook, dataset attribution, measured results, and real reports.
 
-![](https://github.com/mljar/mljar-examples/raw/master/media/mljar_files.gif)
+| Predict a number from a CSV | Predict which customers may leave |
+| --- | --- |
+| [![Measured versus predicted concrete strength on held-out mixture groups.](docs/docs/assets/concrete-strength/predicted-vs-measured.png)](docs/docs/tutorials/concrete-strength.md) | [![Baseline and AutoML confusion matrices for held-out customers at threshold 0.5.](docs/docs/assets/customer-churn/confusion-matrix.png)](docs/docs/tutorials/customer-churn.md) |
+| **Start here · Engineering · Regression** | **Start here · Business · Classification** |
+| Estimate concrete strength from ingredients and age. Learn to measure error in MPa and keep related measurements together. | Estimate churn probabilities from service usage. Understand missed customers, false alarms, and a fixed decision threshold. |
+| [Read the tutorial](docs/docs/tutorials/concrete-strength.md) · [Script](examples/scripts/concrete_strength.py) · [Notebook](examples/notebooks/concrete_strength.ipynb) | [Read the tutorial](docs/docs/tutorials/customer-churn.md) · [Script](examples/scripts/customer_churn.py) · [Notebook](examples/notebooks/customer_churn.ipynb) |
 
-# Contributing
+Both scripts and notebooks passed on Python 3.11 and 3.12 with published
+`mljar-supervised==1.4.0b1`. Their tutorials record the environments, evaluation
+protocols, runtime, memory measurements, and reload checks. Results from one
+historical split are not promises about another dataset or machine.
 
-To get started take a look at our [Contribution Guide](https://supervised.mljar.com/contributing/) for information about our process and where you can fit in!
+[Browse the gallery and advanced guides](docs/docs/examples.md).
 
-### Contributors
-<a href="https://github.com/mljar/mljar-supervised/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=mljar/mljar-supervised" />
-</a>
+<a id="automated-machine-learning"></a>
+<a id="whats-good-in-it"></a>
 
-# Cite
+## What you can do with AutoML
 
-Would you like to cite MLJAR? Great! :)
+| Capability | What it provides | Learn more |
+| --- | --- | --- |
+| Train and compare models | Preprocessing, model selection, hyperparameter search, and ensembles | [Algorithms](docs/docs/features/algorithms.md), [training stages](docs/docs/features/automl.md) |
+| Generate features | Golden features and feature discovery, evaluated through validation | [Golden features](docs/docs/features/golden_features.md), [discovery](docs/docs/features/feature_discovery.md) |
+| Try tabular foundation models | Optional Kumo and TabICLv2 backends | [TFM setup and requirements](docs/docs/features/sdm.md) |
+| Try neural tabular models | Optional RealMLP and TabM backends | [RealMLP](docs/docs/features/realmlp.md), [TabM](docs/docs/features/tabm.md) |
+| Read automatic reports | Run and model reports, metrics, settings, and available explanations | [Reports](docs/docs/features/reports.md), [explainability](docs/docs/features/explain.md) |
+| Evaluate fairness and bias mitigation | Group metrics and mitigation evaluated alongside predictive performance | [Fairness tutorial](docs/docs/tutorials/fairness-binary-classification.md) |
+| Export a prediction app | Interfaces for individual rows and batch CSV predictions | [App guide](docs/docs/features/apps.md) |
+| Customize evaluation | Custom metrics and user-provided validation splits | [Custom metrics](docs/docs/features/custom-eval-metric.md), [custom validation](docs/docs/features/custom-validation.md) |
 
-You can cite MLJAR as follows:
+Feature discovery is included in the base installation. Its use depends on the
+mode and validation setup; the beginner examples disable it for custom grouped
+validation. Optional models have additional dependencies and resource limits.
+Explanations depend on the algorithm and `explain_level`.
 
-```
+## Automatic documentation
+
+Every successful run provides a leaderboard and links to individual model
+reports. Inspect the validation scores, model settings, and available charts.
+The beginner tutorials show real run and model screenshots and explain how to
+read them.
+
+Reports are also available as structured Markdown, dictionaries, or JSON through
+`report_structured()`. [Read the reports guide](docs/docs/features/reports.md).
+
+## Available modes
+
+Choose `Explain`, `Perform`, `Compete`, or `Optuna` according to the workflow and
+compute budget. Modes configure search, validation, ensembling, and explanations;
+you can override individual settings. See [modes](docs/docs/features/modes.md),
+[training stages](docs/docs/features/automl.md), and the [API reference](docs/docs/api.md).
+
+## Fairness aware training
+
+Measure relevant group differences and evaluate bias mitigation together with
+predictive performance. Choosing the groups, metrics, and acceptable trade-offs
+requires context; one score does not establish universal fairness.
+
+Start with [binary classification](docs/docs/tutorials/fairness-binary-classification.md),
+[multiclass classification](docs/docs/tutorials/fairness-multiclass-classification.md),
+or [regression](docs/docs/tutorials/fairness-regression.md). Check backend support
+for sample weights before combining mitigation with optional algorithms.
+
+## Generate web apps for trained models
+
+The base package exports app files with `automl.app()`. Running an exported app
+requires the optional Mercury runtime and the selected model's dependencies.
+Generation, local execution, and publishing are separate steps.
+
+See the [app guide](docs/docs/features/apps.md) for single-row and batch CSV
+prediction, saved artifacts, and deployment options.
+
+## Installation
+
+Version 1.4.0b1 requires Python 3.11+. The beginner workflows were tested on
+Python 3.11 and 3.12. Use the exact beta pin above to reproduce their environment;
+an unpinned install may select a different release.
+
+| Install option | Additional capabilities |
+| --- | --- |
+| `mljar-supervised==1.4.0b1` | Standard algorithms, reports, and feature discovery |
+| `mljar-supervised[realmlp]==1.4.0b1` or `[tabm]` | Shared RealMLP/TabM backend dependencies |
+| `mljar-supervised[tfm]==1.4.0b1` | Kumo/TabICLv2 backend; weights download on first use |
+| `mljar-supervised[apps]==1.4.0b1` | Runtime for generated prediction apps |
+| `mljar-supervised[all]==1.4.0b1` | All optional model backends |
+| `mljar-supervised[all,apps]==1.4.0b1` | Optional model backends and app runtime |
+
+For Torch-based extras, choose a compatible CPU or CUDA PyTorch build first.
+See the [installation guide](docs/docs/install.md) for exact commands, aliases,
+platform limitations, and native-runtime compatibility checks. The base package
+does not require Torch or Mercury. Conda-forge releases are maintained separately.
+
+## FAQ
+
+- **How do I save and reload?** Models are saved in `results_path`. Keep the
+  complete directory; see [save and load](docs/docs/features/save-and-load-models.md).
+- **Can I choose classification or regression explicitly?** Set `ml_task`.
+  See the [API reference](docs/docs/api.md) for supported values.
+- **How do I identify probability columns?** Use `predict_all()` to inspect the
+  class-labelled prediction columns. Their order matches `predict_proba()`;
+  `predict_all()` also includes the predicted label.
+- **How is tuning configured?** See [AutoML stages](docs/docs/features/automl.md)
+  and the [API reference](docs/docs/api.md), including `optuna_init_params` for
+  reusing Optuna parameters.
+
+## Documentation
+
+[Documentation website](https://supervised.mljar.com/) ·
+[Example gallery](docs/docs/examples.md) · [API reference](docs/docs/api.md) ·
+[Get help](docs/docs/get_help.md) · [Report an issue](https://github.com/mljar/mljar-supervised/issues)
+
+<a id="demo"></a>
+
+For a walkthrough with real outputs, follow the
+[concrete-strength tutorial](docs/docs/tutorials/concrete-strength.md) or
+[customer-churn tutorial](docs/docs/tutorials/customer-churn.md).
+
+## Contributing
+
+Read the [contribution guide](docs/docs/contributing.md) and
+[test instructions](tests/README.md). Thanks to everyone who has
+[contributed](https://github.com/mljar/mljar-supervised/graphs/contributors).
+
+## Cite
+
+The project's published citation is:
+
+```bibtex
 @misc{mljar,
   author    = {Aleksandra P\l{}o\'{n}ska and Piotr P\l{}o\'{n}ski},
   year      = {2021},
@@ -674,23 +204,16 @@ You can cite MLJAR as follows:
 }
 ```
 
-Would love to hear from you about how have you used MLJAR AutoML in your project. 
-Please feel free to let us know at 
-![image](https://user-images.githubusercontent.com/6959032/118103228-f5ea9a00-b3d9-11eb-87ed-8cfb1f873f91.png)
+## License
 
+MLJAR AutoML is available under the [MIT license](LICENSE). Example datasets and
+optional model weights have their own licenses, documented with their sources.
 
-# License  
+## Commercial support
 
-The `mljar-supervised` is provided with [MIT license](https://github.com/mljar/mljar-supervised/blob/master/LICENSE).
+For implementation or commercial support, [contact MLJAR](https://mljar.com/contact/).
 
-# Commercial support
+## MLJAR
 
-Looking for commercial support? Do you need new feature implementation? Please contact us by [email](https://mljar.com/contact/) for details.
-
-# MLJAR 
-<p align="center">
-  <img src="https://github.com/mljar/mljar-examples/blob/master/media/large_logo.png" width="314" />
-</p>
-
-The `mljar-supervised` is an open-source project created by [MLJAR](https://mljar.com). We care about ease of use in Machine Learning. 
-The [mljar.com](https://mljar.com) provides a beautiful and simple user interface for building machine learning models.
+Created by [MLJAR](https://mljar.com/). Explore
+[MLJAR Studio](https://mljar.com/studio/) for a conversational notebook interface.

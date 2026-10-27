@@ -1,4 +1,4 @@
-site_name: MLJAR AutoML for Python
+site_name: MLJAR AutoML documentation
 site_url: https://supervised.mljar.com/
 site_description: Automated machine learning for Python with model training, explainability, fairness-aware learning, and report generation for tabular data.
 site_author: MLJAR
@@ -7,19 +7,23 @@ site_dir: site
 
 theme:
     name: material
-    #custom_dir: overrides
-    favicon: images/favicon.png
+    favicon: images/brand/favicon.svg
+    logo: images/brand/mljar-logo.webp
     icon:
         repo: fontawesome/brands/github-square
-        logo: fontawesome/solid/book-open
     palette:
-        primary: blue
+        primary: custom
+        accent: custom
+    font:
+        text: Inter
+        code: Roboto Mono
 
 
 repo_url: https://github.com/mljar/mljar-supervised
 repo_name: mljar-supervised
 
 markdown_extensions:
+    - md_in_html
     - pymdownx.highlight:
         use_pygments: true
     - toc:
@@ -43,7 +47,7 @@ plugins:
   - social:
       cards_layout: default
       cards_layout_options:
-        background_color: "#0f6cbd"
+        background_color: "#004666"
         color: "#ffffff"
   - mkdocstrings
 
@@ -51,29 +55,30 @@ extra:
     social:
         - icon: fontawesome/brands/github
           link: https://github.com/mljar/mljar-supervised
-        - icon: fontawesome/brands/slack
-          link: https://mljar-supervised.slack.com/join/shared_invite/zt-gkhfsvhw-H6LMKxxV5adeTmn9V7nbZw#/
         - icon: fontawesome/brands/twitter
           link: https://twitter.com/MLJARofficial
         - icon: fontawesome/regular/lightbulb
           link: https://mljar.com
-    font:
-        - text: 'Ubuntu'
-        - code: 'Ubuntu Mono'
 
 edit_uri: edit/master/docs/docs/
 
 copyright: Copyright © MLJAR, Inc.
 
 extra_css:
-  - stylesheets/extra.css
+  - stylesheets/extra.css?v=docs-20261027-9
+
+extra_javascript:
+  - javascripts/training-console.js?v=console-20261027-2
 
 nav:
   - Get started: index.md
+  - Examples and guides: examples.md
   - Installation: install.md
   - Features: 
+    - Reports: features/reports.md
     - Apps: features/apps.md
     - Custom eval metric: features/custom-eval-metric.md
+    - Custom validation: features/custom-validation.md
     - Preprocessing: features/preprocessing.md
     - Save and Load models: features/save-and-load-models.md
     - Steps of AutoML: features/automl.md
@@ -92,8 +97,9 @@ nav:
   - How can you help?: help.md
   - Contributing: contributing.md
   - AutoML API: api.md
-  - Roadmap: roadmap.md
   - Tutorials:
+    - Predict a Number from a CSV: tutorials/concrete-strength.md
+    - Predict Customer Churn: tutorials/customer-churn.md
     - Train with IP Addresses: tutorials/ip-addresses.md
     - Share Classification Model as App: tutorials/app-classification.md
     - Share Regression Model as App: tutorials/app-regression.md

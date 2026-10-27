@@ -7,6 +7,12 @@ on:
       - main
     paths:
       - docs/**
+      - examples/scripts/concrete_strength.py
+      - examples/scripts/customer_churn.py
+      - examples/scripts/custom_validation_*.py
+      - examples/docs/**
+      - examples/datasets/**
+      - examples/notebooks/**
       - .github/workflows/docs.yml
       - requirements_dev.txt
       - setup.py
@@ -14,6 +20,12 @@ on:
   pull_request:
     paths:
       - docs/**
+      - examples/scripts/concrete_strength.py
+      - examples/scripts/customer_churn.py
+      - examples/scripts/custom_validation_*.py
+      - examples/docs/**
+      - examples/datasets/**
+      - examples/notebooks/**
       - .github/workflows/docs.yml
       - requirements_dev.txt
       - setup.py
@@ -43,6 +55,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_dev.txt
           pip install -e .
+
+      - name: Check tutorial downloads
+        run: |
+          python examples/notebooks/generate_concrete_strength.py --check
+          python examples/notebooks/generate_customer_churn.py --check
+          python examples/docs/generate_custom_validation.py --check
 
       - name: Build docs
         run: mkdocs build --strict -f docs/mkdocs.yml
