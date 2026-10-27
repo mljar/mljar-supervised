@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="218" viewBox="0 0 1000 218" role="img">
+<title>Export, run locally, and share a prediction app</title>
+<desc>Generate app files from a trained model, run single-row or CSV predictions locally, then publish or host the app when ready.</desc>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="2" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="20" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(26,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3H6a2 2 0 0 0-2 2v22a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V15M18 3v8h8M18 3l8 8M12 20h17m-5-5 5 5-5 5"/></g>
+<text x="78" y="48" font-size="20" font-weight="700" fill="#004666">1. Export</text>
+<text x="22" y="102" font-size="18" fill="#004666">Export your trained model</text>
+<text x="22" y="132" font-size="16" fill="#52697a">Create prediction app files</text>
+<rect x="22" y="160" width="130.0" height="29" rx="7" fill="#eef4f8"/>
+<text x="36" y="180" font-family="monospace" font-size="14" fill="#36566a">automl.app()</text>
+<rect x="338" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="356" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(362,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="22" height="18" rx="2"/><path d="M2 27h28l-3-5H5l-3 5zM12 27h8"/></g>
+<text x="414" y="48" font-size="20" font-weight="700" fill="#004666">2. Run locally</text>
+<text x="358" y="102" font-size="18" fill="#004666">Predict one row or a CSV</text>
+<text x="358" y="132" font-size="16" fill="#52697a">Open the app on your computer</text>
+<rect x="358" y="160" width="181.0" height="29" rx="7" fill="#eef4f8"/>
+<text x="372" y="180" font-family="monospace" font-size="14" fill="#36566a">automl.local_app()</text>
+<rect x="674" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="692" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(698,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l14-8M9 17l14 8"/><circle cx="6" cy="16" r="4"/><circle cx="26" cy="5" r="4"/><circle cx="26" cy="27" r="4"/></g>
+<text x="750" y="48" font-size="20" font-weight="700" fill="#004666">3. Share</text>
+<text x="694" y="102" font-size="18" fill="#004666">Let others use your model</text>
+<text x="694" y="132" font-size="16" fill="#52697a">Publish online or host it yourself</text>
+<rect x="694" y="160" width="198.0" height="29" rx="7" fill="#eef4f8"/>
+<text x="708" y="180" font-family="monospace" font-size="14" fill="#36566a">automl.publish_app()</text>
+</g></svg>

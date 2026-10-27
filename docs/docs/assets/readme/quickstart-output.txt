@@ -1,0 +1,18 @@
+AutoML directory: AutoML_Iris
+The task is multiclass_classification with evaluation metric logloss
+AutoML will use algorithms: ['Baseline', 'Decision Tree', 'Linear', 'LightGBM']
+AutoML is generating and selecting models automatically. Review outputs before important use.
+AutoML will ensemble available models
+AutoML steps: ['simple_algorithms', 'default_algorithms', 'ensemble']
+* Step simple_algorithms will try to check up to 3 models
+1_Baseline logloss 1.098612 trained in 0.29 seconds
+2_DecisionTree logloss 0.544928 trained in 3.97 seconds
+3_Linear logloss 0.206915 trained in 0.53 seconds
+* Step default_algorithms will try to check up to 1 model
+4_Default_LightGBM logloss 0.207178 trained in 0.71 seconds
+* Step ensemble will try to check up to 1 model
+Ensemble logloss 0.111935 trained in 0.78 seconds
+AutoML fit time: 12.23 seconds
+AutoML best model: Ensemble
+Test accuracy: 96.7%
+[0 2 1]

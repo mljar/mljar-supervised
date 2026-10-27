@@ -6,6 +6,9 @@ on:
       - master
       - main
     paths:
+      - README.md
+      - examples/scripts/quickstart.py
+      - examples/readme/**
       - docs/**
       - examples/scripts/concrete_strength.py
       - examples/scripts/customer_churn.py
@@ -19,6 +22,9 @@ on:
       - supervised/**
   pull_request:
     paths:
+      - README.md
+      - examples/scripts/quickstart.py
+      - examples/readme/**
       - docs/**
       - examples/scripts/concrete_strength.py
       - examples/scripts/customer_churn.py
@@ -58,6 +64,7 @@ jobs:
 
       - name: Check tutorial downloads
         run: |
+          python examples/readme/check_readme.py
           python examples/notebooks/generate_concrete_strength.py --check
           python examples/notebooks/generate_customer_churn.py --check
           python examples/docs/generate_custom_validation.py --check

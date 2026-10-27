@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="342" viewBox="0 0 760 342" role="img">
+<title>Iris quickstart leaderboard: Ensemble has the lowest validation log loss, 0.111935.</title>
+<rect x="5" y="7" width="750" height="330" rx="16" fill="#dbe8ef" opacity="0.45"/>
+<rect x="1" y="1" width="750" height="330" rx="16" fill="#ffffff" stroke="#d5e3ec"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#004666">
+<text x="28" y="38" font-size="21" font-weight="700">Iris · model comparison</text>
+<text x="28" y="63" font-size="14" fill="#52697a">One training run. A report for every model.</text>
+<path d="M28 79H724" stroke="#d5e3ec"/>
+<text x="28" y="104" font-size="14" font-weight="700">MODEL</text>
+<text x="724" y="104" font-size="14" font-weight="700" text-anchor="end">VALIDATION LOG LOSS ↓</text>
+<rect x="16" y="115" width="720" height="33" rx="6" fill="#eaf5e7"/>
+<text x="28" y="137" font-size="16">Ensemble</text>
+<text x="724" y="137" font-size="16" text-anchor="end">0.111935</text>
+<text x="28" y="173" font-size="16">3_Linear</text>
+<text x="724" y="173" font-size="16" text-anchor="end">0.206915</text>
+<text x="28" y="209" font-size="16">4_Default_LightGBM</text>
+<text x="724" y="209" font-size="16" text-anchor="end">0.207178</text>
+<text x="28" y="245" font-size="16">2_DecisionTree</text>
+<text x="724" y="245" font-size="16" text-anchor="end">0.544928</text>
+<text x="28" y="281" font-size="16">1_Baseline</text>
+<text x="724" y="281" font-size="16" text-anchor="end">1.098612</text>
+<text x="28" y="312" font-size="13" fill="#52697a">Recorded with MLJAR 1.4.0b1 · lower is better</text>
+</g></svg>

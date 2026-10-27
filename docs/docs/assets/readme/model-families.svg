@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="218" viewBox="0 0 1000 218" role="img">
+<title>Classic, neural, and foundation models</title>
+<desc>Classic models are included. RealMLP and TabM neural models, and Kumo and TabICLv2 foundation models, require optional installation.</desc>
+<g font-family="Arial, Helvetica, sans-serif">
+<rect x="2" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="20" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(26,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 9v7M7 23v-7h18v7"/><rect x="12" y="2" width="8" height="7" rx="2"/><rect x="3" y="23" width="8" height="7" rx="2"/><rect x="21" y="23" width="8" height="7" rx="2"/></g>
+<text x="78" y="48" font-size="20" font-weight="700" fill="#004666">Classic models</text>
+<text x="22" y="102" font-size="18" fill="#004666">Linear, trees and boosting</text>
+<text x="22" y="132" font-size="16" fill="#52697a">Included with MLJAR AutoML</text>
+<rect x="22" y="160" width="90" height="29" rx="14" fill="#eaf5e7"/>
+<text x="36" y="180" font-size="14" fill="#365e2c">Included</text>
+<rect x="338" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="356" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(362,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l9 8-9 8M7 8l18 0-9 8 9 8H7M16 16V4m0 12v12"/><g fill="#eaf6fb"><circle cx="7" cy="8" r="3"/><circle cx="7" cy="24" r="3"/><circle cx="16" cy="16" r="3"/><circle cx="25" cy="8" r="3"/><circle cx="25" cy="24" r="3"/></g></g>
+<text x="414" y="48" font-size="20" font-weight="700" fill="#004666">Neural models</text>
+<text x="358" y="102" font-size="18" fill="#004666">RealMLP · TabM</text>
+<text x="358" y="132" font-size="16" fill="#52697a">Neural networks for tabular data</text>
+<rect x="358" y="160" width="140" height="29" rx="14" fill="#eef4f8"/>
+<text x="372" y="180" font-size="14" fill="#36566a">Optional install</text>
+<rect x="674" y="2" width="324" height="212" rx="14" fill="#ffffff" stroke="#cbdfe9"/>
+<rect x="692" y="20" width="44" height="44" rx="12" fill="#eaf6fb"/>
+<g transform="translate(698,26)" fill="none" stroke="#0086b3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l13-6 13 6-13 6L3 9zM3 16l13 6 13-6M3 23l13 6 13-6"/></g>
+<text x="750" y="48" font-size="20" font-weight="700" fill="#004666">Foundation models</text>
+<text x="694" y="102" font-size="18" fill="#004666">Kumo · TabICLv2</text>
+<text x="694" y="132" font-size="16" fill="#52697a">Start from pretrained models</text>
+<rect x="694" y="160" width="140" height="29" rx="14" fill="#eef4f8"/>
+<text x="708" y="180" font-size="14" fill="#36566a">Optional install</text>
+</g></svg>

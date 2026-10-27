@@ -1,0 +1,53 @@
+AutoML directory: feature_engineering
+The task is regression with evaluation metric rmse
+AutoML will use algorithms: ['Linear']
+AutoML is generating and selecting models automatically. Review outputs before important use.
+AutoML steps: ['simple_algorithms', 'default_algorithms', 'golden_features', 'feature_discovery']
+* Step simple_algorithms will try to check up to 1 model
+1_Linear rmse 3.659663 trained in 0.38 seconds
+Skip default_algorithms because no parameters were generated.
+* Step golden_features will try to check up to 1 model
+None 10
+Add Golden Feature: width_multiply_length
+Add Golden Feature: width_sum_length
+Add Golden Feature: width_ratio_length
+Add Golden Feature: length_ratio_width
+Add Golden Feature: length_diff_width
+Created 5 Golden Features in 2.39 seconds.
+1_Linear_GoldenFeatures rmse 1.95928 trained in 2.73 seconds
+* Step feature_discovery: up to 3 feature sets for 2 parents; discovery budget 2.7s.
+Feature discovery: searching 1 training folds (budget 2.7s).
+Feature discovery: fold 1/1, 300 rows, 3 input columns.
+Feature discovery: fold 1/1: constructed features; default: 8 features, compact: 4 features in 0.56s.
+Feature discovery: default, newly listed features: length_mul_width, material_te, material_freq, rule_length_gt_5p786_and_width_gt_3p215_009, grpstat_001_mean, grpstat_001_min, gde_length_z_material, cproto_material_zabs_mean.
+Feature discovery: transformations report: feature_engineering/feature_discovery/d7611cb4c553cd4551c8979fccc94e9e/generator.md
+Feature discovery: feature sets ready for model training: default, compact.
+* Step feature_discovery will try to check up to 4 models
+2_Linear_GoldenFeatures_FeatureDiscovery_Default rmse 0.473399 trained in 0.37 seconds
+3_Linear_FeatureDiscovery_Default rmse 0.473678 trained in 0.33 seconds
+4_Linear_GoldenFeatures_FeatureDiscovery_Compact rmse 0.473515 trained in 0.41 seconds
+5_Linear_FeatureDiscovery_Compact rmse 0.472797 trained in 0.34 seconds
+AutoML fit time: 8.8 seconds
+AutoML best model: 5_Linear_FeatureDiscovery_Compact
+AutoML directory: standard
+The task is binary_classification with evaluation metric logloss
+AutoML will use algorithms: ['Linear']
+AutoML is generating and selecting models automatically. Review outputs before important use.
+AutoML steps: ['simple_algorithms', 'default_algorithms']
+* Step simple_algorithms will try to check up to 1 model
+1_Linear logloss 0.420443 trained in 2.17 seconds
+Skip default_algorithms because no parameters were generated.
+AutoML fit time: 3.08 seconds
+AutoML best model: 1_Linear
+AutoML directory: mitigation
+The task is binary_classification with evaluation metric logloss
+AutoML will use algorithms: ['Linear']
+AutoML is generating and selecting models automatically. Review outputs before important use.
+AutoML steps: ['simple_algorithms', 'default_algorithms', 'unfairness_mitigation']
+* Step simple_algorithms will try to check up to 1 model
+1_Linear logloss 0.420443 trained in 2.21 seconds
+Skip default_algorithms because no parameters were generated.
+* Step unfairness_mitigation will try to check up to 1 model
+1_Linear_SampleWeigthing logloss 0.42141 trained in 2.41 seconds
+AutoML fit time: 7.94 seconds
+AutoML best model: 1_Linear_SampleWeigthing

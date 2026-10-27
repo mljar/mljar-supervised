@@ -1,0 +1,31 @@
+{
+  "mljar": "1.4.0b1",
+  "python": "3.12.3",
+  "seed": 42,
+  "data": "synthetic; see run_feature_examples.py",
+  "feature_engineering": {
+    "test_mae": 0.48210118010980274
+  },
+  "fairness": {
+    "standard": {
+      "accuracy": 0.775,
+      "selection_rates": {
+        "A": 0.41,
+        "B": 0.86
+      },
+      "demographic_parity_ratio": 0.4767441860465116,
+      "test_rows": 200,
+      "threshold": "AutoML saved decision threshold"
+    },
+    "mitigation": {
+      "accuracy": 0.74,
+      "selection_rates": {
+        "A": 0.5,
+        "B": 0.82
+      },
+      "demographic_parity_ratio": 0.6097560975609756,
+      "test_rows": 200,
+      "threshold": "AutoML saved decision threshold"
+    }
+  }
+}

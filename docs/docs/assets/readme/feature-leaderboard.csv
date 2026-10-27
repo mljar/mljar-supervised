@@ -1,0 +1,7 @@
+name,model_type,is_stacked,metric_type,metric_value,train_time
+1_Linear,Linear,False,rmse,3.6596629683231927,0.68
+1_Linear_GoldenFeatures,Linear,False,rmse,1.959280420813766,3.02
+2_Linear_GoldenFeatures_FeatureDiscovery_Default,Linear,False,rmse,0.47339947027361173,0.64
+3_Linear_FeatureDiscovery_Default,Linear,False,rmse,0.47367829316819626,0.6
+4_Linear_GoldenFeatures_FeatureDiscovery_Compact,Linear,False,rmse,0.4735145117260627,0.68
+5_Linear_FeatureDiscovery_Compact,Linear,False,rmse,0.47279650046035254,0.6

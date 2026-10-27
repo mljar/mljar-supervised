@@ -1,0 +1,6 @@
+name,model_type,is_stacked,metric_type,metric_value,train_time
+1_Baseline,Baseline,False,logloss,1.0986121892929077,0.83
+2_DecisionTree,Decision Tree,False,logloss,0.5449284315109253,4.61
+3_Linear,Linear,False,logloss,0.2069149911403656,1.22
+4_Default_LightGBM,LightGBM,False,logloss,0.2071784883737564,1.45
+Ensemble,Ensemble,False,logloss,0.11193546652793884,0.78
