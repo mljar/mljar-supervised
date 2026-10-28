@@ -148,14 +148,20 @@ def test_precision_setting_and_restoration_after_failure(
         learner.params["precision"] = precision
     autocast = Mock(return_value=nullcontext())
     monkeypatch.setattr(torch.amp, "autocast", autocast)
-    monkeypatch.setattr(torch.backends.cuda.matmul, "allow_tf32", True)
-    with pytest.raises(RuntimeError, match="interrupted"):
-        with _autocast(learner):
-            assert torch.backends.cuda.matmul.allow_tf32 == (
-                device == "cpu" or precision != "fp32"
-            )
-            raise RuntimeError("interrupted")
-    assert torch.backends.cuda.matmul.allow_tf32
+    # PyTorch exposes this setting dynamically, so restore it explicitly:
+    # monkeypatch's static attribute inspection can mistake it for a new attribute.
+    original_tf32 = torch.backends.cuda.matmul.allow_tf32
+    try:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        with pytest.raises(RuntimeError, match="interrupted"):
+            with _autocast(learner):
+                assert torch.backends.cuda.matmul.allow_tf32 == (
+                    device == "cpu" or precision != "fp32"
+                )
+                raise RuntimeError("interrupted")
+        assert torch.backends.cuda.matmul.allow_tf32
+    finally:
+        torch.backends.cuda.matmul.allow_tf32 = original_tf32
     autocast.assert_called_once_with(
         device.split(":")[0],
         dtype=torch.float16,
