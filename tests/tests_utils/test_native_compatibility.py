@@ -94,9 +94,20 @@ def test_child_responses_and_bounded_output(tmp_path, body, reason):
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX signal semantics")
 def test_native_crash_is_contained(tmp_path):
-    script = child_script(tmp_path, "import resource, os, signal\nresource.setrlimit(resource.RLIMIT_CORE, (0, 0))\nos.kill(os.getpid(), signal.SIGSEGV)\n")
+    # Linux ignores RLIMIT_CORE for piped crash reporters (for example Apport).
+    # Disable dumps in this deliberately crashing child so reporter latency is
+    # not confused with the probe timeout. Keep the production deadline intact.
+    script = child_script(tmp_path, """import ctypes, os, resource, signal, sys
+resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+if sys.platform.startswith("linux"):
+    prctl = ctypes.CDLL(None, use_errno=True).prctl
+    prctl.argtypes = [ctypes.c_int] + [ctypes.c_ulong] * 4
+    if prctl(4, 0, 0, 0, 0) != 0:  # PR_SET_DUMPABLE
+        raise OSError(ctypes.get_errno(), "Could not disable test crash dumps")
+os.kill(os.getpid(), signal.SIGSEGV)
+""")
     result = native._run_child("boosting-first", time.monotonic() + 3, script=script)
-    assert result["status"] == "blocked"
+    assert result["status"] == "blocked", result
     assert result["reason"] == "native_crash"
     assert result["signal"] == signal.SIGSEGV
 
