@@ -1166,6 +1166,24 @@ class BaseAutoML(BaseEstimator, ABC):
 
         self._apply_constraints_stack_models()
 
+    def _apply_class_balance_stacking_constraint(self, y):
+        """Avoid stacking when a classification target has a class below 15%."""
+        if not self._stack_models or self._ml_task not in (
+            BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION
+        ):
+            return
+        counts = y.value_counts()
+        counts = counts[counts > 0]  # Ignore unused pandas categorical levels.
+        minority_count = int(counts.min())
+        total = int(counts.sum())
+        if minority_count * 100 < total * 15:
+            self._stack_models = False
+            self.verbose_print(
+                "Disable stacking: smallest class has "
+                f"{minority_count}/{total} training rows "
+                f"({minority_count / total:.2%}), below 15%."
+            )
+
     def _apply_constraints_stack_models(self):
         if self._validation_strategy["validation_type"] == "split":
             if self._stack_models:
@@ -1291,6 +1309,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._privileged_groups = self._get_privileged_groups()
             self._underprivileged_groups = self._get_underprivileged_groups()
 
+        self._apply_class_balance_stacking_constraint(y)
         self._adjust_validation = False
         self._apply_constraints()
         if not self._adjust_validation:

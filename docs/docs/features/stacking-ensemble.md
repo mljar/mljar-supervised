@@ -53,6 +53,12 @@ their full member lists from adding hidden prediction dependencies. Fairness con
 apply when enabled. All trained models remain in the leaderboard; the final
 ensemble can still select ordinary and stacked models.
 
+For new classification training, stacking is disabled if any observed class has
+less than 15% of the training rows, even with `stack_models=True`. Exactly 15%
+is eligible if the other constraints allow stacking. Counts exclude missing
+targets and ignore sample weights. Regression and ordinary ensembles are
+unchanged. This heuristic does not guarantee that a model will avoid overfitting.
+
 The selected input names and order are saved with the run. Loading an older run
 preserves its original stack, even if it contains more inputs. Reducing an
 existing stack requires training new stacked models.

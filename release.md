@@ -1,3 +1,28 @@
+## mljar-supervised 1.4.0b2 (unreleased)
+
+Local beta 2 builds require Python 3.11+ and retain beta 1's base dependencies
+and optional model/app extras. The README's measured tutorial results remain
+pinned to the published beta 1 used to produce them.
+
+- Disable stacking for classification when the smallest observed class has less
+  than 15% of training rows, including explicit stacking requests. Use unweighted
+  counts after dropping missing targets. Keep regression and ordinary ensembles
+  unchanged; exactly 15% remains eligible subject to other constraints.
+- Keep TFM training contexts complete and skip oversized fits instead of silently
+  reducing the training context.
+- Print the MLJAR jar header and installed version at the start of training;
+  `verbose=0` remains quiet.
+- Refresh the README, beginner tutorials, example scripts, report media, and
+  citation. Improve docs navigation and keep generated churn dataset metadata
+  synchronized with its source.
+- Align the SDM oversized-feature test with the structured resource-skip error,
+  including its diagnostic metadata.
+- Make the KMeans/stacking prediction regression test independent of optional
+  feature discovery, model-ranking competition, and wall-clock search budgets.
+
+This entry describes the candidate artifact. Publication and final platform
+validation are separate steps; see the retained release-validation report.
+
 ## mljar-supervised 1.4.0b1
 
 First beta release for testing the 1.4.0 installation and prediction workflows.

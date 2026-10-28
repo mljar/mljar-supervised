@@ -567,11 +567,18 @@ and portable saves.
 
 ## Stacked Algorithm
 
+For classification, stacking is disabled when the smallest observed class has
+**less than 15% of the training rows**, even when `stack_models=True`. Exactly
+15% remains eligible, subject to the other stacking constraints. The rule uses
+unweighted class counts after removing rows with missing targets, and applies
+to binary and multiclass classification. It does not change regression or plain
+ensembling. This is a conservative heuristic, not a guarantee against overfitting.
+
 The stacked algorithms are built with predictions from previous (unstacked) models. The stacked algorithms are reusing hyperparameters of already found good models.
 
-- During the stacking up to 10 best models from each algorithm are used, except `Baseline`.
-- The **out-of-folds** predictions are used to construct extended training data. The stacking only works for `validation_strategy="kfold"` (k-fold cross-validation).
-- The stacked model can be only: `Xgboost`, `LightGBM`, `CatBoost`. The AutoML algorithm selects the best models from **unstacked** `Xgboost`, `LightGBM`, `CatBoost` and reuses its hyperparameters to train **stacked** models.
+- New stacks use up to five models per algorithm as inputs. Baseline, ensembles, random-feature probes, and already stacked models are excluded.
+- Out-of-fold predictions extend the training data. Stacking uses non-repeated K-fold validation, configured with `validation_strategy={"validation_type": "kfold", "k_folds": 5}`.
+- Eligible stacked learners include boosting models, forests, Neural Network, RealMLP, TabM, Kumo, and TabICLv2. AutoML reuses parent hyperparameters and preprocessing; backend compatibility and remaining time still apply. See [stacking and ensembles](stacking-ensemble.md).
 
 ## Ensemble
 

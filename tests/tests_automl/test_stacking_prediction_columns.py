@@ -66,7 +66,10 @@ def test_other_tasks_keep_stacking_columns(task, columns):
 
 
 def test_kmeans_stacking_predict_and_reload(tmp_path, monkeypatch):
-    # Keep real two-fold training small, with enough candidates to enable stacking.
+    # Exercise real KMeans + stacking preprocessing, independently of discovery
+    # ranking and wall-clock admission on slower CI runners. Three LightGBM
+    # parents produce three KMeans variants, so the five-per-family stack limit
+    # must retain at least one KMeans input. Budget policy has separate tests.
     monkeypatch.setitem(lightgbm.additional, "max_rounds", 5)
     X, y = make_classification(
         n_samples=160, n_features=6, n_informative=4, random_state=42
@@ -77,11 +80,12 @@ def test_kmeans_stacking_predict_and_reload(tmp_path, monkeypatch):
     automl = AutoML(
         results_path=str(root),
         mode="Compete",
-        algorithms=["Baseline", "Decision Tree", "LightGBM"],
-        total_time_limit=120,
+        algorithms=["Baseline", "LightGBM"],
+        total_time_limit=None,
         start_random_models=3,
         hill_climbing_steps=0,
         golden_features=False,
+        feature_discovery=False,
         features_selection=False,
         boost_on_errors=False,
         mix_encoding=False,

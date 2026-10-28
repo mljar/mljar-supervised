@@ -158,6 +158,10 @@ class AutoML(BaseAutoML):
             train_ensemble (boolean): Whether an ensemble gets created at the end of the training.
 
             stack_models (boolean): Whether a models stack gets created at the end of the training. Stack level is 1.
+                Classification stacking is disabled if any observed class has less than
+                15% of the training rows, even when set to True. Counts exclude missing
+                targets and ignore sample weights. Regression and ordinary ensembles
+                are unchanged. Other validation and resource constraints still apply.
 
             eval_metric (str or function): The metric to be used in early stopping and to compare models.
 

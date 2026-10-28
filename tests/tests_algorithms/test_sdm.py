@@ -20,6 +20,7 @@ from supervised.algorithms.sdm import (
     TabICLv2RegressionAlgorithm,
     validate_options,
 )
+from supervised.exceptions import ResourceAdmissionError
 
 CLASSES = [KumoClassificationAlgorithm, TabICLv2ClassificationAlgorithm]
 real_models = pytest.mark.skipif(
@@ -409,8 +410,11 @@ def test_reject_truncation_and_constant_context_before_download(monkeypatch):
         m, "_download", lambda: pytest.fail("Must reject before download")
     )
     X = np.random.default_rng(42).normal(size=(10, 501))
-    with pytest.raises(ValueError, match="500 effective columns"):
+    with pytest.raises(ResourceAdmissionError, match="500 effective columns") as exc:
         m.fit(X, np.arange(10) % 2, X_validation=X, y_validation=np.arange(10) % 2)
+    assert exc.value.resources == {
+        "rows": 10, "features": 501, "max_features": 500, "reason": "features"
+    }
     with pytest.raises(ValueError, match="nonconstant"):
         m.fit(
             np.ones((10, 3)),
