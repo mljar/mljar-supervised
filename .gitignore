@@ -108,3 +108,6 @@ venv.bak/
 
 # Local performance benchmark artifacts
 performance-results/
+
+# Local benchmark code and results
+/benchmarks/
