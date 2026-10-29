@@ -2153,10 +2153,6 @@ class BaseAutoML(BaseEstimator, ABC):
         result = native_compatibility.check_native_compatibility(
             any(name in native_compatibility.TORCH_ALGORITHMS for name in algorithms)
         )
-        if result["status"] == "not_needed":
-            self._native_compatibility = None
-            self._native_diagnostic = ""
-            return algorithms
         effective = list(algorithms)
         skipped = []
         if not native_compatibility.allowed(result):
@@ -2166,6 +2162,18 @@ class BaseAutoML(BaseEstimator, ABC):
             effective = [name for name in algorithms if name not in skipped]
             if not effective:
                 native_compatibility.raise_incompatible(result, "any eligible algorithm")
+        modern_networks = [name for name in ("RealMLP", "TabM") if name in effective]
+        if self.algorithms == "auto" and "Neural Network" in effective and modern_networks:
+            effective.remove("Neural Network")
+            if self.verbose:
+                self.verbose_print(
+                    "Neural Network skipped in automatic selection because "
+                    f"{', '.join(modern_networks)} is enabled."
+                )
+        if result["status"] == "not_needed":
+            self._native_compatibility = None
+            self._native_diagnostic = ""
+            return effective
         evidence = {key: value for key, value in result.items() if key != "diagnostic"}
         evidence.update(requested_algorithms=deepcopy(self.algorithms),
                         effective_algorithms=effective, skipped_algorithms=skipped)

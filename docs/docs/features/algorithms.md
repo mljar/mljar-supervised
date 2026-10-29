@@ -9,6 +9,13 @@ and regression. Use the `algorithms` argument to choose models and `custom_param
 to fix supported settings. Your [AutoML mode](modes.md) and installed optional
 dependencies determine which algorithms are available.
 
+With `algorithms="auto"` (the default), Compete mode skips the scikit-learn
+`"Neural Network"` algorithm when RealMLP or TabM is enabled. It keeps
+`"Neural Network"` if neither is available after dependency, sample-weight, and
+native compatibility checks. Explicit algorithm lists keep all requested
+algorithms, subject to their usual compatibility requirements; for example,
+`algorithms=["Neural Network", "RealMLP", "TabM"]` selects all three.
+
 ## Fixed custom parameters
 
 Use `custom_params` to keep selected parameters fixed during default training,
