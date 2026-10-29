@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="144" height="42" viewBox="0 0 144 42" role="img">
 <title>Tutorials</title>
 <rect x="1" y="1" width="142" height="40" rx="8" fill="#ffffff" stroke="#bfd7ea"/>
-<g transform="translate(16,12)" fill="none" stroke="#004666" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v13M9 5C6 2 3 2 1 3v12c3-1 5 0 8 2 3-2 5-3 8-2V3c-2-1-5-1-8 2z"/></g>
-<text x="45" y="26" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#004666">Tutorials</text>
+<g transform="translate(30,12)" fill="none" stroke="#004666" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v13M9 5C6 2 3 2 1 3v12c3-1 5 0 8 2 3-2 5-3 8-2V3c-2-1-5-1-8 2z"/></g>
+<text x="58" y="26" textLength="56" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#004666">Tutorials</text>
 </svg>

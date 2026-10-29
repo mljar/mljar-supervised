@@ -16,7 +16,7 @@ ET.register_namespace('', NS)
 ET.register_namespace('xlink', 'http://www.w3.org/1999/xlink')
 mark = ET.parse(ROOT / 'docs/docs/images/brand/mljar-mark.svg').getroot()
 for variant, color in [('light', '#004666'), ('dark', '#e7f5fc')]:
-    svg = ET.Element(f'{{{NS}}}svg', {'width':'360', 'height':'104', 'viewBox':'0 0 360 104', 'role':'img'})
+    svg = ET.Element(f'{{{NS}}}svg', {'width':'360', 'height':'88', 'viewBox':'0 8 360 88', 'role':'img'})
     ET.SubElement(svg, f'{{{NS}}}title').text = 'MLJAR AutoML'
     logo = copy.deepcopy(mark)
     logo.attrib.update({'x':'4','y':'8','width':'88','height':'88'})
@@ -47,21 +47,24 @@ parts.extend(['<text x="28" y="312" font-size="13" fill="#52697a">Recorded with 
 
 # Image links keep the call-to-action styling on GitHub without custom CSS.
 buttons = [
-    ('quickstart', 'Quickstart', 144, True,
+    ('quickstart', 'Quickstart', 144, 68, True,
      '<path d="m2 4 5 5-5 5M10 14h6"/>'),
-    ('tutorials', 'Tutorials', 144, False,
+    ('tutorials', 'Tutorials', 144, 56, False,
      '<path d="M9 4v13M9 5C6 2 3 2 1 3v12c3-1 5 0 8 2 3-2 5-3 8-2V3c-2-1-5-1-8 2z"/>'),
-    ('studio', 'MLJAR Studio', 172, False,
+    ('studio', 'MLJAR Studio', 172, 96, False,
      '<path d="M3 2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7l-5 4V4a2 2 0 0 1 1-2zM6 6h7M6 10h5"/>'),
 ]
-for slug, label, width, primary, icon in buttons:
-    fill = '#007fa6' if primary else '#ffffff'
+for slug, label, width, label_width, primary, icon in buttons:
+    fill = '#004666' if primary else '#ffffff'
     ink = '#ffffff' if primary else '#004666'
     border = fill if primary else '#bfd7ea'
+    # Center the whole group: an 18px icon, a 10px gap, and the label.
+    # Explicit text widths keep centering stable across SVG font fallbacks.
+    group_x = (width - 18 - 10 - label_width) / 2
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="42" viewBox="0 0 {width} 42" role="img">
 <title>{escape(label)}</title>
 <rect x="1" y="1" width="{width-2}" height="40" rx="8" fill="{fill}" stroke="{border}"/>
-<g transform="translate(16,12)" fill="none" stroke="{ink}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{icon}</g>
-<text x="45" y="26" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="{ink}">{escape(label)}</text>
+<g transform="translate({group_x:g},12)" fill="none" stroke="{ink}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{icon}</g>
+<text x="{group_x + 28:g}" y="26" textLength="{label_width}" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="{ink}">{escape(label)}</text>
 </svg>'''
     (ASSETS/f'button-{slug}.svg').write_text(svg+'\n')

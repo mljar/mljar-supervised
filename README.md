@@ -8,7 +8,7 @@
 <h1 align="center">Machine learning for your tabular data</h1>
 
 <p align="center">
-  Train models, discover features, and understand your results.
+  A Python AutoML package to train models, discover features, and explain predictions.
 </p>
 
 <p align="center">
@@ -18,10 +18,30 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/mljar-supervised/1.4.0b1/"><img src="https://img.shields.io/badge/PyPI-1.4.0b1-0099cc" alt="PyPI: 1.4.0b1 beta" /></a>
+  <a href="https://pypi.org/project/mljar-supervised/1.4.0b1/"><img src="https://img.shields.io/badge/Beta-1.4.0b1-0099cc" alt="Beta release: 1.4.0b1 on PyPI" /></a>
   <a href="https://supervised.mljar.com/install/"><img src="https://img.shields.io/badge/Python-3.11%2B-004666" alt="Python 3.11 or newer" /></a>
   <a href="https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml"><img src="https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg" alt="Tests: latest workflow status" /></a>
 </p>
+
+## One AutoML to rule them all
+
+**New in the 1.4 beta:** RealMLP, TabM mini, Kumo, and TabICLv2 join the classic
+algorithms in MLJAR AutoML. Compare three model families through the same Python
+interface and see their validation results in one leaderboard.
+
+| Model family | Examples | How to get started |
+| --- | --- | --- |
+| Classic machine learning | Linear models, Random Forest, XGBoost, LightGBM, CatBoost | Included in the base install |
+| New neural architectures | RealMLP, TabM mini | Add the optional `[realmlp]` or `[tabm]` package extras |
+| Tabular foundation models (TFMs) | Kumo, TabICLv2 | Add `[tfm]`; pretrained models download on first use |
+
+Start with the published **1.4.0b1 beta** below, or follow the
+[CPU and GPU installation guide](https://supervised.mljar.com/install/) to add
+the new models. Optional models run in **Compete** mode and depend on your
+hardware and available memory.
+
+[See the model comparison example](#compare-classic-neural-and-foundation-models) ·
+[Read the release notes](release.md)
 
 ## Quickstart
 
@@ -442,6 +462,9 @@ If you use MLJAR AutoML in your research, please cite:
 
 MLJAR AutoML is available under the [MIT license](LICENSE). Example datasets and
 optional model weights have their own licenses, documented with their sources.
+
+Built on the shoulders of giants. Meet the projects and people behind AutoML in
+our [Credits](docs/docs/acknowledgments.md).
 
 ## Commercial support
 

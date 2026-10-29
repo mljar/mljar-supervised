@@ -1,0 +1,731 @@
+{
+  "review_date": "2026-10-29",
+  "mljar_version": "1.4.0b2",
+  "scope": "Declared direct dependencies, direct imports supplied transitively, and declared development tools. Not a complete transitive SBOM or legal clearance.",
+  "packages": [
+    {
+      "package": "numpy",
+      "scope": "required",
+      "role": "Numerical arrays and calculations",
+      "reviewed_version": "2.5.4",
+      "license_summary": "BSD-3-Clause; bundled components have additional licenses",
+      "declared_license_expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/numpy/2.5.4/json",
+      "project_urls": {
+        "documentation": "https://numpy.org/doc/",
+        "download": "https://pypi.org/project/numpy/#files",
+        "homepage": "https://numpy.org",
+        "release notes": "https://numpy.org/doc/stable/release",
+        "source": "https://github.com/numpy/numpy",
+        "tracker": "https://github.com/numpy/numpy/issues"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "pandas",
+      "scope": "required",
+      "role": "Tabular data handling",
+      "reviewed_version": "3.1.0",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/pandas/3.1.0/json",
+      "project_urls": {
+        "changelog": "https://pandas.pydata.org/docs/whatsnew/index.html",
+        "documentation": "https://pandas.pydata.org/docs/",
+        "funding": "https://opencollective.com/pandas",
+        "homepage": "https://pandas.pydata.org",
+        "issues": "https://github.com/pandas-dev/pandas/issues",
+        "source": "https://github.com/pandas-dev/pandas"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "scipy",
+      "scope": "required",
+      "role": "Scientific computing and statistics",
+      "reviewed_version": "1.18.1",
+      "license_summary": "BSD-3-Clause; bundled components have additional licenses",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: BSD License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/scipy/1.18.1/json",
+      "project_urls": {
+        "documentation": "https://docs.scipy.org/doc/scipy/",
+        "download": "https://github.com/scipy/scipy/releases",
+        "homepage": "https://scipy.org/",
+        "source": "https://github.com/scipy/scipy",
+        "tracker": "https://github.com/scipy/scipy/issues"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "scikit-learn",
+      "scope": "required",
+      "role": "Estimators, preprocessing, validation, and metrics",
+      "reviewed_version": "1.9.1",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/scikit-learn/1.9.1/json",
+      "project_urls": {
+        "download": "https://pypi.org/project/scikit-learn/#files",
+        "homepage": "https://scikit-learn.org",
+        "release notes": "https://scikit-learn.org/stable/whats_new",
+        "source": "https://github.com/scikit-learn/scikit-learn",
+        "tracker": "https://github.com/scikit-learn/scikit-learn/issues"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "features-goldmine",
+      "scope": "required",
+      "role": "Automated feature discovery",
+      "reviewed_version": "1.1.0",
+      "license_summary": "Apache-2.0 (upstream repository; 1.1.0 packaging gap)",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/features-goldmine/1.1.0/json",
+      "project_urls": null,
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/48/c3/28fc5262ddcade118c65ef58f485535e2d922b9544e2b0e7377d34536d6c/features_goldmine-1.1.0.tar.gz",
+        "sha256": "e207541fa0707a3b9c14baf7fcf50fb26e320691f0175563610f1f53c1ba5ad4"
+      },
+      "upstream_license_url": "https://github.com/mljar/features_goldmine/blob/main/LICENSE"
+    },
+    {
+      "package": "xgboost-cpu",
+      "scope": "required",
+      "role": "XGBoost on supported Linux/Windows architectures",
+      "reviewed_version": "3.4.1",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": "Apache-2.0",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/xgboost-cpu/3.4.1/json",
+      "project_urls": {
+        "documentation": "https://xgboost.readthedocs.io/en/stable/",
+        "repository": "https://github.com/dmlc/xgboost"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "xgboost",
+      "scope": "required",
+      "role": "XGBoost on other platforms",
+      "reviewed_version": "3.4.1",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": "Apache-2.0",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/xgboost/3.4.1/json",
+      "project_urls": {
+        "documentation": "https://xgboost.readthedocs.io/en/stable/",
+        "repository": "https://github.com/dmlc/xgboost"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "lightgbm",
+      "scope": "required",
+      "role": "Gradient-boosted trees",
+      "reviewed_version": "4.7.0",
+      "license_summary": "MIT; bundled components have additional licenses",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/lightgbm/4.7.0/json",
+      "project_urls": {
+        "changelog": "https://github.com/lightgbm-org/LightGBM/releases",
+        "documentation": "https://lightgbm.readthedocs.io/en/latest/",
+        "homepage": "https://github.com/lightgbm-org/LightGBM",
+        "repository": "https://github.com/lightgbm-org/LightGBM.git"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/63/8e/4db5e29290d7e619c307fdb8dab0a0514090af2ce3ec483050e024ec6126/lightgbm-4.7.0.tar.gz",
+        "sha256": "f8e20f682c9aabd000bcf4a7ed8aa6f473c1adfecccae34ec24e823d156f4af0"
+      }
+    },
+    {
+      "package": "catboost",
+      "scope": "required",
+      "role": "Gradient-boosted trees",
+      "reviewed_version": "1.2.10",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/catboost/1.2.10/json",
+      "project_urls": {
+        "Benchmarks": "https://catboost.ai/#benchmark",
+        "Bug Tracker": "https://github.com/catboost/catboost/issues",
+        "Documentation": "https://catboost.ai/docs/",
+        "GitHub": "https://github.com/catboost/catboost",
+        "Homepage": "https://catboost.ai"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "joblib",
+      "scope": "required",
+      "role": "Model persistence and parallel work",
+      "reviewed_version": "1.6.0",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/joblib/1.6.0/json",
+      "project_urls": {
+        "Homepage": "https://joblib.readthedocs.io",
+        "Source": "https://github.com/joblib/joblib"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "tabulate",
+      "scope": "required",
+      "role": "Report tables",
+      "reviewed_version": "0.10.0",
+      "license_summary": "MIT",
+      "declared_license_expression": "MIT",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/tabulate/0.10.0/json",
+      "project_urls": {
+        "Homepage": "https://github.com/astanin/python-tabulate"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "matplotlib",
+      "scope": "required",
+      "role": "Plots and figures",
+      "reviewed_version": "3.11.2",
+      "license_summary": "Matplotlib license (PSF-based); bundled components have additional licenses",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: Python Software Foundation License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/matplotlib/3.11.2/json",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/matplotlib/matplotlib/issues",
+        "Documentation": "https://matplotlib.org",
+        "Donate": "https://numfocus.org/donate-to-matplotlib",
+        "Download": "https://matplotlib.org/stable/install/index.html",
+        "Forum": "https://discourse.matplotlib.org/",
+        "Homepage": "https://matplotlib.org",
+        "Source Code": "https://github.com/matplotlib/matplotlib"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "upstream_license_url": "https://matplotlib.org/stable/project/license.html"
+    },
+    {
+      "package": "dtreeviz",
+      "scope": "required",
+      "role": "Decision tree visualization",
+      "reviewed_version": "2.3.2",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/dtreeviz/2.3.2/json",
+      "project_urls": {
+        "Homepage": "https://github.com/parrt/dtreeviz"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "shap",
+      "scope": "required",
+      "role": "SHAP explanations",
+      "reviewed_version": "0.54.1",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/shap/0.54.1/json",
+      "project_urls": {
+        "Documentation": "https://shap.readthedocs.io/en/latest/index.html",
+        "Release Notes": "https://shap.readthedocs.io/en/latest/release_notes.html",
+        "Repository": "http://github.com/shap/shap"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "seaborn",
+      "scope": "required",
+      "role": "Statistical visualization",
+      "reviewed_version": "0.13.2",
+      "license_summary": "BSD-3-Clause; bundled components have additional licenses",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: BSD License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/seaborn/0.13.2/json",
+      "project_urls": {
+        "Docs": "http://seaborn.pydata.org",
+        "Source": "https://github.com/mwaskom/seaborn"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz",
+        "sha256": "93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7"
+      }
+    },
+    {
+      "package": "optuna-integration",
+      "scope": "required",
+      "role": "Tuning and pruning integrations",
+      "reviewed_version": "5.0.0",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/optuna-integration/5.0.0/json",
+      "project_urls": {
+        "repository": "https://github.com/optuna/optuna-integration"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/b0/80/11da348a0cf62e7e4561508215e79bc44f2e7e96e15c810e373f687346b0/optuna_integration-5.0.0.tar.gz",
+        "sha256": "d32d099a37c3d4c8376d10676e67f789429b4489ada70eacdeefa4350499a89e"
+      }
+    },
+    {
+      "package": "mljar-scikit-plot",
+      "scope": "required",
+      "role": "Evaluation plots; fork of scikit-plot",
+      "reviewed_version": "0.3.12",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/mljar-scikit-plot/0.3.12/json",
+      "project_urls": {
+        "Homepage": "https://github.com/mljar/mljar-scikit-plot"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/73/33/b934329b70948aa7cf88ff26d2f3ff09d3e338723275a506cdcc1b878ad5/mljar-scikit-plot-0.3.12.tar.gz",
+        "sha256": "4a093840bb90e2e31ca49ba22791cd88e74a0b0ff953441cfa9900fdb58c4964"
+      }
+    },
+    {
+      "package": "markdown",
+      "scope": "required",
+      "role": "Markdown-to-HTML reports",
+      "reviewed_version": "3.11.2",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/markdown/3.11.2/json",
+      "project_urls": {
+        "Changelog": "https://python-markdown.github.io/changelog/",
+        "Documentation": "https://Python-Markdown.github.io/",
+        "Homepage": "https://Python-Markdown.github.io/",
+        "Issue Tracker": "https://github.com/Python-Markdown/markdown/issues",
+        "Repository": "https://github.com/Python-Markdown/markdown"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "typing-extensions",
+      "scope": "required",
+      "role": "Typing compatibility",
+      "reviewed_version": "4.16.0",
+      "license_summary": "PSF-2.0",
+      "declared_license_expression": "PSF-2.0",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/typing-extensions/4.16.0/json",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/python/typing_extensions/issues",
+        "Changes": "https://github.com/python/typing_extensions/blob/main/CHANGELOG.md",
+        "Documentation": "https://typing-extensions.readthedocs.io/",
+        "Home": "https://github.com/python/typing_extensions",
+        "Q & A": "https://github.com/python/typing/discussions",
+        "Repository": "https://github.com/python/typing_extensions"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "ipython",
+      "scope": "required",
+      "role": "Notebook display integration",
+      "reviewed_version": "9.17.1",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/ipython/9.17.1/json",
+      "project_urls": {
+        "Documentation": "https://ipython.readthedocs.io/",
+        "Funding": "https://jupyter.org/about#donate",
+        "Homepage": "https://ipython.org",
+        "Source": "https://github.com/ipython/ipython",
+        "Tracker": "https://github.com/ipython/ipython/issues"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "threadpoolctl",
+      "scope": "required",
+      "role": "Native thread-pool control",
+      "reviewed_version": "3.7.0",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/threadpoolctl/3.7.0/json",
+      "project_urls": {
+        "homepage": "https://github.com/joblib/threadpoolctl"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "mercury",
+      "scope": "optional",
+      "role": "Prediction web app runtime",
+      "reviewed_version": "3.2.12",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/mercury/3.2.12/json",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/mljar/mercury/issues",
+        "Homepage": "https://github.com/mljar/mercury",
+        "Repository": "https://github.com/mljar/mercury.git"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "structured-data-models",
+      "scope": "optional",
+      "role": "Kumo and TabICLv2 backend",
+      "reviewed_version": "0.2.1",
+      "license_summary": "Apache-2.0 plus third-party notices, including BSD-3-Clause",
+      "declared_license_expression": "Apache-2.0",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/structured-data-models/0.2.1/json",
+      "project_urls": {
+        "Download": "https://github.com/NVIDIA/structured-data-models/releases",
+        "Homepage": "https://github.com/NVIDIA/structured-data-models",
+        "Issues": "https://github.com/NVIDIA/structured-data-models/issues",
+        "Repository": "https://github.com/NVIDIA/structured-data-models"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/97/33/cb15b007fc67fe53c9bff242e1ca9b7d57229ac39f82e3081db828405d1b/structured_data_models-0.2.1.tar.gz",
+        "sha256": "035ead2627dff755987287fd13f7864b3a7be2c4b0bdc060a94add8d93c29a26"
+      }
+    },
+    {
+      "package": "torch",
+      "scope": "optional",
+      "role": "Tensor computation and neural model runtime",
+      "reviewed_version": "2.15.0",
+      "license_summary": "BSD-style core; distribution contains multiple licenses",
+      "declared_license_expression": "Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND ISC AND MIT AND Zlib",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/torch/2.15.0/json",
+      "project_urls": {
+        "Documentation": "https://pytorch.org/docs",
+        "Forum": "https://discuss.pytorch.org",
+        "Homepage": "https://pytorch.org",
+        "Issue Tracker": "https://github.com/pytorch/pytorch/issues",
+        "Repository": "https://github.com/pytorch/pytorch"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "huggingface-hub",
+      "scope": "optional",
+      "role": "Model checkpoint downloads",
+      "reviewed_version": "2.3.0",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: Apache Software License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/huggingface-hub/2.3.0/json",
+      "project_urls": {
+        "Homepage": "https://github.com/huggingface/huggingface_hub"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "psutil",
+      "scope": "optional-or-development",
+      "role": "Resource and memory monitoring",
+      "reviewed_version": "7.2.2",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/psutil/7.2.2/json",
+      "project_urls": {
+        "Homepage": "https://github.com/giampaolo/psutil"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "pytabkit",
+      "scope": "optional",
+      "role": "RealMLP and TabM mini implementations",
+      "reviewed_version": "1.7.2",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: Apache Software License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/pytabkit/1.7.2/json",
+      "project_urls": {
+        "Documentation": "https://github.com/dholzmueller/pytabkit#readme",
+        "Issues": "https://github.com/dholzmueller/pytabkit/issues",
+        "Source": "https://github.com/dholzmueller/pytabkit"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version.",
+      "inspected_source_archive": {
+        "url": "https://files.pythonhosted.org/packages/b1/17/b55fc1de8dcdc806ef53047623d74ebb1fc94011f22fc5e90ca9813de568/pytabkit-1.7.2.tar.gz",
+        "sha256": "1924564958193b324aac64c6c6e5e2030a83a6d158e7c8fcf3e45f7e9c98f035"
+      }
+    },
+    {
+      "package": "optuna",
+      "scope": "imported-transitive",
+      "role": "Hyperparameter optimization",
+      "reviewed_version": "5.0.0",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/optuna/5.0.0/json",
+      "project_urls": {
+        "bugtracker": "https://github.com/optuna/optuna/issues",
+        "documentation": "https://optuna.readthedocs.io",
+        "homepage": "https://optuna.org/",
+        "repository": "https://github.com/optuna/optuna"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "packaging",
+      "scope": "imported-transitive",
+      "role": "Version and dependency requirement parsing",
+      "reviewed_version": "26.3",
+      "license_summary": "Apache-2.0 OR BSD-2-Clause",
+      "declared_license_expression": "Apache-2.0 OR BSD-2-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/packaging/26.3/json",
+      "project_urls": {
+        "Documentation": "https://packaging.pypa.io/",
+        "Source": "https://github.com/pypa/packaging"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "matplotlib-inline",
+      "scope": "imported-transitive",
+      "role": "Notebook plot integration",
+      "reviewed_version": "0.2.2",
+      "license_summary": "BSD-3-Clause",
+      "declared_license_expression": "BSD-3-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/matplotlib-inline/0.2.2/json",
+      "project_urls": {
+        "Homepage": "https://github.com/ipython/matplotlib-inline"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "pytorch-lightning",
+      "scope": "imported-transitive",
+      "role": "Training support for pytabkit adapters",
+      "reviewed_version": "2.6.6",
+      "license_summary": "Apache-2.0",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: Apache Software License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/pytorch-lightning/2.6.6/json",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/Lightning-AI/pytorch-lightning/issues",
+        "Documentation": "https://pytorch-lightning.rtfd.io/en/latest/",
+        "Download": "https://github.com/Lightning-AI/lightning",
+        "Homepage": "https://github.com/Lightning-AI/lightning",
+        "Source Code": "https://github.com/Lightning-AI/lightning"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "pytest",
+      "scope": "development",
+      "role": "Tests",
+      "reviewed_version": "9.2.0",
+      "license_summary": "MIT",
+      "declared_license_expression": "MIT",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/pytest/9.2.0/json",
+      "project_urls": {
+        "Changelog": "https://docs.pytest.org/en/stable/changelog.html",
+        "Contact": "https://docs.pytest.org/en/stable/contact.html",
+        "Funding": "https://docs.pytest.org/en/stable/sponsor.html",
+        "Homepage": "https://docs.pytest.org/en/latest/",
+        "Source": "https://github.com/pytest-dev/pytest",
+        "Tracker": "https://github.com/pytest-dev/pytest/issues"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "black",
+      "scope": "development",
+      "role": "Formatting",
+      "reviewed_version": "26.10.1",
+      "license_summary": "MIT",
+      "declared_license_expression": "MIT",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/black/26.10.1/json",
+      "project_urls": {
+        "Changelog": "https://github.com/psf/black/blob/main/CHANGES.md",
+        "Documentation": "https://black.readthedocs.io/",
+        "Issues": "https://github.com/psf/black/issues",
+        "Repository": "https://github.com/psf/black"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "pytest-cov",
+      "scope": "development",
+      "role": "Test coverage",
+      "reviewed_version": "7.1.0",
+      "license_summary": "MIT",
+      "declared_license_expression": "MIT",
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/pytest-cov/7.1.0/json",
+      "project_urls": {
+        "Changelog": "https://pytest-cov.readthedocs.io/en/latest/changelog.html",
+        "Documentation": "https://pytest-cov.readthedocs.io/",
+        "Issue Tracker": "https://github.com/pytest-dev/pytest-cov/issues",
+        "Sources": "https://github.com/pytest-dev/pytest-cov"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "coveralls",
+      "scope": "development",
+      "role": "Coverage reporting",
+      "reviewed_version": "4.1.0",
+      "license_summary": "MIT",
+      "declared_license_expression": null,
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/coveralls/4.1.0/json",
+      "project_urls": {
+        "Changelog": "https://github.com/TheKevJames/coveralls-python/blob/master/CHANGELOG.md",
+        "Docs": "https://coveralls-python.rtfd.io/",
+        "Repository": "https://github.com/TheKevJames/coveralls-python"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "mkdocs-material",
+      "scope": "development",
+      "role": "Documentation theme and imaging extra",
+      "reviewed_version": "9.8.0",
+      "license_summary": "MIT",
+      "declared_license_expression": "MIT",
+      "declared_license_classifiers": [
+        "License :: OSI Approved :: MIT License"
+      ],
+      "metadata_url": "https://pypi.org/pypi/mkdocs-material/9.8.0/json",
+      "project_urls": {
+        "Changelog": "https://squidfunk.github.io/mkdocs-material/changelog/",
+        "Documentation": "https://squidfunk.github.io/mkdocs-material/",
+        "Issues": "https://github.com/squidfunk/mkdocs-material/issues",
+        "Maintenance": "https://zensical.org/upcoming-changes/#material-for-mkdocs",
+        "Migration": "https://zensical.org/docs/compatibility/mkdocs/migration/",
+        "Source": "https://github.com/squidfunk/mkdocs-material"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "Pygments",
+      "scope": "development",
+      "role": "Syntax highlighting",
+      "reviewed_version": "2.21.0",
+      "license_summary": "BSD-2-Clause",
+      "declared_license_expression": "BSD-2-Clause",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/Pygments/2.21.0/json",
+      "project_urls": {
+        "Bug Tracker": "https://github.com/pygments/pygments/issues",
+        "Changelog": "https://github.com/pygments/pygments/blob/master/CHANGES",
+        "Documentation": "https://pygments.org/docs",
+        "Homepage": "https://pygments.org",
+        "Source": "https://github.com/pygments/pygments"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "mkdocstrings",
+      "scope": "development",
+      "role": "API documentation",
+      "reviewed_version": "1.0.8",
+      "license_summary": "ISC",
+      "declared_license_expression": "ISC",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/mkdocstrings/1.0.8/json",
+      "project_urls": {
+        "Changelog": "https://mkdocstrings.github.io/changelog",
+        "Discussions": "https://github.com/mkdocstrings/mkdocstrings/discussions",
+        "Documentation": "https://mkdocstrings.github.io",
+        "Funding": "https://github.com/sponsors/pawamoy",
+        "Gitter": "https://gitter.im/mkdocstrings/community",
+        "Homepage": "https://mkdocstrings.github.io",
+        "Issues": "https://github.com/mkdocstrings/mkdocstrings/issues",
+        "Repository": "https://github.com/mkdocstrings/mkdocstrings"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    },
+    {
+      "package": "mkdocstrings-python",
+      "scope": "development",
+      "role": "Python API documentation handler",
+      "reviewed_version": "2.0.10",
+      "license_summary": "ISC",
+      "declared_license_expression": "ISC",
+      "declared_license_classifiers": [],
+      "metadata_url": "https://pypi.org/pypi/mkdocstrings-python/2.0.10/json",
+      "project_urls": {
+        "Changelog": "https://mkdocstrings.github.io/python/changelog",
+        "Discussions": "https://github.com/mkdocstrings/python/discussions",
+        "Documentation": "https://mkdocstrings.github.io/python",
+        "Funding": "https://github.com/sponsors/pawamoy",
+        "Gitter": "https://gitter.im/mkdocstrings/python",
+        "Homepage": "https://mkdocstrings.github.io/python",
+        "Issues": "https://github.com/mkdocstrings/python/issues",
+        "Repository": "https://github.com/mkdocstrings/python"
+      },
+      "notes": "Review version is evidence, not a lockfile or claim about the installed version."
+    }
+  ],
+  "source_revision": "92e1e67e019a876aa47a7e8993608c4e123a142b",
+  "models": [
+    {
+      "model": "Kumo Tabular",
+      "repository": "nvidia/Kumo-Tabular",
+      "revision": "3c3e10bbdb590ace29e7026847f92db3c603096d",
+      "license_name": "OpenMDW License Agreement 1.1",
+      "license_source": "https://huggingface.co/nvidia/Kumo-Tabular/blob/3c3e10bbdb590ace29e7026847f92db3c603096d/LICENSE"
+    },
+    {
+      "model": "TabICLv2",
+      "repository": "jingang/TabICL",
+      "revision": "4dcd344ece2c00be9e831fdd35bed57b5ad83e19",
+      "declared_license_expression": "BSD-3-Clause",
+      "license_source": "https://huggingface.co/jingang/TabICL/blob/4dcd344ece2c00be9e831fdd35bed57b5ad83e19/README.md"
+    }
+  ]
+}
