@@ -206,6 +206,14 @@ The `Extra Trees` is using scikit-learn [`ExtraTreesRegressor`](https://scikit-l
 
 The AutoML is using [`Xgboost`](https://xgboost.readthedocs.io/en/latest/index.html) package.
 
+For binary logistic classification, AutoML checks whether a training fold can
+supply enough Hessian weight for two children at the requested `min_child_weight`.
+Provably impossible configurations are skipped before training. If this bound
+passes, a fitted candidate is still skipped when every trained tree is unsplit
+and every observed root Hessian is below the required weight. These checks use
+training data only, account for sample weights, and do not change parameters.
+Skipped configurations and reasons are recorded in `candidate_skips.json`.
+
 ### Binary Classification
 
 !!! note "`Xgboost` hyperparameters for binary classification"

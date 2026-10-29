@@ -22,6 +22,14 @@ class NativeCompatibilityError(AutoMLException):
         self.result = result
 
 
+class CandidateValidationError(AutoMLException):
+    """A candidate configuration cannot produce a usable fit on this fold."""
+
+    def __init__(self, message, **details):
+        super().__init__(message)
+        self.details = details
+
+
 class ResourceAdmissionError(AutoMLException):
     """A candidate exceeded an estimated budget before allocating its model.
 

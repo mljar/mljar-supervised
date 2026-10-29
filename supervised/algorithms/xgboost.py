@@ -1,6 +1,7 @@
 from functools import partial
 
 import copy
+import json
 import logging
 
 import numpy as np
@@ -9,6 +10,7 @@ import xgboost as xgb
 from sklearn.base import ClassifierMixin, RegressorMixin
 
 from supervised.algorithms.algorithm import BaseAlgorithm
+from supervised.exceptions import CandidateValidationError
 from supervised.algorithms.registry import (
     BINARY_CLASSIFICATION,
     MULTICLASS_CLASSIFICATION,
@@ -158,6 +160,73 @@ class XgbAlgorithm(BaseAlgorithm):
         return iters
     """
 
+    def _binary_min_child_weight(self):
+        if self.learner_params.get("objective") != "binary:logistic":
+            return None
+        minimum = float(self.learner_params.get("min_child_weight", 1))
+        return minimum if np.isfinite(minimum) and minimum > 0 else None
+
+    @staticmethod
+    def _insufficient_hessian(total, minimum):
+        # DMatrix and tree statistics use floating-point weights. Do not reject
+        # a configuration at (or numerically close to) the admissible boundary.
+        required = 2 * minimum
+        return total + 1e-6 * max(1.0, total, required) < required
+
+    def _validate_split_capacity(self, y, sample_weight):
+        minimum = self._binary_min_child_weight()
+        if minimum is None:
+            return
+        targets = np.asarray(y).ravel()
+        weights = (np.ones(len(targets), dtype=float) if sample_weight is None
+                   else np.asarray(sample_weight, dtype=float).ravel())
+        # Leave malformed labels/weights to XGBoost's own input validation.
+        if (not len(targets) or len(weights) != len(targets)
+                or not np.isin(targets, [0, 1]).all()
+                or not np.isfinite(weights).all() or (weights < 0).any()):
+            return
+        positive_weight = float(self.learner_params.get("scale_pos_weight", 1))
+        if not np.isfinite(positive_weight) or positive_weight < 0:
+            return
+        weights = weights * np.where(targets == 1, positive_weight, 1.0)
+        # Logistic Hessian w*p*(1-p) <= w/4 at EVERY boosting round.
+        # Do not multiply by subsample: random sampling can exceed its expectation.
+        upper_bound = float(weights.sum()) / 4
+        if np.isfinite(upper_bound) and self._insufficient_hessian(upper_bound, minimum):
+            raise CandidateValidationError(
+                f"Xgboost min_child_weight={minimum:g} requires at least "
+                f"{2 * minimum:g} Hessian weight for two children, but this "
+                f"training fold can provide at most {upper_bound:g}; skipping candidate.",
+                reason="insufficient_split_hessian", phase="before_fit",
+                min_child_weight=minimum, hessian_upper_bound=upper_bound,
+                training_rows=len(targets),
+            )
+
+    def _validate_trained_split_capacity(self):
+        minimum = self._binary_min_child_weight()
+        if minimum is None or self.model.get_score(importance_type="weight"):
+            return
+        # The global bound can pass while imbalance/subsampling prevents actual
+        # splits. Reject only when ALL trained trees are leaves and ALL observed
+        # root Hessians are insufficient, not merely when the best prefix is small.
+        trees = [json.loads(t) for t in self.model.get_dump(dump_format="json", with_stats=True)]
+        if not trees or any("leaf" not in t for t in trees):
+            return
+        covers = [float(t["cover"]) for t in trees]
+        if not np.isfinite(covers).all():
+            return
+        maximum = max(covers)
+        if self._insufficient_hessian(maximum, minimum):
+            self.model = None
+            raise CandidateValidationError(
+                f"Xgboost trained {len(trees)} unsplit trees: min_child_weight={minimum:g} "
+                f"requires {2 * minimum:g} Hessian weight, but the largest observed "
+                f"root weight was {maximum:g}; skipping candidate.",
+                reason="insufficient_split_hessian", phase="after_fit",
+                min_child_weight=minimum, max_observed_root_hessian=maximum,
+                trained_trees=len(trees),
+            )
+
     def fit(
         self,
         X,
@@ -169,6 +238,8 @@ class XgbAlgorithm(BaseAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
+        self.model = None
+        self._validate_split_capacity(y, sample_weight)
         dtrain = xgb.DMatrix(
             X.values if isinstance(X, pd.DataFrame) else X,
             label=y,
@@ -218,6 +289,7 @@ class XgbAlgorithm(BaseAlgorithm):
 
         del dtrain
         del dvalidation
+        self._validate_trained_split_capacity()
 
         if log_to_file is not None:
             metric_name = list(evals_result["train"].keys())[-1]

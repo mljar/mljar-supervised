@@ -27,7 +27,7 @@ from supervised.algorithms.registry import (
 from supervised.callbacks.early_stopping import EarlyStopping
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
 from supervised.ensemble import Ensemble
-from supervised.exceptions import AutoMLException, NotTrainedException, ResourceAdmissionError, BudgetExceededError
+from supervised.exceptions import AutoMLException, NotTrainedException, ResourceAdmissionError, BudgetExceededError, CandidateValidationError
 from supervised.fairness.report import FairnessReport
 from supervised.model_framework import ModelFramework
 from supervised.prediction import PredictionContext
@@ -885,6 +885,15 @@ class BaseAutoML(BaseEstimator, ABC):
         if budget_skips:
             with open(os.path.join(self._results_path, "budget_skips.json"), "w") as fout:
                 json.dump(budget_skips, fout, indent=4, cls=MLJSONEncoder)
+        candidate_skips = self._candidate_skip_records()
+        if candidate_skips:
+            with open(os.path.join(self._results_path, "candidate_skips.json"), "w") as fout:
+                json.dump(candidate_skips, fout, indent=4, cls=MLJSONEncoder)
+
+    def _candidate_skip_records(self):
+        return [dict(step=step, name=p["name"], **p["candidate_skip"])
+                for step, candidates in self._all_params.items()
+                for p in candidates if "candidate_skip" in p]
 
     def _budget_skip_records(self):
         return [dict(step=step, name=p["name"], **p["budget_skip"])
@@ -1550,6 +1559,13 @@ class BaseAutoML(BaseEstimator, ABC):
                                 e.details["elapsed"], e.details["completed_folds"],
                                 e.details["expected_folds"], e.details.get("dimensions"),
                             )
+                    except CandidateValidationError as e:
+                        params.update(status="skipped", final_loss=None, train_time=None)
+                        params["candidate_skip"] = dict(
+                            message=str(e), **e.details,
+                            learner=deepcopy(params.get("learner", {})),
+                        )
+                        self.verbose_print(f"Skip {params.get('name')}: {e}")
                     except ResourceAdmissionError as e:
                         params["status"] = "skipped"
                         params["resource_skip"] = dict(
@@ -1596,6 +1612,11 @@ class BaseAutoML(BaseEstimator, ABC):
                 self.verbose_print(
                     f"Skipped {len(self._resource_skip_records())} candidates exceeding "
                     "resource budgets. Details: resource_skips.json"
+                )
+            if self._candidate_skip_records():
+                self.verbose_print(
+                    f"Skipped {len(self._candidate_skip_records())} unusable candidates. "
+                    "Details: candidate_skips.json"
                 )
 
             # Training encodings support interrupted searches, not inference.
@@ -1803,6 +1824,13 @@ class BaseAutoML(BaseEstimator, ABC):
                     )
                 fout.write(tabulate(ldb.values, ldb.columns, tablefmt="pipe"))
                 policy = self._algorithm_early_stopping
+                if self._candidate_skip_records():
+                    fout.write(
+                        "\n\n## Candidate validation\n\n"
+                        f"Skipped {len(self._candidate_skip_records())} configurations "
+                        "that could not produce a usable fit on a training fold. "
+                        "[Reasons and parameters](candidate_skips.json).\n"
+                    )
                 if self._budget_skip_records():
                     fout.write(
                         "\n\n## Time budgets\n\n"
