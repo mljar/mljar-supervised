@@ -8,15 +8,9 @@ from sklearn import datasets
 from supervised.algorithms.random_forest import (
     RandomForestAlgorithm,
     RandomForestRegressorAlgorithm,
-    additional,
-    regression_additional,
 )
 from supervised.utils.metric import Metric
 
-additional["trees_in_step"] = 1
-regression_additional["trees_in_step"] = 1
-additional["max_steps"] = 1
-regression_additional["max_steps"] = 1
 
 
 class RandomForestRegressorAlgorithmTest(unittest.TestCase):
@@ -28,7 +22,7 @@ class RandomForestRegressorAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "mse"})
-        params = {"trees_in_step": 1, "seed": 1, "ml_task": "regression"}
+        params = {"seed": 1, "ml_task": "regression"}
         prev_loss = None
         for _ in range(3):
             model = RandomForestRegressorAlgorithm(params)
@@ -57,7 +51,7 @@ class RandomForestAlgorithmTest(unittest.TestCase):
 
     def test_reproduce_fit(self):
         metric = Metric({"name": "logloss"})
-        params = {"trees_in_step": 1, "seed": 1, "ml_task": "binary_classification"}
+        params = {"seed": 1, "ml_task": "binary_classification"}
         prev_loss = None
         for _ in range(3):
             model = RandomForestAlgorithm(params)

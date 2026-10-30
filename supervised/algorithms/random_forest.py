@@ -29,21 +29,17 @@ class RandomForestAlgorithm(ClassifierMixin, SklearnTreesEnsembleClassifierAlgor
         logger.debug("RandomForestAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-        self.trees_in_step = additional.get("trees_in_step", 5)
-        self.max_steps = additional.get("max_steps", 3)
-        self.early_stopping_rounds = additional.get("early_stopping_rounds", 50)
         self.model = RandomForestClassifier(
-            n_estimators=self.trees_in_step,
+            n_estimators=100,  # Resolved from row count in fit().
             criterion=params.get("criterion", "gini"),
             max_features=params.get("max_features", 0.8),
             max_depth=params.get("max_depth", 6),
             min_samples_split=params.get("min_samples_split", 4),
             min_samples_leaf=params.get("min_samples_leaf", 1),
-            warm_start=True,
+            warm_start=False,
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),
         )
-        self.max_steps = self.params.get("max_steps", self.max_steps)
 
     def file_extension(self):
         return "random_forest"
@@ -60,23 +56,17 @@ class RandomForestRegressorAlgorithm(
         logger.debug("RandomForestRegressorAlgorithm.__init__")
 
         self.library_version = sklearn.__version__
-        self.trees_in_step = regression_additional.get("trees_in_step", 5)
-        self.max_steps = regression_additional.get("max_steps", 3)
-        self.early_stopping_rounds = regression_additional.get(
-            "early_stopping_rounds", 50
-        )
         self.model = RandomForestRegressor(
-            n_estimators=self.trees_in_step,
+            n_estimators=100,  # Resolved from row count in fit().
             criterion=params.get("criterion", "squared_error"),
             max_features=params.get("max_features", 0.8),
             max_depth=params.get("max_depth", 6),
             min_samples_split=params.get("min_samples_split", 4),
             min_samples_leaf=params.get("min_samples_leaf", 1),
-            warm_start=True,
+            warm_start=False,
             n_jobs=params.get("n_jobs", -1),
             random_state=params.get("seed", 1),
         )
-        self.max_steps = self.params.get("max_steps", self.max_steps)
 
     def file_extension(self):
         return "random_forest"
@@ -99,11 +89,6 @@ classification_default_params = {
 
 
 additional = {
-    "trees_in_step": 100,
-    "train_cant_improve_limit": 1,
-    "min_steps": 1,
-    "max_steps": 50,
-    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }
@@ -156,11 +141,6 @@ regression_default_params = {
 }
 
 regression_additional = {
-    "trees_in_step": 100,
-    "train_cant_improve_limit": 1,
-    "min_steps": 1,
-    "max_steps": 50,
-    "early_stopping_rounds": 50,
     "max_rows_limit": None,
     "max_cols_limit": None,
 }

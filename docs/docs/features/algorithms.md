@@ -111,6 +111,14 @@ The coefficients are saved in Markdown report if `explain_level > 0`.
 
 ## Random Forest
 
+Random Forest and Extra Trees use a fixed number of trees based on the combined
+training and validation row count: **100** below 2,000 rows, **200** for
+2,000–2,999 rows, and **300** for 3,000 rows or more. This applies to classification
+and regression, including Optuna trials. Ordinary cross-validation folds therefore
+use the same count. Without validation data, only training rows are counted.
+Validation scores do not select or trim the forest; training logs record the
+final forest's training and validation scores.
+
 ### Classification
 
 The `Random Forest` is using scikit-learn [`RandomForestClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html).
@@ -160,6 +168,9 @@ The `Random Forest` is using scikit-learn [`RandomForestRegressor`](https://scik
     ```
 
 ## Extra Trees
+
+Extra Trees uses the same fixed 100/200/300-tree row-count rule as Random Forest
+above, without validation-based tree-count selection.
 
 ### Classification
 

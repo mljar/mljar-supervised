@@ -5,8 +5,6 @@ import pandas as pd
 import pytest
 
 from supervised import AutoML
-from supervised.algorithms.extra_trees import additional as extra_trees_settings
-from supervised.algorithms.random_forest import additional as random_forest_settings
 from supervised.base_automl import BaseAutoML
 from supervised.ensemble import Ensemble
 from supervised.model_framework import ModelFramework
@@ -90,11 +88,6 @@ def test_stacking_orders_reloaded_and_new_losses_numerically(tmp_path):
 def test_optuna_resume_mixes_loaded_and_new_models_before_stacking(
     tmp_path, monkeypatch, task, classes
 ):
-    # Keep real Optuna trials and fold training small for this resume test.
-    for settings in [random_forest_settings, extra_trees_settings]:
-        monkeypatch.setitem(settings, "trees_in_step", 5)
-        monkeypatch.setitem(settings, "max_steps", 2)
-        monkeypatch.setitem(settings, "early_stopping_rounds", 2)
     rng = np.random.default_rng(123)
     X = pd.DataFrame(rng.normal(size=(90, 3)), columns=list("abc"))
     y = (

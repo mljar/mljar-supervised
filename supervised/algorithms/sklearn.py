@@ -1,6 +1,5 @@
 import copy
 import logging
-import time
 import warnings
 
 import joblib
@@ -81,14 +80,17 @@ def predict_proba_function_multiclass(estimator, X):
 
 
 class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
+    @staticmethod
+    def tree_count(rows_count):
+        """Use one fixed count for the complete training/validation split."""
+        return 100 * min(3, max(1, rows_count // 1000))
+
     def __init__(self, params):
         super(SklearnTreesEnsembleClassifierAlgorithm, self).__init__(params)
         self.log_metric = Metric(
             {"name": self.params.get("eval_metric_name", "logloss")}
         )
-        self.max_iters = (
-            1  # max iters is used by model_framework, max_steps is used internally
-        )
+        self.max_iters = 1  # Fit the complete fixed-size forest once per fold.
         if params.get("ml_task") == BINARY_CLASSIFICATION:
             self.predict_function = predict_proba_function_binary
         else:
@@ -105,79 +107,40 @@ class SklearnTreesEnsembleClassifierAlgorithm(SklearnAlgorithm):
         log_to_file=None,
         max_time=None,
     ):
-        max_steps = self.max_steps
-        n_estimators = 0
-
-        min_val = 10e12
-        min_e = 0
-
-        p_tr, p_vd = None, None
-        result = {"iteration": [], "train": [], "validation": []}
-
-        start_time = time.time()
+        rows_count = len(X) + (len(X_validation) if X_validation is not None else 0)
+        n_estimators = self.tree_count(rows_count)
+        # Validation labels do not select the forest size. Disable warm start
+        # so fitting the same learner again cannot retain trees from old data.
+        self.model.set_params(n_estimators=n_estimators, warm_start=False)
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore")
-
-            for i in range(max_steps):
-                self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
-                self.model.n_estimators += self.trees_in_step
-
-                if X_validation is None or y_validation is None:
-                    continue
-                estimators = self.model.estimators_
-
-                stop = False
-                for e in range(n_estimators, len(estimators)):
-                    p = self.predict_function(estimators[e], X)
-                    if p_tr is None:
-                        p_tr = p
-                    else:
-                        p_tr += p
-
-                    p = self.predict_function(estimators[e], X_validation)
-                    if p_vd is None:
-                        p_vd = p
-                    else:
-                        p_vd += p
-
-                    tr = self.log_metric(
-                        y, p_tr / float(e + 1), sample_weight=sample_weight
-                    )
-                    vd = self.log_metric(
-                        y_validation,
-                        p_vd / float(e + 1),
-                        sample_weight=sample_weight_validation,
-                    )
-
-                    if vd < min_val:  # optimize direction
-                        min_val = vd
-                        min_e = e
-
-                    if e - min_e >= self.early_stopping_rounds:
-                        stop = True
-                        break
-
-                    result["iteration"] += [e]
-                    result["train"] += [tr]
-                    result["validation"] += [vd]
-
-                # disable for now ...
-                # if max_time is not None and time.time()-start_time > max_time:
-                #    stop = True
-
-                if stop:
-                    self.model.estimators_ = estimators[: (min_e + 1)]
-                    break
-                n_estimators = len(estimators)
+            self.model.fit(X, np.ravel(y), sample_weight=sample_weight)
+        self.params["n_estimators"] = n_estimators
 
         if log_to_file is not None:
-            df_result = pd.DataFrame(result)
+            train_score = self.log_metric(
+                y, self.predict_function(self.model, X), sample_weight=sample_weight
+            )
+            validation_score = np.nan
+            if X_validation is not None and y_validation is not None:
+                validation_score = self.log_metric(
+                    y_validation,
+                    self.predict_function(self.model, X_validation),
+                    sample_weight=sample_weight_validation,
+                )
+            # Log the final forest only; there is no selected validation peak.
+            df_result = pd.DataFrame({
+                "iteration": [n_estimators - 1],
+                "train": [train_score],
+                "validation": [validation_score],
+            })
             if self.log_metric.is_negative():
                 df_result["train"] *= -1.0
                 df_result["validation"] *= -1.0
             df_result.to_csv(log_to_file, index=False, header=False)
 
-        self.classes_ = np.unique(y)
+        if self.params.get("ml_task") != REGRESSION:
+            self.classes_ = self.model.classes_
 
     def get_metric_name(self):
         return self.params.get("eval_metric_name", "logloss")

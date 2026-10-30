@@ -33,7 +33,6 @@ class RandomForestObjective:
         self.eval_metric = eval_metric
         self.n_jobs = n_jobs
         self.objective = "squared_error" if ml_task == REGRESSION else "gini"
-        self.max_steps = 10  # RF is trained in steps 100 trees each
         self.seed = random_state
 
     def __call__(self, trial):
@@ -49,7 +48,6 @@ class RandomForestObjective:
                 else trial.suggest_categorical("criterion", ["gini", "entropy"])
             )
             params = {
-                "max_steps": self.max_steps,
                 "criterion": self.objective,
                 "max_depth": trial.suggest_int("max_depth", 2, 32),
                 "min_samples_split": trial.suggest_int("min_samples_split", 2, 100),
@@ -60,7 +58,10 @@ class RandomForestObjective:
                 "ml_task": self.ml_task,
             }
             model = Algorithm(params)
-            model.fit(self.X_train, self.y_train, sample_weight=self.sample_weight)
+            model.fit(
+                self.X_train, self.y_train, sample_weight=self.sample_weight,
+                X_validation=self.X_validation, y_validation=self.y_validation,
+            )
 
             preds = model.predict(self.X_validation)
 
