@@ -114,15 +114,20 @@ class FeatureDiscovery:
         count = repeats * n_splits
         deadline = time.monotonic() + time_limit
         folds, profiles = {}, None
-        shown_features = set()
 
         def emit(message):
             if progress is not None:
                 progress("Feature discovery: " + message)
 
-        emit(f"searching {count} training folds (budget {time_limit:.1f}s).")
+        scope = "all training data" if full_data else f"{n_splits} folds"
+        if repeats > 1:
+            scope += f" × {repeats} repeats"
+        emit(f"searching {scope} (budget {time_limit:.1f}s).")
         for repeat in range(repeats):
             for fold in range(n_splits):
+                label = "all training data" if full_data else f"fold {fold + 1}/{n_splits}"
+                if repeats > 1:
+                    label += f", repeat {repeat + 1}/{repeats}"
                 if full_data:
                     from supervised.utils.utils import load_data
                     train = {
@@ -157,10 +162,6 @@ class FeatureDiscovery:
                     if remaining <= 0:
                         emit("stopped: discovery budget exhausted before all folds completed.")
                         return None
-                    emit(
-                        f"fold {len(folds) + 1}/{count}, {len(X)} rows, "
-                        f"{len(X.columns)} input columns."
-                    )
                     generator = GoldenFeatures(
                         time_limit=remaining / (count - len(folds)),
                         max_feature_sets=3,
@@ -214,24 +215,29 @@ class FeatureDiscovery:
                     )
                     write_json(manifest, info)
                     del generator, outputs, matrix, columns
-                action = "reused saved features" if cached else "constructed features"
-                emit(
-                    f"fold {len(folds) + 1}/{count}: {action}; "
-                    + ", ".join(
-                        f"{name}: {len(columns)} features"
-                        for name, columns in info["sets"].items()
+                # Preview selected transformations, not hashed storage names. Keep
+                # each fitted fold separate: matching labels do not imply the
+                # same learned transformation. Full details remain in generator.md.
+                selected = list(dict.fromkeys(
+                    name for columns in info["sets"].values() for name in columns
+                ))
+                if selected:
+                    records = info.get("feature_identities", {})
+                    labels = [
+                        " ".join(str(records.get(name, {}).get("display_label", name)).split())
+                        for name in selected[:3]
+                    ]
+                    preview = "; ".join(
+                        name if len(name) <= 140 else name[:137] + "..."
+                        for name in labels
                     )
-                    + ("." if cached else f" in {info['discovery_seconds']:.2f}s.")
-                )
-                for profile, columns in info["sets"].items():
-                    new = [name for name in columns if name not in shown_features]
-                    if new:
-                        # Keep console output bounded; full transformations are in the report.
-                        preview = ", ".join(str(name).replace("\n", " ") for name in new[:20])
-                        suffix = f" (+{len(new) - 20} more)" if len(new) > 20 else ""
-                        emit(f"{profile}, newly listed features: {preview}{suffix}.")
-                        shown_features.update(new)
-                emit(f"transformations report: {directory / 'generator.md'}")
+                    suffix = f" (+{len(selected) - 3} more)" if len(selected) > 3 else ""
+                    noun = "transformation" if len(selected) == 1 else "transformations"
+                    summary = f"selected {len(selected)} {noun}: {preview}{suffix}"
+                else:
+                    summary = "no transformations selected"
+                timing = "cached" if cached else f"{info['discovery_seconds']:.2f}s"
+                emit(f"{label}: {summary} ({timing}).")
                 available = list(info["sets"])
                 profiles = (
                     available

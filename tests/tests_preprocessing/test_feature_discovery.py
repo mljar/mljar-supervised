@@ -224,8 +224,10 @@ def test_training_encoding_cache_is_not_replaced_by_inference(tmp_path):
     assert not (adapter.transform(train["X"]) == -123).all().all()
 
 
-def test_unavailable_profiles_and_expired_budget(tmp_path, monkeypatch):
+@pytest.mark.parametrize("repeats", [1, 3])
+def test_unavailable_profiles_and_expired_budget(tmp_path, monkeypatch, repeats):
     _, _, store, params = discovery_data(tmp_path)
+    params["repeats"] = repeats
 
     class FakeGoldmine:
         calls = 0
@@ -258,12 +260,22 @@ def test_unavailable_profiles_and_expired_budget(tmp_path, monkeypatch):
     assert FakeGoldmine.calls == 0
     messages.clear()
     assert discovery.prepare(params, 10, progress=messages.append)["profiles"] == ["default"]
-    assert any("fold 1/2" in line and "input columns" in line for line in messages)
-    assert any("default: 1 features, compact: 1 features" in line for line in messages)
-    assert sum("default, newly listed features: a." in line for line in messages) == 1
-    assert any("generator.md" in line for line in messages)
+    assert any("fold 1/2" in line and "selected 2 transformations: a; b" in line for line in messages)
+    assert sum("selected 1 transformation: a" in line for line in messages) == 2 * repeats - 1
+    assert not any("generator.md" in line or "input columns" in line for line in messages)
+    if repeats > 1:
+        assert "2 folds × 3 repeats" in messages[0]
+        assert any("fold 2/2, repeat 3/3" in line for line in messages)
+        assert not any("fold 3/6" in line for line in messages)
     assert messages[-1].endswith("feature sets ready for model training: default.")
     messages.clear()
     discovery.prepare(params, 10, progress=messages.append)
-    assert sum("reused saved features" in line for line in messages) == 2
-    assert FakeGoldmine.calls == 2
+    assert sum("(cached)" in line for line in messages) == 2 * repeats
+    assert FakeGoldmine.calls == 2 * repeats
+    for manifest in (tmp_path / "feature_discovery").glob("*/manifest.json"):
+        info = json.loads(manifest.read_text())
+        info["sets"] = {}
+        manifest.write_text(json.dumps(info))
+    messages.clear()
+    assert discovery.prepare(params, 10, progress=messages.append) is None
+    assert sum("no transformations selected" in line for line in messages) == 2 * repeats
