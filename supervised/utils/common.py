@@ -1,4 +1,5 @@
 import os
+import re
 
 
 def construct_learner_name(fold, repeat, repeats):
@@ -16,7 +17,8 @@ def learner_name_to_fold_repeat(name):
 
 
 def get_fold_repeat_cnt(model_path):
-    training_logs = [f for f in os.listdir(model_path) if "_training.log" in f]
+    training_logs = [f for f in os.listdir(model_path)
+                     if re.fullmatch(r"learner_fold_\d+(?:_repeat_\d+)?_training\.log", f)]
     fold_cnt, repeat_cnt = 0, 0
     for fname in training_logs:
         fold, repeat = learner_name_to_fold_repeat(fname)

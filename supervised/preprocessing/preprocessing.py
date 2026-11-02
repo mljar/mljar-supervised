@@ -15,6 +15,7 @@ from supervised.preprocessing.goldenfeatures_transformer import (
     GoldenFeaturesTransformer,
 )
 from supervised.preprocessing.feature_discovery_transformer import FeatureDiscoveryTransformer
+from supervised.preprocessing.feature_identity import input_identity, reject_generated_drops
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
 from supervised.preprocessing.label_binarizer import LabelBinarizer
 from supervised.preprocessing.label_encoder import LabelEncoder
@@ -62,6 +63,7 @@ class Preprocessing(object):
         self._kmeans = None
         self._add_random_feature = self._params.get("add_random_feature", False)
         self._drop_features = self._params.get("drop_features", [])
+        self._feature_selection_manifest = None
         self._model_name = model_name
         self._k_fold = k_fold
         self._repeat = repeat
@@ -83,6 +85,7 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
+        reject_generated_drops(self._params, list(X_train.columns))
         # Transformations replace columns; owning the frame metadata avoids
         # chained-assignment warnings without copying every fold's data again.
         if X_train is not None:
@@ -148,6 +151,20 @@ class Preprocessing(object):
             self._feature_discovery = FeatureDiscoveryTransformer(
                 info, config["feature_set"], self._results_path
             )
+            selection = self._params.get("feature_selection_manifest")
+            if selection is not None:
+                self._feature_discovery.validate_selection(selection)
+                if set(selection.get("dropped_input_identities", [])) != {
+                    input_identity(c) for c in self._drop_features if c != "random_feature"
+                }:
+                    raise AutoMLException("Feature selection drop list does not match identities")
+            if info.get("generator_id"):
+                self._feature_selection_manifest = {
+                    "generator_id": info["generator_id"],
+                    "dropped_input_identities": [input_identity(c) for c in self._drop_features if c != "random_feature"],
+                    "dropped_generated_identities": [],
+                    "generated_selection": "disabled",
+                }
             discovery_values = self._feature_discovery.fit_transform(discovery_X, discovery_y)
             discovery_columns = self._feature_discovery._new_columns
 
@@ -347,6 +364,10 @@ class Preprocessing(object):
             if drop_cols:
                 X_train.drop(drop_cols, axis=1, inplace=True)
             self._drop_features = drop_cols
+            if self._feature_selection_manifest is not None:
+                self._feature_selection_manifest["dropped_input_identities"] = [
+                    input_identity(c) for c in drop_cols if c != "random_feature"
+                ]
 
         if X_train is not None:
             # there can be catagorical columns (in CatBoost) which cant be clipped
@@ -616,6 +637,8 @@ class Preprocessing(object):
 
     def to_json(self):
         preprocessing_params = {}
+        if self._feature_selection_manifest is not None:
+            preprocessing_params["feature_selection_manifest"] = self._feature_selection_manifest
         if self._timedelta_columns:
             preprocessing_params["timedelta_columns"] = self._timedelta_columns
         if self._ip_transforms:
@@ -730,6 +753,13 @@ class Preprocessing(object):
 
         if "feature_discovery" in data_json:
             self._feature_discovery = FeatureDiscoveryTransformer.from_json(data_json["feature_discovery"], results_path)
+            self._feature_selection_manifest = data_json.get("feature_selection_manifest")
+            if self._feature_selection_manifest is not None:
+                self._feature_discovery.validate_selection(self._feature_selection_manifest)
+                if set(self._feature_selection_manifest.get("dropped_input_identities", [])) != {
+                    input_identity(c) for c in data_json.get("drop_features", []) if c != "random_feature"
+                }:
+                    raise AutoMLException("Saved feature selection drop list does not match identities")
 
         if "kmeans" in data_json:
             self._kmeans = KMeansTransformer()

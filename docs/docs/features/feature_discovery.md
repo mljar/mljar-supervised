@@ -113,7 +113,8 @@ Artifacts live under `feature_discovery/<identity>/` in the AutoML results folde
 
 - `generator.joblib`: frozen transformations and inference state.
 - `generator.md` and `generator.json`: formulas, dependencies, limits and decisions.
-- `manifest.json`: input fingerprint, profiles and output-column mapping.
+- `manifest.json`: input fingerprint, profiles, fitted-generator identity,
+  semantic feature identities, display labels and output-column mapping.
 - `training.joblib`: shared training encodings, retained during interrupted search
   and removed after successful fitting. Inference does not need this file.
 
@@ -128,6 +129,26 @@ layout. Selecting or copying equivalent columns does not invalidate the cache;
 changed training values, targets or row order do. Manifests record the fingerprint
 version. Inference from existing artifacts continues to use the frozen generator
 and does not require a training-cache fingerprint.
+
+New generated columns use deterministic SHA-256 storage names, rather than
+fold-local numeric positions. A stateless feature identity includes its operation,
+ordered inputs and parameters; commutative operations canonicalize input order.
+Learned transformations remain scoped to the fitted generator and its saved state.
+This includes Goldmine's numeric formulas when they carry a learned output-fill
+value. Incomplete definitions are also scoped to their generator; readable names
+do not establish equivalence. Replay checks the saved generator and column mapping.
+
+Permutation and SHAP reports align only equivalent feature identities. Other
+generated features are shown by fold, with missing observations left missing.
+The accompanying `permutation_importance_identities.csv` and
+`shap_importance_identities.csv` preserve the storage names and identities.
+
+Shared feature selection is limited to original input columns. Generated columns,
+including legacy `feature_discovery_0` slots, cannot be dropped by a shared list
+during new training. A full-data TFM fits its own generator and cannot receive a
+selection manifest from a CV generator. Generated-feature selection inside a
+training-only inner pipeline is not implemented yet. Existing saved models retain
+their original mappings and drop lists for prediction.
 
 Feature discovery is an additional search strategy, not a guarantee of better
 accuracy. Keep original-feature candidates and select using validation results.

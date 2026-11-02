@@ -220,6 +220,42 @@ The `Extra Trees` is using scikit-learn [`ExtraTreesRegressor`](https://scikit-l
     }
     ```
 
+## Shared boosting-round selection
+
+Starting in 1.4.0b3, cross-validation training for XGBoost, LightGBM and CatBoost
+selects one boosting-round count for all folds of each model configuration.
+This applies to classification and regression, including repeated validation.
+A single validation split and standalone algorithm fits retain their existing
+local early stopping.
+
+Each fold trains continuously with validation checkpoints every **10 rounds**
+and **300 rounds of patience**, subject to round and time limits. Round 1 is
+also a candidate so very short runs and boosters that exhaust possible splits
+can participate. The full booster, including patience rounds, is retained until
+all folds finish. Only checkpoints available in every fold are considered;
+shorter folds are not extended. Selection optimizes the existing **pooled OOF
+metric**, with the smaller count winning exact ties.
+
+After selection, every fold model is reduced to the selected prefix. OOF
+predictions, validation scores, thresholds, reports and subsequent ensembles
+use that same prefix. `shared_boosting.json` and `shared_boosting_scores.csv`
+record the stopping counts and selection curve. Model reports and the
+leaderboard include the **mean fold score** alongside the pooled score.
+`metric_value` remains the pooled selection score; `mean_fold_metric_value`
+is the additional reported score for these models.
+
+Counts refer to boosting rounds, which may contain multiple trees for
+multiclass models. XGBoost's zero-based `best_iteration` is stored as the count
+minus one; prediction uses the exclusive endpoint equal to the count.
+
+Training retains one fold's booster and data at a time. Validation checkpoint
+predictions are temporarily stored on disk and removed after completion or
+failure. Their size scales with rows, checkpoints and prediction columns;
+this does not make the underlying training algorithms out-of-core. Training
+curve logs contain checkpoint validation scores; training scores are not
+recomputed at every checkpoint. Shared selection is a validation tuning
+procedure and does not guarantee better performance on unseen data.
+
 ## Xgboost
 
 The AutoML is using [`Xgboost`](https://xgboost.readthedocs.io/en/latest/index.html) package.
@@ -604,7 +640,7 @@ The stacked algorithms are built with predictions from previous (unstacked) mode
 
 - New stacks use up to five models per algorithm as inputs. Baseline, ensembles, random-feature probes, and already stacked models are excluded.
 - Out-of-fold predictions extend the training data. Stacking uses non-repeated K-fold validation, configured with `validation_strategy={"validation_type": "kfold", "k_folds": 5}`.
-- Eligible stacked learners include boosting models, forests, Neural Network, RealMLP, TabM, Kumo, and TabICLv2. AutoML reuses parent hyperparameters and preprocessing; backend compatibility and remaining time still apply. See [stacking and ensembles](stacking-ensemble.md).
+- Eligible stacked learners include boosting models, forests, Neural Network, RealMLP and TabM. Starting in 1.4.0b4, Kumo and TabICLv2 remain eligible as stacking inputs and ensemble members, but are not trained on stacked features. AutoML reuses parent hyperparameters and preprocessing; backend compatibility and remaining time still apply. See [stacking and ensembles](stacking-ensemble.md).
 
 ## Ensemble
 

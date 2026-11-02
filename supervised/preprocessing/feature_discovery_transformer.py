@@ -16,6 +16,9 @@ from supervised.exceptions import AutoMLException
 from supervised.preprocessing.exclude_missing_target import ExcludeRowsMissingTarget
 from supervised.preprocessing.preprocessing_utils import PreprocessingUtils
 from supervised.validation.validation_step import ValidationStep
+from supervised.preprocessing.feature_identity import (
+    SCHEMA_VERSION, build_identities, digest as identity_digest, file_digest, input_identity, validate_manifest,
+)
 
 
 def check_dependencies():
@@ -98,15 +101,17 @@ class FeatureDiscovery:
         self.n_jobs = joblib.effective_n_jobs(n_jobs)
         self.data_store = data_store
 
-    def prepare(self, validation_params, time_limit, progress=None):
+    def prepare(self, validation_params, time_limit, progress=None, *, full_data=False):
         GoldenFeatures = check_dependencies()
         package_version = importlib.metadata.version("features-goldmine")
         if not supported_validation(validation_params):
             raise AutoMLException(
                 "Feature discovery needs shuffled split or K-fold validation."
             )
-        validation = ValidationStep(validation_params, data_store=self.data_store)
-        count = validation.get_repeats() * validation.get_n_splits()
+        validation = None if full_data else ValidationStep(validation_params, data_store=self.data_store)
+        repeats = 1 if full_data else validation.get_repeats()
+        n_splits = 1 if full_data else validation.get_n_splits()
+        count = repeats * n_splits
         deadline = time.monotonic() + time_limit
         folds, profiles = {}, None
         shown_features = set()
@@ -116,9 +121,16 @@ class FeatureDiscovery:
                 progress("Feature discovery: " + message)
 
         emit(f"searching {count} training folds (budget {time_limit:.1f}s).")
-        for repeat in range(validation.get_repeats()):
-            for fold in range(validation.get_n_splits()):
-                train, _ = validation.get_split(fold, repeat)
+        for repeat in range(repeats):
+            for fold in range(n_splits):
+                if full_data:
+                    from supervised.utils.utils import load_data
+                    train = {
+                        "X": load_data(validation_params["X_path"], store=self.data_store),
+                        "y": load_data(validation_params["y_path"], store=self.data_store)["target"],
+                    }
+                else:
+                    train, _ = validation.get_split(fold, repeat)
                 X, y, weights, _ = ExcludeRowsMissingTarget.transform(
                     train["X"], train["y"], train.get("sample_weight")
                 )
@@ -128,7 +140,7 @@ class FeatureDiscovery:
                     return None
                 digest = fingerprint(X, y)
                 identity = joblib.hash(
-                    (digest, weights, self.task, self.seed, package_version)
+                    (digest, weights, self.task, self.seed, package_version, SCHEMA_VERSION)
                 )
                 relative = Path("feature_discovery") / identity
                 directory = self.root / relative
@@ -168,15 +180,21 @@ class FeatureDiscovery:
                             if name not in columns:
                                 columns[name] = frame[name]
                     matrix = pd.DataFrame(columns, index=X.index)
-                    rename = {}
-                    used = set(X.columns)
-                    for i, name in enumerate(names):
-                        output = f"feature_discovery_{i}"
-                        while output in used:
-                            output += "_"
-                        rename[name] = output
-                        used.add(output)
+                    directory.mkdir(parents=True, exist_ok=True)
+                    generator.save(directory / "generator.joblib", report=True)
+                    generator_sha256 = file_digest(directory / "generator.joblib")
+                    generator_id = identity_digest({"fit_scope": identity, "state": generator_sha256})
+                    identities = build_identities(
+                        names, getattr(generator, "_selected_metadata_by_name", {}),
+                        generator_id, list(X.columns), package_version,
+                    )
+                    rename = {name: record["storage_column"] for name, record in identities.items()}
                     info = {
+                        "identity_schema_version": SCHEMA_VERSION,
+                        "generator_id": generator_id,
+                        "generator_sha256": generator_sha256,
+                        "fit_scope": identity,
+                        "feature_identities": identities,
                         "features_goldmine_version": package_version,
                         "fingerprint": digest,
                         "fingerprint_version": 2,
@@ -190,8 +208,6 @@ class FeatureDiscovery:
                         "discovery_seconds": time.monotonic() - started,
                         "discovery_uses_sample_weight": False,
                     }
-                    directory.mkdir(parents=True, exist_ok=True)
-                    generator.save(directory / "generator.joblib", report=True)
                     joblib.dump(matrix, directory / "training.tmp")
                     os.replace(
                         directory / "training.tmp", directory / "training.joblib"
@@ -244,7 +260,24 @@ class FeatureDiscoveryTransformer:
         self.feature_set = feature_set
         self.root = Path(results_path)
         self.generator = None
+        self._identity_checked = False
+        validate_manifest(info)
         self._new_columns = [info["rename"][c] for c in info["sets"][feature_set]]
+
+    def validate_selection(self, selection):
+        if selection.get("generator_id") != self.info.get("generator_id") or not self.info.get("generator_id"):
+            raise AutoMLException("Feature selection generator mismatch")
+        allowed = {input_identity(c) for c in self.info["input_columns"]}
+        if not set(selection.get("dropped_input_identities", [])).issubset(allowed):
+            raise AutoMLException("Feature selection references unknown input identities")
+        if selection.get("dropped_generated_identities"):
+            raise AutoMLException("Shared selection of generated features is disabled")
+
+    def _check_identity(self):
+        if not self._identity_checked and "identity_schema_version" in self.info:
+            if file_digest(self.root / self.info["directory"] / "generator.joblib") != self.info["generator_sha256"]:
+                raise AutoMLException("Feature discovery fitted generator identity mismatch")
+            self._identity_checked = True
 
     def _input(self, X):
         missing = set(self.info["input_columns"]) - set(X.columns)
@@ -259,6 +292,7 @@ class FeatureDiscoveryTransformer:
         return discovery_input(X)
 
     def fit_transform(self, X, y):
+        self._check_identity()
         X = self._input(X)
         if (
             fingerprint(X, y, self.info.get("fingerprint_version", 1))
@@ -280,14 +314,19 @@ class FeatureDiscoveryTransformer:
         )
 
     def transform(self, X):
+        self._check_identity()
         if self.generator is None:
             GoldenFeatures = check_dependencies()
             self.generator = GoldenFeatures.load(
                 self.root / self.info["directory"] / "generator.joblib"
             )
-        return self.generator.transform(
+        frame = self.generator.transform(
             self._input(X), feature_set=self.feature_set
-        ).rename(columns=self.info["rename"])
+        )
+        expected = self.info["sets"][self.feature_set]
+        if set(frame.columns) != set(expected) or frame.columns.has_duplicates:
+            raise AutoMLException("Feature discovery output schema changed")
+        return frame[expected].rename(columns=self.info["rename"])
 
     def to_json(self):
         return {"info": self.info, "feature_set": self.feature_set}

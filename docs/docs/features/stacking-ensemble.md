@@ -63,6 +63,35 @@ The selected input names and order are saved with the run. Loading an older run
 preserves its original stack, even if it contains more inputs. Reducing an
 existing stack requires training new stacked models.
 
+Starting in **1.4.0b4**, Kumo and TabICLv2 predictions remain eligible inputs for
+other stacked learners, and their ordinary models can enter ensembles. AutoML
+does not train new Kumo or TabICLv2 models on stacked data. RealMLP and TabM remain
+eligible stacked learners. Saved older TFM stacks can still be loaded for prediction.
+
+For new Kumo and TabICLv2 cross-validation runs, validation and ensemble selection
+still use fold-based OOF predictions. Inference uses **one saved context containing
+all training rows**, with separately fitted full-data preprocessing. This also
+supplies TFM prediction columns to stacked models on new inputs. Full-data
+resource admission and preparation run within the training budget; oversized
+contexts are skipped, never truncated. `framework.json` retains the CV learners
+under `validation_models` and records `tfm_full_context`, while its ordinary
+`learners` and `saved` fields describe the single inference learner. Holdout runs
+and previously saved models retain their original prediction behavior.
+
+With `validation_strategy="auto"`, cross-validation is capped at **five folds**
+when the training data has fewer than **5,000 rows**, or classification has fewer
+than **250 samples in its smallest observed class**. Otherwise Compete and Optuna
+can use ten folds. Perform retains its five-fold default; Explain retains its
+holdout default. Existing time-budget constraints can still reduce validation.
+Counts exclude missing targets, ignore sample weights and are taken before
+oversampling. Explicit validation strategies are preserved. The chosen strategy
+and `auto_cv_policy` are saved in `params.json`.
+
+These are fixed heuristics. Five-fold CV enlarges each validation fold but trains
+each learner on 80% rather than 90% of the data; better test performance is not
+guaranteed. Pooled OOF model selection and the existing stacking constraints remain
+unchanged.
+
 When `max_single_prediction_time` is set, ensemble construction counts shared
 prediction dependencies once, including the inputs needed by stacked models.
 Repeated selection of a member changes its weight without adding another

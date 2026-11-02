@@ -1,5 +1,6 @@
 import copy
 import warnings
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pandas as pd
@@ -7,6 +8,39 @@ import pytest
 
 from supervised.algorithms.registry import AlgorithmsRegistry
 from supervised.tuner.mljar_tuner import MljarTuner
+
+
+@pytest.mark.parametrize("task", ["binary_classification", "regression"])
+def test_tfms_supply_stacking_features_but_never_train_on_them(task):
+    from supervised import AutoML
+    from supervised.tuner.stacking import select_stacking_models
+
+    kinds = ["Kumo", "TabICLv2", "RealMLP", "TabM", "Xgboost"]
+    t = tuner(algorithms=kinds, ml_task=task,
+              eval_metric="rmse" if task == "regression" else "auc",
+              validation_strategy={"validation_type": "kfold", "k_folds": 5,
+                                   "X_path": "/run/X.data"})
+    models = []
+    for kind in kinds:
+        params = t._get_model_params(kind, seed=1)
+        params.update(name=kind, data_type="original")
+        models.append(SimpleNamespace(
+            params=params, _is_stacked=False,
+            get_name=lambda kind=kind: kind, get_type=lambda kind=kind: kind,
+            get_final_loss=lambda: 0.1, is_valid=lambda: True, is_fair=lambda: True,
+            get_out_of_folds=lambda: pd.DataFrame({"prediction": [0.2, 0.8]}),
+        ))
+    inputs = select_stacking_models(models)
+    assert {m.get_type() for m in inputs} == set(kinds)
+    automl = AutoML()
+    automl._ml_task, automl._stacked_models = task, inputs
+    stacked = automl.get_stacked_data(pd.DataFrame({"original": [1., 2.]}))
+    assert {"Kumo_prediction", "TabICLv2_prediction"}.issubset(stacked.columns)
+    generated = t.get_params_stack_models(inputs)
+    assert {p["learner"]["model_type"] for p in generated} == {"RealMLP", "TabM", "Xgboost"}
+    assert all(p["is_stacked"] and p["validation_strategy"]["X_path"] == "/run/X_stacked.data"
+               for p in generated)
+    assert all(m.params["validation_strategy"]["X_path"] == "/run/X.data" for m in inputs)
 
 
 def tuner(**kwargs):

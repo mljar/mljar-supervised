@@ -180,6 +180,12 @@ class SDMAlgorithm(RealMLPAlgorithm):
     def is_fitted(self):
         return self.model is not None and hasattr(self, "context")
 
+    def unload(self):
+        self.model = None
+        if self.model_file_path is not None:
+            for name in ("context", "context_y", "_validation_prediction"):
+                self.__dict__.pop(name, None)
+
     @property
     def effective_precision(self):
         return (
@@ -263,7 +269,7 @@ class SDMAlgorithm(RealMLPAlgorithm):
             # needed, then remeasure using the same estimate and budget limits.
             for cleanup in (False, True):
                 free, total = available_gpu_memory(self.device, cleanup=cleanup)
-                gpu_budget = free * self.params.get("gpu_memory_fraction", 0.7)
+                gpu_budget = free * self.params.get("gpu_memory_fraction", 0.95)
                 if self.params.get("gpu_memory_limit_gb") is not None:
                     gpu_budget = min(
                         gpu_budget, self.params["gpu_memory_limit_gb"] * 1024**3
@@ -335,6 +341,22 @@ class SDMAlgorithm(RealMLPAlgorithm):
         )
 
     def fit(
+        self, X, y, sample_weight=None, X_validation=None, y_validation=None,
+        sample_weight_validation=None, log_to_file=None, max_time=None,
+    ):
+        return self._fit_context(
+            X, y, sample_weight, X_validation, y_validation,
+            sample_weight_validation, log_to_file, max_time,
+        )
+
+    def fit_full_context(self, X, y, sample_weight=None, log_to_file=None, max_time=None):
+        """Retain all labeled rows for inference, without manufacturing validation scores."""
+        return self._fit_context(
+            X, y, sample_weight=sample_weight, log_to_file=log_to_file,
+            max_time=max_time, full_context=True,
+        )
+
+    def _fit_context(
         self,
         X,
         y,
@@ -344,12 +366,13 @@ class SDMAlgorithm(RealMLPAlgorithm):
         sample_weight_validation=None,
         log_to_file=None,
         max_time=None,
+        full_context=False,
     ):
         if sample_weight is not None or sample_weight_validation is not None:
             raise ValueError(
                 f"{self.algorithm_short_name} does not support sample weights"
             )
-        if X_validation is None or y_validation is None:
+        if not full_context and (X_validation is None or y_validation is None):
             raise ValueError("SDM requires validation inputs and targets")
         if "max_context_size" in self.params:
             validate_options(
@@ -421,8 +444,15 @@ class SDMAlgorithm(RealMLPAlgorithm):
             len(frame), effective_cols, Path(self.checkpoint_path).stat().st_size
         )
         self._check_time()
-        self._load_network()
         self.library_version = version("structured-data-models")
+        if full_context:
+            # Weights are pretrained. Building the saved context needs no forward
+            # pass, training-set score or additional validation data.
+            self._deadline = None
+            self._record_context_info(frame, effective_cols, resources, started,
+                                      None, None, log_to_file, full_context=True)
+            return self
+        self._load_network()
         try:
             prediction = self.predict(X_validation)
             from supervised.utils.metric import Metric
@@ -460,6 +490,15 @@ class SDMAlgorithm(RealMLPAlgorithm):
             self._deadline = None
         self._evaluation_deadline = None if max_time is None else started + max_time
         self._validation_prediction = prediction
+        self._record_context_info(frame, effective_cols, resources, started,
+                                  score, metric_name, log_to_file)
+        return self
+
+    def _record_context_info(self, frame, effective_cols, resources, started,
+                             score, metric_name, log_to_file, full_context=False):
+        import torch
+        from supervised.utils.metric import Metric
+
         self.training_info = dict(
             context_rows=len(frame),
             training_rows=len(frame),
@@ -479,19 +518,19 @@ class SDMAlgorithm(RealMLPAlgorithm):
             validation_score=score,
             stopping_metric=metric_name,
             elapsed_seconds=time.monotonic() - started,
-            stop_reason="pretrained_inference",
+            stop_reason="full_training_context" if full_context else "pretrained_inference",
             sdm_version=self.library_version,
             torch_version=torch.__version__,
         )
         if log_to_file:
-            display_score = -score if Metric.optimize_negative(metric_name) else score
-            pd.DataFrame([(0, np.nan, display_score)]).to_csv(
-                log_to_file, index=False, header=False
-            )
+            if score is not None:
+                display_score = -score if Metric.optimize_negative(metric_name) else score
+                pd.DataFrame([(0, np.nan, display_score)]).to_csv(
+                    log_to_file, index=False, header=False
+                )
             Path(log_to_file + ".json").write_text(
                 json.dumps(self.training_info, indent=2)
             )
-        return self
 
     def training_predictions(self, X_train, X_validation):
         # The framework's train/OOF scoring is part of the learner budget too.

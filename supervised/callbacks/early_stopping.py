@@ -177,9 +177,9 @@ class EarlyStopping(Callback):
                         f"sensitive_{col}"
                     ] = np.array(sensitive_features_validation[col])
 
-            self.best_models[self.learner.uid] = self.learner.copy()
+            self.best_models[self.learner.uid] = self.learner.copy() if self.keep_best_model else None
             # if local copy is not available, save model and keep path
-            if self.best_models[self.learner.uid] is None:
+            if self.keep_best_model and self.best_models[self.learner.uid] is None:
                 self.best_model_paths[self.learner.uid] = self.learner.save()
         else:
             self.no_improvement_cnt += 1

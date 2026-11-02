@@ -658,14 +658,12 @@ class MljarTuner:
             "Neural Network",
             "RealMLP",
             "TabM",
-            "Kumo",
-            "TabICLv2",
         ]
         generated_params = {m: [] for m in model_types}
         types_score_order = []
         # resue old params
         for m in stacked_models:
-            # use only Xgboost, LightGBM and CatBoost as stacked models
+            # TFMs remain stacking inputs, but are never trained on stacked data.
             if m.get_type() not in model_types:
                 continue
 
@@ -1452,6 +1450,12 @@ class MljarTuner:
             return None
 
         drop_features = json.load(open(fname, "r"))
+        # Shared selection is limited to original columns. Never interpret
+        # legacy discovery positions (or another generator's hashes) as inputs.
+        from supervised.preprocessing.feature_identity import generated_column
+        original_columns = set((self._data_info or {}).get("columns_info", {}))
+        drop_features = [c for c in drop_features
+                         if not generated_column(c) and (c == "random_feature" or c in original_columns)]
         print("Drop features", drop_features)
 
         # in case of droping only one feature (random_feature)

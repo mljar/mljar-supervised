@@ -93,6 +93,7 @@ class BaseAutoML(BaseEstimator, ABC):
         self._stack_models = False
         self._eval_metric = None
         self._validation_strategy = None
+        self._auto_cv_policy = None
         self._verbose = None
         self._explain_level = None
         self._golden_features = None
@@ -187,6 +188,7 @@ class BaseAutoML(BaseEstimator, ABC):
             self._validation_strategy = params.get(
                 "validation_strategy", self._validation_strategy
             )
+            self._auto_cv_policy = params.get("auto_cv_policy")
             self._verbose = params.get("verbose", self._verbose)
             self._explain_level = params.get("explain_level", self._explain_level)
             self._golden_features = params.get("golden_features", self._golden_features)
@@ -290,6 +292,9 @@ class BaseAutoML(BaseEstimator, ABC):
             "metric_value": [],
             "train_time": [],
         }
+        if any(getattr(m, "params", {}).get("shared_boosting") for m in self._models):
+            ldb["mean_fold_metric_value"] = []
+            ldb["selected_boosting_rounds"] = []
         if self._max_single_prediction_time is not None:
             ldb["single_prediction_time"] = []
 
@@ -311,6 +316,13 @@ class BaseAutoML(BaseEstimator, ABC):
             ldb["metric_type"] += [self._eval_metric]
             ldb["metric_value"] += [m.get_final_loss()]
             ldb["train_time"] += [np.round(m.get_train_time(), 2)]
+            if "mean_fold_metric_value" in ldb:
+                shared = getattr(m, "params", {}).get("shared_boosting", {})
+                value = shared.get("mean_fold_score")
+                if value is not None and not original_metric_values and Metric.optimize_negative(self._eval_metric):
+                    value = -value
+                ldb["mean_fold_metric_value"].append(value)
+                ldb["selected_boosting_rounds"].append(shared.get("selected_rounds"))
             if self._max_single_prediction_time is not None:
                 if m._single_prediction_time is not None:
                     ldb["single_prediction_time"] += [
@@ -1122,6 +1134,35 @@ class BaseAutoML(BaseEstimator, ABC):
             strategy["stratify"] = True
         return strategy
 
+    def _configure_auto_cv(self, y):
+        """Cap automatic CV using original, cleaned, unweighted training counts."""
+        self._auto_cv_policy = None
+        if self.validation_strategy != "auto" or self._mode not in (
+            "Perform", "Compete", "Optuna"
+        ):
+            return
+        rows = int(len(y))
+        smallest_class = None
+        reasons = []
+        if rows < 5000:
+            reasons.append("fewer than 5000 training rows")
+        if self._ml_task in (BINARY_CLASSIFICATION, MULTICLASS_CLASSIFICATION):
+            counts = y.value_counts()
+            counts = counts[counts > 0]
+            smallest_class = int(counts.min())
+            if smallest_class < 250:
+                reasons.append("smallest class has fewer than 250 samples")
+        self._auto_cv_policy = {
+            "max_folds": 5 if reasons else 10,
+            "training_rows": rows,
+            "smallest_class_count": smallest_class,
+            "reason": "; ".join(reasons) if reasons else "sufficient rows and class counts for 10 folds",
+        }
+        self.verbose_print(
+            f"Automatic CV: at most {self._auto_cv_policy['max_folds']} folds "
+            f"({self._auto_cv_policy['reason']}); time budget may reduce validation."
+        )
+
     def _set_adjusted_validation(self):
         if self._validation_strategy["validation_type"] != "split":
             return
@@ -1141,6 +1182,9 @@ class BaseAutoML(BaseEstimator, ABC):
             k_folds = 5
             if folds_cnt >= 15:
                 k_folds = 10
+            if self._auto_cv_policy is not None:
+                self._auto_cv_policy["time_budget_folds"] = k_folds
+                k_folds = min(k_folds, self._auto_cv_policy["max_folds"])
             # too small dataset for stacking
             if self.n_rows_in_ < 500:
                 self._stack_models = False
@@ -1290,6 +1334,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 check_tabm()
             else:
                 check_dependencies()
+        self._configure_auto_cv(y)
         self._train_ensemble = self._get_train_ensemble()
         self._stack_models = self._get_stack_models()
         self._eval_metric = self._get_eval_metric()
@@ -1752,6 +1797,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 "stack_models": self._stack_models,
                 "eval_metric": self._eval_metric,
                 "validation_strategy": self._validation_strategy,
+                "auto_cv_policy": self._auto_cv_policy,
                 "verbose": self._verbose,
                 "explain_level": self._explain_level,
                 "golden_features": self._golden_features,
@@ -2312,6 +2358,8 @@ class BaseAutoML(BaseEstimator, ABC):
                     "shuffle": True,
                     "stratify": True,
                 }
+            if strat.get("validation_type") == "kfold" and self._auto_cv_policy is not None:
+                strat["k_folds"] = min(strat["k_folds"], self._auto_cv_policy["max_folds"])
             if self._get_ml_task() == REGRESSION:
                 if "stratify" in strat:
                     # it's better to always check

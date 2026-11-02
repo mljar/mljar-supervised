@@ -39,6 +39,7 @@ from supervised.utils.additional_plots import AdditionalPlots
 from supervised.utils.common import construct_learner_name, get_fold_repeat_cnt
 from supervised.utils.learning_curves import LearningCurves
 from supervised.utils.jsonencoder import MLJSONEncoder
+from supervised.utils.feature_importance_identity import importance_matrix
 
 
 class AdditionalMetrics:
@@ -702,18 +703,9 @@ class AdditionalMetrics:
         if not len(imp_data):
             return
 
-        df_all = []
-        for repeat in range(repeat_cnt):
-            repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
-            for fold in range(fold_cnt):
-                learner_name = construct_learner_name(fold, repeat, repeat_cnt)
-                fname = learner_name + "_importance.csv"
-                if fname in imp_data:
-                    df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
-                    df.columns = [f"Learner {fold+1}{repeat_str}"]
-                    df_all += [df]
-
-        df = pd.concat(df_all, axis=1)
+        df, selectable = importance_matrix(model_path, fold_cnt, repeat_cnt, "_importance.csv")
+        if df.empty:
+            return
 
         df["m"] = df.mean(axis=1)
         df = df.sort_values(by="m", ascending=False)
@@ -735,16 +727,19 @@ class AdditionalMetrics:
         fout.write(f"![Permutation-based Importance](permutation_importance.png)")
 
         if "random_feature" in df.index.tolist():
+            df = df.loc[df.index.isin(selectable)].copy()
             df["counter"] = 0
-            df = df.fillna(
-                0
-            )  # there might be not-used features between different learners
+            observations = pd.Series(0, index=df.index)
             max_counter = 0.0
             for col in df.columns:
                 if "Learner" not in col:
                     continue
                 score = max(0, df[col]["random_feature"]) + 1e-6
-                df["counter"] += (df[col] <= score).astype(int)
+                if pd.isna(df[col]["random_feature"]):
+                    continue
+                present = df[col].notna()
+                observations += present.astype(int)
+                df["counter"] += (present & (df[col] <= score)).astype(int)
                 max_counter += 1.0
 
             """ version 1
@@ -760,7 +755,7 @@ class AdditionalMetrics:
 
             # version 2 - should be better
             threshold = max_counter / 2.0
-            drop_features = df.index[df["counter"] >= threshold].tolist()
+            drop_features = df.index[(observations > 0) & (df["counter"] >= observations / 2.0)].tolist()
 
             fname = os.path.join(os.path.dirname(model_path), "drop_features.json")
             with open(fname, "w") as fout:
@@ -782,18 +777,9 @@ class AdditionalMetrics:
             if not len(imp_data):
                 return
 
-            df_all = []
-            for repeat in range(repeat_cnt):
-                repeat_str = f", Repeat {repeat+1}" if repeat_cnt > 1 else ""
-                for fold in range(fold_cnt):
-                    learner_name = construct_learner_name(fold, repeat, repeat_cnt)
-                    fname = learner_name + "_shap_importance.csv"
-                    if fname in imp_data:
-                        df = pd.read_csv(os.path.join(model_path, fname), index_col=0)
-                        df.columns = [f"Learner {fold+1}{repeat_str}"]
-                        df_all += [df]
-
-            df = pd.concat(df_all, axis=1)
+            df, _ = importance_matrix(model_path, fold_cnt, repeat_cnt, "_shap_importance.csv")
+            if df.empty:
+                return
 
             df["m"] = df.mean(axis=1)
             df = df.sort_values(by="m", ascending=False)

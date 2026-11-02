@@ -1,3 +1,33 @@
+## mljar-supervised 1.4.0b4 (unreleased)
+
+- Give discovered features separate semantic identities, storage names and display
+  labels. Scope learned features to their fitted generators, align importance by
+  identity, and block shared generated-column selection in new training and TFM
+  full-data preparation. Preserve legacy model replay and training encodings.
+- Keep Kumo and TabICLv2 predictions as inputs to stacking and ordinary
+  ensembles, but do not train new TFM models on stacked features.
+- For TFM cross-validation, preserve fold-based OOF scores and artifacts, then
+  use one full-training-data context for inference. Prepare full-context
+  preprocessing separately, enforce full-data resource limits, and include
+  preparation time in the training budget. Holdout and older saved runs retain
+  their original prediction behavior.
+- Cap automatic cross-validation at five folds below 5,000 training rows or,
+  for classification, below 250 samples in the smallest observed class.
+  Use cleaned, unweighted counts before oversampling. Preserve explicit
+  validation strategies, existing mode defaults and time-budget constraints.
+  Save the automatic CV policy and its reason with the run.
+
+## mljar-supervised 1.4.0b3 (unreleased)
+
+- Select one shared boosting-round count across CV folds for XGBoost, LightGBM
+  and CatBoost. Use 10-round checkpoints and 300-round patience, retain complete
+  fold boosters, and select only prefixes available in every fold by pooled OOF
+  performance. Update saved models and OOF predictions before ensembling.
+- Report mean fold scores, shared round counts and selection curves. Keep
+  checkpoint predictions on disk and clean them up on success or failure.
+- Use fixed 100/200/300-tree Random Forest and Extra Trees models based on the
+  complete training/validation row count instead of selecting per-fold sizes.
+
 ## mljar-supervised 1.4.0b2 (unreleased)
 
 Local beta 2 builds require Python 3.11+ and retain beta 1's base dependencies

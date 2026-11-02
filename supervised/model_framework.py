@@ -5,6 +5,7 @@ import logging
 import os
 import time
 import uuid
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -65,6 +66,8 @@ class ModelFramework:
         self.validation = None
         self.preprocessings = []
         self.learners = []
+        self._validation_models = None
+        self._tfm_full_context = None
 
         self.train_time = None
         self.final_loss = None
@@ -150,6 +153,19 @@ class ModelFramework:
         }
 
     def train(self, results_path, model_subpath):
+        self._shared_selection = None
+        early = self.callbacks.get("early_stopping")
+        keep_best = early.keep_best_model if early is not None else None
+        try:
+            return self._train(results_path, model_subpath)
+        finally:
+            if self._shared_selection is not None:
+                self._shared_selection.close()
+                self._shared_selection = None
+            if early is not None:
+                early.keep_best_model = keep_best
+
+    def _train(self, results_path, model_subpath):
         from supervised.utils.native_compatibility import require_algorithm
 
         require_algorithm(self.learner_params.get("model_type"), "model training")
@@ -182,6 +198,30 @@ class ModelFramework:
 
         repeats = self.validation.get_repeats()
         expected_folds = repeats * self.validation.get_n_splits()
+        full_context = None
+        if self.get_type() in ("Kumo", "TabICLv2") and expected_folds > 1:
+            from supervised.tfm_full_context import TFMFullContext
+
+            full_context = TFMFullContext(self, results_path, model_subpath, budget_started)
+        from supervised.algorithms.shared_boosting import SUPPORTED
+        from supervised.shared_boosting import SharedBoostingSelection
+
+        if (self.get_type() in SUPPORTED and expected_folds > 1
+                and self.callbacks.get("early_stopping") is not None):
+            deadlines = []
+            if candidate_limit is not None:
+                deadlines.append(budget_started + candidate_limit)
+            total = self.callbacks.get("total_time_constraint")
+            if total is not None and total.total_time_limit is not None:
+                remaining = total.total_time_limit - (time.time() - total.total_time_start)
+                deadlines.append(time.monotonic() + remaining)
+            self._shared_selection = SharedBoostingSelection(
+                resolve_artifact_path(results_path, model_subpath), self.get_metric(),
+                min(deadlines) if deadlines else None,
+            )
+            self._shared_selection.ignore_sample_weight = self.params.get("injected_sample_weight", False)
+            # Full boosters are already saved per fold; do not duplicate them in RAM.
+            self.callbacks.get("early_stopping").keep_best_model = False
         for repeat in range(repeats):
             for k_fold in range(self.validation.get_n_splits()):
                 if candidate_limit is not None:
@@ -290,7 +330,10 @@ class ModelFramework:
                                                       phase="preprocessing", fold=k_fold, repeat=repeat)
                         learner_limit = min(learner_limit, 0.8 * remaining / (expected_folds - completed_folds))
 
-                    learner.fit(
+                    fit = learner.fit
+                    if self._shared_selection is not None:
+                        fit = partial(self._shared_selection.fit, learner, self.preprocessings[-1])
+                    fit(
                         X_train,
                         y_train,
                         sample_weight,
@@ -341,23 +384,25 @@ class ModelFramework:
                     raise
 
                 model_path = resolve_artifact_path(results_path, model_subpath)
-                learner.interpret(
-                    X_train,
-                    y_train,
-                    X_validation,
-                    y_validation,
-                    model_file_path=model_path,
-                    learner_name=learner.name,
-                    class_names=self.preprocessings[-1].get_target_class_names(),
-                    metric_name=self.get_metric_name(),
-                    ml_task=self._ml_task,
-                    explain_level=self._explain_level,
-                )
+                if self._shared_selection is None:
+                    learner.interpret(
+                        X_train,
+                        y_train,
+                        X_validation,
+                        y_validation,
+                        model_file_path=model_path,
+                        learner_name=learner.name,
+                        class_names=self.preprocessings[-1].get_target_class_names(),
+                        metric_name=self.get_metric_name(),
+                        ml_task=self._ml_task,
+                        explain_level=self._explain_level,
+                    )
 
                 # save learner and free the memory
                 p = os.path.join(model_path, learner.get_fname())
                 if learner.algorithm_short_name in ["Kumo", "TabICLv2"]:
                     learner.save(p, weights_root=results_path)
+                    learner.unload()
                 else:
                     learner.save(p)
                 del learner.model
@@ -387,12 +432,40 @@ class ModelFramework:
                 gc.collect()
 
         # end of validation loop
+        if self._shared_selection is not None:
+            self._shared_selection.finalize(self)
+            if self._explain_level and self._explain_level > 0:
+                self._interpret_shared_boosting(results_path, model_subpath)
         self.callbacks.on_framework_train_end()
         # self.get_additional_metrics()
         self._additional_metrics = self.get_additional_metrics()
 
+        if full_context is not None:
+            full_context.activate()
+
         self.train_time = time.time() - start_time
         logger.debug("ModelFramework end of training")
+
+    def _interpret_shared_boosting(self, results_path, model_subpath):
+        # Reuse saved preprocessing, never refit it during finalization.
+        for index, learner in enumerate(self.learners):
+            self._shared_selection.check_budget()
+            repeat, fold = divmod(index, self.validation.get_n_splits())
+            train, valid = self.validation.get_split(fold, repeat)
+            prep = self.preprocessings[index]
+            X_train, y_train, _ = prep.transform(train["X"], train["y"], train.get("sample_weight"))
+            X_valid, y_valid, _ = prep.transform(valid["X"], valid["y"], valid.get("sample_weight"))
+            try:
+                learner.interpret(
+                    X_train, y_train, X_valid, y_valid,
+                    model_file_path=resolve_artifact_path(results_path, model_subpath),
+                    learner_name=learner.name, class_names=prep.get_target_class_names(),
+                    metric_name=self.get_metric_name(), ml_task=self._ml_task,
+                    explain_level=self._explain_level,
+                )
+            finally:
+                learner.unload()
+            del train, valid, X_train, y_train, X_valid, y_valid
 
     def release_learners(self):
         for learner in self.learners:
@@ -694,6 +767,9 @@ class ModelFramework:
                 "is_stacked": self._is_stacked,
                 "joblib_version": joblib.__version__,
             }
+            if self._validation_models is not None:
+                desc["validation_models"] = self._validation_models
+                desc["tfm_full_context"] = self._tfm_full_context
             desc["final_loss"] = str(desc["final_loss"])
             if self._threshold is not None:
                 desc["threshold"] = self._threshold
@@ -707,7 +783,8 @@ class ModelFramework:
             learning_curve_metric = self.get_metric_name()
 
         LearningCurves.plot(
-            [l.name for l in self.learners],
+            ([l["name"] for l in self._validation_models["learners"]]
+             if self._validation_models is not None else [l.name for l in self.learners]),
             learning_curve_metric,
             model_path,
             trees_in_iteration=self.additional_params.get("trees_in_step"),
@@ -761,6 +838,14 @@ class ModelFramework:
             f"{metric_name} ({averaging} averaging)\n"
             if averaging else f"{metric_name}\n"
         )
+        shared = self.params.get("shared_boosting")
+        if shared:
+            desc += "\n## Shared boosting selection\n\n"
+            desc += f"All folds use {shared['selected_rounds']} boosting rounds. "
+            desc += f"Mean fold {metric_name}: {shared['mean_fold_score']:.6f}; "
+            desc += f"pooled OOF {metric_name}: {shared['pooled_score']:.6f}. "
+            desc += "Selection uses pooled OOF performance. "
+            desc += "[Selection curve](shared_boosting_scores.csv) and [fold details](shared_boosting.json).\n"
         desc += "\n## Training time\n"
         desc += f"\n{np.round(self.train_time,1)} seconds\n"
         discovery = self.preprocessing_params.get("feature_discovery")
@@ -783,6 +868,11 @@ class ModelFramework:
         if short_name in ["Kumo", "TabICLv2"]:
             desc += "\n## In-context inference\n\n"
             desc += "Saved artifacts retain labeled training context. SHAP is not enabled.\n\n"
+            if self._tfm_full_context is not None:
+                desc += (f"Validation uses {self._tfm_full_context['validation_learners']} CV learners; "
+                         f"inference uses one learner with all {self._tfm_full_context['context_rows']} "
+                         "training rows. OOF predictions and selection scores remain from CV. "
+                         "Fold artifacts are retained under validation_models in framework.json.\n\n")
             for learner in self.learners:
                 info = getattr(learner, "training_info", {})
                 precision = info.get(
@@ -816,6 +906,8 @@ class ModelFramework:
             )
 
         mf = ModelFramework(json_desc["params"])
+        mf._validation_models = json_desc.get("validation_models")
+        mf._tfm_full_context = json_desc.get("tfm_full_context")
         mf.uid = json_desc.get("uid", mf.uid)
         mf._name = json_desc.get("name", mf._name)
         mf._threshold = json_desc.get("threshold")

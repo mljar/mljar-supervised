@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -115,7 +116,13 @@ class LearningCurves:
                     best_iter = df.test.argmin()
 
                 if best_iter is not None and best_iter != -1:
-                    plt.axvline(best_iter, color=colors[fold], alpha=0.3)
+                    shared_path = os.path.join(model_path, "shared_boosting.json")
+                    if os.path.exists(shared_path):
+                        with open(shared_path) as stream:
+                            selected = json.load(stream)["selected_rounds"] - 1
+                    else:
+                        selected = df.iteration.iloc[best_iter]
+                    plt.axvline(selected, color=colors[fold], alpha=0.3)
 
         if trees_in_iteration is not None:
             plt.xlabel("#Trees")
