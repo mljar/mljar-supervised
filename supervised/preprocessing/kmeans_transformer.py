@@ -14,7 +14,7 @@ from supervised.utils.artifact_paths import (
 
 
 class KMeansTransformer(object):
-    def __init__(self, results_path=None, model_name=None, k_fold=None):
+    def __init__(self, results_path=None, model_name=None, k_fold=None, repeat=None):
         self._new_features = []
         self._input_columns = []
         self._error = None
@@ -25,8 +25,10 @@ class KMeansTransformer(object):
         self._k_fold = k_fold
 
         if results_path is not None:
+            # Each repeat fits a different state, even for the same fold index.
+            suffix = "" if repeat is None else f"_repeat_{repeat}"
             self._result_file = portable_artifact_path(
-                self._model_name, f"kmeans_fold_{k_fold}.joblib"
+                self._model_name, f"kmeans_fold_{k_fold}{suffix}.joblib"
             )
             self._result_path = resolve_artifact_path(results_path, self._result_file)
             # self.try_load()

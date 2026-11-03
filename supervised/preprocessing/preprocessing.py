@@ -258,7 +258,7 @@ class Preprocessing(object):
         if "kmeans_features" in self._params:
             results_path = self._params["kmeans_features"]["results_path"]
             self._kmeans = KMeansTransformer(
-                results_path, self._model_name, self._k_fold
+                results_path, self._model_name, self._k_fold, repeat=self._repeat
             )
             self._kmeans.fit(X_train[numeric_cols], y_train)
             X_train = self._kmeans.transform(X_train)

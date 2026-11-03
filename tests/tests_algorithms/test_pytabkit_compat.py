@@ -29,6 +29,7 @@ def test_compatibility_restores_globals_after_nested_failure(caplog):
         sklearn_base.check_X_y_wrapper,
         sklearn_base.check_array_wrapper,
         _pytree.LeafSpec,
+        sklearn_base.torch,
     )
     logger = logging.getLogger("pytorch_lightning.utilities.rank_zero")
     upstream_logger = logging.getLogger("lightning")
@@ -65,6 +66,7 @@ def test_compatibility_restores_globals_after_nested_failure(caplog):
         sklearn_base.check_X_y_wrapper,
         sklearn_base.check_array_wrapper,
         _pytree.LeafSpec,
+        sklearn_base.torch,
     )
     assert logger.filters == original_filters
     assert (upstream_logger.level, upstream_logger.propagate) == (
@@ -72,6 +74,36 @@ def test_compatibility_restores_globals_after_nested_failure(caplog):
         old_propagate,
     )
     assert warnings.filters == old_warning_filters
+
+
+def test_read_only_numpy_storage_is_copied_only_at_backend_tensor_boundary(monkeypatch):
+    import torch
+    from pytabkit.models.sklearn import sklearn_base
+    from supervised.algorithms._pytabkit_compat import backend_context
+
+    original = torch.as_tensor
+    received = []
+
+    def checked(data, *args, **kwargs):
+        if isinstance(data, np.ndarray):
+            assert data.flags.writeable
+            received.append(data)
+        return original(data, *args, **kwargs)
+
+    monkeypatch.setattr(torch, "as_tensor", checked)
+    read_only = np.arange(4, dtype=np.float32)
+    read_only.setflags(write=False)
+    writable = np.arange(4, dtype=np.float32)
+    with backend_context(), backend_context():
+        assert torch.as_tensor is checked
+        tensor = sklearn_base.torch.as_tensor(read_only)
+        assert not np.shares_memory(received[-1], read_only)
+        tensor[0] = 99
+        assert read_only[0] == 0
+        sklearn_base.torch.as_tensor(writable)
+        assert received[-1] is writable
+    assert sklearn_base.torch is torch
+    assert not read_only.flags.writeable
 
 
 @pytest.mark.parametrize("keyword", ["force_all_finite", "ensure_all_finite"])
@@ -128,6 +160,9 @@ def test_fit_predict_reload_without_reported_warnings(
 
     if task == "regression":
         X, y = make_regression(n_samples=120, n_features=6, random_state=43)
+        # Float32 targets expose pandas' read-only NumPy view in pytabkit.
+        y = y.astype(np.float32)
+        y.setflags(write=False)
     else:
         X, y = make_classification(
             n_samples=120,
@@ -153,6 +188,7 @@ def test_fit_predict_reload_without_reported_warnings(
         warnings.filterwarnings(
             "error", message=r"The \d+-th feature has just two bin edges"
         )
+        warnings.filterwarnings("error", message=r"The given NumPy array is not writable")
         model.fit(X[:90], y[:90], X_validation=X[90:], y_validation=y[90:])
         expected = model.predict(X[90:])
         path = tmp_path / "model"

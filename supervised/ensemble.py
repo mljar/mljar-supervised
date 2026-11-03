@@ -21,6 +21,9 @@ from supervised.utils.artifact_paths import portable_artifact_path, resolve_arti
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.jsonencoder import MLJSONEncoder
 from supervised.utils.metric import Metric
+from supervised.utils.validation_scores import (
+    average_fold_predictions, has_fold_index, mean_fold_score,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -69,6 +72,7 @@ class Ensemble:
         self._scores = []
         self.oof_predictions = None
         self._oof_predictions_fname = None
+        self._validation_predictions_fname = None
         self._single_prediction_time = None  # prediction time on single sample
         self._max_single_prediction_time = max_single_prediction_time
         self.model_prediction_time = {}
@@ -127,6 +131,22 @@ class Ensemble:
     def get_metric(self):
         return self.metric
 
+    def get_validation_predictions(self):
+        if self.total_best_sum is not None:
+            frame = self.total_best_sum.copy(deep=True)
+            frame[self.target.columns] = self.target
+            if self.sample_weight is not None:
+                frame["sample_weight"] = self.sample_weight
+            if self.sensitive_features is not None:
+                frame[self.sensitive_features.columns] = self.sensitive_features
+            return frame
+        if self._validation_predictions_fname is not None:
+            return pd.read_csv(
+                self._validation_predictions_fname, index_col=[0, 1],
+                float_precision="round_trip",
+            )
+        return None
+
     def get_out_of_folds(self):
         """Needed when ensemble is treated as model and we want to compute additional metrics for it"""
         # single prediction (in case of binary classification and regression)
@@ -137,19 +157,8 @@ class Ensemble:
             self.oof_predictions = pd.read_csv(self._oof_predictions_fname)
             return self.oof_predictions.copy(deep=True)
 
-        ensemble_oof = pd.DataFrame(
-            data=self.total_best_sum, columns=self.total_best_sum.columns
-        )
-        ensemble_oof["target"] = self.target
-        if self.sample_weight is not None:
-            ensemble_oof["sample_weight"] = self.sample_weight
-
-        # if self.sensitive_features is not None:
-        #    for col in self.sensitive_features.columns:
-        #        ensemble_oof[col] = self.sensitive_features[col]
-
-        self.oof_predictions = ensemble_oof
-        return ensemble_oof
+        self.oof_predictions = average_fold_predictions(self.get_validation_predictions())
+        return self.oof_predictions.copy(deep=True)
 
     def _get_mean(self, oof_selected, best_sum, best_count):
         resp = copy.deepcopy(oof_selected)
@@ -193,6 +202,8 @@ class Ensemble:
 
         oofs = {}
         sensitive_features = None
+        fold_scoring = None
+        reference = None
         for m in models:
             # do not use model with RandomFeature
             if "RandomFeature" in m.get_name():
@@ -201,7 +212,25 @@ class Ensemble:
             # ensemble only the same level of stack
             # if m._is_stacked != self._is_stacked:
             #    continue
-            oof = m.get_out_of_folds()
+            get_folds = getattr(m, "get_validation_predictions", lambda: None)
+            oof = get_folds()
+            has_folds = oof is not None and has_fold_index(oof)
+            if fold_scoring is not None and has_folds != fold_scoring:
+                raise NotTrainedException(
+                    "Cannot mix legacy averaged predictions with fold-level validation "
+                    "predictions. Retrain the candidates in a new results directory."
+                )
+            fold_scoring = has_folds
+            if oof is None:
+                oof = m.get_out_of_folds()
+            target_cols = [c for c in oof if "target" in c]
+            if reference is not None and (
+                not oof.index.equals(reference.index)
+                # Inverse target scaling can introduce harmless round-off.
+                or not np.allclose(oof[target_cols], reference[target_cols], rtol=1e-7, atol=1e-8)
+            ):
+                raise NotTrainedException("Ensemble candidates must use the same validation folds and rows.")
+            reference = oof
             prediction_cols = [c for c in oof.columns if "prediction" in c]
             oofs[m.get_name()] = oof[prediction_cols]  # oof["prediction"]
             if self.target is None:
@@ -248,7 +277,8 @@ class Ensemble:
                 oof_preds,
                 sample_weight,
                 self._ml_task,
-                self.sensitive_features,
+                (oof_predictions[[c for c in oof_predictions if "sensitive" in c]]
+                 if self.sensitive_features is not None else None),
                 self._fairness_metric
                 if self._ml_task != REGRESSION
                 else f"{self._fairness_metric}@{self.get_metric_name()}",
@@ -357,6 +387,10 @@ class Ensemble:
 
     def fit(self, oofs, y, sample_weight=None, sensitive_features=None):
         logger.debug("Ensemble.fit")
+        self.target = y if isinstance(y, pd.DataFrame) else pd.DataFrame(
+            {"target": np.asarray(y).ravel()}, index=next(iter(oofs.values())).index
+        )
+        self.sample_weight = sample_weight
         self.sensitive_features = sensitive_features
         start_time = time.time()
         selected_algs_cnt = 0  # number of selected algorithms
@@ -385,7 +419,7 @@ class Ensemble:
                 ):
                     continue
                 y_ens = self._get_mean(oofs[model_name], best_sum, j + 1)
-                score = self.metric(y, y_ens, sample_weight)
+                score = mean_fold_score(self.metric, y, y_ens, sample_weight)
                 if self.metric.improvement(previous=min_score, current=score):
                     min_score = score
                     best_model = model_name
@@ -530,6 +564,17 @@ class Ensemble:
         self._oof_predictions_fname = resolve_artifact_path(results_path, predictions_fname)
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
+        fold_predictions = self.get_validation_predictions()
+        validation_predictions_fname = None
+        if fold_predictions is not None and has_fold_index(fold_predictions):
+            validation_predictions_fname = portable_artifact_path(
+                model_subpath, "predictions_validation_folds.csv"
+            )
+            self._validation_predictions_fname = resolve_artifact_path(
+                results_path, validation_predictions_fname
+            )
+            fold_predictions.to_csv(self._validation_predictions_fname)
+
         with open(os.path.join(model_path, "ensemble.json"), "w") as fout:
             ms = []
             for selected in self.selected_models:
@@ -541,6 +586,8 @@ class Ensemble:
                 "optimize_metric": self._optimize_metric,
                 "selected_models": ms,
                 "predictions_fname": predictions_fname,
+                "validation_predictions_fname": validation_predictions_fname,
+                "validation_score_aggregation": "mean_fold" if validation_predictions_fname else "pooled_oof",
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -571,6 +618,14 @@ class Ensemble:
             ]
         desc = f"# Summary of {self.get_name()}\n\n"
         desc += "[<< Go back](../README.md)\n\n"
+        if self._validation_predictions_fname is not None:
+            sign = -1 if Metric.optimize_negative(self.metric.name) else 1
+            desc += f"Mean fold {self.metric.name}: **{sign * self.get_final_loss():.6f}**.\n\n"
+            desc += (
+                "Selection uses the arithmetic mean of the ensemble scores from "
+                "all folds and repeats. Additional metrics below use predictions "
+                "averaged across repeats.\n"
+            )
         desc += "\n## Ensemble structure\n"
         selected = pd.DataFrame(select_models_desc)
         desc += tabulate(selected.values, ["Model", "Weight"], tablefmt="pipe")
@@ -598,6 +653,11 @@ class Ensemble:
         ensemble.best_loss = None if final_loss is None else float(final_loss)
         ensemble.train_time = json_desc.get("train_time", ensemble.train_time)
         ensemble._is_stacked = json_desc.get("is_stacked", ensemble._is_stacked)
+        fold_predictions_fname = json_desc.get("validation_predictions_fname")
+        if fold_predictions_fname is not None:
+            ensemble._validation_predictions_fname = resolve_artifact_path(
+                results_path, fold_predictions_fname
+            )
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
             ensemble._oof_predictions_fname = resolve_artifact_path(

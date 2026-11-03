@@ -12,6 +12,7 @@ from supervised.algorithms.algorithm import BaseAlgorithm
 from supervised.ensemble import Ensemble
 from supervised.model_framework import ModelFramework
 from supervised.preprocessing.kmeans_transformer import KMeansTransformer
+from supervised.utils.validation_scores import mean_fold_score
 
 
 def legacy_path(path, style):
@@ -56,6 +57,7 @@ def test_relocated_legacy_artifacts_keep_predictions(
         validation_strategy={
             "validation_type": "kfold",
             "k_folds": 2,
+            "repeats": 2,
             "shuffle": True,
             "stratify": bool(classes),
             "random_seed": 123,
@@ -75,9 +77,11 @@ def test_relocated_legacy_artifacts_keep_predictions(
     model.fit(X, y)
     expected = model.predict_all(X)
     references = {
-        m.get_name(): (m.predict(X), m.get_out_of_folds()) for m in model._models
+        m.get_name(): (m.predict(X), m.get_out_of_folds(), m.get_validation_predictions())
+        for m in model._models
     }
-    assert any(isinstance(m, Ensemble) for m in model._models)
+    if algorithm == "Decision Tree":
+        assert any(isinstance(m, Ensemble) for m in model._models)
     backup = tmp_path / "backup"
     root.rename(backup)
     for style in ["posix", "windows", "mixed"]:
@@ -89,11 +93,13 @@ def test_relocated_legacy_artifacts_keep_predictions(
             assert "\\" not in data["predictions_fname"]
             data["saved"] = [legacy_path(path, style) for path in data["saved"]]
             data["predictions_fname"] = legacy_path(data["predictions_fname"], style)
+            data["validation_predictions_fname"] = legacy_path(data["validation_predictions_fname"], style)
             file.write_text(json.dumps(data))
         for file in moved.glob("*/ensemble.json"):
             data = json.loads(file.read_text())
             assert "\\" not in data["predictions_fname"]
             data["predictions_fname"] = legacy_path(data["predictions_fname"], style)
+            data["validation_predictions_fname"] = legacy_path(data["validation_predictions_fname"], style)
             file.write_text(json.dumps(data))
         # The original root is absent for every path style.
         with monkeypatch.context() as patch:
@@ -121,6 +127,27 @@ def test_relocated_legacy_artifacts_keep_predictions(
                     check_exact=False,
                     rtol=1e-12,
                     atol=1e-12,
+                )
+                fold_predictions = restored.get_validation_predictions()
+                pd.testing.assert_frame_equal(fold_predictions, references[name][2])
+                assert len(fold_predictions) == 2 * len(X)
+                columns = [c for c in fold_predictions if "prediction" in c]
+                assert restored.get_final_loss() == pytest.approx(mean_fold_score(
+                    restored.get_metric(), fold_predictions.target, fold_predictions[columns]
+                ))
+            # Rebuilding an ensemble from reloaded models must use the same folds.
+            rebuilt = Ensemble(model._eval_metric, task)
+            members = [m for m in models.values() if not isinstance(m, Ensemble)]
+            oofs, target, weights, sensitive = rebuilt.get_oof_matrix(members)
+            rebuilt.fit(oofs, target, weights, sensitive)
+            original = next((m for m in model._models if isinstance(m, Ensemble)), None)
+            if original is not None:
+                assert rebuilt.get_final_loss() == pytest.approx(original.get_final_loss())
+            else:
+                # A single selected member is omitted from AutoML's saved ensemble list.
+                assert len(rebuilt.selected_models) == 1
+                assert rebuilt.get_final_loss() == pytest.approx(
+                    rebuilt.selected_models[0]["model"].get_final_loss()
                 )
 
 

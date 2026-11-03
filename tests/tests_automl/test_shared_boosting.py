@@ -77,9 +77,9 @@ def test_shared_rounds_oof_and_reload(tmp_path, monkeypatch, algorithm, task):
         assert report["patience_rounds"] == 300
         scores = pd.read_csv(path / "shared_boosting_scores.csv")
         best = (
-            scores.pooled_score.idxmax()
+            scores.mean_fold_score.idxmax()
             if metric.is_negative()
-            else scores.pooled_score.idxmin()
+            else scores.mean_fold_score.idxmin()
         )
         assert scores.iloc[best]["rounds"] == count
         loaded = ModelFramework.load(str(root), name)
@@ -100,13 +100,8 @@ def test_shared_rounds_oof_and_reload(tmp_path, monkeypatch, algorithm, task):
             )
             folds.append(metric(oof.target.iloc[va], pred))
             learner.unload()
-        pred = (
-            oof[prediction_cols[0]]
-            if len(prediction_cols) == 1
-            else oof[prediction_cols]
-        )
-        loss = metric(oof.target, pred)
-        assert loaded.get_final_loss() == pytest.approx(loss, rel=1e-7, abs=1e-7)
+        assert report["selection_aggregation"] == "mean_fold"
+        assert loaded.get_final_loss() == pytest.approx(np.mean(folds), rel=1e-7, abs=1e-7)
         sign = -1 if metric.is_negative() else 1
         assert report["mean_fold_score"] == pytest.approx(
             sign * np.mean(folds), rel=1e-7, abs=1e-7
@@ -279,6 +274,7 @@ def test_weighted_repeated_cv_and_categorical_labels(tmp_path, monkeypatch, algo
         -metric(y, expected.prediction, weights), abs=1e-7
     )
     assert report["mean_fold_score"] == pytest.approx(-np.mean(losses), abs=1e-7)
+    assert loaded.get_final_loss() == pytest.approx(np.mean(losses), abs=1e-7)
 
 
 def test_temporary_predictions_cleaned_on_failure(tmp_path, monkeypatch):
@@ -358,7 +354,42 @@ def test_checkpoint_time_limit_can_stop_between_ticks(monkeypatch):
     assert stop.best_round == 1 and stop.reason == "time_limit"
 
 
-def test_leaderboard_reports_mean_without_changing_pooled_ranking():
+def test_shared_round_selection_uses_fold_scores_before_repeat_averaging(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from supervised.callbacks.early_stopping import EarlyStopping
+    from supervised.shared_boosting import SharedBoostingSelection
+
+    selection = SharedBoostingSelection(tmp_path, Metric({"name": "mse"}))
+    early = EarlyStopping({"metric": {"name": "mse"}})
+    early.target_columns = "target"
+    learners = []
+    for i in range(2):
+        uid = str(i)
+        selection.folds.append({"uid": uid, "learner": uid, "checkpoints": [1, 10]})
+        early.best_y_predicted[uid] = pd.DataFrame({"target": [0], "prediction": [1]})
+        # At round 1, repeat errors cancel exactly but each fold has MSE 16.
+        np.save(selection.cache / f"{uid}-1.npy", np.array([4 if i == 0 else -4]))
+        np.save(selection.cache / f"{uid}-10.npy", np.array([1]))
+        learners.append(SimpleNamespace(
+            uid=uid, model_file_path=uid, reload=lambda: None,
+            save=lambda path: None, unload=lambda: None,
+        ))
+    selected = []
+    monkeypatch.setattr(backend, "select_rounds", lambda learner, count: selected.append(count))
+    framework = SimpleNamespace(
+        learners=learners, callbacks=SimpleNamespace(get=lambda name: early), params={}
+    )
+    try:
+        selection.finalize(framework)
+        early.on_framework_train_end(None)
+        assert selected == [10, 10]
+        assert early.final_loss == 1
+        assert framework.params["shared_boosting"]["selection_aggregation"] == "mean_fold"
+    finally:
+        selection.close()
+
+
+def test_leaderboard_keeps_legacy_pooled_scores_when_loading_old_models():
     model = ModelFramework(
         {
             "learner": {"model_type": "Xgboost"},

@@ -51,11 +51,11 @@ class FoldBudget:
         if extended:
             self.allowance = estimated
         self.decisions.append(dict(decision, decision="extend" if extended else "continue"))
-        if self.notify is not None and (completed == 1 or extended or finishing):
+        if self.notify is not None and extended:
             self.notify(
                 f"Completed {completed}/{expected_folds} folds; estimated remaining "
                 f"work {remaining_cost:.1f}s, available {available:.1f}s. "
-                + ("Extending candidate allocation." if extended else "Continuing training.")
+                "Extending candidate allocation."
             )
 
     def record(self, learner, seconds, stop_reason):

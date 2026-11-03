@@ -7,6 +7,11 @@ import pandas as pd
 from supervised.callbacks.callback import Callback
 from supervised.utils.config import LOG_LEVEL
 from supervised.utils.metric import Metric
+from supervised.utils.validation_scores import (
+    average_fold_predictions,
+    collect_fold_predictions,
+    mean_fold_score,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(LOG_LEVEL)
@@ -29,9 +34,8 @@ class EarlyStopping(Callback):
         self.best_y_oof = (
             None  # predictions computed on out of folds or on validation set
         )
-        self.final_loss = (
-            None  # final score computed on combined predictions from all learners
-        )
+        self.final_loss = None  # arithmetic mean of the completed fold scores
+        self.validation_predictions = None
         # path to best model local copy, only used if cannot deep copy
         self.best_model_paths = {}
         self.multiple_target = False
@@ -61,41 +65,18 @@ class EarlyStopping(Callback):
         # aggregate predictions from all learners
         # it has two columns: 'prediction', 'target'
         logger.debug("early stopping on framework train end")
-        self.best_y_oof = pd.concat(list(self.best_y_predicted.values()))
-        self.best_y_oof.sort_index(inplace=True)
-        # check for duplicates in index -> repeats of validation
-        if np.sum(self.best_y_oof.index.duplicated()):
-            # we need to aggregate predictions from multiple repeats
-            target_cols = [c for c in self.best_y_oof.columns if "prediction" not in c]
-            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
-
-            aggs = {}
-            for t in target_cols:
-                aggs[t] = "first"
-            for p in prediction_cols:
-                aggs[p] = "mean"
-            # aggregate predictions from repeats
-            self.best_y_oof = self.best_y_oof.groupby(
-                target_cols + prediction_cols, level=0
-            ).agg(aggs)
-
-        sample_weight = None
-        if "sample_weight" in self.best_y_oof.columns:
-            sample_weight = self.best_y_oof["sample_weight"]
-
-        if "prediction" in self.best_y_oof:
-            self.final_loss = self.metric(
-                self.best_y_oof[self.target_columns],
-                self.best_y_oof["prediction"],
-                sample_weight=sample_weight,
-            )
-        else:
-            prediction_cols = [c for c in self.best_y_oof.columns if "prediction" in c]
-            self.final_loss = self.metric(
-                self.best_y_oof[self.target_columns],
-                self.best_y_oof[prediction_cols],
-                sample_weight=sample_weight,
-            )
+        self.validation_predictions = collect_fold_predictions(
+            list(self.best_y_predicted.values())
+        )
+        frame = self.validation_predictions
+        prediction_cols = [c for c in frame if "prediction" in c]
+        predictions = frame[prediction_cols]
+        if len(prediction_cols) == 1:
+            predictions = predictions.iloc[:, 0]
+        self.final_loss = mean_fold_score(
+            self.metric, frame[self.target_columns], predictions, frame.get("sample_weight")
+        )
+        self.best_y_oof = average_fold_predictions(frame)
 
     def on_iteration_end(self, logs, predictions):
         train_loss = 0

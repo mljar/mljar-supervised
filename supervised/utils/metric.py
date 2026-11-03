@@ -29,7 +29,7 @@ def logloss(y_true, y_predicted, sample_weight=None):
 
 def rmse(y_true, y_predicted, sample_weight=None):
     val = mean_squared_error(y_true, y_predicted, sample_weight=sample_weight)
-    return np.sqrt(val) if val > 0 else -np.inf
+    return np.sqrt(val)
 
 
 def rmsle(y_true, y_predicted, sample_weight=None):

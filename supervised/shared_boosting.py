@@ -159,8 +159,8 @@ class SharedBoostingSelection:
                     mean_fold_score=sign * mean,
                 )
             )
-            if not np.isnan(pooled) and self.metric.improvement(best_loss, pooled):
-                best_count, best_loss = count, pooled
+            if not np.isnan(mean) and self.metric.improvement(best_loss, mean):
+                best_count, best_loss = count, mean
             del frames
         if best_count is None:
             raise AutoMLException("No valid shared boosting validation score")
@@ -182,7 +182,7 @@ class SharedBoostingSelection:
             checkpoint_interval=backend.CHECKPOINT_INTERVAL,
             patience_rounds=backend.PATIENCE_ROUNDS,
             selection_metric=self.metric.name,
-            selection_aggregation="pooled_oof",
+            selection_aggregation="mean_fold",
             pooled_score=selected["pooled_score"],
             mean_fold_score=selected["mean_fold_score"],
             common_max_rounds=max(common),

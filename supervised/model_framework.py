@@ -79,6 +79,7 @@ class ModelFramework:
         self._threshold = None  # used only for binary classifiers
         self._max_time_for_learner = params.get("max_time_for_learner", 3600)
         self._oof_predictions_fname = None
+        self._validation_predictions_fname = None
         self._single_prediction_time = None  # prediction time on single sample
         self._optuna_time_budget = params.get("optuna_time_budget")
         self._optuna_init_params = params.get("optuna_init_params", {})
@@ -494,6 +495,26 @@ class ModelFramework:
             return early_stopping.metric
         return Metric({"name": self.get_metric_name()})
 
+    def get_validation_predictions(self):
+        """Unaveraged fold predictions used for selection, including after reload."""
+        early = self.callbacks.get("early_stopping")
+        if early is not None and early.validation_predictions is not None:
+            frame = early.validation_predictions.copy(deep=True)
+            # Neural-network targets may be one-hot encoded; ensemble members
+            # must share the same scalar class labels, just as in get_out_of_folds.
+            target_cols = [c for c in frame if "target" in c]
+            if len(target_cols) > 1:
+                target = np.argmax(frame[target_cols].to_numpy(), axis=1)
+                frame.drop(columns=target_cols, inplace=True)
+                frame.insert(0, "target", target)
+            return frame
+        if self._validation_predictions_fname is not None:
+            return pd.read_csv(
+                self._validation_predictions_fname, index_col=[0, 1],
+                float_precision="round_trip",
+            )
+        return None  # Legacy artifacts did not retain the individual repeats.
+
     def get_out_of_folds(self):
         if self.oof_predictions is not None:
             return self.oof_predictions.copy(deep=True)
@@ -755,6 +776,17 @@ class ModelFramework:
         predictions = self.get_out_of_folds()
         predictions.to_csv(self._oof_predictions_fname, index=False)
 
+        fold_predictions = self.get_validation_predictions()
+        validation_predictions_fname = None
+        if fold_predictions is not None:
+            validation_predictions_fname = portable_artifact_path(
+                model_subpath, "predictions_validation_folds.csv"
+            )
+            self._validation_predictions_fname = resolve_artifact_path(
+                results_path, validation_predictions_fname
+            )
+            fold_predictions.to_csv(self._validation_predictions_fname)
+
         saved = [portable_artifact_path(model_subpath, l.get_fname()) for l in self.learners]
 
         with open(os.path.join(model_path, "framework.json"), "w") as fout:
@@ -769,6 +801,8 @@ class ModelFramework:
                 "params": self.params,
                 "saved": saved,
                 "predictions_fname": predictions_fname,
+                "validation_predictions_fname": validation_predictions_fname,
+                "validation_score_aggregation": "mean_fold" if fold_predictions is not None else "pooled_oof",
                 "metric_name": self.get_metric_name(),
                 "final_loss": self.get_final_loss(),
                 "train_time": self.get_train_time(),
@@ -846,6 +880,14 @@ class ModelFramework:
             f"{metric_name} ({averaging} averaging)\n"
             if averaging else f"{metric_name}\n"
         )
+        if self._validation_predictions_fname is not None:
+            sign = -1 if Metric.optimize_negative(metric_name) else 1
+            desc += f"\nMean fold {metric_name}: **{sign * self.get_final_loss():.6f}**.\n"
+            desc += (
+                "\nSelection uses the arithmetic mean of the scores from all folds "
+                "and repeats. Additional metrics below use predictions averaged "
+                "across repeats.\n"
+            )
         shared = self.params.get("shared_boosting")
         if shared:
             desc += "\n## Shared boosting selection\n\n"
@@ -930,6 +972,11 @@ class ModelFramework:
             "single_prediction_time", mf._single_prediction_time
         )
         mf._prediction_time_by_model = json_desc.get("prediction_time_by_model", {})
+        fold_predictions_fname = json_desc.get("validation_predictions_fname")
+        if fold_predictions_fname is not None:
+            mf._validation_predictions_fname = resolve_artifact_path(
+                results_path, fold_predictions_fname
+            )
         predictions_fname = json_desc.get("predictions_fname")
         if predictions_fname is not None:
             mf._oof_predictions_fname = resolve_artifact_path(

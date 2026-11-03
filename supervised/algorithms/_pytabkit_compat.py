@@ -13,6 +13,7 @@ import threading
 import warnings
 from contextlib import ExitStack, contextmanager
 
+import numpy as np
 from sklearn.utils.validation import check_array, check_X_y
 
 
@@ -48,6 +49,28 @@ def _leaf_spec():
     return tree_flatten(None)[1]
 
 
+class _WritableTensorTorch:
+    """Adapt only pytabkit's tensor conversions, without patching torch globally."""
+
+    def __init__(self, module):
+        self._module = module
+        self._thread = threading.get_ident()
+
+    def __getattr__(self, name):
+        return getattr(self._module, name)
+
+    def as_tensor(self, data, *args, **kwargs):
+        # pandas Copy-on-Write can return read-only arrays even after copying
+        # the input frame. PyTorch must not share those arrays' storage.
+        if (
+            threading.get_ident() == self._thread
+            and isinstance(data, np.ndarray)
+            and not data.flags.writeable
+        ):
+            data = data.copy()
+        return self._module.as_tensor(data, *args, **kwargs)
+
+
 class _BackendLogFilter(logging.Filter):
     def __init__(self):
         super().__init__()
@@ -69,6 +92,7 @@ def backend_context():
         for module, name, replacement in [
             (sklearn_base, "check_X_y_wrapper", _check_X_y),
             (sklearn_base, "check_array_wrapper", _check_array),
+            (sklearn_base, "torch", _WritableTensorTorch(sklearn_base.torch)),
             (_pytree, "LeafSpec", _leaf_spec),
         ]:
             original = getattr(module, name)

@@ -233,16 +233,24 @@ and **300 rounds of patience**, subject to round and time limits. Round 1 is
 also a candidate so very short runs and boosters that exhaust possible splits
 can participate. The full booster, including patience rounds, is retained until
 all folds finish. Only checkpoints available in every fold are considered;
-shorter folds are not extended. Selection optimizes the existing **pooled OOF
-metric**, with the smaller count winning exact ties.
+shorter folds are not extended. Selection optimizes the **mean of the fold
+scores**, with the smaller count winning exact ties.
 
 After selection, every fold model is reduced to the selected prefix. OOF
 predictions, validation scores, thresholds, reports and subsequent ensembles
 use that same prefix. `shared_boosting.json` and `shared_boosting_scores.csv`
 record the stopping counts and selection curve. Model reports and the
-leaderboard include the **mean fold score** alongside the pooled score.
-`metric_value` remains the pooled selection score; `mean_fold_metric_value`
-is the additional reported score for these models.
+leaderboard use the **mean fold score** for selection. The pooled score remains
+in the shared boosting report as a diagnostic.
+
+For all newly trained models, `metric_value` is the arithmetic mean of the
+validation scores from every fold and repeat. Each fold has equal weight;
+sample weights, when provided, apply within each fold. Ensemble selection
+combines candidate predictions separately within each fold, then averages the
+fold scores in the same way. Predictions averaged across repeats are still
+available for stacking and additional reports, but do not determine the
+selection score. Individual fold predictions are saved in
+`predictions_validation_folds.csv` so this also works after reloading.
 
 Counts refer to boosting rounds, which may contain multiple trees for
 multiclass models. XGBoost's zero-based `best_iteration` is stored as the count

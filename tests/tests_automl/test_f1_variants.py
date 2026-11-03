@@ -69,12 +69,14 @@ def test_f1_training_ensemble_reports_and_reload(tmp_path, monkeypatch, name, cl
         "Ensemble",
     }.issubset(types)
     for member in model._models:
-        oof = member.get_out_of_folds()
-        probabilities = oof[
-            [c for c in oof.columns if c.startswith("prediction")]
-        ].to_numpy()
+        oof = member.get_validation_predictions()
         assert member.get_final_loss() == pytest.approx(
-            Metric({"name": name})(oof.target.to_numpy(), probabilities)
+            np.mean([
+                Metric({"name": name})(fold.target.to_numpy(), fold[
+                    [c for c in fold.columns if c.startswith("prediction")]
+                ].to_numpy())
+                for _, fold in oof.groupby(level="validation_fold")
+            ])
         )
         assert member.get_metric_name() == name
         if member.get_type() != "Ensemble":
