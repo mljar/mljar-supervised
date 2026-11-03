@@ -131,5 +131,6 @@ def test_full_context_size_skip_continues_with_other_algorithm(tmp_path, monkeyp
     records = json.loads((tmp_path / algorithm / "resource_skips.json").read_text())
     assert records
     assert all(r["resources"]["reason"] == "training_rows" for r in records)
-    assert all(r["resources"]["rows"] == 60 for r in records)
+    # CV inference uses the full training context, checked before any fold fits.
+    assert all(r["resources"]["rows"] == len(X) for r in records)
     assert not (tmp_path / algorithm / "errors.md").exists()

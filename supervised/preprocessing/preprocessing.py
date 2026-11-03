@@ -85,7 +85,9 @@ class Preprocessing(object):
     # fit and transform
     def fit_and_transform(self, X_train, y_train, sample_weight=None):
         logger.debug("Preprocessing.fit_and_transform")
-        reject_generated_drops(self._params, list(X_train.columns))
+        reject_generated_drops(
+            self._params, list(X_train.columns) if X_train is not None else None
+        )
         # Transformations replace columns; owning the frame metadata avoids
         # chained-assignment warnings without copying every fold's data again.
         if X_train is not None:
