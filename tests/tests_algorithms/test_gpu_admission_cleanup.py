@@ -116,10 +116,14 @@ def test_sdm_reclaims_memory_then_rechecks_same_estimate(admission):
     assert calls == [("cuda:1", False), ("cuda:1", True)]
 
 
-def test_sdm_genuine_shortage_reports_latest_measurement(admission):
+@pytest.mark.parametrize("fraction", [None, 0.5])
+def test_sdm_genuine_shortage_reports_latest_measurement(admission, fraction):
     from supervised.exceptions import AutoMLException
 
     model, resources, required, calls, measure = admission
+    if fraction is not None:
+        model.params["gpu_memory_fraction"] = fraction
+    expected_fraction = 0.95 if fraction is None else fraction
     first, after_cleanup = required / 2, required / 4
     measure(first, after_cleanup)
     params = model.params.copy()
@@ -127,7 +131,8 @@ def test_sdm_genuine_shortage_reports_latest_measurement(admission):
         model._check_resources(*resources)
     message = str(exc.value)
     assert f"{required / 1024**3:.2f} GiB needed" in message
-    assert f"{after_cleanup * 0.7 / 1024**3:.2f} GiB budget" in message
+    assert f"{after_cleanup * expected_fraction / 1024**3:.2f} GiB budget" in message
+    assert exc.value.resources["vram_budget_bytes"] == int(after_cleanup * expected_fraction)
     assert f"({after_cleanup / 1024**3:.2f} GiB free)" in message
     assert calls == [("cuda:1", False), ("cuda:1", True)]
     assert model.device == "cuda:1"
@@ -139,10 +144,12 @@ def test_sdm_memory_fraction_applies_before_and_after_cleanup(admission, fractio
     model, resources, required, calls, measure = admission
     if fraction is not None:
         model.params["gpu_memory_fraction"] = fraction
-    fraction = fraction or 0.7
+    fraction = 0.95 if fraction is None else fraction
     # Raw free memory is sufficient, but the configured allowance is not.
-    measure(required * 1.01, required / fraction + 1024)
-    model._check_resources(*resources)
+    after_cleanup = required / fraction + 1024
+    measure(required * 1.01, after_cleanup)
+    info = model._check_resources(*resources)
+    assert info["vram_budget_bytes"] == int(after_cleanup * fraction)
     assert calls == [("cuda:1", False), ("cuda:1", True)]
 
 
