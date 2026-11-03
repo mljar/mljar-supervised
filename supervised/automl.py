@@ -99,8 +99,14 @@ class AutoML(BaseAutoML):
                 If the `results_path` will point to directory with AutoML results (`params.json` must be present),
                 then all models will be loaded.
 
-            total_time_limit (int): The total time limit in seconds for AutoML training.
+            total_time_limit (int): The scheduling budget in seconds for AutoML training.
                 It is not used when `model_time_limit` is not `None`.
+                Started folds finish normally, so elapsed time can exceed this target.
+                After the first fold, AutoML estimates whether the remaining folds fit.
+                Candidates with at least 80% of folds complete may use a finishing reserve
+                of up to 10% of this budget, shared across the run. When ensembling is
+                enabled, 5% is reserved for ensemble construction. Incomplete candidates
+                are excluded from model selection and ensembling.
 
             mode (str): Can be {`Explain`, `Perform`, `Compete`, `Optuna`}. This parameter defines the goal of AutoML and how intensive the AutoML search will be.
 
@@ -132,7 +138,10 @@ class AutoML(BaseAutoML):
 
             model_time_limit (int): The time limit for training a single model, in seconds.
                 If `model_time_limit` is set, the `total_time_limit` is not respected.
-                The single model can contain several learners. The time limit for subsequent learners is computed based on `model_time_limit`.
+                The single model can contain several learners. This is a scheduling
+                target checked between completed folds, not a cutoff inside a fit.
+                A started fold finishes normally; elapsed time may exceed the target.
+                The global finishing reserve does not apply to this explicit per-model limit.
 
                 For example, in the case of 10-fold cross-validation, one model will have 10 learners.
                 The `model_time_limit` is the time for all 10 learners.
@@ -185,6 +194,12 @@ class AutoML(BaseAutoML):
                 might be needed inside the custom metric.
 
             validation_strategy (dict): Dictionary with validation type. Right now train/test split and cross-validation are supported.
+                With automatic validation, datasets below 5,000 training rows or
+                with fewer than 250 samples in the smallest class use 3 repeats
+                whenever 5-fold CV is selected, with no additional budget threshold.
+                Stacking and BoostOnErrors are disabled for these repeated folds.
+                Explicit validation settings are preserved; short budgets may still
+                select holdout validation.
 
                 Example:
 

@@ -56,7 +56,8 @@ def test_candidate_stops_between_folds_without_publishing_partial_model(tmp_path
     original_fit = RandomForestAlgorithm.fit
     def train(self, *args):
         if self.get_type() == 'Random Forest':
-            self.params['candidate_time_limit'] = 10.0
+            from supervised.tuner.fold_budget import FoldBudget
+            self.training_budget = FoldBudget(10.0)
         return original_train(self, *args)
     def fit(self, *args, **kwargs):
         result = original_fit(self, *args, **kwargs)
@@ -76,68 +77,86 @@ def test_candidate_stops_between_folds_without_publishing_partial_model(tmp_path
     assert not (root/'errors.md').exists()
 
 
-def test_stacking_cost_admission_happens_before_model_directory(tmp_path, monkeypatch):
-    from supervised.tuner.algorithm_early_stopping import AlgorithmEarlyStopping
+
+def test_pilot_deferral_happens_before_model_directory(tmp_path):
     from supervised.tuner.time_controller import TimeController
-    monkeypatch.setattr('supervised.tuner.time_controller.time.time', lambda: 0)
     model = AutoML()
-    model._results_path = str(tmp_path/'automl')
-    model._fit_level = 'stack'
-    model._total_time_limit = 100
-    model._model_time_limit = None
-    model._algorithm_early_stopping = AlgorithmEarlyStopping('auc')
-    model._time_ctrl = TimeController(0, 100, None, ['stack'], ['RealMLP'])
-    p = dict(name='second', learner={'model_type':'RealMLP','hidden_width':64,'n_hidden_layers':2},
-             preprocessing={}, validation_strategy={'k_folds':10}, is_stacked=True)
-    model._time_ctrl.stacking_cost.observe('first', model._stacking_descriptor(p), 12, 1, 10)
-    with pytest.raises(BudgetExceededError) as exc:
-        model.train_model(p)
-    assert exc.value.details['source_attempt'] == 'first'
-    assert exc.value.details['estimated_total'] == 120
-    assert not (tmp_path/'automl').exists()
-    assert len(model._time_ctrl.stacking_cost.observations) == 1
+    model._results_path = str(tmp_path / "automl")
+    model._fit_level = "not_so_random"
+    model._time_ctrl = TimeController(0, 1000, None, ["not_so_random"], ["RealMLP"])
+    for i in range(2):
+        model._time_ctrl.record_attempt(str(i), "RealMLP", "not_so_random", 10,
+            "budget_exhausted", str(i), dict(phase="between_folds", completed_folds=1))
+    with pytest.raises(BudgetExceededError, match="Two unaffordable") as exc:
+        model.train_model(dict(name="third", learner=dict(model_type="RealMLP")))
+    assert exc.value.details["phase"] == "pilot_admission"
+    assert not (tmp_path / "automl").exists()
 
 
-def test_failed_stacking_probe_informs_next_trial_and_is_saved(tmp_path, monkeypatch):
-    from copy import deepcopy
+def test_two_failed_pilots_defer_changed_candidates_and_save_status(tmp_path, monkeypatch):
     from supervised.model_framework import ModelFramework
-    from supervised.tuner.mljar_tuner import MljarTuner
-    train = ModelFramework.train
-    generate = MljarTuner.get_params_stack_models
-    probes = []
-    def candidates(self, models):
-        generated = generate(self, models)
-        assert generated
-        first = deepcopy(generated[0]); first['name'] = '1001_StackProbe'
-        second = deepcopy(first); second['name'] = '1002_StackProbe'
-        return [first, second]
-    def fail_stacked(self, *args):
-        if self.params.get('is_stacked'):
-            probes.append(self.get_name())
-            raise BudgetExceededError('Remaining folds cannot finish', phase='between_folds',
-                                      elapsed=100, completed_folds=1, expected_folds=3,
-                                      dimensions={'train_rows':60,'validation_rows':30,'features':9})
-        return train(self, *args)
-    monkeypatch.setattr(MljarTuner, 'get_params_stack_models', candidates)
-    monkeypatch.setattr(ModelFramework, 'train', fail_stacked)
-    X, y = make_classification(n_samples=90, n_features=4, random_state=17)
-    root = tmp_path/'stacking'
-    model = AutoML(results_path=str(root), mode='Compete',
-                   algorithms=['Decision Tree','Random Forest','Extra Trees'],
-                   total_time_limit=120, start_random_models=3, hill_climbing_steps=0,
-                   train_ensemble=False, stack_models=True, explain_level=0, n_jobs=1,
+    original = ModelFramework.train
+    attempts = []
+
+    def train(self, *args):
+        if self.get_type() == "Random Forest":
+            attempts.append(self.get_name())
+            raise BudgetExceededError("Pilot cannot finish", phase="between_folds",
+                                      completed_folds=1, expected_folds=3)
+        return original(self, *args)
+
+    monkeypatch.setattr(ModelFramework, "train", train)
+    X, y = make_classification(n_samples=80, n_features=4, random_state=17)
+    root = tmp_path / "pilots"
+    automl = AutoML(results_path=str(root), mode="Compete",
+                   algorithms=["Decision Tree", "Random Forest"], total_time_limit=120,
+                   start_random_models=4, hill_climbing_steps=0, train_ensemble=False,
+                   stack_models=False, explain_level=0, n_jobs=1,
                    golden_features=False, feature_discovery=False, kmeans_features=False,
                    features_selection=False, mix_encoding=False, boost_on_errors=False,
-                   validation_strategy={'validation_type':'kfold','k_folds':3,'shuffle':True,'stratify':True})
-    model.fit(X, y)
-    assert probes == ['1001_StackProbe']
-    state = json.loads((root/'progress.json').read_text())
-    observations = state['time_controller']['stacking_cost_observations']
-    assert len(observations) == 1 and observations[0]['estimated_total'] == 300
-    skips = json.loads((root/'budget_skips.json').read_text())
-    second = next(s for s in skips if s['name'] == '1002_StackProbe')
-    assert second['source_attempt'] == '1001_StackProbe'
-    assert second['phase'] == 'stacking_admission'
-    assert not (root/'1002_StackProbe').exists()
-    assert all(not m._is_stacked for m in model._models)
-    assert not (root/'errors.md').exists()
+                   validation_strategy=dict(validation_type="kfold", k_folds=3,
+                                            stratify=True, shuffle=True))
+    automl.fit(X, y)
+    assert len(attempts) == 3  # One default pilot; two in not_so_random.
+    records = json.loads((root / "budget_skips.json").read_text())
+    assert any(r["phase"] == "pilot_admission" for r in records)
+    state = json.loads((root / "progress.json").read_text())
+    assert state["time_controller"]["pilot_failures"]["not_so_random"]["Random Forest"] == 2
+    assert all(m.get_type() != "Random Forest" for m in automl._models)
+    assert '"status": "not_trained"' in (root / "progress.json").read_text()
+    assert '"status": "not_started"' in (root / "progress.json").read_text()
+
+
+@pytest.mark.parametrize("algorithm", ["RealMLP", "TabM"])
+def test_neural_timeout_checkpoint_is_not_published(tmp_path, monkeypatch, algorithm):
+    from supervised.algorithms import realmlp, tabm
+    from supervised.algorithms.realmlp import RealMLPAlgorithm
+    from supervised.algorithms.tabm import TabMAlgorithm
+
+    # Fit is simulated here; exercise exclusion without requiring optional backends.
+    monkeypatch.setattr(realmlp, "check_dependencies", lambda: None)
+    monkeypatch.setattr(tabm, "check_dependencies", lambda: None)
+    attempts = []
+
+    def interrupted(self, *args, **kwargs):
+        assert args[-1] is None
+        attempts.append(self)
+        self.training_info = dict(stop_reason="time_limit", best_epoch=2)
+
+    cls = RealMLPAlgorithm if algorithm == "RealMLP" else TabMAlgorithm
+    monkeypatch.setattr(cls, "fit", interrupted)
+    X, y = make_classification(n_samples=80, n_features=4, random_state=17)
+    root = tmp_path / algorithm
+    automl = AutoML(results_path=str(root), mode="Compete",
+                   algorithms=["Decision Tree", algorithm], total_time_limit=120,
+                   train_ensemble=True, explain_level=0, n_jobs=1,
+                   start_random_models=1, hill_climbing_steps=0, stack_models=False,
+                   golden_features=False, feature_discovery=False, kmeans_features=False,
+                   features_selection=False, mix_encoding=False, boost_on_errors=False,
+                   validation_strategy=dict(validation_type="kfold", k_folds=2,
+                                            stratify=True, shuffle=True))
+    automl.fit(X, y)
+    assert attempts
+    assert all(m.get_type() != algorithm for m in automl._models)
+    records = json.loads((root / "budget_skips.json").read_text())
+    assert any(r.get("stop_reason") == "time_limit" for r in records)

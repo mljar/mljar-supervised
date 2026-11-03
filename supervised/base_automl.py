@@ -416,6 +416,11 @@ class BaseAutoML(BaseEstimator, ABC):
 
     def train_model(self, params):
         params.pop("candidate_time_limit", None)
+        if self._time_ctrl.pilots_deferred(params["learner"]["model_type"], self._fit_level):
+            raise BudgetExceededError(
+                "Two unaffordable first-fold pilots; deferring this algorithm for this stage.",
+                phase="pilot_admission", completed_folds=0,
+            )
         policy = self._algorithm_early_stopping
         budgeted = (policy is not None and policy.enabled
                     and self._fit_level not in ("simple_algorithms", "adjust_validation")
@@ -430,15 +435,6 @@ class BaseAutoML(BaseEstimator, ABC):
                 raise BudgetExceededError("No affordable exploration allowance remains.",
                                           phase="admission", allowance=allowance)
             params["candidate_time_limit"] = allowance
-            if self._fit_level == "stack":
-                decision = self._time_ctrl.stacking_cost.decision(
-                    self._stacking_descriptor(params), allowance,
-                )
-                if decision:
-                    raise BudgetExceededError(
-                        "Previous stacking timings predict this candidate cannot fit its allowance.",
-                        **decision,
-                    )
         expected_time = None
         if self._fit_level == "feature_discovery":
             expected_time = params.get("feature_discovery_expected_time")
@@ -447,15 +443,8 @@ class BaseAutoML(BaseEstimator, ABC):
         if not self._time_ctrl.enough_time(
             params["learner"]["model_type"], self._fit_level, expected_time=expected_time
         ):
-            if budgeted:
-                raise BudgetExceededError("Estimated candidate cost exceeds the remaining stage budget.",
-                                          phase="admission")
-            if self._fit_level == "feature_discovery":
-                self.verbose_print(
-                    f"Skip {params['name']}: insufficient time for the estimated training cost."
-                )
-            logger.info(f"Cannot train {params['name']} because of the time constraint")
-            return False
+            raise BudgetExceededError("Insufficient scheduling budget to start this candidate.",
+                                      phase="admission", completed_folds=0)
         # let's create directory to log all training artifacts
         results_path, model_subpath = self._results_path, params["name"]
         model_path = os.path.join(results_path, model_subpath)
@@ -466,30 +455,8 @@ class BaseAutoML(BaseEstimator, ABC):
             {"metric": {"name": self._eval_metric}, "log_to_dir": model_path}
         )
 
-        # disable for now
-        max_time_for_learner = 3600
-        if self._total_time_limit is not None:
-            k_folds = self._validation_strategy.get("k_folds", 1.0)
-            at_least_algorithms = 10.0
-
-            max_time_for_learner = max(
-                self._total_time_limit / k_folds / at_least_algorithms, 60
-            )
-
-        params["max_time_for_learner"] = max_time_for_learner
-        if self._model_time_limit is not None:
-            params["max_time_for_learner"] = self._model_time_limit / self._expected_learners_cnt()
-        policy = self._algorithm_early_stopping
-        if policy is not None and policy.enabled and policy.tuning_step(self._fit_level):
-            allowance = self._time_ctrl.learner_time_limit(
-                params["learner"]["model_type"], self._fit_level,
-                self._expected_learners_cnt(),
-            )
-            if allowance is not None:
-                params["max_time_for_learner"] = allowance
-
-        if budgeted:
-            params["max_time_for_learner"] = params["candidate_time_limit"] / self._expected_learners_cnt()
+        # Routine runtime limits apply between completed folds.
+        params["max_time_for_learner"] = None
 
         total_time_constraint = TotalTimeConstraint(
             {
@@ -506,6 +473,7 @@ class BaseAutoML(BaseEstimator, ABC):
             params,
             callbacks=[early_stop, total_time_constraint],
             data_store=self._training_store,
+            training_budget=self._time_ctrl.fold_budget(params.get("candidate_time_limit"), self.verbose_print),
         )
 
         # start training
@@ -1154,6 +1122,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 reasons.append("smallest class has fewer than 250 samples")
         self._auto_cv_policy = {
             "max_folds": 5 if reasons else 10,
+            "repeats": 3 if reasons else 1,
             "training_rows": rows,
             "smallest_class_count": smallest_class,
             "reason": "; ".join(reasons) if reasons else "sufficient rows and class counts for 10 folds",
@@ -1162,6 +1131,15 @@ class BaseAutoML(BaseEstimator, ABC):
             f"Automatic CV: at most {self._auto_cv_policy['max_folds']} folds "
             f"({self._auto_cv_policy['reason']}); time budget may reduce validation."
         )
+
+    def _apply_auto_cv_repeats(self, strategy):
+        if (self.validation_strategy == "auto"
+                and self._auto_cv_policy is not None
+                and self._auto_cv_policy["max_folds"] == 5
+                and strategy.get("validation_type") == "kfold"
+                and strategy.get("k_folds") == 5):
+            strategy["repeats"] = 3
+            strategy.setdefault("random_seed", 1906)
 
     def _set_adjusted_validation(self):
         if self._validation_strategy["validation_type"] != "split":
@@ -1185,16 +1163,10 @@ class BaseAutoML(BaseEstimator, ABC):
             if self._auto_cv_policy is not None:
                 self._auto_cv_policy["time_budget_folds"] = k_folds
                 k_folds = min(k_folds, self._auto_cv_policy["max_folds"])
-            # too small dataset for stacking
-            if self.n_rows_in_ < 500:
-                self._stack_models = False
-                self.verbose_print(
-                    "*** Disable stacking for small dataset (nrows < 500)"
-                )
-
             self._validation_strategy["validation_type"] = "kfold"
             del self._validation_strategy["train_ratio"]
             self._validation_strategy["k_folds"] = k_folds
+            self._apply_auto_cv_repeats(self._validation_strategy)
             self.tuner._validation_strategy = self._validation_strategy
             shutil.rmtree(
                 os.path.join(self._results_path, self._model_subpaths[0]),
@@ -1209,15 +1181,17 @@ class BaseAutoML(BaseEstimator, ABC):
                 cv += ["Shuffle"]
             if self._validation_strategy.get("stratify", False):
                 cv += ["Stratify"]
-            self.select_and_save_best()  # save validation strategy
+            self._apply_constraints_stack_models()
+            self.select_and_save_best()  # save validation strategy and its constraints
 
-            self.verbose_print(f"Validation strategy: {k_folds}-fold CV {','.join(cv)}")
+            repeats = self._validation_strategy.get("repeats", 1)
+            self.verbose_print(f"Validation strategy: {k_folds}-fold CV, {repeats} repeat(s), {','.join(cv)}")
         else:
             # cant stack models for train/test split
             self._stack_models = False
             self.verbose_print("Disable stacking for split validation")
 
-        self._apply_constraints_stack_models()
+            self._apply_constraints_stack_models()
 
     def _apply_class_balance_stacking_constraint(self, y):
         """Avoid stacking when a classification target has a class below 15%."""
@@ -1244,7 +1218,11 @@ class BaseAutoML(BaseEstimator, ABC):
             self._stack_models = False
             self._boost_on_errors = False
         if "repeats" in self._validation_strategy:
-            if self._stack_models:
+            if (self.validation_strategy == "auto" and self._auto_cv_policy is not None
+                    and self._auto_cv_policy["max_folds"] == 5
+                    and self._validation_strategy.get("repeats") == 3):
+                self.verbose_print("Small dataset: stacking disabled; using 5-fold CV with 3 repeats.")
+            elif self._stack_models:
                 self.verbose_print("Disable stacking for repeated validation")
             self._stack_models = False
             self._boost_on_errors = False
@@ -1535,7 +1513,7 @@ class BaseAutoML(BaseEstimator, ABC):
                         self.verbose_print(f"Skip {step} because of the time limit.")
                         continue
                     else:
-                        pending_count = sum(p.get("status") not in ("trained", "skipped", "error")
+                        pending_count = sum(p.get("status") not in ("trained", "skipped", "error", "not_trained", "not_started")
                                             for p in generated_params)
                         model_str = "models" if pending_count != 1 else "model"
                         self.verbose_print(
@@ -1543,7 +1521,7 @@ class BaseAutoML(BaseEstimator, ABC):
                         )
 
                 for params in generated_params:
-                    if params.get("status", "") in ["trained", "skipped", "error"]:
+                    if params.get("status", "") in ["trained", "skipped", "error", "not_trained", "not_started"]:
                         if "algorithm_early_stopping" not in params:
                             self.verbose_print(f"{params['name']}: {params['status']}.")
                         continue
@@ -1561,7 +1539,7 @@ class BaseAutoML(BaseEstimator, ABC):
                     if policy.enabled and policy.tuning_step(step):
                         self._time_ctrl.set_active_algorithms(step, {
                             p["learner"]["model_type"] for p in generated_params
-                            if p.get("status") not in ("trained", "skipped", "error")
+                            if p.get("status") not in ("trained", "skipped", "error", "not_trained", "not_started")
                             and policy.decision(step, p) is None
                         })
 
@@ -1593,17 +1571,15 @@ class BaseAutoML(BaseEstimator, ABC):
 
                     except BudgetExceededError as e:
                         outcome = "budget_exhausted"
-                        params.update(status="skipped", final_loss=None, train_time=None)
+                        started = e.details.get("phase") not in (
+                            "admission", "pilot_admission", "stacking_admission")
+                        params.update(status="not_trained" if started else "not_started",
+                                      final_loss=None, train_time=None)
                         params["budget_skip"] = {
                             "reason": str(e), "elapsed": time.monotonic() - attempt_start,
                             "allowance": params.get("candidate_time_limit"), **e.details,
                         }
-                        if step == "stack" and e.details.get("completed_folds", 0) > 0:
-                            self._time_ctrl.stacking_cost.observe(
-                                params["name"], self._stacking_descriptor(params),
-                                e.details["elapsed"], e.details["completed_folds"],
-                                e.details["expected_folds"], e.details.get("dimensions"),
-                            )
+                        self.verbose_print(f"Skip {params.get('name')}: {e}")
                     except CandidateValidationError as e:
                         params.update(status="skipped", final_loss=None, train_time=None)
                         params["candidate_skip"] = dict(
@@ -1639,6 +1615,7 @@ class BaseAutoML(BaseEstimator, ABC):
                             self._time_ctrl.record_attempt(
                                 params["name"], params["learner"]["model_type"], step,
                                 time.monotonic() - attempt_start, outcome, configuration,
+                                params.get("budget_skip"),
                             )
 
                     self.save_progress(step, generated_params)
@@ -2360,6 +2337,7 @@ class BaseAutoML(BaseEstimator, ABC):
                 }
             if strat.get("validation_type") == "kfold" and self._auto_cv_policy is not None:
                 strat["k_folds"] = min(strat["k_folds"], self._auto_cv_policy["max_folds"])
+            self._apply_auto_cv_repeats(strat)
             if self._get_ml_task() == REGRESSION:
                 if "stratify" in strat:
                     # it's better to always check

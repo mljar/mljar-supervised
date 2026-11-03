@@ -71,6 +71,18 @@ class SharedBoostingSelection:
             None if max_time is None else 0.7 * max_time,
         )
         trained = backend.round_count(learner)
+        if stopping.reason == "time_limit":
+            raise BudgetExceededError(
+                f"{learner.algorithm_short_name} learner {learner.name} reached its "
+                f"time limit after {trained} boosting rounds; skipping the incomplete candidate.",
+                phase="boosting_fit",
+                learner=learner.name,
+                stop_reason=stopping.reason,
+                trained_rounds=int(trained),
+                local_best_rounds=stopping.best_round,
+                learner_elapsed=time.monotonic() - stopping.started,
+                learner_allowance=stopping.max_time,
+            )
         if trained < 1:
             raise AutoMLException("Booster produced no prediction rounds")
         counts = backend.checkpoints(trained)

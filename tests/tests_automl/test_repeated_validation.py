@@ -29,7 +29,8 @@ class AutoMLRepeatedValidationTest(unittest.TestCase):
 
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=10,
+            total_time_limit=None,  # Verify repeat artifacts, not wall-clock admission.
+            n_jobs=1,
             algorithms=["Random Forest"],
             train_ensemble=False,
             validation_strategy={
@@ -76,7 +77,8 @@ class AutoMLRepeatedValidationTest(unittest.TestCase):
 
         a = AutoML(
             results_path=self.automl_dir,
-            total_time_limit=10,
+            total_time_limit=None,
+            n_jobs=1,
             algorithms=["Random Forest"],
             train_ensemble=False,
             validation_strategy={

@@ -136,7 +136,7 @@ class AlgorithmEarlyStopping:
     def filter_candidates(self, step, candidates):
         # Retain skipped metadata for progress/resume, without allocating models.
         for params in candidates:
-            if params.get("status") not in ("trained", "skipped", "error"):
+            if params.get("status") not in ("trained", "skipped", "error", "not_trained", "not_started"):
                 self.skip_candidate(step, params)
         return candidates
 

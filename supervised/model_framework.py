@@ -6,6 +6,7 @@ import os
 import time
 import uuid
 from functools import partial
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -39,7 +40,8 @@ from supervised.utils.learning_curves import LearningCurves
 
 class ModelFramework:
 
-    def __init__(self, params, callbacks=[], data_store=None):
+    def __init__(self, params, callbacks=[], data_store=None, training_budget=None):
+        self.training_budget = training_budget
         logger.debug("ModelFramework.__init__")
         self._data_store = data_store
         self.uid = str(uuid.uuid4())
@@ -158,7 +160,18 @@ class ModelFramework:
         keep_best = early.keep_best_model if early is not None else None
         try:
             return self._train(results_path, model_subpath)
+        except BaseException as exc:
+            if self.training_budget is not None:
+                self.training_budget.status = "not_trained"
+                self.training_budget.reason = f"{type(exc).__name__}: {exc}"
+            raise
         finally:
+            if self.training_budget is not None and hasattr(self, "_expected_folds"):
+                report = self.training_budget.report(self._expected_folds)
+                self.params["training_completion"] = report
+                path = Path(results_path) / model_subpath / "training_completion.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(report, indent=2))
             if self._shared_selection is not None:
                 self._shared_selection.close()
                 self._shared_selection = None
@@ -198,6 +211,17 @@ class ModelFramework:
 
         repeats = self.validation.get_repeats()
         expected_folds = repeats * self.validation.get_n_splits()
+        self._expected_folds = expected_folds
+        if self.training_budget is None:
+            from supervised.tuner.fold_budget import FoldBudget
+            total = self.callbacks.get("total_time_constraint")
+            available = candidate_limit
+            finishing = available
+            if total is not None and total.total_time_limit is not None:
+                available = total.total_time_limit - (time.time() - total.total_time_start)
+                finishing = available + 0.1 * total.total_time_limit
+            self.training_budget = FoldBudget(available, finishing, candidate_limit)
+        self.training_budget.status = "not_trained"
         full_context = None
         if self.get_type() in ("Kumo", "TabICLv2") and expected_folds > 1:
             from supervised.tfm_full_context import TFMFullContext
@@ -208,36 +232,16 @@ class ModelFramework:
 
         if (self.get_type() in SUPPORTED and expected_folds > 1
                 and self.callbacks.get("early_stopping") is not None):
-            deadlines = []
-            if candidate_limit is not None:
-                deadlines.append(budget_started + candidate_limit)
-            total = self.callbacks.get("total_time_constraint")
-            if total is not None and total.total_time_limit is not None:
-                remaining = total.total_time_limit - (time.time() - total.total_time_start)
-                deadlines.append(time.monotonic() + remaining)
             self._shared_selection = SharedBoostingSelection(
                 resolve_artifact_path(results_path, model_subpath), self.get_metric(),
-                min(deadlines) if deadlines else None,
             )
             self._shared_selection.ignore_sample_weight = self.params.get("injected_sample_weight", False)
             # Full boosters are already saved per fold; do not duplicate them in RAM.
             self.callbacks.get("early_stopping").keep_best_model = False
         for repeat in range(repeats):
             for k_fold in range(self.validation.get_n_splits()):
-                if candidate_limit is not None:
-                    elapsed = time.monotonic() - budget_started
-                    remaining = candidate_limit - elapsed
-                    estimated = (elapsed / completed_folds * (expected_folds - completed_folds)
-                                 if completed_folds else 0)
-                    if remaining <= 0 or estimated > remaining:
-                        raise BudgetExceededError(
-                            "Remaining folds cannot finish within the candidate allowance.",
-                            phase="between_folds", completed_folds=completed_folds,
-                            expected_folds=expected_folds, allowance=candidate_limit,
-                            elapsed=elapsed,
-                            estimated_total=(elapsed + estimated),
-                            dimensions=getattr(self, "_budget_dimensions", None),
-                        )
+                self.training_budget.check(expected_folds)
+                fold_started = time.monotonic()
                 train_data, validation_data = self.validation.get_split(k_fold, repeat)
                 logger.debug(
                     "Data split, train X:{} y:{}, validation X:{}, y:{}".format(
@@ -322,14 +326,6 @@ class ModelFramework:
                 for i in range(learner.max_iters):
                     self.callbacks.on_iteration_start()
 
-                    learner_limit = self._max_time_for_learner
-                    if candidate_limit is not None:
-                        remaining = candidate_limit - (time.monotonic() - budget_started)
-                        if remaining <= 0:
-                            raise BudgetExceededError("Candidate budget exhausted during preprocessing.",
-                                                      phase="preprocessing", fold=k_fold, repeat=repeat)
-                        learner_limit = min(learner_limit, 0.8 * remaining / (expected_folds - completed_folds))
-
                     fit = learner.fit
                     if self._shared_selection is not None:
                         fit = partial(self._shared_selection.fit, learner, self.preprocessings[-1])
@@ -341,8 +337,15 @@ class ModelFramework:
                         y_validation,
                         sample_weight_validation,
                         log_to_file,
-                        learner_limit,
+                        None,  # Once admitted, finish the fold's intended training schedule.
                     )
+                    reason = getattr(learner, "training_info", {}).get("stop_reason")
+                    if reason == "time_limit":
+                        raise BudgetExceededError(
+                            "Learner was interrupted; its checkpoint is not an eligible model.",
+                            phase="fit", learner=learner.name, stop_reason=reason,
+                            completed_folds=completed_folds, expected_folds=expected_folds,
+                        )
 
                     if self.params.get("injected_sample_weight", False):
                         # print("Dont use sample weight in model evaluation")
@@ -430,6 +433,10 @@ class ModelFramework:
                 del validation_data
 
                 gc.collect()
+                reason = (self._shared_selection.folds[-1]["stop_reason"]
+                          if self._shared_selection is not None else
+                          getattr(learner, "training_info", {}).get("stop_reason", "completed_fit"))
+                self.training_budget.record(learner.name, time.monotonic() - fold_started, reason)
 
         # end of validation loop
         if self._shared_selection is not None:
@@ -444,6 +451,7 @@ class ModelFramework:
             full_context.activate()
 
         self.train_time = time.time() - start_time
+        self.training_budget.status = "trained"
         logger.debug("ModelFramework end of training")
 
     def _interpret_shared_boosting(self, results_path, model_subpath):

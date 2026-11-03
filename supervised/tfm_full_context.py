@@ -3,7 +3,7 @@ import copy
 import time
 
 from supervised.algorithms.factory import AlgorithmFactory
-from supervised.exceptions import AutoMLException, BudgetExceededError
+from supervised.exceptions import AutoMLException
 from supervised.preprocessing.preprocessing import Preprocessing
 from supervised.utils.artifact_paths import portable_artifact_path, resolve_artifact_path
 from supervised.utils.utils import data_row_count, load_data
@@ -15,24 +15,7 @@ class TFMFullContext:
         self.root = results_path
         self.subpath = model_subpath
         self.started = time.monotonic()
-        self.deadlines = []
-        limit = framework.params.get("candidate_time_limit")
-        if limit is not None:
-            self.deadlines.append(budget_started + limit)
-        total = framework.callbacks.get("total_time_constraint")
-        if total is not None and total.total_time_limit is not None:
-            self.deadlines.append(time.monotonic() + total.total_time_limit
-                                  - (time.time() - total.total_time_start))
         self.prepare()
-
-    def remaining(self):
-        remaining = self.framework._max_time_for_learner
-        if self.deadlines:
-            remaining = min(remaining, min(self.deadlines) - time.monotonic())
-        if remaining <= 0:
-            raise BudgetExceededError("TFM full-context preparation exceeded the training budget.",
-                                      phase="tfm_full_context")
-        return remaining
 
     def prepare(self):
         model = self.framework
@@ -45,7 +28,6 @@ class TFMFullContext:
         # Check the full count before copying data or running any CV learners.
         self.rows = data_row_count(validation["X_path"], store=model._data_store)
         learner._check_training_size(self.rows)
-        self.remaining()
         preprocessing = copy.deepcopy(model.preprocessing_params)
         from supervised.preprocessing.feature_identity import reject_generated_drops
         reject_generated_drops(preprocessing)
@@ -57,7 +39,12 @@ class TFMFullContext:
             discovery = FeatureDiscovery(self.root, model._ml_task,
                                          model._automl_random_state, params.get("n_jobs", -1),
                                          data_store=model._data_store)
-            prepared = discovery.prepare(validation, self.remaining(), full_data=True)
+            # Feature search has its own search budget; this is not a learner
+            # deadline and cannot truncate the subsequent context inference.
+            available = model.training_budget.available
+            search_budget = 3600 if available is None else max(
+                1.0, available - (time.monotonic() - model.training_budget.started))
+            prepared = discovery.prepare(validation, search_budget, full_data=True)
             profile = preprocessing["feature_discovery"]["feature_set"]
             if prepared is None or profile not in prepared["folds"]["0:0"]["sets"]:
                 raise AutoMLException("Feature discovery profile is unavailable for the full TFM context.")
@@ -74,13 +61,11 @@ class TFMFullContext:
             X, y, sample_weight=weights,
             log_to_file=resolve_artifact_path(
                 self.root, portable_artifact_path(self.subpath, "learner_full_training.log")),
-            max_time=self.remaining(),
+            max_time=None,  # An admitted context is prepared completely.
         )
-        self.remaining()
         self.saved = portable_artifact_path(self.subpath, learner.get_fname())
         path = resolve_artifact_path(self.root, self.saved)
         learner.save(path, weights_root=self.root)
-        self.remaining()
         description = learner.get_params()
         learner.unload()
         # Restore only metadata: do not retain full context alongside CV folds.
@@ -89,7 +74,6 @@ class TFMFullContext:
         self.prepare_seconds = time.monotonic() - self.started
 
     def activate(self):
-        self.remaining()
         model = self.framework
         # CV learners remain on disk for inspection. Prediction/export sees only
         # learner_full. Older frameworks without this metadata still average folds.

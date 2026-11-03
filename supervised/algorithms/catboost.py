@@ -215,14 +215,14 @@ class CatBoostAlgorithm(BaseAlgorithm):
                 weight=sample_weight_validation,
             )
 
-        if self.params.get("num_boost_round") is None:
+        if self.params.get("num_boost_round") is None and max_time is not None:
             model_init, new_iterations = self._assess_iterations(
                 X, y, sample_weight, eval_set, max_time
             )
             self.model.set_params(iterations=new_iterations)
         else:
             model_init = None
-            self.model.set_params(iterations=self.params.get("num_boost_round"))
+            self.model.set_params(iterations=self.params.get("num_boost_round") or self.rounds)
             self.early_stopping_rounds = self.params.get("early_stopping_rounds", 50)
 
         self.model.fit(

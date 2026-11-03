@@ -25,13 +25,14 @@ class TimeController:
         self._active_algorithms = None
         self._active_step = None
         self._stage_budgets = {}
+        self._pilot_failures = {}
         self.stacking_cost = StackingCostHistory()
 
     def set_active_algorithms(self, step, algorithms):
         # Reconstructed from pending candidates on resume, never a permanent
         # blacklist: a changed feature representation remains eligible.
         self._active_step = step
-        self._active_algorithms = set(algorithms)
+        self._active_algorithms = {a for a in algorithms if not self.pilots_deferred(a, step)}
 
     def candidate_budget(self, model_type, step, configuration):
         """Whole-trial allowance; unsuccessful work also consumes exploration."""
@@ -54,7 +55,23 @@ class TimeController:
             return 0.0
         return budget
 
-    def record_attempt(self, model_name, model_type, step, elapsed, outcome, configuration):
+    def pilots_deferred(self, model_type, step):
+        return self._pilot_failures.get(step, {}).get(model_type, 0) >= 2
+
+    def fold_budget(self, allowance=None, notify=None):
+        from supervised.tuner.fold_budget import FoldBudget
+
+        if self._model_time_limit is not None:
+            return FoldBudget(self._model_time_limit, allowance=self._model_time_limit, notify=notify)
+        if self._total_time_limit is None:
+            return FoldBudget(allowance=allowance, notify=notify)
+        elapsed = time.time() - self._start_time
+        reserve = 0.05 * self._total_time_limit if any("ensemble" in s for s in self._steps) else 0
+        available = self._total_time_limit - reserve - elapsed
+        # Both limits use the run start: finishing slack cannot reset per candidate.
+        return FoldBudget(available, available + 0.1 * self._total_time_limit, allowance, notify)
+
+    def record_attempt(self, model_name, model_type, step, elapsed, outcome, configuration, details=None):
         # keep_model logs successful fits; replace that entry with complete
         # attempt wall time (including preparation, prediction and saving).
         self._spend = [s for s in self._spend
@@ -62,6 +79,16 @@ class TimeController:
         self._spend.append(dict(model_name=model_name, model_type=model_type,
                                 fit_level=step, train_time=elapsed, outcome=outcome,
                                 configuration=configuration))
+        failures = self._pilot_failures.setdefault(step, {})
+        if outcome == "trained":
+            failures[model_type] = 0
+        elif (outcome == "budget_exhausted" and details
+              and details.get("phase") == "between_folds"
+              and details.get("completed_folds") == 1):
+            failures[model_type] = failures.get(model_type, 0) + 1
+        elif outcome == "error" or (outcome == "budget_exhausted" and details
+              and details.get("phase") not in ("admission", "pilot_admission", "stacking_admission")):
+            failures[model_type] = 0
 
     def to_json(self):
         return {
@@ -73,6 +100,8 @@ class TimeController:
             "is_hill_climbing": self._is_hill_climbing,
             "is_stacking": self._is_stacking,
             "stage_budgets": self._stage_budgets,
+            "pilot_failures": self._pilot_failures,
+            "elapsed": max(float(self.already_spend()), time.time() - self._start_time),
             "stacking_cost_observations": self.stacking_cost.observations,
         }
 
@@ -91,8 +120,9 @@ class TimeController:
             )
             tc._spend = data.get("spend")
             tc._stage_budgets = data.get("stage_budgets", {})
+            tc._pilot_failures = data.get("pilot_failures", {})
             tc.stacking_cost = StackingCostHistory(data.get("stacking_cost_observations"))
-            tc._start_time -= tc.already_spend()  # update time with already spend
+            tc._start_time -= data.get("elapsed", tc.already_spend())
             return tc
         except Exception as e:
             logger.error(f"Cant load TimeController from json, {str(e)}")
@@ -226,10 +256,7 @@ class TimeController:
         time_left = self._total_time_limit - (time.time() - self._start_time)
         if step is not None:
             time_left = min(time_left, self.remaining_step_time(step))
-        if expected_time is None:
-            spend = [s["train_time"] for s in self._spend if s["model_type"] == model_type]
-            expected_time = np.mean(spend)
-        return expected_time <= time_left
+        return time_left > 0 and (expected_time is None or expected_time <= time_left)
 
     def enough_time(self, model_type, step, expected_time=None):
         """
@@ -254,6 +281,8 @@ class TimeController:
         """
         if step in ["ensemble", "ensemble_stacked"]:
             return True
+        if self.pilots_deferred(model_type, step):
+            return False
         # if model_time_limit is set, train every model
         # do not apply total_time_limit
         if self._model_time_limit is not None:
@@ -264,6 +293,8 @@ class TimeController:
 
         total_time_spend = time.time() - self._start_time
         time_left = self._total_time_limit - total_time_spend
+        if any("ensemble" in s for s in self._steps):
+            time_left -= 0.05 * self._total_time_limit
         # no time left, do not train any more models, sorry ...
         if time_left <= 0:
             # print("No time left", time_left)

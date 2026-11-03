@@ -141,6 +141,62 @@ def test_checkpoint_patience_and_round_boundaries():
     assert minimized.best_round == 10
 
 
+@pytest.mark.parametrize("algorithm", ["Xgboost", "LightGBM", "CatBoost"])
+def test_time_limited_fold_excludes_entire_candidate(tmp_path, monkeypatch, capsys, algorithm):
+    for module in [xgboost, lightgbm, catboost]:
+        monkeypatch.setitem(module.additional, "max_rounds", 20)
+    native_fit = backend.fit
+
+    def interrupted_fit(learner, *args, **kwargs):
+        assert args[-1] is None  # Routine budgets must not reach the native fit.
+        stopping = native_fit(learner, *args, **kwargs)
+        # One fold has already completed; a later interrupted fold must still
+        # prevent the whole candidate from being published or ensembled.
+        if learner.name == "learner_fold_1_repeat_0":
+            stopping.reason = "time_limit"
+        return stopping
+
+    monkeypatch.setattr(backend, "fit", interrupted_fit)
+    X, y = make_classification(n_samples=100, n_features=4, random_state=17)
+    root = tmp_path / "interrupted"
+    automl = AutoML(
+        results_path=str(root), mode="Compete",
+        algorithms=["Decision Tree", algorithm], eval_metric="auc",
+        total_time_limit=300, n_jobs=1, explain_level=0,
+        validation_strategy={"validation_type": "kfold", "k_folds": 2,
+                             "repeats": 2, "shuffle": True, "stratify": True},
+        train_ensemble=True, stack_models=False, start_random_models=1,
+        hill_climbing_steps=0, golden_features=False, feature_discovery=False,
+        kmeans_features=False, features_selection=False, mix_encoding=False,
+        boost_on_errors=False,
+    )
+    automl.fit(X, y)
+    skips = json.loads((root / "budget_skips.json").read_text())
+    interrupted = [s for s in skips if s.get("phase") == "boosting_fit"]
+    assert interrupted
+    for skip in interrupted:
+        assert skip["learner"] == "learner_fold_1_repeat_0"
+        assert skip["trained_rounds"] == 20
+        assert skip["stop_reason"] == "time_limit"
+        assert skip["learner_allowance"] is None
+        assert skip["learner_elapsed"] >= 0
+        path = root / skip["name"]
+        assert not (path / "framework.json").exists()
+        assert not (path / "shared_boosting.json").exists()
+        assert not list(path.glob(".boosting-*"))
+    excluded = {s["name"] for s in interrupted}
+    params = json.loads((root / "params.json").read_text())
+    assert excluded.isdisjoint(params["saved"])
+    assert params["best_model"] not in excluded
+    assert excluded.isdisjoint(automl.get_leaderboard()["name"])
+    for model in automl._models:
+        if model.get_type() == "Ensemble":
+            assert excluded.isdisjoint(model.involved_model_names())
+    assert "skipping the incomplete candidate" in capsys.readouterr().out
+    assert not (root / "errors.md").exists()
+    assert len(AutoML(results_path=str(root)).predict(X[:3])) == 3
+
+
 def test_repeated_oof_averages_predictions_and_retains_weights():
     a = pd.DataFrame(
         {"target": [0, 1], "prediction": [0.2, 0.8], "sample_weight": [2.0, 3.0]},

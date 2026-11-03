@@ -1,54 +1,14 @@
-import time
-import unittest
+from types import SimpleNamespace
 
 from supervised.callbacks.total_time_constraint import TotalTimeConstraint
-from supervised.exceptions import NotTrainedException
 
 
-class TotalTimeConstraintTest(unittest.TestCase):
-    def test_stop_on_first_learner(self):
-        params = {
-            "total_time_limit": 100,
-            "total_time_start": time.time(),
-            "expected_learners_cnt": 1001,
-        }
-        callback = TotalTimeConstraint(params)
-        callback.add_and_set_learner(learner={})
-        callback.on_learner_train_start(logs=None)
-        callback.train_start_time = time.time() - 0.2
-        with self.assertRaises(NotTrainedException) as context:
-            callback.on_learner_train_end(logs=None)
-        self.assertTrue("Stop training after the first fold" in str(context.exception))
-
-    def test_stop_on_not_first_learner(self):
-        params = {
-            "total_time_limit": 100,
-            "total_time_start": time.time(),
-            "expected_learners_cnt": 10,
-        }
-        callback = TotalTimeConstraint(params)
-        callback.add_and_set_learner(learner={})
-        callback.on_learner_train_start(logs=None)
-        callback.on_learner_train_end(logs=None)
-        with self.assertRaises(NotTrainedException) as context:
-            #
-            # hardcoded change just for tests!
-            callback.total_time_start = time.time() - 600 - 100 - 1
-            #
-            callback.add_and_set_learner(learner={})
-            callback.on_learner_train_start(logs=None)
-            callback.on_learner_train_end(logs=None)
-        self.assertTrue("Force to stop" in str(context.exception))
-
-    def test_dont_stop(self):
-        params = {
-            "total_time_limit": 100,
-            "total_time_start": time.time(),
-            "expected_learners_cnt": 10,
-        }
-        callback = TotalTimeConstraint(params)
-
-        for i in range(10):
-            callback.add_and_set_learner(learner={})
-            callback.on_learner_train_start(logs=None)
-            callback.on_learner_train_end(logs=None)
+def test_callback_never_interrupts_an_admitted_fold():
+    callback = TotalTimeConstraint(dict(total_time_limit=0, total_time_start=0,
+                                       expected_learners_cnt=15))
+    learner = SimpleNamespace(stop_training=False)
+    callback.add_and_set_learner(learner)
+    callback.on_learner_train_start(None)
+    callback.on_iteration_end(None, None)
+    callback.on_learner_train_end(None)
+    assert not learner.stop_training
