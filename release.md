@@ -1,3 +1,63 @@
+## mljar-supervised 1.4.0rc6
+
+One AutoML for classic machine learning, neural networks, and tabular foundation
+models. This release candidate brings the changes tested in local beta builds
+into the public 1.4 release series. Requires Python 3.11+.
+
+```bash
+python -m pip install "mljar-supervised==1.4.0rc6"
+```
+
+Choose your PyTorch build before adding `[realmlp]`, `[tabm]`, or `[tfm]` for
+RealMLP, TabM mini, Kumo, and TabICLv2. `[all]` adds all optional model backends;
+`[apps]` adds the runtime for exported prediction apps. See the
+[installation guide](docs/docs/install.md).
+
+### Validation and training
+
+- Score cross-validation models and ensembles by the arithmetic mean of their
+  fold scores across all repeats. Averaging repeated OOF predictions no longer
+  substitutes for averaging the validation metrics used for model selection.
+- Select a shared RealMLP epoch across CV folds and repeats by default. Evaluate
+  checkpoints at epochs 10, 20, …, 250, 256 for the default training schedule,
+  then restore each fold's own weights at the chosen epoch. Save the selection
+  curve, verify restored predictions, and clean up temporary checkpoints.
+- Use mean fold scores for shared XGBoost, LightGBM, and CatBoost round selection.
+- For eligible small datasets, automatic validation uses five folds and three
+  repeats, with stacking disabled. Dataset size, class counts, time budget, and
+  explicit validation settings still determine eligibility.
+- Reject incomplete candidates from final model selection and ensembling.
+  Use completed-fold costs to decide whether to continue a candidate and reduce
+  wasted training. Keep routine continuation messages out of the console.
+
+### Compete defaults and saved models
+
+- Keep golden features enabled. Disable KMeans features, feature discovery, and
+  boost-on-errors by default. Each remains available through its explicit option.
+- Give generated features separate semantic identities, storage names, and
+  display labels; preserve their fitted meaning when replaying saved models.
+- Store KMeans artifacts separately for each CV fold and repeat, fixing changed
+  predictions after reloading repeated-CV models.
+- Use fold models to evaluate Kumo and TabICLv2, and one separately prepared
+  full-training-data context for inference. Retain their predictions as ensemble
+  and stacking inputs without fitting new TFM models on stacked features.
+- Improve resource admission, expected budget-skip reporting, and PyTorch input
+  handling. Keep failed candidates out of the ensemble.
+- Include Python 3.11+ installation extras, exported-app dependencies, native
+  compatibility checks, and documentation updates developed during the betas.
+
+### Known limitations
+
+This is a release candidate. Validation remains part of adaptive model and
+feature selection; it is not an unbiased estimate of final test performance.
+The deferred validation-boundary work for legacy golden features, feature
+selection, and optional boost-on-errors is not resolved by this release. Use a
+separate held-out test set for final evaluation. No general accuracy improvement
+is claimed from the partial local benchmark comparison.
+
+Historical entries below describe the earlier local candidates and published
+betas. The current behavior is summarized above.
+
 ## mljar-supervised 1.4.0b4 (unreleased)
 
 - Give discovered features separate semantic identities, storage names and display
@@ -123,7 +183,7 @@ matching CPU-only XGBoost wheel and unchanged MLJAR code. The original failures
 are retained in the validation logs; this candidate does not include a driver
 workaround or an XGBoost dependency pin.
 
-## mljar-supervised 1.4.0rc6 (local candidate)
+## Earlier local RC6 prototype (not published)
 
 Local candidate for validation and benchmarking; not yet published to PyPI.
 

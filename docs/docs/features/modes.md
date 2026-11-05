@@ -15,7 +15,7 @@ them explicitly with `kmeans_features=True`, `feature_discovery=True`, or
 
 ## Algorithm early stopping in Compete
 
-Starting with 1.4.0rc7, new ordinary Compete runs automatically stop further
+Starting with 1.4.0rc6, new ordinary Compete runs automatically stop further
 original-feature tuning of algorithms that remain uncompetitive after at least
 three successful, distinct configurations. There is no additional argument.
 The existing search settings and time budget still determine how many initial

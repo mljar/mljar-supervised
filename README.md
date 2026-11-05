@@ -18,14 +18,14 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/mljar-supervised/1.4.0b1/"><img src="https://img.shields.io/badge/Beta-1.4.0b1-0099cc" alt="Beta release: 1.4.0b1 on PyPI" /></a>
+  <a href="https://pypi.org/project/mljar-supervised/1.4.0rc6/"><img src="https://img.shields.io/badge/Release_candidate-1.4.0rc6-0099cc" alt="Release candidate: 1.4.0rc6 on PyPI" /></a>
   <a href="https://supervised.mljar.com/install/"><img src="https://img.shields.io/badge/Python-3.11%2B-004666" alt="Python 3.11 or newer" /></a>
   <a href="https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml"><img src="https://github.com/mljar/mljar-supervised/actions/workflows/run-tests.yml/badge.svg" alt="Tests: latest workflow status" /></a>
 </p>
 
 ## One AutoML to rule them all
 
-**New in the 1.4 beta:** RealMLP, TabM mini, Kumo, and TabICLv2 join the classic
+**New in 1.4:** RealMLP, TabM mini, Kumo, and TabICLv2 join the classic
 algorithms in MLJAR AutoML. Compare three model families through the same Python
 interface and see their validation results in one leaderboard.
 
@@ -35,7 +35,7 @@ interface and see their validation results in one leaderboard.
 | New neural architectures | RealMLP, TabM mini | Add the optional `[realmlp]` or `[tabm]` package extras |
 | Tabular foundation models (TFMs) | Kumo, TabICLv2 | Add `[tfm]`; pretrained models download on first use |
 
-Start with the published **1.4.0b1 beta** below, or follow the
+Start with the published **1.4.0rc6 release candidate** below, or follow the
 [CPU and GPU installation guide](https://supervised.mljar.com/install/) to add
 the new models. Optional models run in **Compete** mode and depend on your
 hardware and available memory.
@@ -45,10 +45,10 @@ hardware and available memory.
 
 ## Quickstart
 
-Use Python 3.11 or newer. In a virtual environment, install the beta used below:
+Use Python 3.11 or newer. In a virtual environment, install the release candidate:
 
 ```bash
-python -m pip install 'mljar-supervised==1.4.0b1'
+python -m pip install 'mljar-supervised==1.4.0rc6'
 ```
 
 Predict the species of an Iris flower from four measurements. This small dataset
@@ -90,7 +90,7 @@ The explicit algorithm list keeps this example on standard CPU models, even if
 you have optional model packages installed. The training budget is 120 seconds;
 this small example can finish sooner.
 
-In our beta runs on Python 3.11 and 3.12, the selected model predicted **29 of 30
+In our recorded 1.4.0b1 runs on Python 3.11 and 3.12, the selected model predicted **29 of 30
 held-out flowers correctly (96.7%)**. This is one small test split, not a general
 accuracy claim. [Recorded output and setup](examples/readme/README.md).
 
@@ -295,7 +295,7 @@ automl.app(title="Iris species prediction")
 The base package generates the files. Install the optional runtime to run them:
 
 ```bash
-python -m pip install 'mljar-supervised[apps]==1.4.0b1'
+python -m pip install 'mljar-supervised[apps]==1.4.0rc6'
 ```
 
 ```python
@@ -396,16 +396,17 @@ historical split are not promises about another dataset or machine.
 ## Installation
 
 Use Python 3.11 or newer. We recommend Python 3.12.
-The install command above uses the same MLJAR version as the tutorials.
+The install commands use RC6. Recorded tutorial results retain their original
+1.4.0b1 version and environment details.
 
 | Install option | Additional capabilities |
 | --- | --- |
-| `mljar-supervised==1.4.0b1` | Standard algorithms, reports, and feature discovery |
-| `mljar-supervised[realmlp]==1.4.0b1` or `[tabm]` | Shared RealMLP/TabM backend dependencies |
-| `mljar-supervised[tfm]==1.4.0b1` | Kumo/TabICLv2 backend; weights download on first use |
-| `mljar-supervised[apps]==1.4.0b1` | Runtime for generated prediction apps |
-| `mljar-supervised[all]==1.4.0b1` | All optional model backends |
-| `mljar-supervised[all,apps]==1.4.0b1` | Optional model backends and app runtime |
+| `mljar-supervised==1.4.0rc6` | Standard algorithms, reports, and feature discovery |
+| `mljar-supervised[realmlp]==1.4.0rc6` or `[tabm]` | Shared RealMLP/TabM backend dependencies |
+| `mljar-supervised[tfm]==1.4.0rc6` | Kumo/TabICLv2 backend; weights download on first use |
+| `mljar-supervised[apps]==1.4.0rc6` | Runtime for generated prediction apps |
+| `mljar-supervised[all]==1.4.0rc6` | All optional model backends |
+| `mljar-supervised[all,apps]==1.4.0rc6` | Optional model backends and app runtime |
 
 For Torch-based extras, choose a compatible CPU or CUDA PyTorch build first.
 See the [installation guide](https://supervised.mljar.com/install/) for exact commands, aliases,

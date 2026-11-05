@@ -8,12 +8,12 @@ Install `mljar-supervised` with pip to train AutoML models in Python. Start with
 the base package, then add optional model backends or the prediction app runtime
 when your workflow needs them.
 
-**Version 1.4.0b1 requires Python 3.11+** for every installation option.
+**Version 1.4.0rc6 requires Python 3.11+** for every installation option.
 It includes feature discovery (`features-goldmine>=1.1,<1.2`) in the base package.
-No extra tag is needed. Select the beta explicitly:
+No extra tag is needed. Select the release candidate explicitly:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0b1"
+python -m pip install "mljar-supervised==1.4.0rc6"
 ```
 
 An unpinned install selects the stable release. Python 3.11 and 3.12 are tested;
@@ -25,13 +25,13 @@ A base install does not require PyTorch, SDM, or the Mercury app runtime.
 Feature discovery is disabled by default, including in Compete mode. Enable it
 with `feature_discovery=True` when using supported validation.
 
-For generated prediction apps, `python -m pip install "mljar-supervised[apps]==1.4.0b1"` adds
-`mercury>=3.2.12,<4` in beta 1. Use `mljar-supervised[all,apps]==1.4.0b1` for all optional
+For generated prediction apps, `python -m pip install "mljar-supervised[apps]==1.4.0rc6"` adds
+`mercury>=3.2.12,<4` in RC6. Use `mljar-supervised[all,apps]==1.4.0rc6` for all optional
 model backends plus the app runtime. `[all]` alone keeps the app server optional.
 See [apps](features/apps.md) for exported requirements and fresh-environment setup.
 
 For **Kumo and TabICLv2**, use Python 3.11+, `[tfm]` (or `[kumo]`, `[tabiclv2]`,
-`[all]`). Beta 1 installs `structured-data-models==0.2.1`
+`[all]`). RC6 installs `structured-data-models==0.2.1`
 from PyPI through these extras. See the
 [Kumo/TabICLv2 instructions](features/sdm.md#installation). Weights download from
 Hugging Face on first use, not during package installation.
@@ -54,10 +54,10 @@ There are no separate CPU/GPU editions of MLJAR. The PyTorch build controls
 the available devices for RealMLP, TabM, Kumo, and TabICLv2. Other algorithms
 use their own device settings.
 
-!!! note "Beta release"
-    Version `1.4.0b1` includes optional RealMLP, TabM mini, Kumo and TabICLv2
+!!! note "Release candidate"
+    Version `1.4.0rc6` includes optional RealMLP, TabM mini, Kumo and TabICLv2
     support, plus [feature discovery](features/feature_discovery.md) in the base
-    package. Select the exact beta version in the commands below. The stable
+    package. Select the exact release candidate version in the commands below. The stable
     `1.3.2` package does not include these integrations.
 
 ## Create an environment
@@ -90,10 +90,10 @@ virtual environment for your chosen CPU or GPU build.
 python -m pip install mljar-supervised
 ```
 
-To test the beta release:
+To test the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0b1"
+python -m pip install "mljar-supervised==1.4.0rc6"
 ```
 
 The existing sklearn `Neural Network` does not require PyTorch or pytabkit.
@@ -114,7 +114,7 @@ On the platforms using `xgboost-cpu`, migrate an existing MLJAR environment with
 
 ```bash
 python -m pip uninstall -y xgboost xgboost-cpu xgboost-cu12
-python -m pip install --upgrade "mljar-supervised==1.4.0b1"
+python -m pip install --upgrade "mljar-supervised==1.4.0rc6"
 python -m pip check
 ```
 
@@ -125,7 +125,7 @@ an isolated environment automatically and checks CPU multiclass evaluation.
 
 ## Kumo and TabICLv2 on CPU or NVIDIA GPU
 
-Use Python **3.11+**. In beta 1, `[tfm]`, `[kumo]`,
+Use Python **3.11+**. In RC6, `[tfm]`, `[kumo]`,
 `[tabiclv2]`, and `[all]` install the tested PyPI backend
 `structured-data-models==0.2.1` automatically.
 
@@ -149,13 +149,13 @@ Install your PyTorch build first:
     [PyTorch installation selector](https://pytorch.org/get-started/locally/).
     Keep PyTorch within `>=2.7,<3`.
 
-Then install the beta:
+Then install the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0b1"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc6"
 ```
 
-No separate SDM install or Git dependency is needed for beta 1.
+No separate SDM install or Git dependency is needed for RC6.
 
 !!! note "Published alpha 1.4.0a1"
     To reproduce the published alpha in a separate environment, use its original
@@ -166,7 +166,7 @@ No separate SDM install or Git dependency is needed for beta 1.
     python -m pip install "git+https://github.com/NVIDIA/structured-data-models.git@b97cb914e2bdcf0d165fc2c83b5fdf795aad6a69"
     ```
 
-| Extra (1.4.0b1) | Dependencies it adds |
+| Extra (1.4.0rc6) | Dependencies it adds |
 |---|---|
 | `[kumo]`, `[tabiclv2]`, `[tfm]` | SDM 0.2.1, PyTorch, Hugging Face Hub, psutil |
 | `[all]` | Those dependencies plus pytabkit for RealMLP/TabM; feature discovery is already in base |
@@ -234,12 +234,12 @@ CUDA device, not multi-GPU training.
 
 ## Install the RealMLP extra
 
-After installing your chosen PyTorch build, install the beta:
+After installing your chosen PyTorch build, install the release candidate:
 
 ```bash
-python -m pip install "mljar-supervised[realmlp]==1.4.0b1"
+python -m pip install "mljar-supervised[realmlp]==1.4.0rc6"
 # Or all optional model dependencies:
-python -m pip install "mljar-supervised[all]==1.4.0b1"
+python -m pip install "mljar-supervised[all]==1.4.0rc6"
 ```
 
 `[realmlp]` and `[tabm]` share pytabkit/PyTorch dependencies. `[all]` also adds

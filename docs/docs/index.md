@@ -167,10 +167,10 @@ that reflect your data's groups and timing.
 
 ## Installation
 
-In a Python 3.11+ environment, install the exact beta used by the new tutorials:
+In a Python 3.11+ environment, install the release candidate:
 
 ```bash
-python -m pip install 'mljar-supervised==1.4.0b1'
+python -m pip install 'mljar-supervised==1.4.0rc6'
 ```
 
 The beginner workflows were tested on Python 3.11 and 3.12. See the

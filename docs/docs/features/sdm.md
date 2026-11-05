@@ -13,10 +13,10 @@ The relational model is not included.
 ## Installation
 
 Requires Python **3.11+**. Install CPU or CUDA PyTorch as described in
-[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install beta 1:
+[Installation](../install.md#kumo-and-tabiclv2-on-cpu-or-nvidia-gpu), then install RC6:
 
 ```bash
-python -m pip install "mljar-supervised[tfm]==1.4.0b1"
+python -m pip install "mljar-supervised[tfm]==1.4.0rc6"
 ```
 
 This installs `structured-data-models==0.2.1` from PyPI automatically.

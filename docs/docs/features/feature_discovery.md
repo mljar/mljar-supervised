@@ -12,7 +12,7 @@ Starting with beta 1, feature discovery is included in the base package
 and requires Python 3.11 or newer:
 
 ```bash
-python -m pip install "mljar-supervised==1.4.0b1"
+python -m pip install "mljar-supervised==1.4.0rc6"
 ```
 
 No extra tag is needed. `[feature-discovery]` is retained as a compatibility alias.

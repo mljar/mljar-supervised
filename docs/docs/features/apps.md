@@ -17,14 +17,14 @@ Create a web app from your trained AutoML model for single predictions or batch 
 ## Generate app files
 
 The base package can export an app without Mercury installed. To run apps from
-beta 1, use Python 3.11+ and install the optional runtime:
+RC6, use Python 3.11+ and install the optional runtime:
 
 ```bash
-python -m pip install "mljar-supervised[apps]==1.4.0b1"
+python -m pip install "mljar-supervised[apps]==1.4.0rc6"
 ```
 
 This adds `mercury>=3.2.12,<4`; Mercury 3.2.12 is the tested version. `[all]`
-continues to mean all optional model backends. Use `mljar-supervised[all,apps]==1.4.0b1` when you need both.
+continues to mean all optional model backends. Use `mljar-supervised[all,apps]==1.4.0rc6` when you need both.
 
 Use `app()` to generate the app workspace:
 
