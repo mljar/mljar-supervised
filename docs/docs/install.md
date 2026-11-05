@@ -22,8 +22,8 @@ newer interpreters are allowed by package metadata but are not yet validated.
 The `[feature-discovery]` extra remains a compatibility alias and adds nothing.
 `[realmlp]`, `[tabm]`, `[tfm]`, and `[all]` still add optional model backends.
 A base install does not require PyTorch, SDM, or the Mercury app runtime.
-Feature discovery runs automatically in eligible Compete workflows; disable it
-with `feature_discovery=False`. Installation does not enable it in every mode.
+Feature discovery is disabled by default, including in Compete mode. Enable it
+with `feature_discovery=True` when using supported validation.
 
 For generated prediction apps, `python -m pip install "mljar-supervised[apps]==1.4.0b1"` adds
 `mercury>=3.2.12,<4` in beta 1. Use `mljar-supervised[all,apps]==1.4.0b1` for all optional

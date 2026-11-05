@@ -243,8 +243,8 @@ class AutoML(BaseAutoML):
             feature_discovery (boolean or "auto"): Generate up to three reusable feature
                 sets with the included features-goldmine package and try them on the
                 best current models. Runs after golden_features and shares its time
-                allocation. "auto" enables this in Compete when the
-                dependency and shuffled split/K-fold validation are available.
+                allocation. "auto" leaves this disabled in every mode.
+                Set True to enable it with supported shuffled split/K-fold validation.
                 Explicit True reports unsupported configurations as errors.
 
             features_selection (boolean): Whether to do features_selection
@@ -275,9 +275,9 @@ class AutoML(BaseAutoML):
                 - If `mode` is "Perform", `top_models_to_improve` = 2.
                 - If `mode` is "Compete", `top_models_to_improve` = 3.
 
-            boost_on_errors (boolean): Whether a model with boost on errors from previous best model should be trained. By default available in the `Compete` mode.
+            boost_on_errors (boolean or "auto"): Whether to train an additional model emphasizing errors from a previous model. Disabled by default; set True to enable it with compatible validation.
 
-            kmeans_features (boolean): Whether a model with k-means generated features should be trained. By default available in the `Compete` mode.
+            kmeans_features (boolean or "auto"): Whether to train models with k-means generated features. Disabled by default; set True to enable it.
 
             mix_encoding (boolean): Whether a model with mixed encoding should be trained. Mixed encoding is the encoding that uses label encoding
                 for categoricals with more than 25 categories, and one-hot binary encoding for other categoricals. It is only applied if there are

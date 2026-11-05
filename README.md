@@ -183,8 +183,10 @@ report = automl.report_structured(format="dict")
 
 **Try additional features and check whether they help.** AutoML handles missing
 values and categorical inputs, can construct numeric combinations with golden
-features, and uses feature discovery to propose additional sets of columns.
+features, and can use feature discovery to propose additional sets of columns.
 Feature selection can also test models with fewer inputs.
+Compete enables golden features by default; feature discovery and KMeans features
+require explicit opt-in.
 
 ```python
 # Use your training data in X_train and y_train.

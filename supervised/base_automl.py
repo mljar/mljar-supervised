@@ -2389,7 +2389,7 @@ class BaseAutoML(BaseEstimator, ABC):
         value = self.feature_discovery
         if value != "auto" and not isinstance(value, bool):
             raise ValueError("feature_discovery must be 'auto', True or False")
-        if value is False or (value == "auto" and self._get_mode() != "Compete"):
+        if value is False or value == "auto":
             return False
         reason = None
         if not discovery_supports_validation(self._validation_strategy):
@@ -2400,10 +2400,7 @@ class BaseAutoML(BaseEstimator, ABC):
             except AutoMLException as exc:
                 reason = str(exc)
         if reason:
-            if value is True:
-                raise AutoMLException(reason)
-            self.verbose_print("Skip feature_discovery: " + reason)
-            return False
+            raise AutoMLException(reason)
         return True
 
     def _prepare_feature_discovery(self):
@@ -2533,17 +2530,7 @@ class BaseAutoML(BaseEstimator, ABC):
         """Gets the current boost_on_errors"""
         self._validate_boost_on_errors()
         if self.boost_on_errors == "auto":
-            val = self._get_validation_strategy()
-            if val.get("validation_type", "") == "custom":
-                return False
-            if self._get_mode() == "Explain":
-                return False
-            if self._get_mode() == "Perform":
-                return False
-            if self._get_mode() == "Compete":
-                return True
-            if self._get_mode() == "Optuna":
-                return False
+            return False
         else:
             return deepcopy(self.boost_on_errors)
 
@@ -2551,14 +2538,7 @@ class BaseAutoML(BaseEstimator, ABC):
         """Gets the current kmeans_features"""
         self._validate_kmeans_features()
         if self.kmeans_features == "auto":
-            if self._get_mode() == "Explain":
-                return False
-            if self._get_mode() == "Perform":
-                return False
-            if self._get_mode() == "Compete":
-                return True
-            if self._get_mode() == "Optuna":
-                return False
+            return False
         else:
             return deepcopy(self.kmeans_features)
 

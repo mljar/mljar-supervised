@@ -66,7 +66,16 @@ def test_installed_discovery_and_activation_policy():
     for mode in ["Explain", "Perform", "Compete", "Optuna"]:
         automl = AutoML(mode=mode)
         automl._validation_strategy = {"validation_type": "split", "shuffle": True}
-        assert automl._get_feature_discovery() is (mode == "Compete")
+        assert automl._get_feature_discovery() is False
+        assert automl._get_kmeans_features() is False
+        assert automl._get_boost_on_errors() is False
+        assert automl._get_golden_features() is (mode in ["Perform", "Compete"])
+        automl.feature_discovery = True
+        automl.kmeans_features = True
+        automl.boost_on_errors = True
+        assert automl._get_feature_discovery() is True
+        assert automl._get_kmeans_features() is True
+        assert automl._get_boost_on_errors() is True
         automl.feature_discovery = False
         assert automl._get_feature_discovery() is False
 

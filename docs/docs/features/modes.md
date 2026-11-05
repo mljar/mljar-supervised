@@ -8,6 +8,11 @@ AutoML modes configure the model search for different training goals. Choose a
 mode and time budget, then use the [training steps guide](automl.md) to understand
 the work performed and the [model reports](reports.md) to compare results.
 
+In Compete mode, golden features are enabled by default. KMeans features,
+feature discovery, and boost-on-errors are disabled by default. You can enable
+them explicitly with `kmeans_features=True`, `feature_discovery=True`, or
+`boost_on_errors=True`, subject to their validation requirements.
+
 ## Algorithm early stopping in Compete
 
 Starting with 1.4.0rc7, new ordinary Compete runs automatically stop further
@@ -89,7 +94,8 @@ stacking limits are unchanged.
 
 ## Feature-engineering stage ratios
 
-Golden features, feature discovery, and KMeans remain separate, sequential stages.
+Golden features, feature discovery, and KMeans are separate, sequential stages
+when enabled. Compete enables only golden features by default.
 Their combined scheduling budget is distributed as 30% golden features, 50%
 feature discovery, and 20% KMeans. Each allocation covers feature preparation and
 training the models that use those features; it is not a guaranteed runtime.

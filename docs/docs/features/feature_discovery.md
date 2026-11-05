@@ -30,10 +30,9 @@ automl = AutoML(
 automl.fit(X, y)
 ```
 
-`feature_discovery="auto"` enables the step in Compete when its dependency and
-validation configuration are supported. Other modes require explicit `True`.
-`False` disables it. Automatic selection prints a skip reason when unavailable;
-explicit `True` raises an actionable error.
+`feature_discovery="auto"` leaves this step disabled in every mode, including
+Compete. Set `feature_discovery=True` to enable it. Unsupported dependencies or
+validation configurations then raise an actionable error. `False` disables it.
 
 ## Search and time allocation
 

@@ -188,9 +188,8 @@ Set `golden_features=False` to disable this stage.
 
 This stage uses the included `features-goldmine` package to propose up to three
 feature sets. It follows `golden_features` and precedes `kmeans_features`.
-`feature_discovery="auto"` enables it in eligible Compete runs; no optional
-installation extra is needed. Set `feature_discovery=False` to disable it, or
-explicitly enable it in another supported mode with `True`.
+This step is disabled by default, including in Compete mode. Set
+`feature_discovery=True` to enable it; no optional installation extra is needed.
 
 AutoML selects up to three eligible parent models, subject to
 `top_models_to_improve` and the remaining budget. It reuses each parent's
@@ -219,7 +218,7 @@ This stage adds distances to cluster centers and a cluster assignment derived
 from numerical columns. Imputation, scaling, and clustering are fitted on each
 training fold and saved for validation and prediction. AutoML tries up to three
 eligible parent configurations; model names use `_KMeansFeatures`.
-Set `kmeans_features=False` to disable this stage.
+This stage is disabled by default. Set `kmeans_features=True` to enable it.
 
 ## `insert_random_feature`
 
