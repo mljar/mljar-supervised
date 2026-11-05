@@ -34,8 +34,6 @@ class SharedRealMLPSelection:
 
     def fit(self, learner, preprocessing, X, y, sample_weight, X_validation,
             y_validation, sample_weight_validation, log_to_file, max_time):
-        from supervised.algorithms._realmlp_backend import restore_checkpoint
-
         epochs = learner.params.get("n_epochs", 256)
         counts = checkpoint_epochs(epochs, self.interval)
         directory = self.cache / learner.uid
@@ -48,9 +46,15 @@ class SharedRealMLPSelection:
         finally:
             del learner._checkpoint_directory
             del learner._checkpoint_epochs
+        if learner.training_info.get("stop_reason") == "time_limit":
+            # Let ModelFramework record the same budget skip as other learners,
+            # before attempting to restore any incomplete checkpoints.
+            return
         if (learner.training_info.get("completed_epochs") != epochs
                 or learner.training_info.get("stop_reason") != "max_epochs"):
             raise AutoMLException("Shared RealMLP selection requires a complete training schedule")
+        from supervised.algorithms._realmlp_backend import restore_checkpoint
+
         for epoch in counts:
             path = directory / f"epoch_{epoch:04d}.pt"
             if not path.is_file():

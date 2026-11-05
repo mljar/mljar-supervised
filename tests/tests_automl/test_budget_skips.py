@@ -127,8 +127,8 @@ def test_two_failed_pilots_defer_changed_candidates_and_save_status(tmp_path, mo
     assert '"status": "not_started"' in (root / "progress.json").read_text()
 
 
-@pytest.mark.parametrize("algorithm", ["RealMLP", "TabM"])
-def test_neural_timeout_checkpoint_is_not_published(tmp_path, monkeypatch, algorithm):
+@pytest.mark.parametrize("algorithm,shared", [("RealMLP", True), ("RealMLP", False), ("TabM", False)])
+def test_neural_timeout_checkpoint_is_not_published(tmp_path, monkeypatch, algorithm, shared):
     from supervised.algorithms import realmlp, tabm
     from supervised.algorithms.realmlp import RealMLPAlgorithm
     from supervised.algorithms.tabm import TabMAlgorithm
@@ -149,6 +149,8 @@ def test_neural_timeout_checkpoint_is_not_published(tmp_path, monkeypatch, algor
     root = tmp_path / algorithm
     automl = AutoML(results_path=str(root), mode="Compete",
                    algorithms=["Decision Tree", algorithm], total_time_limit=120,
+                   custom_params=({"realmlp": {"shared_checkpoint_selection": False}}
+                                  if algorithm == "RealMLP" and not shared else {}),
                    train_ensemble=True, explain_level=0, n_jobs=1,
                    start_random_models=1, hill_climbing_steps=0, stack_models=False,
                    golden_features=False, feature_discovery=False, kmeans_features=False,
@@ -160,3 +162,5 @@ def test_neural_timeout_checkpoint_is_not_published(tmp_path, monkeypatch, algor
     assert all(m.get_type() != algorithm for m in automl._models)
     records = json.loads((root / "budget_skips.json").read_text())
     assert any(r.get("stop_reason") == "time_limit" for r in records)
+    assert not (root / "errors.md").exists()
+    assert not list(root.rglob(".realmlp-*"))
