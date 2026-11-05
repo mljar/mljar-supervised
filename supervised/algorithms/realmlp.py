@@ -45,6 +45,8 @@ OPTIONS = set(SEARCH_PARAMS) | {
     "early_stopping_additive_patience",
     "early_stopping_multiplicative_patience",
     "use_ls",
+    "shared_checkpoint_selection",
+    "checkpoint_interval",
     "memory_fraction",
     "gpu_memory_fraction",
     "memory_limit_gb",
@@ -66,6 +68,7 @@ def validate_options(options):
         "n_epochs",
         "batch_size",
         "predict_batch_size",
+        "checkpoint_interval",
     ]:
         if name in options and (type(options[name]) is not int or options[name] <= 0):
             raise ValueError(f"RealMLP {name} must be a positive integer")
@@ -84,7 +87,7 @@ def validate_options(options):
                 raise ValueError(f"RealMLP {name} must be a finite nonnegative number")
     if options.get("lr", 0.04) <= 0 or options.get("p_drop", 0.15) >= 1:
         raise ValueError("RealMLP requires lr > 0 and 0 <= p_drop < 1")
-    for name in ["use_early_stopping", "use_ls"]:
+    for name in ["use_early_stopping", "use_ls", "shared_checkpoint_selection"]:
         if name in options and type(options[name]) is not bool:
             raise ValueError(f"RealMLP {name} must be boolean")
     for name in [
@@ -307,6 +310,8 @@ class RealMLPAlgorithm(BaseAlgorithm):
                 "gpu_memory_fraction",
                 "memory_limit_gb",
                 "gpu_memory_limit_gb",
+                "shared_checkpoint_selection",
+                "checkpoint_interval",
             }
         }
         config.update(
@@ -325,6 +330,9 @@ class RealMLPAlgorithm(BaseAlgorithm):
         )
         config.setdefault("n_epochs", 256)
         config.setdefault("use_early_stopping", False)
+        checkpoint_directory = getattr(self, "_checkpoint_directory", None)
+        if checkpoint_directory is not None:
+            config["use_early_stopping"] = False
         config.setdefault("early_stopping_additive_patience", 40)
         config.setdefault("early_stopping_multiplicative_patience", 3)
         if valid is None:
@@ -336,6 +344,8 @@ class RealMLPAlgorithm(BaseAlgorithm):
             )
         Model = RealMLPRegressor if self.ml_task == REGRESSION else RealMLPClassifier
         model = Model(**config)
+        model._checkpoint_directory = checkpoint_directory
+        model._checkpoint_epochs = getattr(self, "_checkpoint_epochs", ())
         resources = check_resources(
             model,
             train,
@@ -361,12 +371,14 @@ class RealMLPAlgorithm(BaseAlgorithm):
                 time_to_fit_in_seconds=remaining,
             )
         except torch.cuda.OutOfMemoryError as exc:
-            del model
+            model = None
             torch.cuda.empty_cache()
             raise RealMLPResourceError(
                 "RealMLP ran out of GPU memory. No architecture or device was changed."
             ) from exc
         finally:
+            if model is not None:
+                model._checkpoint_directory = None
             torch.set_num_threads(old_threads)
             torch.backends.cuda.matmul.allow_tf32 = old_tf32
         history = model.cv_alg_interface_.history

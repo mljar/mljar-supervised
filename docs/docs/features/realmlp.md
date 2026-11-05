@@ -119,9 +119,36 @@ saved with AutoML settings. `custom_params` is not supported in Optuna mode yet.
 
 ## Checkpoints and time limits
 
-With validation, RealMLP restores the best validation epoch even when early
-termination is disabled (the default). Training normally lasts 256 epochs.
-`use_early_stopping=True` enables this rule:
+With cross-validation, RealMLP uses **one shared epoch across all folds and
+repeats by default**. Each fold completes the configured training schedule
+(256 epochs by default). Candidate checkpoints are saved every 10 epochs,
+plus the final epoch: **10, 20, …, 250, 256**. Epoch 1 is not an extra candidate;
+it is only saved if the configured training schedule itself is one epoch.
+
+AutoML computes the requested metric separately for each fold at each candidate
+epoch, then selects the best arithmetic mean across all folds and repeats.
+An exact tie selects the earlier epoch. Each fold restores its own weights at
+that epoch and keeps its own fitted preprocessing. Test data is never used.
+The selected weights determine validation scores, ensemble selection, and
+predictions after reloading.
+
+`checkpoint_interval` changes the interval. Set
+`custom_params={"realmlp": {"shared_checkpoint_selection": False}}` to keep
+independent best epochs for each fold. A single train/validation split also
+keeps independent checkpoint selection.
+
+Shared selection writes temporary checkpoints to disk and verifies restored
+predictions after saving and reloading each fold. Temporary files are removed
+after finalization or a handled failure. `shared_realmlp.json` and
+`shared_realmlp_scores.csv` retain the selected epoch and validation curve.
+An incomplete training schedule or failed restoration makes the candidate
+ineligible for the ensemble. Shared selection is validation tuning and does
+not guarantee improved performance on unseen data.
+
+For a single split, or with shared selection disabled, RealMLP restores the best
+individual validation epoch. Training normally lasts 256 epochs.
+`use_early_stopping=True` enables the following rule in that mode; shared
+selection overrides it so every fold completes the same training schedule:
 
 `epoch > early_stopping_multiplicative_patience * best_epoch + early_stopping_additive_patience`
 
@@ -130,7 +157,7 @@ after wrapper preprocessing. The timer is cooperative: upstream setup, validatio
 and saving can cause overruns. A fit without a completed finite validation
 checkpoint is rejected. Without validation, no best epoch is reported.
 
-Checkpoint metrics are cross-entropy for logloss, AUC loss for AUC, classification
+For individual checkpoint selection, metrics are cross-entropy for logloss, AUC loss for AUC, classification
 error for accuracy, RMSE for RMSE/MSE/R2, and MAE for MAE. Other metrics emit a
 warning and use cross-entropy or RMSE for checkpoint selection. MLJAR still ranks
 models using the requested metric. Label smoothing defaults off for logloss/AUC.

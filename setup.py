@@ -17,7 +17,7 @@ TFM_REQUIREMENTS = [
 
 setup(
     name="mljar-supervised",
-    version="1.4.0b4",
+    version="1.4.0b6",
     description="Automated Machine Learning for Humans",
     long_description=long_description,
     long_description_content_type="text/markdown",

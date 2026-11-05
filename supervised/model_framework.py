@@ -239,6 +239,16 @@ class ModelFramework:
             self._shared_selection.ignore_sample_weight = self.params.get("injected_sample_weight", False)
             # Full boosters are already saved per fold; do not duplicate them in RAM.
             self.callbacks.get("early_stopping").keep_best_model = False
+        elif (self.get_type() == "RealMLP" and expected_folds > 1
+              and self.learner_params.get("shared_checkpoint_selection", True)
+              and self.callbacks.get("early_stopping") is not None):
+            from supervised.shared_realmlp import SharedRealMLPSelection
+
+            self._shared_selection = SharedRealMLPSelection(
+                resolve_artifact_path(results_path, model_subpath), self.get_metric(),
+                self.learner_params.get("checkpoint_interval", 10),
+            )
+            self.callbacks.get("early_stopping").keep_best_model = False
         for repeat in range(repeats):
             for k_fold in range(self.validation.get_n_splits()):
                 self.training_budget.check(expected_folds)
@@ -443,7 +453,7 @@ class ModelFramework:
         if self._shared_selection is not None:
             self._shared_selection.finalize(self)
             if self._explain_level and self._explain_level > 0:
-                self._interpret_shared_boosting(results_path, model_subpath)
+                self._interpret_shared_selection(results_path, model_subpath)
         self.callbacks.on_framework_train_end()
         # self.get_additional_metrics()
         self._additional_metrics = self.get_additional_metrics()
@@ -455,7 +465,7 @@ class ModelFramework:
         self.training_budget.status = "trained"
         logger.debug("ModelFramework end of training")
 
-    def _interpret_shared_boosting(self, results_path, model_subpath):
+    def _interpret_shared_selection(self, results_path, model_subpath):
         # Reuse saved preprocessing, never refit it during finalization.
         for index, learner in enumerate(self.learners):
             self._shared_selection.check_budget()
@@ -889,6 +899,13 @@ class ModelFramework:
                 "across repeats.\n"
             )
         shared = self.params.get("shared_boosting")
+        shared_neural = self.params.get("shared_realmlp")
+        if shared_neural:
+            desc += (
+                f"\nShared RealMLP epoch: **{shared_neural['selected_epoch']}** "
+                "across all folds and repeats. "
+                "[Selection curve](shared_realmlp_scores.csv).\n"
+            )
         if shared:
             desc += "\n## Shared boosting selection\n\n"
             desc += f"All folds use {shared['selected_rounds']} boosting rounds. "
